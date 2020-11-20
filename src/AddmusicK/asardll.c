@@ -15,7 +15,7 @@
 	inline void * getlib()
 	{
 		char libname[256];
-		const char * names[]={"./libasar"EXTENSION, "libasar", NULL};
+		const char * names[]={"./libasar" EXTENSION, "libasar", NULL};
 		for (int i=0;names[i];i++)
 		{
 			void * rval=dlopen(names[i], RTLD_LAZY);
