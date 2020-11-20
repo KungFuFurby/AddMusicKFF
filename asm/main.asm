@@ -1706,14 +1706,14 @@ L_0CA8:
 	mov	a, y			; \
 	cmp	a, #$c6			; | Ties/rests don't mess up glissando.
 	bcs	.notGlissando		; /
-	mov	a, !ArpType		; \
+	mov	a, !ArpType+x		; \
 	cmp	a, #$02			; |
 	bne	.notGlissando		; | If the arpeggio type is glissando,
 	mov	a, !ArpNoteCount+x	; | We can only play one note with this on.
 	dec	a			; |
 	mov	!ArpNoteCount+x, a	; |
 	bne	.glissandoIsStillOn	; |
-	mov	!ArpCurrentDelta, a	; | If we're turning it off, then reset the delta.
+	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
 	bra	.glissandoOver		; / And actually play the next note.
 .glissandoIsStillOn
 .notGlissando

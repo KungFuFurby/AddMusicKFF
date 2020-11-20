@@ -947,7 +947,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	
 
 .doStuff
-	mov	a, !ArpType		;
+	mov	a, !ArpType+x		;
 	cmp	a, #$01			; \ If it's 1, then it's a trill
 	beq	.trill			; /
 	cmp	a, #$02			; \ If it's 2, then it's a glissando.
