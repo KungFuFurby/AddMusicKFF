@@ -1,0 +1,32 @@
+$DA $02 $0C $54 $B4 $B0 $B4 $18 $B0 #jsr changePause1
+
+#asm changePause1
+{
+	mov	a, $0387			;\
+	mov	!SpeedUpBackUp, a	;| Set the tempo increase to 0 and save it.
+	mov a, #$00				;|
+	mov	$0387, a			;/
+
+	inc a
+	mov	!PauseMusic, a
+
+; $d1/d2 seem to be unused in AMK
+	mov $f2, #$2c	;\
+	mov $d1, $f3	;| Backup echo volumes
+	mov $f2, #$3c	;|
+	mov $d2, $f3	;/
+
+	mov a, #$00		;\
+	mov y, #$2c		;|
+	call DSPWrite	;| Set echo volumes to $00
+	mov a, #$00		;|
+	mov y, #$3c		;|
+	call DSPWrite	;/
+
+	mov	a, #$00		;\
+	mov	y, #$0c		;| Set left master volume to $00
+	call DSPWrite	;/
+	mov	a, #$00		;\
+	mov	y, #$1c		;| Set right master volume to $00
+	jmp	DSPWrite	;/
+}
