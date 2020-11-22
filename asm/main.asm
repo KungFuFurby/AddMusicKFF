@@ -2067,7 +2067,11 @@ L_10B4:							; |
 	beq	L_10D1					; |
 	bmi	L_10BF					; |
 L_10BA:							; |
-	inc	y					; |
+;Bugfix by KungFuFurby 11/19/20:
+;All additions are being directly sent to the pointer instead of using y.
+;This is to avoid a softlock via a 256-byte wraparound due to the Y
+;register overflowing back to zero.
+	incw	$14					; |
 	mov	a, ($14)+y				; |
 	bpl	L_10BA					; /
 L_10BF:
@@ -2075,33 +2079,34 @@ L_10BF:
 	beq	skip_keyoff				; / So we shouldn't key off the voice.
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
 	bcc	L_10D1					; / So we have to key off in preparation
-	push	y					;
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
-	pop	y					; y = the current "offset".
-	inc	y					; \ 
+	incw	$14					; \
 	mov	a, ($14)+y				; / Get the next byte
 	bpl	.normal					; \ 
-	mov	a, y
 	clrc
-	adc	a, #$03
-	bra	+
+	adc	$14, #$03				; |
+	adc	$15, #$00				; |
+	bra	L_10B4
 .normal
 	mov	$10, a					; Store it for a moment...
-	mov	a, y					; Now a has the offset.
 	clrc						; \
-	adc	a, $10					; / Add the number of bytes in the command.
-	inc	a					; \
-	inc	a					; / Plus the number of bytes the command itself takes up .
-	bra	+					;
+	adc	$14, $10				; / Add the number of bytes in the command.
+	adc	$15, #$00				; |
+							; |
+	incw	$14					; \
+	incw	$14					; / Plus the number of bytes the command itself takes up .
+	bra	L_10B4					;
 	
 .normalCommand
 	mov	y, a					; \ 
-	pop	a					; |
+	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command to y (so we get the next note/command/whatever).
 	clrc						; |
-	adc	a, CommandLengthTable-$DA+y		; | Add the length of the current command to y (so we get the next note/command/whatever).
+	adc	a, $14					; |
+	mov	$14, a					; |
+	adc	$15, #$00				; |
 +							; |
-	mov	y, a					; |
+	mov	y, #$00					; |
 	bra	L_10B4					; /
 L_10D1:							;
 	mov	$10, a
