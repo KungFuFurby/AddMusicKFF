@@ -1224,9 +1224,13 @@ L_0A14:
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
 	mov	a, #$00		;
-	mov	y, #$20		;
+;Bugfix by KungFuFurby 11/20/20:
+;Avoid zeroing out memory locations reserved by arpeggio (since they're
+;not used by the SFX at all)
+	mov	y, #$10		;
 L_0A28:				; \
-	mov	$02ff+y, a	; | $0300-$0320 = #$00.  Dunno why, though.
+	mov	$02ff+y, a	; | $0300-$030f = #$00.  Dunno why, though.
+	mov	$031f+y, a	; | $0320-$032f = #$00.  Dunno why, though.
 	dbnz	y, L_0A28	; | 
 	ret			; /
 L_0A2E:
@@ -1326,9 +1330,13 @@ L_0ACE:
 	call	KeyOffVoices             ; key off voice 7 now
 	set1	$1d.7
 	mov	a, #$00
-	mov	y, #$20
+;Bugfix by KungFuFurby 11/20/20:
+;Avoid zeroing out memory locations reserved by arpeggio (since they're
+;not used by the SFX at all)
+	mov	y, #$10
 L_0AE2:
 	mov	$02ff+y, a
+	mov	$031f+y, a
 	dbnz	y, L_0AE2
 L_0AE7:
 	ret
