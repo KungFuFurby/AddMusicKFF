@@ -992,7 +992,9 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	pop	a
 	bne	.return			; |
 +
-	jmp	KeyOnVoices		; / Key on this voice.
+	or	a, $47			; / Set this voice to be keyed on.
+	mov	$47, a
+	ret
 	
 .trill
 	mov	a, !ArpCurrentDelta+x	; \ Opposite note.
