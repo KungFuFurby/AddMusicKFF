@@ -2058,27 +2058,41 @@ L_109A:				;
 ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  Otherwise, the key off should be performed.	
 {
 ;L_10AC:							;
+	;Scratch RAM usages ($14/$15 is in original, all others are new):
+	;$11.7 - Subroutine entered
+	;        (and return address not initialized outside of readahead)
+	;$11.6 - Subroutine loop active
+	;$11.5 - Loop section entered
+	;        (and return address not initialized outside of readahead)
+	;$11.4 - Loop section active
+	;$11.3 - Subroutine exited
+	;$12/$13 - Return address (if subroutine)
+	;$14/$15 - Current track pointer
+	;$16/$17 - Return address (if loop section)
+	mov	$11, #$00
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
 	mov	y, #$00					; |
 L_10B4:							; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
-	beq	L_10D1					; |
-	bmi	L_10BF					; |
-L_10BA:							; |
+	beq	.subroutineCheck			; |
+	bmi	.L_10BF					; |
+.L_10BA:						; |
 ;Bugfix by KungFuFurby 11/19/20:
 ;All additions are being directly sent to the pointer instead of using y.
 ;This is to avoid a softlock via a 256-byte wraparound due to the Y
 ;register overflowing back to zero.
 	incw	$14					; |
 	mov	a, ($14)+y				; |
-	bpl	L_10BA					; /
-L_10BF:
+	bpl	.L_10BA					; /
+.L_10BF:
 	cmp	a, #$c6					; \ C6 is a tie.
-	beq	skip_keyoff				; / So we shouldn't key off the voice.
+	beq	.skip_keyoff				; / So we shouldn't key off the voice.
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
-	bcc	L_10D1					; / So we have to key off in preparation
+	bcs	+					; / So we have to key off in preparation
+	jmp	.L_10D1
++:
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
 	incw	$14					; \
@@ -2099,44 +2113,151 @@ L_10BF:
 	bra	L_10B4					;
 	
 .normalCommand
+	;Update by KungFuFurby 12/5/20
+	;Account for loop sections and subroutines
+	cmp	a, #$e6
+	beq	.loopSection
+	cmp	a, #$e9
+	beq	.subroutine
+-:
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command to y (so we get the next note/command/whatever).
 	clrc						; |
 	adc	a, $14					; |
 	mov	$14, a					; |
 	adc	$15, #$00				; |
-+							; |
++:							; |
 	mov	y, #$00					; |
 	bra	L_10B4					; /
-L_10D1:							;
+
+.subroutineCheck:							;
+	;Check for subroutine first before automatically setting a key off.
+	mov1	c, $11.6
+	notc
+	bbc7	$11, .subroutineNoPreviousEntry
+	mov1	$11.3, c
+	mov	$14, $12
+	mov	$15, $13
+	bcs	L_10B4
+	clr1	$11.6
+	setc
+	sbc	$14, #$03
+	sbc	$15, #$00
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	mov	$15, a
+	pop	a
+	mov	$14, a
+	bra	L_10B4
+
+.skip_keyoff:
+	clrc
+	ret
+
+.subroutineNoPreviousEntry:
+	bbs3	$11, .L_10D1
+	mov	a, $c0+x
+	beq	.L_10D1
+	dec	a
+	mov1	$11.3, c
+	beq	.subroutineExit
+	bcc	.subroutineExit
+	clr1	$11.6
+	mov	a, $03f0+x
+	mov	$14, a
+	mov	a, $03f1+x
+	mov	$15, a
+	jmp	L_10B4
+
+.keyoff:
+	setc
+	ret
+
+.subroutineExit:
+	mov	a, $03e0+x
+	mov	$14, a
+	mov	a, $03e1+x
+	mov	$15, a
+	jmp	L_10B4
+
+.loopSection:
+	incw	$14
+	mov	a, ($14)+y
+	bne	.loopSectionNonZero
+	;Save return point for loop
+	set1	$11.5
+	incw	$14
+	mov	$16, $14
+	mov	$17, $15
+	jmp	L_10B4
+
+.subroutine:
+	set1	$11.7
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	cmp	a, #$01
+	beq	.subroutineNoLoop
+	set1	$11.6
+.subroutineNoLoop:
+	incw	$14
+	mov	$12, $14
+	mov	$13, $15
+	pop	a
+	mov	$15, a
+	pop	a
+	mov	$14, a
+	jmp	L_10B4
+
+.L_10D1:
 	mov	$10, a
 	mov	a, $48					; \ 
 	;mov	y, #$5c					; |
 	and	a,$0161					; | Key off the current voice (with conditions).
 	and	a,$0162					; |
-	bne	skip_keyoff				; |
+	bne	.skip_keyoff				; |
 
 	mov	a, !InRest+x
-	bne	+
+	bne	.keyoff
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
-	bne	keyoff
+	bne	.keyoff
 	mov	a, $10
 	cmp	a, #$c7
-	beq	skipKeyOffAndRunCode
+	beq	.skipKeyOffAndRunCode
 	mov	a, $70+x
 	cmp	a, !WaitTime
-	beq	keyoff
-skipKeyOffAndRunCode:
+	beq	.keyoff
+.skipKeyOffAndRunCode:
 	call	RunRemoteCode
-	bra	skip_keyoff
-+
-keyoff:
-	setc
-	ret
-skip_keyoff:
-	clrc
-	ret
+	jmp	.skip_keyoff
+
+.loopSectionNonZero:	
+	bbs4	$11, .loopSectionClearAndPassThrough
+	set1	$11.4
+	bbs5	$11, .loopSectionJumpFromScratchRAM
+	mov	a, $01e0+x
+	mov	$14, a
+	mov	a, $01e1+x
+	mov	$15, a
+	jmp	L_10B4
+
+.loopSectionJumpFromScratchRAM:
+	mov	$14, $16
+	mov	$15, $17
+	jmp	L_10B4
+
+.loopSectionClearAndPassThrough:
+	clr1	$11.4
+	incw	$14
+	jmp	L_10B4
 }
 
 
