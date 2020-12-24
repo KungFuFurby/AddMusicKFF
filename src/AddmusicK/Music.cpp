@@ -559,11 +559,22 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
+	if (i == -1 && text[pos] == '=')
+	{
+		pos++;
+		i = getInt();
 
+		if (i == -1)
+		{
+			error("Error parsing \"l\" directive.");
+		}
+		defaultNoteLength = i;
+		return;
+	}
 	if (i == -1) error("Error parsing \"l\" directive.")
 	if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 
-		defaultNoteLength = i;
+	defaultNoteLength = 192 / i;
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -2795,14 +2806,14 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		return i;
+		//return i;
 		//if (i < 1) still = false; else return i;
 	}
 
 	//if (still)
 	//{
-	if (i < 1 || i > 192) i = defaultNoteLength;
-	i = 192 / i;
+	else if (i < 1 || i > 192) i = defaultNoteLength;
+	else i = 192 / i;
 
 	int frac = i;
 
