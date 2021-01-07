@@ -569,12 +569,11 @@ void Music::parseLDirective()
 			error("Error parsing \"l\" directive.");
 		}
 		defaultNoteLength = i;
-		return;
 	}
-	if (i == -1) error("Error parsing \"l\" directive.")
-	if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
-
-	defaultNoteLength = 192 / i;
+	else if (i == -1) error("Error parsing \"l\" directive.")
+	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
+	else {defaultNoteLength = 192 / i;}
+	defaultNoteLength = getNoteLengthModifier(defaultNoteLength);
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -2815,6 +2814,10 @@ int Music::getNoteLength(int i)
 	else if (i < 1 || i > 192) i = defaultNoteLength;
 	else i = 192 / i;
 
+	return getNoteLengthModifier(i);
+}
+
+int Music::getNoteLengthModifier(int i) {
 	int frac = i;
 
 	int times = 0;
@@ -2831,6 +2834,7 @@ int Music::getNoteLength(int i)
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
 	return i;
 }
+
 
 bool sortTempoPair(const std::pair<double, int> &p1, const std::pair<double, int> &p2)
 {
