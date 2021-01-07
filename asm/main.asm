@@ -2209,6 +2209,8 @@ L_10FB:
 	call	GetCommandDataFast			; /
 	clrc
 	adc	a, $43
+	clrc
+	adc	a, !HTuneValues+x
 	call	CalcPortamentoDelta
 L_1111:
 	mov	a, $91+x
