@@ -24,8 +24,8 @@ F	0F Hurt while flying.txt
 17	17 Enemy stomp 5.txt
 18	18 Enemy stomp 6.txt
 19	19 Enemy stomp 7.txt
-1A ?	1A Grinder click 1.txt
-1B	1B Grinder click 2.txt
+1A 	1A Grinder click 1.txt
+1B *	1A Grinder click 1.txt
 1C	1C Yoshi coin.txt
 1D	1D Time running low 1.txt
 1E	1E P-balloon.txt
@@ -41,8 +41,8 @@ F	0F Hurt while flying.txt
 28	28 Firework whistle 2.txt
 29	29 Firework bang 2.txt
 2A	2A Peach pops up.txt
-2B	2B Jump.txt
-2C  12 Unpause (silent).txt
+2B ?	2B Jump.txt
+2C	12 Unpause (silent).txt
 
 SFX1DFC:
 1	01 Coin.txt
