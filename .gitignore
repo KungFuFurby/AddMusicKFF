@@ -2,3 +2,8 @@
 *.exe
 *.spc
 .DS_Store
+src/.vs
+src/Release
+src/Debug
+src/**/Release
+src/**/Debug
