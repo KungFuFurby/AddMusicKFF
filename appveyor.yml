@@ -1,0 +1,28 @@
+version: 1.0.{build}
+build:
+  verbosity: minimal
+ 
+artifacts:
+  - path: src/Release/*.exe
+  - path: 1DF9
+  - path: 1DFC
+  - path: asm
+  - path: music
+  - path: readme_files
+  - path: samples
+  - path: Addmusic_list.txt
+  - path: Addmusic_sample groups.txt
+  - path: Addmusic_sound effects.txt
+  - path: addmusicMRemover.pl
+  - path: readme.html
+ 
+ configuration: Release
+ 
+ deploy:
+    provider: FTP
+    protocol: sftp
+    host: 95.236.216.146
+    folder: home/pi/Desktop/$(JOB_NAME)/
+    username: pi
+    password:
+        secure: CD8uAofbZXnuJcfPrCazCg==
