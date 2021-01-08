@@ -16,13 +16,13 @@ artifacts:
   - path: addmusicMRemover.pl
   - path: readme.html
  
- configuration: Release
+configuration: Release
  
- deploy:
-    provider: FTP
-    protocol: sftp
-    host: 95.236.216.146
-    folder: home/pi/Desktop/$(JOB_NAME)/
-    username: pi
-    password:
-        secure: CD8uAofbZXnuJcfPrCazCg==
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: 95.236.216.146
+  folder: home/pi/Desktop/$(JOB_NAME)/
+  username: pi
+  password:
+    secure: CD8uAofbZXnuJcfPrCazCg==
