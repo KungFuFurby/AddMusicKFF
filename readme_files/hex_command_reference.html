@@ -546,8 +546,8 @@
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
 		<td>$F4<br></td>
-		<td>Yoshi drums <br></td>
-		<td>Enables yoshi drums on channel #5 <br></td>
+		<td>Yoshi Drums Toggle<br>(Ch #5)<br></td>
+		<td>Toggles yoshi drums on channel #5 <br></td>
 		<td>$00<br></td>
 		<td></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
@@ -574,15 +574,15 @@
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>SNES sync <br></td>
-		<td>Sends the current song's position to the output registers. <br></td>
+		<td>SNES Sync Toggle<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and toggles incrementing the counter per tick and sending it to the output registers. <br></td>
 		<td>$05 <br></td>
 		<td></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>Yoshi drums <br></td>
-		<td>Enables yoshi drums on the current channel <br></td>
+		<td>Yoshi Drums Toggle<br></td>
+		<td>Toggles yoshi drums on the current channel <br></td>
 		<td>$06 <br></td>
 		<td></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
@@ -607,7 +607,140 @@
 		<td>$09</td>
 		<td></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
-	    <tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SMW Velocity Table<br></td>
+		<td>Switch the velocity table to use. Normally not needed unless you want to switch back in the middle of a song.<br></td>
+		<td>$0A</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Pitch Modulation Toggle<br></td>
+		<td>Toggles the pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$0B</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Yoshi Drums On<br></td>
+		<td>Enables yoshi drums on the current channel<br></td>
+		<td>$0C</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Yoshi Drums Off<br></td>
+		<td>Disables yoshi drums on the current channel<br></td>
+		<td>$0D</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Echo On<br></td>
+		<td>Enable echo for this channel <br></td>
+		<td>$0E <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Echo Off<br></td>
+		<td>Disables echo for this channel <br></td>
+		<td>$0F <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Pitch Modulation On<br></td>
+		<td>Enables pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$10</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Pitch Modulation On<br></td>
+		<td>Disables pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$11</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Legato On<br></td>
+		<td>Enables legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning). <br></td>
+		<td>$12 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Legato Off<br></td>
+		<td>Diables legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning). Note that when turning off legato, you must do so in the middle of the last note to use this effect, instead of in between notes.<br></td>
+		<td>$13 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Light Staccato On<br></td>
+		<td>Enables light staccato (notes will be played with less of a delay between).  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
+		<td>$14</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Light Staccato Off<br></td>
+		<td>Disables light staccato.<br></td>
+		<td>$15</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Toggle <br>(No Reset)<br></td>
+		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first. <br></td>
+		<td>$16 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync On<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and enables incrementing the counter per tick and sending it to the output registers. <br></td>
+		<td>$17 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Off<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and disables incrementing the counter per tick and sending it to the output registers. <br></td>
+		<td>$18 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Resume<br></td>
+		<td>Starts the 16-bit tick counter (representing the song's position) without resetting it. <br></td>
+		<td>$19 <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Pause<br></td>
+		<td>Stops the 16-bit tick counter (representing the song's position) without resetting it. <br></td>
+		<td>$1A <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Reset<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) without enabling or disabling incrementing the counter per tick and sending it to the output registers.<br></td>
+		<td>$1B <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>SNES Sync Increment<br></td>
+		<td>Increments the 16-bit tick counter and sends it to the output registers. <br></td>
+		<td>$1C <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
         <td rowspan="8">$F5 <br></td>
         <td rowspan="8">FIR filter <br></td>
         <td rowspan="8">Sets the fir filter coefficients. <br></td>
