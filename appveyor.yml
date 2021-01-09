@@ -21,8 +21,8 @@ configuration: Release
 deploy:
   provider: FTP
   protocol: sftp
-  host: 95.236.216.146
-  folder: home/pi/Desktop/$(JOB_NAME)/
+  host: www.atarismwc.com
+  folder: home/pi/Desktop/AMKFF/
   username: pi
   password:
-    secure: CD8uAofbZXnuJcfPrCazCg==
+    secure: 5EUQJJ1H2QhydG9QQsaKaQ==
