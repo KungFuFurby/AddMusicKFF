@@ -8,14 +8,14 @@ after_build:
   - ps: .\zip_script.ps1
   
 artifacts:
-  - path: AMKFF.zip
+  - path: AMKFF_latest.zip
  
 
 deploy:
   provider: FTP
   protocol: sftp
   host: www.atarismwc.com
-  folder: Desktop/AMKFF/
+  folder: html/amkff_releases/
   username: pi
   password:
     secure: 5EUQJJ1H2QhydG9QQsaKaQ==
