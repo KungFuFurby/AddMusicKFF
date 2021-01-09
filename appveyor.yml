@@ -2,27 +2,20 @@ version: 1.0.{build}
 build:
   verbosity: minimal
  
-artifacts:
-  - path: src/Release/*.exe
-  - path: 1DF9
-  - path: 1DFC
-  - path: asm
-  - path: music
-  - path: readme_files
-  - path: samples
-  - path: Addmusic_list.txt
-  - path: Addmusic_sample groups.txt
-  - path: Addmusic_sound effects.txt
-  - path: addmusicMRemover.pl
-  - path: readme.html
- 
 configuration: Release
+
+after_build:
+  - ps: zip_script.ps1
+  
+artifacts:
+  - path: AMKFF.zip
  
+
 deploy:
   provider: FTP
   protocol: sftp
   host: www.atarismwc.com
-  folder: home/pi/Desktop/AMKFF/
+  folder: Desktop/AMKFF/
   username: pi
   password:
     secure: 5EUQJJ1H2QhydG9QQsaKaQ==
