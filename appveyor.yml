@@ -5,7 +5,7 @@ build:
 configuration: Release
 
 after_build:
-  - ps: zip_script.ps1
+  - ps: .\zip_script.ps1
   
 artifacts:
   - path: AMKFF.zip
