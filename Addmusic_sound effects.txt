@@ -44,6 +44,7 @@ F	0F Hurt while flying.txt
 2B	2B Jump.txt
 2C	12 Unpause (silent).txt
 2D	2D Grinder click 2.txt
+2E	2B Jump (alt).txt
 
 SFX1DFC:
 1	01 Coin.txt
@@ -100,3 +101,4 @@ F	0F Door.txt
 34	34 Podoboo 100% pan.txt
 35	35 Jump.txt
 36	36 Grinder click 2.txt
+37	35 Jump (alt).txt
