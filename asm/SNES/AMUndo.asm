@@ -53,7 +53,7 @@ org $05855F
 endif
 
 
-if read($05D8E6) == $22
+if read1($05D8E6) == $22
 print "Sample Tool data detected. Undoing ASM hijacks..."
 
 org $00800A
