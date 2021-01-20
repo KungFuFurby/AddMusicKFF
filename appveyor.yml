@@ -1,0 +1,21 @@
+version: 1.0.{build}
+build:
+  verbosity: minimal
+ 
+configuration: Release
+
+after_build:
+  - ps: .\zip_script.ps1
+  
+artifacts:
+  - path: AMKFF_latest.zip
+ 
+
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: www.atarismwc.com
+  folder: html/amkff_releases/
+  username: pi
+  password:
+    secure: 5EUQJJ1H2QhydG9QQsaKaQ==

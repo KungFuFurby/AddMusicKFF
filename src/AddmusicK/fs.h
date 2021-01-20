@@ -13,8 +13,8 @@
 #	endif
 #elif defined(_MSVC_LANG) && _MSVC_LANG > 201402L
 // VS2017 does not put this in the std namespace directly yet
-#	include <experimental/filesystem>
-	namespace fs = std::experimental::filesystem::v1;
+#	include <filesystem>
+	namespace fs = std::filesystem;
 #elif defined(__has_include)
 // more C++17 support
 #	if __has_include(<filesystem>)
