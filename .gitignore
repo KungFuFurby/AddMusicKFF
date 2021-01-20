@@ -1,5 +1,6 @@
 *.o
 *.exe
+!asar.exe
 *.spc
 .DS_Store
 src/.vs
