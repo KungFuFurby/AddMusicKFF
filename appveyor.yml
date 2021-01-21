@@ -1,6 +1,12 @@
 version: 1.0.8.{build}
 build:
   verbosity: minimal
+  branches:
+    except:
+      - master
+    only_commits:
+      files:
+        - src/
  
 configuration: Release
 
