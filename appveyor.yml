@@ -13,6 +13,8 @@ artifacts:
 
 deploy:
   provider: FTP
+  on:
+    branch: master
   protocol: sftp
   host: www.atarismwc.com
   folder: html/amkff_releases/
