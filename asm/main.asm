@@ -2237,12 +2237,20 @@ L_10B4:							; |
 	beq	.keyoff
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
-	jmp	.skip_keyoff
+;.skip_keyoff duplicate stored here since it's cheaper memory-wise
+;(and the distance is too great to go backwards)
+	clrc
+	ret
 
-.loopSectionNonZero:	
+.loopSectionNonZero:
 	bbs4	$11, .loopSectionClearAndPassThrough
 	set1	$11.4
 	bbs5	$11, .loopSectionJumpFromScratchRAM
+	mov	a, $01f0+x
+	cmp	a, #$01
+	;$01 means that the loop section has been entered and terminated.
+	beq	.loopSectionPassThrough
+	
 	mov	a, $01e0+x
 	mov	$14, a
 	mov	a, $01e1+x
@@ -2256,6 +2264,7 @@ L_10B4:							; |
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4
+.loopSectionPassThrough:
 	incw	$14
 	jmp	L_10B4
 }
