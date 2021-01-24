@@ -1,14 +1,15 @@
 version: 1.0.8.{build}
+
+branches:
+  except:
+    - master
+  only_commits:
+    files:
+      - src/
+
 build:
   verbosity: minimal
-  on:
-    branches:
-      except:
-        - master
-      only_commits:
-        files:
-          - src/
- 
+
 configuration: Release
 
 after_build:
