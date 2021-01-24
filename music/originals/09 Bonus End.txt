@@ -1,4 +1,10 @@
-;title=Bonus Screen Clear Fanfare
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Bonus Game Clear"
+	#game "Super Mario World"
+}
+
 ;ported by gocha
 ;@12 => h-5
 
@@ -7,13 +13,9 @@
 #option TempoImmunity
 #option NoLoop
 
-#0	
-	@1 y10 t64
+#0	@1 y10 t64
 	VCMD_PITCHENV_FROM $00 $06 $08
 	q5d o6 l4 dddd l8 cc<agf4 @15 < f^
-
-	; halt
-	/ r
 
 #1	@7 y10 q59
 	o2 l8 a+>>d<<a+>>d<<b>>d<<b>>d<c>e<c>e<<frfr
@@ -23,7 +25,7 @@
 
 #3	@12 ;y15
 	y10 ;v255
-	q6f o5 c8.<g16a8>c8.<g16a8>c16e16<g16a16>c8.<g16a8>c8c8^8c8^8
+	q6f o5 [[c8.<g16a8>]]2 c16e16<g16a16>c8.<g16a8>c8c8^8c8^8
 
 #5	@2 y5 q59
 	o6 l4 gggg l8 ffdc<a+4 @15 < f^
@@ -34,7 +36,7 @@
 
 #7	@7 y15 q59
 	o4 l8 rfrfrfrfrgrgcrcr
-                
+
 
 #amk 2
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
