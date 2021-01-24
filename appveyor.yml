@@ -1,14 +1,22 @@
 version: 1.0.8.{build}
 
-branches:
-  except:
-    - master
-  only_commits:
-    files:
-      - src/
-
-build:
-  verbosity: minimal
+for:
+  -
+    branches:
+      except:
+        - master
+    only_commits:
+      files:
+        - src/
+        - .appveyor.yml
+    build:
+      verbosity: minimal
+  -
+    branches:
+      only:
+        - master
+    build:
+      verbosity: minimal
 
 configuration: Release
 
@@ -17,8 +25,7 @@ after_build:
   
 artifacts:
   - path: AMKFF_latest.zip
- 
-
+  
 deploy:
   provider: FTP
   on:
