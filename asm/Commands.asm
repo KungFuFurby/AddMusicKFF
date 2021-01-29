@@ -661,6 +661,8 @@ SubC_table:
 	dw	SubC_1A
 	dw	SubC_1B
 	dw	SubC_1C
+	dw	SubC_1D
+	dw	SubC_1E
 
 SubC_0:
 	mov     a, $6e				; 
@@ -841,6 +843,21 @@ SubC_1C:
 	mov     x, $46
 	ret
 
+SubC_1D:
+	mov     x, $46
+	mov	a, $48
+	and	a, $1d
+	bne	SubC_1D_Ret
+	mov	a, $48
+	jmp	KeyOnVoices
+SubC_1D_Ret:
+	ret
+
+SubC_1E:
+	mov     x, $46
+	mov	a, $48
+	jmp	KeyOffVoicesWithCheck
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -916,6 +933,15 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	.gainRest		; 05
 	dw	.manualVTable		; 06
+	dw	$0000			; 07
+	dw	.VxDSPWrite		; 08
+	dw	.VxDSPWrite		; 09
+	dw	.VxDSPWrite		; 0A
+	dw	.VxDSPWrite		; 0B
+	dw	.VxDSPWrite		; 0C
+	dw	.VxDSPWrite		; 0D
+	dw	.VxDSPWrite		; 0E
+	dw	.VxDSPWrite		; 0F
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -992,6 +1018,20 @@ SubC_table2:
 	mov	x, $46			;
 	ret				; /
 	
+.VxDSPWrite
+	;A will contain our command ID shifted left once.
+	;Adjust by command ID to get the lower four bits of our
+	setc
+	sbc	a, #$08<<1
+	xcn	a
+	or	a, $46
+	xcn	a
+	lsr	a
+	push	a
+	call	GetCommandData
+	pop	y
+	jmp	DSPWrite
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.

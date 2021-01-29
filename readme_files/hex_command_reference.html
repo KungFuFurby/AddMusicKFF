@@ -741,6 +741,20 @@
 		<td></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
+		<td>$F4 <br></td>
+		<td>Force Key On<br></td>
+		<td>Forces the channel to be keyed on regardless of legato or any other setting that would affect when the note is keyed on, unless a SFX is playing on the channnel. This risks causing clicks if done without a prior key off, or if the note was planned on being keyed on anyways.<br></td>
+		<td>$1D <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>Force Key Off<br></td>
+		<td>Forces the channel to be keyed off regardless of legato or any other setting that would affect when the note is keyed off, unless a SFX is playing on the channnel. <br></td>
+		<td>$1E <br></td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
         <td rowspan="8">$F5 <br></td>
         <td rowspan="8">FIR filter <br></td>
         <td rowspan="8">Sets the fir filter coefficients. <br></td>
@@ -859,6 +873,16 @@
 		<td>$XX<br></td>
 		<td>The largest echo buffer you plan to use<br></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">Voice DSP Write </td>
+		<td rowspan="2">Write a value directly to the DSP register corresponding to the current voice </td>
+		<td>$0X<br></td>
+		<td>$X is the lower three bits plus $8 ($8-$F) of the DSP register ID for the current voice to write to.</td>
+	</tr><tr>
+		<td>$YY<br></td>
+		<td>Value to write <br></td>
+	</tr>
 <tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$FB<br></td>
