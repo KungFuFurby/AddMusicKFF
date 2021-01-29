@@ -1,0 +1,38 @@
+version: 1.0.8.{build}
+
+for:
+  -
+    branches:
+      except:
+        - master
+    only_commits:
+      files:
+        - src/
+        - .appveyor.yml
+    build:
+      verbosity: minimal
+  -
+    branches:
+      only:
+        - master
+    build:
+      verbosity: minimal
+
+configuration: Release
+
+after_build:
+  - ps: .\zip_script.ps1
+  
+artifacts:
+  - path: AMKFF_latest.zip
+  
+deploy:
+  provider: FTP
+  on:
+    branch: master
+  protocol: sftp
+  host: www.atarismwc.com
+  folder: html/amkff_releases/
+  username: pi
+  password:
+    secure: N90u+68BQTm8IHH9p3O78A==

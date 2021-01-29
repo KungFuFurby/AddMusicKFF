@@ -1,3 +1,10 @@
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Iris Out"
+	#game "Super Mario World"
+}
+
 #option TempoImmunity
 #option NoLoop
 

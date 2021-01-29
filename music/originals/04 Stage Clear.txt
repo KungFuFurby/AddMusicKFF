@@ -1,4 +1,10 @@
-;title=Course Clear Fanfare
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Stage Clear"
+	#game "Super Mario World"
+}
+
 ;ported by gocha
 
 "VCMD_PAN_FADE=$dc"
