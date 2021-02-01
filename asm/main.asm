@@ -496,10 +496,21 @@ SetPitch:			;
 	push	x
 	mov	a, $11
 	asl	a
+	mov	$14, #$00
+	push	p
+	bcc	+
+.negativeOctave
+	dec	$14
+	clrc
+	adc	a, #$18
+	bmi	.negativeOctave
 	mov	y, #$00
 	mov	x, #$18
 	div	ya, x
-	mov	x, a
+	bcc	+
+	clrc
+	adc	a, $14
++	mov	x, a
 	mov	a, PitchTable+1+y
 	mov	$15, a
 	mov	a, PitchTable+0+y
@@ -518,13 +529,23 @@ SetPitch:			;
 	asl	a
 	rol	$15
 	mov	$14, a
-	bra	+
--	lsr	$15
+	cmp	x, #$80
+	bcc	.cmpX
+.shiftPitchRight:
+	lsr	$15
 	ror	a
 	inc	x
-+	cmp	x, #$06
-	bne	-
-	mov	$14, a
+	bmi	.shiftPitchRight
+.cmpX:
+	cmp	x, #$06
+	bcc	.shiftPitchRight
+	beq	+
+	asl	$15
+	rol	a
+	dec	x
+	bra	.cmpX
+
++	mov	$14, a
 	pop	x
 	mov	a, $02f0+x
 	mov	y, $15
