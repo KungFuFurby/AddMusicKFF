@@ -9,9 +9,6 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_latest.zip
-    deploy:
-      provider: FTP
-      confirm-deploy: true
   -
     branches:
       only:
@@ -20,9 +17,6 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_latestbeta.zip
-    deploy:
-      provider: FTP
-      confirm-deploy: true
   -
     branches:
       except:
@@ -36,9 +30,6 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_testbuild.zip
-    deploy:
-      provider: FTP
-      confirm-deploy: false
 
 configuration: Release
 
@@ -46,12 +37,21 @@ after_build:
   - ps: .\zip_script.ps1
   
 deploy:
-  provider: FTP
-  on:
-    confirm-deploy: true
-  protocol: sftp
-  host: www.atarismwc.com
-  folder: html/amkff_releases/
-  username: pi
-  password:
-    secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: master
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: bleeding-edge
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==
