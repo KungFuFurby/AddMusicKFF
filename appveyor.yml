@@ -40,8 +40,7 @@ deploy:
   provider: FTP
   on:
     branches:
-      master
-      bleeding-edge
+      master bleeding-edge
   protocol: sftp
   host: www.atarismwc.com
   folder: html/amkff_releases/
