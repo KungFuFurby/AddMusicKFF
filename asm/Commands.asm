@@ -48,11 +48,11 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mul	ya			; \ 
 	addw	ya, $14			; |
 	movw	$14, ya			; /
-
+if not(defined("noSFX"))
 	mov   a, $48			; \ 
 	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
 	bne   .noSet			; /
-	
+endif	
 	call	GetBackupInstrTable	; \
 	movw	$10, ya			; /
 	
