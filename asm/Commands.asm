@@ -680,7 +680,10 @@ SubC_3:
 	jmp	EffectModifier
 
 SubC_4:
-	call    Square_getSpecialWavePtr
+	mov     x, $46
+SubC_4Gate:
+	ret ;Will be turned into a call opcode
+	dw	Square_getSpecialWavePtr
 	mov	a,#$00
 	mov	y,#$07
 SubC_4l:
@@ -902,6 +905,8 @@ SubC_table2:
 	mov	$0163, a
 	mov	a, #$F0 ;BEQ opcode
 	mov	SquareGate, a ;Special wave will now be initialized
+	mov	a, #$3F ;CALL opcode
+	mov	SubC_4Gate,a
 	jmp	SubC_4
 
 }

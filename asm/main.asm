@@ -1478,6 +1478,8 @@ L_0B5A:
 	; MODIFIED CODE START
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
 	mov	a,#$00			; Clear various new addresses.
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
@@ -2662,6 +2664,8 @@ Start:
 
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
 	
 	jmp	($0014+x)		; Jump to address
 	
