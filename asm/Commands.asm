@@ -994,7 +994,14 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	cmp	a, #$c7			;  |(unless it's a rest)
 	bne	+			;  |
 	ret				;  |
-+	call	NoteVCMD		; /
++	push	a			;  |
+	mov	a, !runningArp		;  | If runningArp was set outside
+	eor	a, #$01			;  | of this routine, then remote
+	mov	!runningArp, a		;  | code event -2 should be able to
+	pop	a			;  | fire.
+	call	NoteVCMD		;  |
+	mov	a, #$00			;  |
+	mov	!runningArp, a		; /
 	
 	mov	a, $48			; \
 	push	a			; |
@@ -1029,8 +1036,8 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
-	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	cmp	a, #$fe					; |
+	bcs	.noteStartCommand			; | Handle types #$fe-#$ff, #$04, and #$00. #$04 and #$00 take effect now; #$fe-#$ff has special properties.
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
 	cmp	a, #$00					; |
@@ -1053,6 +1060,7 @@ cmdFC:
 	
 	
 .noteStartCommand					;
+	mov	!remoteCodeType2+x, a			;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr2+1+x, a		; | Note start code; get the address back and store it where it belongs.
 	pop	a					; |

@@ -135,11 +135,13 @@
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
 !runningRemoteCode = $0380	; Set if we're running remote code.  Used so that, when we hit a 0, we return to RunRemoteCode, instead of ending the song track/loop.
+!runningArp = $0381		; Set if we're running arpeggio. Only really used to have a remote code type bypass arpeggio-triggered notes.
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
 !remoteCodeTimeValue = $01a0	; The value to set the timer to when necessary.
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
+!remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
 
@@ -434,8 +436,16 @@ NormalNote:						;;;;;;;;;;/ Code change
 .notType1RemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
-	beq	.noRemoteCode			
+	beq	.noRemoteCode
 
+	mov	a, !runningArp
+	beq	.runRemoteCodeKON
+
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$fe
+	beq	.noRemoteCode
+
+.runRemoteCodeKON
 	call	RunRemoteCode2
 	
 .noRemoteCode
@@ -1729,9 +1739,10 @@ L_0CA8:
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
-	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.
+	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.	
 	mov	a, #$01			; | But we do have to restart the timer so that it will work correctly (and start right now).
-	mov	!ArpTimeLeft+x, a	; /
+	mov	!ArpTimeLeft+x, a	; |
+	mov	!runningArp, a		; / Have this trigger remote code type -2.
 	dec	a
 	dec	a
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
