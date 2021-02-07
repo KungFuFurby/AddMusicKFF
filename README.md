@@ -6,3 +6,5 @@ This is a fork created by KungFuFurby off of AddMusicK 1.0.8, originally by Kipe
 This repository hosts changes made by KungFuFurby to AddMusicK for others to test, especially if they eventually get merged into the official AddMusicK.
 
 You can find the latest Windows build (particularly if you need C++-side modifications) [here](https://www.atarismwc.com/amkff_releases/).
+* AMKFF_latest.zip refers to the latest stable version built as of the last time the master branch was updated (not counting skipped cases)
+* AMKFF_latestbeta.zip refers to the latest version built for the bleeding-edge branch, which contains the majority, if not all of the unmerged changes in one pack.
