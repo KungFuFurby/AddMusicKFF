@@ -854,12 +854,16 @@ SubC_1C:
 SubC_1D:
 	mov     x, $46
 	mov	a, $48
+if not(defined("noSFX"))
 	and	a, $1d
 	bne	SubC_1D_Ret
 	mov	a, $48
+endif
 	jmp	KeyOnVoices
+if not(defined("noSFX"))
 SubC_1D_Ret:
 	ret
+endif
 
 SubC_1E:
 	mov     x, $46
