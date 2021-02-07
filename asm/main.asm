@@ -1694,8 +1694,11 @@ L_0CA8:
 	mov	y, a			; / Put it into y for  now.
 
 	
-	cmp	y, #$c6			; \ If the note is a rest or tie, then don't save the current note pitch.
-	bcs	+				; /
+	cmp	y, #$c6			; \ If the note is a tie, then don't save the current note pitch.
+	beq	+				; /
+	cmp	y, #$c8
+	bcs	+
+
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +

@@ -983,7 +983,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	!ArpTimeLeft+x, a	; /
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
-	call	NoteVCMD		; /
+	cmp	a, #$c7			;  |(unless it's a rest)
+	bne	+			;  |
+	ret				;  |
++	call	NoteVCMD		; /
 	
 	mov	a, $48			; \
 	push	a			; |
