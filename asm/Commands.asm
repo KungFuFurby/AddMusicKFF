@@ -650,6 +650,27 @@ SubC_table:
 	dw	SubC_7
 	dw	SubC_8
 	dw	SubC_9
+	dw	SubC_A
+	dw	SubC_B
+	dw	SubC_C
+	dw	SubC_D
+	dw	SubC_E
+	dw	SubC_F
+	dw	SubC_10
+	dw	SubC_11
+	dw	SubC_12
+	dw	SubC_13
+	dw	SubC_14
+	dw	SubC_15
+	dw	SubC_16
+	dw	SubC_17
+	dw	SubC_18
+	dw	SubC_19
+	dw	SubC_1A
+	dw	SubC_1B
+	dw	SubC_1C
+	dw	SubC_1D
+	dw	SubC_1E
 
 SubC_0:
 	mov     a, $6e				; 
@@ -660,9 +681,56 @@ SubC_01:
 	mov	a,#$01
 SubC_00:
 	eor	a,$0160
+SubC_02:
 	mov	$0160,a
 	mov     x, $46
 	ret
+
+SubC_03:
+	or	a,$0160
+	bra	SubC_02
+
+SubC_04:
+	and	a,$0160
+	bra	SubC_02
+
+SubC_6:
+	eor	($6e), ($48)
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	bra	SubC_01
+
+SubC_C:
+	or	($6e), ($48)
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	mov     x, $46
+	mov	a,#$01
+	bra	SubC_03
+
+SubC_D:
+	or	($6e), ($48)
+	eor	($6e), ($48)
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	mov     x, $46
+	mov	a,#$FE
+	bra	SubC_04
+
+SubC_5:
+	call	SubC_1B
+SubC_16:
+	mov	a,#$02
+	bra	SubC_00
+
+SubC_17:
+	call	SubC_1B
+SubC_19:
+	mov	a,#$02
+	bra	SubC_03
+
+SubC_18:
+	call	SubC_1B
+SubC_1A:
+	mov	a,#$FD
+	bra	SubC_03
 
 SubC_1:
 	mov	a, $0161
@@ -687,22 +755,7 @@ SubC_3:
 	mov     x, $46
 	jmp	EffectModifier
 	
-SubC_5:
-	mov    a, #$00
-	mov    $0167, a
-	mov    $0166, a
-	mov	a,#$02
-	bra	SubC_00	
-
-	;ret
-	
-SubC_6:
-	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	bra	SubC_01
-	
 SubC_7:
-	mov	$ffff, a
 	mov	a, #$00				; \ 
 	mov	$0387, a			; | Set the tempo to normal.
 	mov	x, $46				; |
@@ -719,8 +772,100 @@ SubC_9:
 	mov	a, #$00				; | Turn the current instrument back on.
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	jmp	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
-	
-	
+
+SubC_A:
+	mov	!SecondVTable, #$00		; \
+	mov	x, $46				; | Toggle which velocity table we're using.
+	ret					; /
+
+SubC_B:
+	eor	(!MusicPModChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
+	eor	(!MusicEchoChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_10:
+	or	(!MusicPModChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_11:
+	or	(!MusicPModChannels), ($48)
+	eor	(!MusicPModChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_12:
+	mov	a, $0161
+	or	a, $48
+	mov	$0161,a
+	mov	a,$48
+	eor	a,#$FF
+	and	a, $0162		
+	mov	$0162,a
+	mov     x, $46
+	ret
+
+SubC_13:
+	mov	a,$48
+	eor	a,#$FF
+	and	a, $0161
+	mov	$0161,a
+	mov	a, $0162		
+	or	a, $48
+	mov	$0162,a
+	mov     x, $46
+	ret
+
+SubC_14:
+	mov	!WaitTime, #$01
+	mov     x, $46
+	ret
+
+SubC_15:
+	mov	!WaitTime, #$02
+	mov     x, $46
+	ret
+
+SubC_1B:
+	mov    a, #$00
+	mov    $0167, a
+	mov    $0166, a
+	mov     x, $46
+	ret
+
+SubC_1C:
+	setp			; \ 
+	incw	$66		; | Increase $166.
+	clrp			; / 
+	mov     x, $46
+	ret
+
+SubC_1D:
+	mov     x, $46
+	mov	a, $48
+	and	a, $1d
+	bne	SubC_1D_Ret
+	mov	a, $48
+	jmp	KeyOnVoices
+SubC_1D_Ret:
+	ret
+
+SubC_1E:
+	mov     x, $46
+	mov	a, $48
+	jmp	KeyOffVoicesWithCheck
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -796,6 +941,15 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	.gainRest		; 05
 	dw	.manualVTable		; 06
+	dw	$0000			; 07
+	dw	.VxDSPWrite		; 08
+	dw	.VxDSPWrite		; 09
+	dw	.VxDSPWrite		; 0A
+	dw	.VxDSPWrite		; 0B
+	dw	.VxDSPWrite		; 0C
+	dw	.VxDSPWrite		; 0D
+	dw	.VxDSPWrite		; 0E
+	dw	.VxDSPWrite		; 0F
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -872,6 +1026,21 @@ SubC_table2:
 	mov	x, $46			;
 	ret				; /
 	
+.VxDSPWrite
+	;A will contain our command ID shifted left once.
+	;Adjust by command ID to get the lower three bits of our voice DSP
+	;register ID. (The fourth is zeroed out.)
+	setc
+	sbc	a, #$08<<1
+	xcn	a
+	or	a, $46
+	xcn	a
+	lsr	a
+	push	a
+	call	GetCommandData
+	pop	y
+	jmp	DSPWrite
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
