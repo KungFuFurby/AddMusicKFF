@@ -5,31 +5,43 @@ for:
     branches:
       except:
         - master
+        - bleeding-edge
     only_commits:
       files:
         - src/
         - .appveyor.yml
     build:
       verbosity: minimal
+    artifacts:
+      - path: AMKFF_testbuild.zip
   -
     branches:
       only:
         - master
     build:
       verbosity: minimal
+    artifacts:
+      - path: AMKFF_latest.zip
+  -
+    branches:
+      only:
+        - bleeding-edge
+    build:
+      verbosity: minimal
+    artifacts:
+      - path: AMKFF_latestbeta.zip
 
 configuration: Release
 
 after_build:
   - ps: .\zip_script.ps1
   
-artifacts:
-  - path: AMKFF_latest.zip
-  
 deploy:
   provider: FTP
   on:
-    branch: master
+    branches:
+      master
+      bleeding-edge
   protocol: sftp
   host: www.atarismwc.com
   folder: html/amkff_releases/
