@@ -208,7 +208,7 @@ if not(defined("noSFX"))
 	clrc
 	adc   a, $44
 	mov   $44, a
-	bcc   L_0573
+	bcc   Square
 	inc   $45
 	
 	call	ProcessSFX
@@ -232,6 +232,57 @@ if not(defined("noSFX"))
 	mov	$03, #$00
 +
 endif
+
+;RETURN OF THE SPECIAL WAVE!
+;Original from AMM
+;Ported to AMK by KungFuFurby
+Square:		mov	a,$0165
+SquareGate:
+		bra	Sq_ret ;This turns into a beq once the SRCN ID has been initialized.
+		pop	y
+		push	y
+		mul	ya
+		setp
+		clrc
+;The same slowdown fix that the music got gets applied here.
+;However, it has been upgraded.
+		addw	ya,$6a
+		movw	$6a,ya
+		cmp	$6b, #$00
+		clrp
+		beq	Sq_ret
+;Original used fixed memory location references (and sample ID $09).
+;However, this isn't possible on AMK, so off we go to get the special wave's
+;sample ID.
+		call    Square_getSpecialWavePtr
+
+		mov	a,$0164
+		push	a
+		and	a,#$1F
+		lsr	a
+		cmp	a,#$08
+		bcc	Sq_skip1
+		inc	a
+;Original stored using X as an index on a fixed memory location.
+;However, memory locations are more variable, and thus we're using an
+;indirect, so we need to use the Y register instead...
+Sq_skip1:	mov	y,a
+		mov	x,#$00
+		pop	a
+		and	a,#$3F
+		cmp	a,#$20
+		bcc	Sq_skip2
+		inc	x
+		inc	x
+Sq_skip2:	and	a,#$01
+		beq	Sq_skip3
+		inc	x
+Sq_skip3:	mov	a,Sq_data+x
+		mov	($14)+y,a
+		inc	$0164
+		dec	$016b
+Sq_ret:
+
 L_0573:
 	mov   a, $51
 	pop   y
@@ -271,16 +322,17 @@ L_0586:
 	clrp				;
 	movw  $f6, ya			;
 	
-	bra   MainLoop             ; restart main loop
+	jmp   MainLoop             ; restart main loop
 L_058D:
 	mov   a, $06             ; if writing 0 to APU2 then
-	beq   MainLoop             ;   restart main loop
+	bne   +
+	jmp   MainLoop             ;   restart main loop
 	
 { ; Execute code for each channel.
 
 	
 	
-	mov   x, #$0e            ; foreach voice
++	mov   x, #$0e            ; foreach voice
 	mov   $48, #$80
 L_0596:
 	mov   a, $31+x
@@ -291,9 +343,38 @@ L_059D:
 	dec   x
 	dec   x
 	bpl   L_0596             ; loop for each voice
-	bra   MainLoop             ; restart main loop
+	jmp   MainLoop             ; restart main loop
 
 }
+
+Sq_data:	db	$70,$77,$07,$00
+
+;RETURN OF THE SPECIAL WAVE!
+;Original from AMM
+;Ported to AMK by KungFuFurby
+;Citing a variable memory location (and sample ID), this will act as our
+;sample pointer retriever for the special wave.
+Square_getSpecialWavePtr:
+	;A contains the SRCN ID
+	;This reserves $14-$15 for the pointer to the special wave
+	mov   a, $0163
+	asl   a
+	asl   a
+	inc   a
+	inc   a
+	mov   y, a
+	mov   $14, #$00
+	mov   $f2, #$5d ;Read from the sample directory
+	mov   $15, $f3  ;(specifically the loop point).
+	mov   a, ($14)+y
+	push  a
+	inc   y
+	mov   a, ($14)+y
+	mov   $15, a
+	pop   a
+	mov   $14, a
+	incw  $14 ;The first byte to write should not be a BRR block header
+	ret
 	
 }	
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
@@ -1442,12 +1523,15 @@ L_0B5A:
 	mov	$06, a		; Song number goes into $06.
 	push	a
 	; MODIFIED CODE START
+	mov	a,#$2F			;BRA opcode
+	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
 	mov	a,#$00			; Clear various new addresses.
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
 	mov	$0160+x,a		;
-	;mov	$245A+x,a		; These did something in AMM, but I don't know what.
-	;mov	$2463+x,a		; They can't be used now, since chances are music or something else is there now.
+	mov	$0168+x,a		;
 	dec	x			;
 	bpl	-			;
 					;
@@ -2785,6 +2869,11 @@ Start:
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
+
+	mov	a,#$2F			;BRA opcode
+	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
 	
 	jmp	($0014+x)		; Jump to address
 	

@@ -644,7 +644,7 @@ SubC_table:
 	dw	SubC_1
 	dw	SubC_2
 	dw	SubC_3
-	dw	$0000
+	dw	SubC_4
 	dw	SubC_5
 	dw	SubC_6
 	dw	SubC_7
@@ -754,6 +754,27 @@ SubC_3:
 	eor	(!MusicEchoChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
+
+SubC_4:
+	mov     x, $46
+SubC_4Gate:
+	ret ;Will be turned into a call opcode
+	dw	Square_getSpecialWavePtr
+	mov	a,#$00
+	mov	y,#$07
+SubC_4l:
+	mov	($14)+y,a
+	clrc
+	adc	$14,#$09
+	adc	$15,#$00
+	mov	($14)+y,a
+	setc
+	sbc	$14,#$09
+	sbc	$15,#$00
+	dec	y
+	bpl	SubC_4l
+	mov     x, $46
+	ret
 	
 SubC_7:
 	mov	a, #$00				; \ 
@@ -945,7 +966,7 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	.gainRest		; 05
 	dw	.manualVTable		; 06
-	dw	$0000			; 07
+	dw	.oldFA_com		; 07
 	dw	.VxDSPWrite		; 08
 	dw	.VxDSPWrite		; 09
 	dw	.VxDSPWrite		; 0A
@@ -954,6 +975,7 @@ SubC_table2:
 	dw	.VxDSPWrite		; 0D
 	dw	.VxDSPWrite		; 0E
 	dw	.VxDSPWrite		; 0F
+	dw	.SquareFormatClearSRCN	; 10
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -1030,6 +1052,11 @@ SubC_table2:
 	mov	x, $46			;
 	ret				; /
 	
+.oldFA_com
+	call	GetCommandData
+	mov	$0165,a
+	ret
+
 .VxDSPWrite
 	;A will contain our command ID shifted left once.
 	;Adjust by command ID to get the lower three bits of our voice DSP
@@ -1044,6 +1071,15 @@ SubC_table2:
 	call	GetCommandData
 	pop	y
 	jmp	DSPWrite
+
+.SquareFormatClearSRCN
+	call	GetCommandData
+	mov	$0163, a
+	mov	a, #$F0 ;BEQ opcode
+	mov	SquareGate, a ;Special wave will now be initialized
+	mov	a, #$3F ;CALL opcode
+	mov	SubC_4Gate,a
+	jmp	SubC_4
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
