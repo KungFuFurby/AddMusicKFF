@@ -9,6 +9,9 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_latest.zip
+    deploy:
+      provider: FTP
+      confirm-deploy: true
   -
     branches:
       only:
@@ -17,6 +20,9 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_latestbeta.zip
+    deploy:
+      provider: FTP
+      confirm-deploy: true
   -
     branches:
       except:
@@ -30,6 +36,9 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_testbuild.zip
+    deploy:
+      provider: FTP
+      confirm-deploy: false
 
 configuration: Release
 
@@ -39,7 +48,7 @@ after_build:
 deploy:
   provider: FTP
   on:
-    branch: master bleeding-edge
+    confirm-deploy: true
   protocol: sftp
   host: www.atarismwc.com
   folder: html/amkff_releases/
