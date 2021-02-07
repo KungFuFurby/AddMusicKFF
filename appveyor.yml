@@ -39,8 +39,7 @@ after_build:
 deploy:
   provider: FTP
   on:
-    branches:
-      master bleeding-edge
+    branches: master bleeding-edge
   protocol: sftp
   host: www.atarismwc.com
   folder: html/amkff_releases/
