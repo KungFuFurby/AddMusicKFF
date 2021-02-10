@@ -773,7 +773,6 @@ SubC_4l:
 	sbc	$15,#$00
 	dec	y
 	bpl	SubC_4l
-	mov     x, $46
 	ret
 	
 SubC_7:
