@@ -48,6 +48,7 @@
 
 #AMM
 {
+	"SPECIALWAVE.brr"!
 	"EMPTY.brr"!
 	"EMPTY.brr"
 	"EMPTY.brr"
@@ -57,7 +58,7 @@
 	"EMPTY.brr"
 	"EMPTY.brr"
 	"EMPTY.brr"
-	"SPECIALWAVE.brr"
+	"EMPTY.brr"
 	"EMPTY.brr"
 	"EMPTY.brr"
 }
