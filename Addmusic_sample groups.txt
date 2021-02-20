@@ -60,5 +60,4 @@
 	"EMPTY.brr"
 	"EMPTY.brr"
 	"EMPTY.brr"
-	"EMPTY.brr"
 }
