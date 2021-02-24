@@ -1516,9 +1516,11 @@ PlaySong:
 
 	;mov	y, #$00		
 	;mov	$0387, y		; Zero out the tempo modifier.
+
 if not(defined("noSFX"))
-	mov	!SFXEchoChannels, y
+	mov	!SFXEchoChannels, #$00
 endif
+
 L_0B5A:
 	mov	$06, a		; Song number goes into $06.
 	push	a
