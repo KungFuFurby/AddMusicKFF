@@ -1467,9 +1467,14 @@ L_0B6D:
 	mov	!ArpSpecial+x, a	; /
 	mov	!VolumeMult+x, a	
 	call	ClearRemoteCodeAddresses
-	mov	$02f0+x, a	
+	push	a
+	;Don't clear pitch base if it is occupied by SFX.
+	mov	a, !ChSFXPtrs+1+x
+	pop	a
+	bne	+
+	mov	$02f0+x, a
 	mov	$0210+x, a
-	dec	x
++	dec	x
 	dec	x
 	bpl	L_0B6D	
 	; MODIFIED CODE START
