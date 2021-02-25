@@ -107,6 +107,7 @@
 
 !ChSFXPtrs = $20		; Two bytes per channel, so $20 - $2f.
 !ChSFXNoteTimer = $d0		; Actually $01d0.  Use setp/clrp.
+!ChSFXPriority = $d1		; (Same as above, use setp and clrp)
 ;!ChSFXTimeToStart = $d1		; Time until the SFX on this channel starts. (Same as above, use setp and clrp).
 !ChSFXNoteTimerBackup = $03d1	; Used to save space when two consecutive notes use the same length.
 !ChSFXPtrBackup = $03c0		; A copy of $20w, only updated when a sound effect starts.  Used by the #$FE command to restart a sound effect.
@@ -937,23 +938,11 @@ SpeedUpMusic:
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
-	cmp	$00, #$11			; \
-	beq	.skipSpeedUpCheck		; | Handle which sound effects can overwrite others (pause, unpause, low time)
-	cmp	$00, #$12			; |
-	beq	.skipSpeedUpCheck		; |
-	cmp	$04, #$1d			; | Don't overwrite the "sound is running out!" sound effect.
-	beq	+				; /
-.skipSpeedUpCheck
-.speedUpSFXIsOff
 	mov	x, #$0c				; \ 
 	mov	y, #$00				; | 
 	mov	$10, #$40			; | 
 --						; | 
 	bra 	ProcessSFXInput			; / Actually a subroutine.
-+
-	cmp	!ChSFXPtrs+$0d, #$00		; \ But if #$1d is no longer playing... 
-	beq	.speedUpSFXIsOff		; /
-	ret
 	
 if !PSwitchIsSFX = !true
 PlayPSwitchSFX:
@@ -991,17 +980,10 @@ if !PSwitchIsSFX = !true
 	mov	a, $03				;
 	bmi	PlayPSwitchSFX			;
 endif
-	cmp	$07, #$1d			; \ No sound effects can overwrite #$1d
-	beq	+				; /
-.speedUpSFXIsOff
 	mov	x, #$0e				; \
 	mov	y, #$03				; | 
 	mov	$10, #$80			; |
-	bra	--				; / Saving 1 whole byte!
-+
-	cmp	!ChSFXPtrs+$0f, #$00		; \ But if #$1d is no longer playing... 
-	beq	.speedUpSFXIsOff		; /
-	ret
+	;bra	ProcessSFXInput			; /
 
 
 ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = input port to process, $10 = bitwise indicator of the current channel.
@@ -1017,6 +999,58 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	ret					;
 		
 .prepareForSFX					;
+	push	a				;
+	push	y				; \ 
+	asl	a				; |
+	mov	y, a				; | Y = SFX * 2, index to a table.
+	pop	a				; | If a is 0, then the table we load from table 1.
+	cmp	a, #$00				; | Otherwise, we load from table 2.
+	push	a
+	beq	+				; /
+						;
+	mov	a, SFXTable1-1+y		; \
+	push	a				; | Move the pointer to the current SFX to the correct pointer.
+	mov	a, SFXTable1-2+y		; |
+	bra	.gottenPointer			;
+						;
++						;
+	mov	a, SFXTable0-1+y		; \
+	push	a				; |
+	mov	a, SFXTable0-2+y		; /
+	
+.gottenPointer
+	pop	y
+	movw	$14, ya
+	pop	y
+;Check SFX priority.
+	mov	$13, #$E5			;mov a, !a opcode
+	mov	$16, #$6F			;RET opcode
+	call	$0013
+	cmp	a, #$E0
+	beq	.getSFXPriority
+	mov	a, #$00
+	bra	.sfxPriorityCheck
+.getSFXPriority
+	incw	$14
+	call	$0013
+	incw	$14
+
+.sfxPriorityCheck
+	push	a
+	mov	a, !ChSFXPtrs+1+x
+	pop	a
+	beq	.sfxAllocAllowed
+
+	cmp	a, !ChSFXPriority|$0100+x
+	bcs	.sfxAllocAllowed
+
+.noSFXOverwrite
+	pop	a
+	ret
+
+.sfxAllocAllowed
+	mov	!ChSFXPriority|$0100+x, a
+	pop	a	
 	mov	$0004+y, a			; > Tell the SPC to process this SFX.
 	;setp					; \
 	;mov	a, #$01				; | We need to wait 2 ticks before processing SFX.
@@ -1028,7 +1062,12 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	pop	y
 	or	($1d), ($10)			;
 	
-	
+	mov	a, $15
+	mov	!ChSFXPtrs+1+x, a		; Store to current pointer
+	mov	!ChSFXPtrBackup+1+x, a		; And backup pointer.
+	mov	a, $14				;
+	mov	!ChSFXPtrs+x, a			; Store to current pointer.
+	mov	!ChSFXPtrBackup+x, a		; And backup pointer.
 						;
 	call	EffectModifier
 	mov	a, #$00				; \
@@ -1042,30 +1081,6 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	;clrp					;
 	;bne	.return				;
 						;
-	push	y				;
-	mov	a, $0004+y			; \ 
-	asl	a				; |
-	mov	y, a				; | Y = SFX * 2, index to a table.
-	pop	a				; | If a is 0, then the table we load from table 1.
-	cmp	a, #$00				; | Otherwise, we load from table 2.
-	beq	+				; /
-						;
-	mov	a, SFXTable1-2+y		; \
-	push	a				; | Move the pointer to the current SFX to the correct pointer.
-	mov	a, SFXTable1-1+y		; |
-	bra	.gottenPointer			;
-						;
-+						;
-	mov	a, SFXTable0-2+y		; \
-	push	a				; |
-	mov	a, SFXTable0-1+y		; /
-	
-.gottenPointer
-	mov	!ChSFXPtrs+1+x, a		; Store to current pointer
-	mov	!ChSFXPtrBackup+1+x, a		; And backup pointer.
-	pop	a				;
-	mov	!ChSFXPtrs+x, a			; Store to current pointer.
-	mov	!ChSFXPtrBackup+x, a		; And backup pointer.
 	
 	mov	a, #$02
 	setp
