@@ -1,4 +1,10 @@
-;title=Game Over
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Game Over"
+	#game "Super Mario World"
+}
+
 ;ported by gocha
 
 "VCMD_ECHO_OFF=$f0"
