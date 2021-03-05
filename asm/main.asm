@@ -2290,6 +2290,7 @@ L_10B4:							; |
 -:
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
+	mov	y, #$00					; |
 +:							; |
 	clrc						; |
 	addw	ya, $14					; |
