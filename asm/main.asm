@@ -469,7 +469,9 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-	
+
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	L_062B		; Don't adjust the pitch.	
 	mov	a, $0300+x	; \ 
 	mov	$90+x, a	; / 
 	beq	L_062B
