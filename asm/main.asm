@@ -1261,6 +1261,7 @@ L_0A38:
 	bra	L_0A99
 ;
 L_0A51:						;;;;;;;;/ Code change
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
@@ -1358,6 +1359,7 @@ L_0AF7:
 	call	NoteVCMD
 	bra	L_0B1C
 L_0B08:
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
