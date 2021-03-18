@@ -563,7 +563,10 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-	
+if not(defined("noSFX"))
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	L_062B		; Don't adjust the pitch.	
+endif
 	mov	a, $0300+x	; \ 
 	mov	$90+x, a	; / 
 	beq	L_062B
@@ -1272,6 +1275,7 @@ endif
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
+if not(defined("noSFX"))
 ; add pitch slide delta and set DSP pitch
 L_09CD:
 	mov	a, #$b0
@@ -1288,7 +1292,7 @@ L_09CD:
 	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 ;
-if not(defined("noSFX"))
+
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
