@@ -472,7 +472,9 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-	
+
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	L_062B		; Don't adjust the pitch.	
 	mov	a, $0300+x	; \ 
 	mov	$90+x, a	; / 
 	beq	L_062B
@@ -2139,28 +2141,21 @@ L_10BF:
 	incw	$14					; \
 	mov	a, ($14)+y				; / Get the next byte
 	bpl	.normal					; \ 
-	clrc
-	adc	$14, #$03				; |
-	adc	$15, #$00				; |
-	bra	L_10B4
+	mov	a, #$03
+	bra	+
 .normal
-	mov	$10, a					; Store it for a moment...
-	clrc						; \
-	adc	$14, $10				; / Add the number of bytes in the command.
-	adc	$15, #$00				; |
-							; |
-	incw	$14					; \
-	incw	$14					; / Plus the number of bytes the command itself takes up .
-	bra	L_10B4					;
+	inc	a					; \ Add the number of bytes in the command.
+	inc	a					; / Plus the number of bytes the command itself takes up .	
+	bra	+					;
 	
 .normalCommand
 	mov	y, a					; \ 
-	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command to y (so we get the next note/command/whatever).
-	clrc						; |
-	adc	a, $14					; |
-	mov	$14, a					; |
-	adc	$15, #$00				; |
+	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
+	mov	y, #$00					; |
 +							; |
+	clrc						; |
+	addw	ya, $14					; |
+	movw	$14, ya					; |
 	mov	y, #$00					; |
 	bra	L_10B4					; /
 L_10D1:							;
