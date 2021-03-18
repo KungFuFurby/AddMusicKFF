@@ -1073,7 +1073,8 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 						;
 	call	EffectModifier
 	mov	a, #$00				; \
-	mov	$0300+x, a			; /
+	mov	$90+x, a			; |
+	mov	$91+x, a			; /
 .return						;
 	;ret					;
 						;
@@ -1240,16 +1241,7 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
-	mov	a, #$00		;
-;Bugfix by KungFuFurby 11/20/20:
-;Avoid zeroing out memory locations reserved by arpeggio (since they're
-;not used by the SFX at all)
-	mov	y, #$10		;
-L_0A28:				; \
-	mov	$02ff+y, a	; | $0300-$030f = #$00.  Dunno why, though.
-	mov	$031f+y, a	; | $0320-$032f = #$00.  Dunno why, though.
-	dbnz	y, L_0A28	; | 
-	ret			; /
+	ret
 L_0A2E:
 	dec	$0383
 	bne	L_0A0D
@@ -1346,15 +1338,6 @@ L_0ACE:
 	;mov	y, #$5c
 	call	KeyOffVoices             ; key off voice 7 now
 	set1	$1d.7
-	mov	a, #$00
-;Bugfix by KungFuFurby 11/20/20:
-;Avoid zeroing out memory locations reserved by arpeggio (since they're
-;not used by the SFX at all)
-	mov	y, #$10
-L_0AE2:
-	mov	$02ff+y, a
-	mov	$031f+y, a
-	dbnz	y, L_0AE2
 L_0AE7:
 	ret
 ;
