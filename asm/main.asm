@@ -1266,13 +1266,15 @@ L_0A51:						;;;;;;;;/ Code change
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
 	mov	$05, #$00
+RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.7
 	mov	x, #$0e
 	mov	a, !BackupSRCN+$0e
 	bne	RestoreSample7
 	mov	a, $cf
 	beq	L_0A67
-	jmp	L_0D4B			; Restore the current instrument on the channel?
+	dec	a
+	jmp	SetInstrument			; Restore the current instrument on the channel?
 L_0A67:
 	ret
 RestoreSample7:
@@ -1364,10 +1366,7 @@ L_0B08:
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
 	mov	$05, #$00
-	clr1	$1d.7
-	mov	x, #$0e
-	mov	a, $cf
-	jmp	L_0D4B
+	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
 	mov	$10, a
