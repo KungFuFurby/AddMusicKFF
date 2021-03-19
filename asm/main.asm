@@ -1460,7 +1460,9 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
+if not(defined("noSFX"))
 	mov	$48, #$80
+endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
@@ -1497,7 +1499,10 @@ if not(defined("noSFX"))
 endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
-+	lsr	$48
++
+if not(defined("noSFX"))
+	lsr	$48
+endif
 	dec	x
 	dec	x
 	bpl	L_0B6D	
