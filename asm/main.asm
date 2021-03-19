@@ -879,6 +879,12 @@ HandleSFXVoice:
 }
 
 if !PSwitchIsSFX = !true
+
+PSwitchPtrs:
+	dw PSwitchCh5
+	dw PSwitchCh6
+	dw PSwitchCh7
+
 PSwitchCh7:
 	db $DA, $02			; @2
 	db $30, $00,      $C6 		; r=24
@@ -948,32 +954,26 @@ ProcessAPU0Input:
 	
 if !PSwitchIsSFX = !true
 PlayPSwitchSFX:
-	mov	!ChSFXPtrs+$0a, #PSwitchCh5
-	mov	!ChSFXPtrs+$0b, #PSwitchCh5>>8
-	mov	!ChSFXPtrs+$0c, #PSwitchCh6
-	mov	!ChSFXPtrs+$0d, #PSwitchCh6>>8
-	mov	!ChSFXPtrs+$0e, #PSwitchCh7
-	mov	!ChSFXPtrs+$0f, #PSwitchCh7>>8
+	push	a
+	mov	y, #$03
+	push	y
+	mov	x, #$0e
+	mov	$10, #$80
+	call	ProcessSFXInput
 
-	mov	y, #$06				; \
--						; |
-	mov	a, !ChSFXPtrs+$0009+y		; | Copy the SFX pointers to the backup pointers.
-	mov	!ChSFXPtrBackup+$09+y, a	; |
-	dbnz	y, -				; /
-	
-	mov	a, #$03
-	setp
-	mov	!ChSFXNoteTimer+$0e, a		; \
-	mov	!ChSFXNoteTimer+$0c, a		; | Set the timers to 3, not 1.
-	mov	!ChSFXNoteTimer+$0a, a		; /
-	clrp
-	;mov	$f2, #$5c			; \ Key off these 3 voices.
-	;mov	$f3, #$e0			; /
-	mov	a, #$e0
-	call	KeyOffVoices
-	
-	or	$1d, #$e0			; Mute these channels.
-	ret
+	pop	y
+	pop	a
+	push	a
+	push	y
+	mov	x, #$0c
+	mov	$10, #$40
+	call	ProcessSFXInput
+
+	pop	y
+	pop	a
+	mov	x, #$0a
+	mov	$10, #$20
+	bra	ProcessSFXInput
 
 endif
 	
@@ -1010,6 +1010,10 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	push	a
 	beq	+				; /
 						;
+if !PSwitchIsSFX = !true
+	cmp	$03, #$80			;
+	bcs	.PSwitchSFX
+endif
 	mov	a, SFXTable1-1+y		; \
 	push	a				; | Move the pointer to the current SFX to the correct pointer.
 	mov	a, SFXTable1-2+y		; |
@@ -1019,7 +1023,15 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	mov	a, SFXTable0-1+y		; \
 	push	a				; |
 	mov	a, SFXTable0-2+y		; /
-	
+if !PSwitchIsSFX = !true
+	bra	.gottenPointer
+
+.PSwitchSFX	
+	mov	a, PSwitchPtrs-$09+x
+	push	a
+	mov	a, PSwitchPtrs-$0a+x
+
+endif	
 .gottenPointer
 	pop	y
 	movw	$14, ya
