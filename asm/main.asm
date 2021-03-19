@@ -1581,6 +1581,9 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
+if not(defined("noSFX"))
+	mov	$48, #$80
+endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
@@ -1610,13 +1613,18 @@ L_0B6D:
 if not(defined("noSFX"))
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
-	mov	a, !ChSFXPtrs+1+x
+	mov	a, $1d
+	and	a, $48
 	pop	a
 	bne	+
 endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
-+	dec	x
++
+if not(defined("noSFX"))
+	lsr	$48
+endif
+	dec	x
 	dec	x
 	bpl	L_0B6D	
 	; MODIFIED CODE START
