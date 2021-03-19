@@ -148,11 +148,14 @@ macro DDEEFix()
 	mov	a, $90+x
 	beq	+
 -
+	mov	a, #$00
 	mov	a, $02b0+x
 	bra ++
 +
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
 	mov	a, $02d1+x
 	mov	$02b0+x, a
 ++
