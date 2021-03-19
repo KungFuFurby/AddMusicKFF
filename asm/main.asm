@@ -879,7 +879,7 @@ HandleSFXVoice:
 }
 
 if !PSwitchIsSFX = !true
-PSwitchCh5:
+PSwitchCh7:
 	db $DA, $02			; @2
 	db $30, $00,      $C6 		; r=24
 	db $20, $00, $26, $A4		; y0o4c=16
@@ -913,7 +913,7 @@ PSwitchCh6:
 	db $30, $1E, $08, $94		; y16o2g+=24
 	db $FE
 	
-PSwitchCh7:
+PSwitchCh5:
 	db $DA, $09			; @9
 	db $10, $0D, $B0		; o4g=8
 	db 	$B0			; o4g=8
