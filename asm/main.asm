@@ -1084,7 +1084,8 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 						;
 	call	EffectModifier
 	mov	a, #$00				; \
-	mov	$0300+x, a			; /
+	mov	$90+x, a			; |
+	mov	$91+x, a			; /
 .return						;
 	;ret					;
 						;
@@ -1254,16 +1255,7 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
-	mov	a, #$00		;
-;Bugfix by KungFuFurby 11/20/20:
-;Avoid zeroing out memory locations reserved by arpeggio (since they're
-;not used by the SFX at all)
-	mov	y, #$10		;
-L_0A28:				; \
-	mov	$02ff+y, a	; | $0300-$030f = #$00.  Dunno why, though.
-	mov	$031f+y, a	; | $0320-$032f = #$00.  Dunno why, though.
-	dbnz	y, L_0A28	; | 
-	ret			; /
+	ret
 L_0A2E:
 	dec	$0383
 	bne	L_0A0D
@@ -1283,17 +1275,20 @@ L_0A38:
 	bra	L_0A99
 ;
 L_0A51:						;;;;;;;;/ Code change
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
 	mov	$05, #$00
+RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.7
 	mov	x, #$0e
 	mov	a, !BackupSRCN+$0e
 	bne	RestoreSample7
 	mov	a, $cf
 	beq	L_0A67
-	jmp	L_0D4B			; Restore the current instrument on the channel?
+	dec	a
+	jmp	SetInstrument			; Restore the current instrument on the channel?
 L_0A67:
 	ret
 RestoreSample7:
@@ -1360,15 +1355,6 @@ L_0ACE:
 	;mov	y, #$5c
 	call	KeyOffVoices             ; key off voice 7 now
 	set1	$1d.7
-	mov	a, #$00
-;Bugfix by KungFuFurby 11/20/20:
-;Avoid zeroing out memory locations reserved by arpeggio (since they're
-;not used by the SFX at all)
-	mov	y, #$10
-L_0AE2:
-	mov	$02ff+y, a
-	mov	$031f+y, a
-	dbnz	y, L_0AE2
 L_0AE7:
 	ret
 ;
@@ -1389,14 +1375,12 @@ L_0AF7:
 	call	NoteVCMD
 	bra	L_0B1C
 L_0B08:
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
 	mov	$05, #$00
-	clr1	$1d.7
-	mov	x, #$0e
-	mov	a, $cf
-	jmp	L_0D4B
+	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
 	mov	$10, a
@@ -1476,6 +1460,7 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
+	mov	$48, #$80
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
@@ -1505,13 +1490,15 @@ L_0B6D:
 if not(defined("noSFX"))
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
-	mov	a, !ChSFXPtrs+1+x
+	mov	a, $1d
+	and	a, $48
 	pop	a
 	bne	+
 endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
-+	dec	x
++	lsr	$48
+	dec	x
 	dec	x
 	bpl	L_0B6D	
 	; MODIFIED CODE START
