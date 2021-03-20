@@ -1136,9 +1136,22 @@ PlayPSwitchSFX:
 
 	pop	y
 	pop	a
+	push	a
 	mov	x, #$0a
 	mov	$10, #$20
-	bra	ProcessSFXInput
+	call	ProcessSFXInput
+
+	pop	a
+	and	a, #$40
+	bne	PlayPSwitchActivateSFX
+	ret
+
+PlayPSwitchActivateSFX:
+	mov	x, #$08
+	mov	$10, #$10
+	mov	a, #$0b
+	mov	y, #$00
+	bra	ProcessSFXInput_prepareForSFX
 
 endif
 	
