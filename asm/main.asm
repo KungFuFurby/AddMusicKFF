@@ -1198,6 +1198,17 @@ PSwitchNoteLengths:
 	db $0D, $0D, $0B, $09, $07	
 endif
 
+SFXTerminateVCMD:
+	db $00
+
+SFXTerminateCh:
+	mov	a, #SFXTerminateVCMD&$ff
+	mov	!ChSFXPtrs+x, a
+	mov	a, #SFXTerminateVCMD>>8
+	mov	!ChSFXPtrs+1+x, a
+	mov	a, #$03
+	mov	!ChSFXNoteTimer|$0100+x, a
+	ret
 
 SpeedUpMusic:
 	mov	a, #$0a
@@ -1222,6 +1233,23 @@ ProcessAPU0Input:
 	bra 	ProcessSFXInput			; / Actually a subroutine.
 	
 if !PSwitchIsSFX = !true
+PSwitchSFX:
+	cmp	a, #$80
+	bne	PlayPSwitchSFX
+StopPSwitchSFX:
+	mov	x, #$0e
+StopPSwitchSFXLoop:
+	asl	$1b
+	push	p
+	bcc	StopPSwitchSFXSkipCh
+	call	SFXTerminateCh
+StopPSwitchSFXSkipCh:
+	dec	x
+	dec	x
+	pop	p
+	bne	StopPSwitchSFXLoop
+	ret
+
 PlayPSwitchSFX:
 	push	a
 	mov	y, #$03
@@ -1240,16 +1268,29 @@ PlayPSwitchSFX:
 
 	pop	y
 	pop	a
+	push	a
 	mov	x, #$0a
 	mov	$10, #$20
-	bra	ProcessSFXInput
+	call	ProcessSFXInput
+
+	pop	a
+	and	a, #$40
+	bne	PlayPSwitchActivateSFX
+	ret
+
+PlayPSwitchActivateSFX:
+	mov	x, #$08
+	mov	$10, #$10
+	mov	a, #$0b
+	mov	y, #$00
+	bra	ProcessSFXInput_prepareForSFX
 
 endif
 	
 ProcessAPU3Input:
 if !PSwitchIsSFX = !true
 	mov	a, $03				;
-	bmi	PlayPSwitchSFX			;
+	bmi	PSwitchSFX			;
 endif
 	mov	x, #$0e				; \
 	mov	y, #$03				; | 
@@ -1280,7 +1321,7 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	beq	+				; /
 						;
 if !PSwitchIsSFX = !true
-	cmp	$03, #$80			;
+	cmp	$03, #$81			;
 	bcs	.PSwitchSFX
 endif
 	mov	a, SFXTable1-1+y		; \
@@ -1345,7 +1386,7 @@ endif
 	pop	y
 	or	($1d), ($10)			;
 if !PSwitchIsSFX = !true
-	cmp	$03, #$80			;
+	cmp	$03, #$81			;
 	or	($1b), ($10)
 	bcs	.PSwitchSFXChSet
 	eor	($1b), ($10)
@@ -3046,6 +3087,7 @@ Start:
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
+	mov	$1b, #$00
 
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
