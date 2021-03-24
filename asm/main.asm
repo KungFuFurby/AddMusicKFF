@@ -155,7 +155,9 @@ macro DDEEFix()
 ++
 endmacro
 
-arch spc700-raw
+arch 65816
+norom
+arch spc700
 org $000000
 base $0400			; Do not change this.
 
