@@ -742,8 +742,15 @@ SubC_2:
 	mov     x, $46
 	ret
 
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
 	
@@ -770,22 +777,6 @@ SubC_A:
 	mov	x, $46				; | Toggle which velocity table we're using.
 	ret					; /
 
-SubC_B:
-	eor	(!MusicPModChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
-SubC_E:
-	or	(!MusicEchoChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
-SubC_F:
-	or	(!MusicEchoChannels), ($48)
-	eor	(!MusicEchoChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
 SubC_10:
 	or	(!MusicPModChannels), ($48)
 	mov     x, $46
@@ -793,6 +784,7 @@ SubC_10:
 
 SubC_11:
 	or	(!MusicPModChannels), ($48)
+SubC_B:
 	eor	(!MusicPModChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
