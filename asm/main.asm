@@ -1636,7 +1636,7 @@ L_0C4D:
 	beq	L_0C57		; (fix another out-of-range error)
 	jmp	L_0CC6             ; if not zero, skip to voice readahead
 L_0C57:
-	call	GetCommandDataFast             ; get next vbyte
+	call	GetCommandData             ; get next vbyte
 	bne	L_0C7A
 	mov	a, !runningRemoteCode
 	beq	+

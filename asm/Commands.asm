@@ -458,7 +458,6 @@ L_0EEB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
 {
-	mov	x, $46
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
 	push	a
 	call	EffectModifier
@@ -514,8 +513,6 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	a, #$10			;
 	mov	y, a			;
 	bpl	-			; set echo filter from table idx op3
-	mov	x, $46			;
-
 	jmp	L_0EEB			; Set the echo volume.
 	
 WaitForDelay:				; This stalls the SPC for the correct amount of time depending on the value in !EchoDelay.
@@ -653,7 +650,6 @@ SubC_01:
 SubC_00:
 	eor	a,$0160
 	mov	$0160,a
-	mov     x, $46
 	ret
 
 SubC_1:
@@ -664,17 +660,14 @@ SubC_1:
 	eor	a,#$FF
 	and	a, $0162		
 	mov	$0162,a
-	mov     x, $46
 	ret
 
 SubC_2:
 	eor	!WaitTime, #$03
-	mov     x, $46
 	ret
 
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
-	mov     x, $46
 	jmp	EffectModifier
 	
 SubC_5:
@@ -694,14 +687,12 @@ SubC_6:
 SubC_7:
 	mov	a, #$00				; \ 
 	mov	$0387, a			; | Set the tempo to normal.
-	mov	x, $46				; |
 	mov	a, $51				; |
 	jmp	L_0E14				; /
 	
 SubC_8:
-	mov	!SecondVTable, #$01		; \
-	mov	x, $46				; | Toggle which velocity table we're using.
-	ret					; /
+	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+	ret
 	
 SubC_9:
 	mov     x, $46				; \ 
@@ -846,7 +837,6 @@ SubC_table2:
 	call	ModifyEchoDelay		; /
 	pop	a			;
 	mov	!MaxEchoDelay, a	;
-	mov	x, $46			;
 	ret				;
 	
 .gainRest
