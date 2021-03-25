@@ -702,7 +702,6 @@ SubC_6:
 SubC_C:
 	or	($6e), ($48)
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	mov     x, $46
 	mov	a,#$01
 	bra	SubC_03
 
@@ -710,7 +709,6 @@ SubC_D:
 	or	($6e), ($48)
 	eor	($6e), ($48)
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	mov     x, $46
 	mov	a,#$FE
 	bra	SubC_04
 
@@ -748,8 +746,15 @@ SubC_2:
 	mov     x, $46
 	ret
 
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
+	mov     x, $46
+	jmp	EffectModifier
+
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
 
@@ -796,22 +801,6 @@ SubC_A:
 	mov	x, $46				; | Toggle which velocity table we're using.
 	ret					; /
 
-SubC_B:
-	eor	(!MusicPModChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
-SubC_E:
-	or	(!MusicEchoChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
-SubC_F:
-	or	(!MusicEchoChannels), ($48)
-	eor	(!MusicEchoChannels), ($48)
-	mov     x, $46
-	jmp	EffectModifier
-
 SubC_10:
 	or	(!MusicPModChannels), ($48)
 	mov     x, $46
@@ -819,6 +808,7 @@ SubC_10:
 
 SubC_11:
 	or	(!MusicPModChannels), ($48)
+SubC_B:
 	eor	(!MusicPModChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
@@ -863,11 +853,29 @@ SubC_1B:
 	ret
 
 SubC_1C:
-	setp			; \ 
-	incw	$66		; | Increase $166.
-	clrp			; / 
+	call	SyncInc
 	mov     x, $46
 	ret
+
+SyncInc:
+	setp
+	inc	$66		; Increase $166.
+	cmp	$66, $6c
+	bne	SyncInc_ret
+	mov	$66, #$00
+	inc	$67
+	; Note that this is different from AMM's code.
+	; The old code never let the low byte go above #$C0.
+	; A good idea in theory, but it both assumes that all
+	; songs use 4/4 time, and it makes, for example,
+	; using the song's time as an index to a table more difficult.
+	; Thus, it is optional, and can be restored via the $FA $12 VCMD.
+	; By default, this is de facto treated as a word increment.
+
+SyncInc_ret:
+	clrp
+	ret
+
 
 SubC_1D:
 	mov     x, $46
@@ -973,6 +981,8 @@ SubC_table2:
 	dw	.VxDSPWrite		; 0E
 	dw	.VxDSPWrite		; 0F
 	dw	.SquareFormatClearSRCN	; 10
+	dw	$0000			; 11
+	dw	.SyncClockDivider	; 12
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -1077,6 +1087,11 @@ SubC_table2:
 	mov	a, #$3F ;CALL opcode
 	mov	SubC_4Gate,a
 	jmp	SubC_4
+
+.SyncClockDivider
+	call	GetCommandData
+	mov	$016c, a
+	ret
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
