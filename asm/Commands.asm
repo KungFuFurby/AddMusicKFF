@@ -668,9 +668,7 @@ SubC_1:
 	ret
 
 SubC_2:
-	mov	a, !WaitTime
-	eor	a,#$03
-	mov	!WaitTime,a
+	eor	!WaitTime, #$03
 	mov     x, $46
 	ret
 
