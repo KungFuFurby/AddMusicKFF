@@ -858,7 +858,6 @@ SubC_table2:
 	call	GetCommandData		; \ Argument is which table we're using
 	mov	!SecondVTable, a	; |
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
-	mov	x, $46			;
 	ret				; /
 	
 }
