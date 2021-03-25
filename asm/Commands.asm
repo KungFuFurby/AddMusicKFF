@@ -768,7 +768,6 @@ SubC_E:
 	jmp	EffectModifier
 
 SubC_4:
-	mov     x, $46
 SubC_4Gate:
 	ret ;Will be turned into a call opcode
 	dw	Square_getSpecialWavePtr
