@@ -726,9 +726,27 @@ SubC_1:
 	mov	a, $0161
 	eor	a, $48
 	mov	$0161,a
+SubC_1_Clear162Bit:
 	mov	a,$48
 	eor	a,#$FF
 	and	a, $0162		
+	mov	$0162,a
+	mov     x, $46
+	ret
+
+SubC_12:
+	mov	a, $0161
+	or	a, $48
+	mov	$0161,a
+	bra	SubC_1_Clear162Bit
+
+SubC_13:
+	mov	a,$48
+	eor	a,#$FF
+	and	a, $0161
+	mov	$0161,a
+	mov	a, $0162		
+	or	a, $48
 	mov	$0162,a
 	mov     x, $46
 	ret
@@ -784,28 +802,6 @@ SubC_B:
 	eor	(!MusicPModChannels), ($48)
 	mov     x, $46
 	jmp	EffectModifier
-
-SubC_12:
-	mov	a, $0161
-	or	a, $48
-	mov	$0161,a
-	mov	a,$48
-	eor	a,#$FF
-	and	a, $0162		
-	mov	$0162,a
-	mov     x, $46
-	ret
-
-SubC_13:
-	mov	a,$48
-	eor	a,#$FF
-	and	a, $0161
-	mov	$0161,a
-	mov	a, $0162		
-	or	a, $48
-	mov	$0162,a
-	mov     x, $46
-	ret
 
 SubC_14:
 	mov	!WaitTime, #$01
