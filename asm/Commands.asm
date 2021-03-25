@@ -694,7 +694,6 @@ SubC_6:
 	bra	SubC_01
 	
 SubC_7:
-	mov	$ffff, a
 	mov	a, #$00				; \ 
 	mov	$0387, a			; | Set the tempo to normal.
 	mov	x, $46				; |
