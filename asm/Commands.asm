@@ -743,7 +743,6 @@ SubC_13:
 	mov	a, $0162		
 	or	a, $48
 	mov	$0162,a
-	mov     x, $46
 	ret
 
 SubC_2:
@@ -758,7 +757,6 @@ SubC_3:
 
 SubC_E:
 	or	(!MusicEchoChannels), ($48)
-	mov     x, $46
 	jmp	EffectModifier
 	
 SubC_7:
@@ -778,44 +776,34 @@ SubC_9:
 	jmp	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
 
 SubC_A:
-	mov	!SecondVTable, #$00		; \
-	mov	x, $46				; | Toggle which velocity table we're using.
-	ret					; /
+	mov	!SecondVTable, #$00		; Toggle which velocity table we're using.
+	ret
 
 SubC_10:
 	or	(!MusicPModChannels), ($48)
-	mov     x, $46
 	jmp	EffectModifier
 
 SubC_11:
 	or	(!MusicPModChannels), ($48)
 SubC_B:
 	eor	(!MusicPModChannels), ($48)
-	mov     x, $46
 	jmp	EffectModifier
 
 SubC_14:
 	mov	!WaitTime, #$01
-	mov     x, $46
 	ret
 
 SubC_15:
 	mov	!WaitTime, #$02
-	mov     x, $46
 	ret
 
 SubC_1B:
 	mov    a, #$00
 	mov    $0167, a
 	mov    $0166, a
-	mov     x, $46
 	ret
 
 SubC_1C:
-	call	SyncInc
-	mov     x, $46
-	ret
-
 SyncInc:
 	setp
 	inc	$66		; Increase $166.
@@ -837,7 +825,6 @@ SyncInc_ret:
 
 
 SubC_1D:
-	mov     x, $46
 	mov	a, $48
 	and	a, $1d
 	bne	SubC_1D_Ret
@@ -847,7 +834,6 @@ SubC_1D_Ret:
 	ret
 
 SubC_1E:
-	mov     x, $46
 	mov	a, $48
 	jmp	KeyOffVoicesWithCheck
 
