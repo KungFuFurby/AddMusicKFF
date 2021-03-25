@@ -882,7 +882,14 @@
 	</tr><tr>
 		<td>$YY<br></td>
 		<td>Value to write <br></td>
-	</tr>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">SNES Sync Clock Divider<br></td>
+		<td rowspan="2">Increments the high byte of the sync counter after a certain number of ticks. Zero is the default, making the counter act like a 16-bit word.<br></td>
+		<td>$12</td>
+		<td>The number of ticks before incrementing the high byte. $00 = 256 ticks.</td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
 <tr><td colspan="5">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$FB<br></td>

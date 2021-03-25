@@ -1542,15 +1542,7 @@ ProcessAPU2Input:
 	mov	a,$0160		; Get the special AMM byte.
 	and	a,#$02		; If the second bit is set, then we've enabled sync.
 	beq	.nothing	; Otherwise, do nothing.
-	setp			; \ 
-	incw	$66		; | Increase $166.
-	clrp			; / 
-				; Note that this is different from AMM's code.
-				; The old code never let the low byte go above #$C0.
-				; A good idea in theory, but it both assumes that all
-				; songs use 4/4 time, and it makes, for example,
-				; using the song's time as an index to a table more difficult.
-				; If the SNES needs 0 <= value < #$C0, it can limit the value itself.
+	call	SyncInc
 .nothing			; 
 
 	mov	a, $02

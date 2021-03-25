@@ -827,11 +827,29 @@ SubC_1B:
 	ret
 
 SubC_1C:
-	setp			; \ 
-	incw	$66		; | Increase $166.
-	clrp			; / 
+	call	SyncInc
 	mov     x, $46
 	ret
+
+SyncInc:
+	setp
+	inc	$66		; Increase $166.
+	cmp	$66, $6c
+	bne	SyncInc_ret
+	mov	$66, #$00
+	inc	$67
+	; Note that this is different from AMM's code.
+	; The old code never let the low byte go above #$C0.
+	; A good idea in theory, but it both assumes that all
+	; songs use 4/4 time, and it makes, for example,
+	; using the song's time as an index to a table more difficult.
+	; Thus, it is optional, and can be restored via the $FA $12 VCMD.
+	; By default, this is de facto treated as a word increment.
+
+SyncInc_ret:
+	clrp
+	ret
+
 
 SubC_1D:
 	mov     x, $46
@@ -932,6 +950,9 @@ SubC_table2:
 	dw	.VxDSPWrite		; 0D
 	dw	.VxDSPWrite		; 0E
 	dw	.VxDSPWrite		; 0F
+	dw	$0000			; 10
+	dw	$0000			; 11
+	dw	.SyncClockDivider	; 12
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -1022,6 +1043,11 @@ SubC_table2:
 	call	GetCommandData
 	pop	y
 	jmp	DSPWrite
+
+.SyncClockDivider
+	call	GetCommandData
+	mov	$016c, a
+	ret
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
