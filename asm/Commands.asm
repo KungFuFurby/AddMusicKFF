@@ -6,10 +6,8 @@ cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 	mov	a, #$00			; \ It's not a raw sample playing on this channel.
 	mov	!BackupSRCN+x, a	; /
 	
-	mov	a, $48			; \ 
-	eor	a, #$ff			; | No noise is playing on this channel.
-	and	a, !MusicNoiseChannels	; | (EffectModifier is called later)
-	mov	!MusicNoiseChannels, a	; /
+	mov	a, $48			; \ No noise is playing on this channel.
+	tclr	!MusicNoiseChannels, a	; / (EffectModifier is called later)
 	
 	call	GetCommandData		; 
 SetInstrument:				; Call this to start playing the instrument in A.
@@ -657,9 +655,7 @@ SubC_1:
 	eor	a, $48
 	mov	$0161,a
 	mov	a,$48
-	eor	a,#$FF
-	and	a, $0162		
-	mov	$0162,a
+	tclr	$0162, a
 	ret
 
 SubC_2:

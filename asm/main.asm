@@ -361,9 +361,7 @@ if_rest:
 	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
-	eor	a, #$FF
-	and	a, $0162
-	mov	$0162, a
+	tclr	$0162, a
 L_05CD:
 	ret
 ;UseGainInstead:
@@ -664,14 +662,8 @@ EndSFX:
 				
 	
 	mov	a, $18			; \
-	eor	a, #$ff			; | Clear the bit of $1d that this SFX corresponds to.
-	mov	$10, a			; |
-	and	a, $1d			; |
-	mov	$1d, a			; /
-	
-	mov	a, $10			; \
-	and	a, !SFXNoiseChannels	; | Turn noise off for this channel's SFX.
-	mov	!SFXNoiseChannels, a	; /
+	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
+	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
 	
@@ -821,11 +813,9 @@ HandleSFXVoice:
 	mov	a, #$00			; \ Disable sub-tuning
 	mov	$02f0+x, a		; /
 	
-	mov	a, $18			; \
-	eor	a, #$ff			; |
-	and	a, !SFXNoiseChannels	; | Disable noise for this channel.
-	mov	!SFXNoiseChannels, a	; /
-					; (EffectModifier is called a bit later)
+	mov	a, $18			; \ Disable noise for this channel.
+	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
+
 .getInstrumentByte
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
 	bmi	.noise			; If it's negative, then it's a noise command.
@@ -1075,19 +1065,20 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	a, $0386			;
+	push	p
+	mov	a, $6e				; 
+	pop	p
 	bne	.drumsOn			;
 					
-					
-	mov	a, $6e				; 
-	or	a, $5e				;
+	tset	$5e, a				;
 	bra	+
 	
 .drumsOn					
-	mov	a, $6e				; \ $5E = ($5E --/--> $6E)
-	eor	a, #$ff				; | (Or $5E = $5E & ~$5C)
-	and	a, $5e				; / Basically, we're reverting whatever the Yoshi drums did to $5E.
+						; $5E = ($5E --/--> $6E)
+						; (Or $5E = $5E & ~$5C)
+	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
 +
-	mov	$5e, a
+	mov	a, $5e
 	call	KeyOffVoices
 	ret
 
@@ -1801,15 +1792,11 @@ L_0D23:
 	;and     a, $47
 ; key on voices in A
 KeyOnVoices:
-	push	a
-	;mov	y, #$5c
-	mov	a, #$00
-	call	KeyOffVoices             ; key off none
-	pop	a
-	mov	y, #$4c
-	call	DSPWrite             ; key on voices from A
-	or	a, !PlayingVoices
-	mov	!PlayingVoices, a
+	mov	$F2, #$5C
+	mov	$F3, #$00
+	mov	$F2, #$4C
+	mov	$F3, a
+	tset	!PlayingVoices, a
 	ret
 
 KeyOffVoicesWithCheck:
@@ -1819,11 +1806,7 @@ KeyOffVoicesWithCheck:
 	pop	a
 	bne	+
 KeyOffVoices:
-	push	a
-	eor	a, #$ff
-	and	a, !PlayingVoices
-	mov	!PlayingVoices, a
-	pop	a
+	tclr	!PlayingVoices, a
 	mov	y, #$5c
 	jmp	DSPWrite
 +
