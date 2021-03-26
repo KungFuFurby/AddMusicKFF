@@ -143,24 +143,6 @@
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !InRest = $01a1
 
-
-macro DDEEFix()
-	mov	a, $90+x
-	beq	+
--
-	mov	a, #$00
-	mov	a, $02b0+x
-	bra ++
-+
-	mov	a, $48		; If $48 is 0, then this is SFX code.
-	beq	-		; Don't adjust the pitch.
-	and	a, $1d
-	bne	-
-	mov	a, $02d1+x
-	mov	$02b0+x, a
-++
-endmacro
-
 arch spc700-raw
 org $000000
 base $0400			; Do not change this.
@@ -495,9 +477,7 @@ L_0621:				;
 	adc	a, $02b1+x	;
 	call	CalcPortamentoDelta
 L_062B:
-	mov	a, $02b1+x	;
-	mov	y, a		;
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x	;
 	movw	$10, ya		;
 ; set DSP pitch from $10/11
@@ -579,6 +559,26 @@ DSPWrite:
 +	
 	ret
 	
+}
+
+DDEEFix:
+{
+	mov	a, $02b1+x
+	mov	y, a
+	mov	a, $90+x
+	beq	+
+-
+	mov	a, #$00
+	mov	a, $02b0+x
+	ret
++
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
+	mov	a, $02d1+x
+	mov	$02b0+x, a
+	ret
 }
 
 
@@ -1162,10 +1162,7 @@ L_09CD:
 	mov	y, #$02            ; pitch (notenum fixed-point)
 	dec	$90+x
 	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-	mov	a, $02b1+x
-	mov	y, a
-	
-	%DDEEFix()
+	call	DDEEFix	
 	
 	;mov	a, $02b0+x
 	movw	$10, ya
@@ -1448,6 +1445,7 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
+	mov	$48, #$80
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
@@ -1476,12 +1474,14 @@ L_0B6D:
 	call	ClearRemoteCodeAddresses
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
-	mov	a, !ChSFXPtrs+1+x
+	mov	a, $1d
+	and	a, $48
 	pop	a
 	bne	+
 	mov	$02f0+x, a
 	mov	$0210+x, a
-+	dec	x
++	lsr	$48
+	dec	x
 	dec	x
 	bpl	L_0B6D	
 	; MODIFIED CODE START
@@ -1639,7 +1639,7 @@ L_0C4D:
 	beq	L_0C57		; (fix another out-of-range error)
 	jmp	L_0CC6             ; if not zero, skip to voice readahead
 L_0C57:
-	call	GetCommandDataFast             ; get next vbyte
+	call	GetCommandData             ; get next vbyte
 	bne	L_0C7A
 	mov	a, !runningRemoteCode
 	beq	+
@@ -2230,9 +2230,7 @@ L_1119:
 	dec	$90+x			;
 	call	L_1075			;
 L_112A:
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x
 	movw	$10, ya            ; note num -> $10/11
 	mov	a, $a1+x
@@ -2332,9 +2330,7 @@ L_11C3:
 	call	L_1036             ; set voice DSP regs, pan from $10/11
 L_11C6:
 	clr1	$13.7
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x
 	movw	$10, ya            ; notenum to $10/11
 	mov	a, $90+x           ; pitch slide counter
