@@ -312,6 +312,7 @@ RunRemoteCode:
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr+1+x
 	mov	$31+x, a
+RunRemoteCode_Exec:
 	mov	a, #$01
 	mov	!runningRemoteCode, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -334,16 +335,7 @@ RunRemoteCode2:
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr2+1+x
 	mov	$31+x, a
-	mov	a, #$01
-	mov	!runningRemoteCode, a
-	call	L_0C57
-	mov	a, #$00
-	mov	!runningRemoteCode, a
-	pop	a
-	mov	$31+x, a
-	pop	a
-	mov	$30+x, a
-	ret
+	bra	RunRemoteCode_Exec
 }
 	
 ; handle a note vcmd
