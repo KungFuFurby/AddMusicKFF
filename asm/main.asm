@@ -467,8 +467,6 @@ L_0621:				;
 	call	CalcPortamentoDelta
 L_062B:
 	call	DDEEFix	
-	;mov	a, $02b0+x	;
-	movw	$10, ya		;
 ; set DSP pitch from $10/11
 SetPitch:			;
 	push	x
@@ -561,6 +559,7 @@ DDEEFix:
 +
 	mov	a, $02d1+x
 	mov	$02b0+x, a
+	movw	$10, ya            ; notenum to $10/11
 	ret
 }
 
@@ -1146,9 +1145,6 @@ L_09CD:
 	dec	$90+x
 	call	L_1075             ; add pitch slide delta to value                                ;ERROR
 	call	DDEEFix	
-	
-	;mov	a, $02b0+x
-	movw	$10, ya
 	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 ;
@@ -2214,8 +2210,6 @@ L_1119:
 	call	L_1075			;
 L_112A:
 	call	DDEEFix	
-	;mov	a, $02b0+x
-	movw	$10, ya            ; note num -> $10/11
 	mov	a, $a1+x
 	beq	L_1140
 	mov	a, $0340+x
@@ -2314,8 +2308,6 @@ L_11C3:
 L_11C6:
 	clr1	$13.7
 	call	DDEEFix	
-	;mov	a, $02b0+x
-	movw	$10, ya            ; notenum to $10/11
 	mov	a, $90+x           ; pitch slide counter
 	beq	L_11E3
 	mov	a, $91+x
