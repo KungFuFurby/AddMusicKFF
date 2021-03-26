@@ -147,25 +147,6 @@
 
 !PSwitchLoopCounter = $0385
 
-macro DDEEFix()
-	mov	a, $90+x
-	beq	+
--
-	mov	a, #$00
-	mov	a, $02b0+x
-	bra ++
-+
-if not(defined("noSFX"))
-	mov	a, $48		; If $48 is 0, then this is SFX code.
-	beq	-		; Don't adjust the pitch.
-	and	a, $1d
-	bne	-
-endif
-	mov	a, $02d1+x
-	mov	$02b0+x, a
-++
-endmacro
-
 arch spc700-raw
 org $000000
 base $0400			; Do not change this.
@@ -593,9 +574,7 @@ L_0621:				;
 	adc	a, $02b1+x	;
 	call	CalcPortamentoDelta
 L_062B:
-	mov	a, $02b1+x	;
-	mov	y, a		;
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x	;
 	movw	$10, ya		;
 ; set DSP pitch from $10/11
@@ -700,6 +679,28 @@ DSPWrite:
 +	
 	ret
 	
+}
+
+DDEEFix:
+{
+	mov	a, $02b1+x
+	mov	y, a
+	mov	a, $90+x
+	beq	+
+-
+	mov	a, #$00
+	mov	a, $02b0+x
+	ret
++
+if not(defined("noSFX"))
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
+endif
+	mov	a, $02d1+x
+	mov	$02b0+x, a
+	ret
 }
 
 
@@ -1488,10 +1489,7 @@ L_09CD:
 	mov	y, #$02            ; pitch (notenum fixed-point)
 	dec	$90+x
 	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-	mov	a, $02b1+x
-	mov	y, a
-	
-	%DDEEFix()
+	call	DDEEFix	
 	
 	;mov	a, $02b0+x
 	movw	$10, ya
@@ -2726,9 +2724,7 @@ endif
 	dec	$90+x			;
 	call	L_1075			;
 L_112A:
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x
 	movw	$10, ya            ; note num -> $10/11
 	mov	a, $a1+x
@@ -2828,9 +2824,7 @@ L_11C3:
 	call	L_1036             ; set voice DSP regs, pan from $10/11
 L_11C6:
 	clr1	$13.7
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
+	call	DDEEFix	
 	;mov	a, $02b0+x
 	movw	$10, ya            ; notenum to $10/11
 	mov	a, $90+x           ; pitch slide counter
