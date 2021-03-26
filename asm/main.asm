@@ -1163,7 +1163,6 @@ endif
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
-if not(defined("noSFX"))
 ; add pitch slide delta and set DSP pitch
 L_09CD:
 	mov	a, #$b0
@@ -1180,7 +1179,7 @@ L_09CD:
 	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 ;
-
+if not(defined("noSFX"))
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
