@@ -568,13 +568,8 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 {	
 	push	x
 	push	y
-	mov	$10, #!MusicPModChannels	;
-	mov	$12, #!SFXPModChannels		;
-	mov	$14, #$d1			; The DSP register for pitch modulation - $10 and reversed.
-	mov	y, #$00				;
-	mov	$11, y				;
-	mov	$13, y				;
-	
+	mov	x, #$00
+	mov	y, #$d1				; The DSP register for pitch modulation reversed.
 						; $10 = the current music whatever
 						; $12 = the current SFX whatever
 -						
@@ -585,32 +580,27 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 						; E is !WhateverSFXChannels.
 						; and S is $1d (the current channels for which SFX are enabled)
 						; Yay logic!
+
+	inc	y				; \
+	mov	a, y				; | Get the next DSP register into a.
+	xcn	a				; /
+	mov	$f2, a				;
 						
 	mov	a, $1d				; \ a = S
 	eor	a, #$ff				; | a = S'
-	and	a, ($10)+y			; / a = S'M
+	and	a, !MusicPModChannels+x		; / a = S'M
 	
 	mov	$15, a
 
-	mov	a, ($12)+y			; \ a = S
+	mov	a, !SFXPModChannels+x		; \ a = S
 	and	a, $1d				; | a = SE
 	or	a, $15				; / a = S'M + SE
 	
-	push	y
-
-	mov	y, a
-
-	inc	$14				; \
-	mov	a, $14				; | Get the next DSP register into a.
-	xcn	a				; /
+						; \ Write to the relevant DSP register.
+	mov	$f3, a				; / (coincidentally, the order is the opposite of DSPWrite)
 	
-	mov	$f2, a				; \ Write to the relevant DSP register.
-	mov	$f3, y				; / (coincidentally, the order is the opposite of DSPWrite)
-	
-	pop	y				; \ Do this three times.
-	;inc	y				; |
-	inc	y				; |
-	cmp	y, #$03				; |
+	inc	x				; \
+	cmp	x, #$03				; | Do this three times.
 	bne	-				; /
 
 	pop	y
