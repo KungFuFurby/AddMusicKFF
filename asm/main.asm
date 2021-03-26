@@ -152,14 +152,11 @@ base $0400			; Do not change this.
 	mov   x, #$cf
 	mov   sp, x              ; set SP to 01cf
 	mov   a, #$00
-	
-	mov	y, #$00
+	mov	y, a
 	
 -	mov	$0100+y, a
-	dbnz	y, -
--	mov	$0200+y, a
-	dbnz	y, -
--	mov	$0300+y, a
+	mov	$0200+y, a
+	mov	$0300+y, a
 	dbnz	y, -
 	
 	movw	$00, ya
