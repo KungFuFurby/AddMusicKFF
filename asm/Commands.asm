@@ -673,12 +673,12 @@ SubC_02:
 	ret
 
 SubC_03:
-	or	a,$0160
-	bra	SubC_02
+	tset	$0160,a
+	ret
 
 SubC_04:
-	and	a,$0160
-	bra	SubC_02
+	tclr	$0160,a
+	ret
 
 SubC_6:
 	eor	($6e), ($48)
@@ -726,19 +726,14 @@ SubC_1_Clear162Bit:
 	ret
 
 SubC_12:
-	mov	a, $0161
-	or	a, $48
-	mov	$0161,a
+	mov	a, $48
+	tset	$0161,a
 	bra	SubC_1_Clear162Bit
 
 SubC_13:
 	mov	a,$48
-	eor	a,#$FF
-	and	a, $0161
-	mov	$0161,a
-	mov	a, $0162		
-	or	a, $48
-	mov	$0162,a
+	tclr	$0161,a
+	tset	$0162,a
 	ret
 
 SubC_2:
