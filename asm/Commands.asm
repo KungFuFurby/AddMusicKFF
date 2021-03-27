@@ -11,7 +11,7 @@ cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 	
 	call	GetCommandData		; 
 SetInstrument:				; Call this to start playing the instrument in A.
-	mov	$10, #InstrumentTable	; \ $14w = the location of the instrument data.
+	mov	$10, #InstrumentTable	; \ $10w = the location of the instrument data.
 	mov	$11, #InstrumentTable>>8 ;/
 	mov	y, #$06			; Normal instruments have 6 bytes of data.
 	
@@ -113,7 +113,7 @@ RestoreMusicSample:
 UpdateInstr:
 	mov	y, #$06
 	mov	a, #$00
-	jmp	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
