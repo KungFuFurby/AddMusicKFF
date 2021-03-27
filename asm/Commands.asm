@@ -271,29 +271,21 @@ cmdE6:					; Second loop
 	mov   a,#$ff			; \ ?
 	mov   $01f0+x,a			; /
 	ret				;
-label2:					;
-	push  a				;
-	mov   a,$01f0+x			;
-	cmp   a,#$01			;
-	bne   label3			;
-	pop   a				;
-	ret				;
-label3:	
-	cmp   a,#$ff
-	beq   label4
-	pop   a
-	mov   a,$01f0+x
+
+label2:
+	mov   a, $01f0+x
 	dec   a
+	beq   label4
+	cmp   a, #$fe
+	bne   label3
+	mov   a, y
+label3:
 	mov   $01f0+x,a
-	bra   label5
-label4:	
-	pop   a
-	mov   $01f0+x,a
-label5:	
 	mov   a,$01e0+x
 	mov   $30+x,a
 	mov   a,$01e1+x
 	mov   $31+x,a
+label4:
 	ret
 }	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
