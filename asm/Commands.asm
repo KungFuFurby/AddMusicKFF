@@ -385,13 +385,11 @@ cmdEA:					; Fade the vibrato
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEB:					; Pitch envelope (release)
 {
-	mov   a, #$01
-	bra   L_0E55
+	inc   a
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEC:					; Pitch envelope (attack)
 {
-	mov   a, #$00
 L_0E55: 
 	mov   x, $46
 	mov   $0320+x, a
