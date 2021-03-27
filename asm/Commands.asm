@@ -253,19 +253,9 @@ cmdE5:					; Tremolo on
 	
 	;0DCA
 TSampleLoad:
-	and   a, #$7F
-MSampleLoad:
-	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	call	GetBackupInstrTable
-	pop	a			; \ 
-	mov	y, #$00			; | Write the sample to the backup table.
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$04			; | Get the pitch multiplier byte.
-	mov	($10)+y, a		; /
-	jmp	UpdateInstr
+	;and   a, #$7F
+	;jmp	MSampleLoad
+
 
 }	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -613,7 +603,18 @@ cmdF2:					; Echo fade
 cmdF3:					; Sample load command
 {
 	call GetCommandData
-	jmp  MSampleLoad
+MSampleLoad:
+	push	a
+	mov	a, #$01
+	mov	!BackupSRCN+x, a
+	call	GetBackupInstrTable
+	pop	a			; \ 
+	mov	y, #$00			; | Write the sample to the backup table.
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \ 
+	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; /
+	jmp	UpdateInstr
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF4:					; Misc. command
