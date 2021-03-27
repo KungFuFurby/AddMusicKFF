@@ -639,9 +639,7 @@ SubC_table:
 	dw	SubC_9
 
 SubC_0:
-	mov     a, $6e				; 
-	eor     a, #$20				;
-	mov     $6e, a				;
+	mov     $6e, #$20			; 
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 SubC_01:	
 	mov	a,#$01
