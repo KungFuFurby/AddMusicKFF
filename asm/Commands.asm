@@ -507,24 +507,14 @@ WaitForDelay:				; This stalls the SPC for the correct amount of time depending 
 +	ret
 	
 GetBufferAddress:
-	cmp	a, #$00
+	xcn
 	beq	+
-	asl	a			; \
-	asl	a			; |
-	asl	a			; |
-	asl	a			; | Gets the size of the buffer needed to hold an echo delay this large.
-	mov	y, #$80			; |
-	mul	ya			; /
-	
-	eor	a, #$ff			; \
-	mov	x, a			; |
-	mov	a, y			; |
-	eor	a, #$ff			; | All this needed to flip a and y (at least it's only 8 bytes).
-	mov	y, a			; |
-	mov	a, x			; /
-	inc	a			; \ incw in this case.
-	inc	y			; /
-	
+	and	a, #$F0
+	lsr	a
+	mov	$14, #$00
+	mov	$15, a
+	movw	ya, $0e
+	subw	ya, $14		
 	ret				; 
 +
 	mov	a, #$fc			; \ A delay of 0 needs 4 bytes for no adequately explained reason.
