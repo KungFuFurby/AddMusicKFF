@@ -768,16 +768,15 @@ HandleSFXVoice:
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
-					; \ Get the length of the note back
-	setp
-	mov	!ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
-	clrp
+						; \ Get the length of the note back
+	mov     !ChSFXNoteTimer|$0100+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	clr1	$13.7			; I...still don't know what $13.7 does...
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
-	bra	.return1
+	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
+	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
 	;setp				; |
@@ -1119,15 +1118,28 @@ L_099C:
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
+
+L_09CDWPreCheck:
+	mov	a, $91+x
+	beq	L_1119
+	dec	$91+x
+	bra	L_112A
+L_1119:
+	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
+	and	a, $48			; |
+	bne	L_112A			; /
+	set1	$13.7			;
+
 ; add pitch slide delta and set DSP pitch
 L_09CD:
 	mov	a, #$b0
 	mov	y, #$02            ; pitch (notenum fixed-point)
 	dec	$90+x
 	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+L_112A:
 	call	DDEEFix	
-	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
-	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
+	ret
+
 ;
 
 ForceSFXEchoOff:
@@ -1276,6 +1288,8 @@ L_0AA5:
 	beq	L_0AB0
 	mov	x, #$0e
 	call	L_09CD
+	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
+	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
 L_0AB1:
@@ -2140,7 +2154,10 @@ L_10A1:
 L_10E4:
 	mov	a, ($30+x)				; Code for handling the $DD command.
 	cmp	a, #$dd					; I don't know why this is here instead of in its dispatch table.
-	bne	L_112A					; Maybe so that it can properly do the "read-ahead" effect?
+	beq	+					; Maybe so that it can properly do the "read-ahead" effect?
+	call	L_112A
+	bra	L_1133
++
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
 	beq	L_10FB					; /
@@ -2160,21 +2177,8 @@ L_10FB:
 	adc	a, $43
 	call	CalcPortamentoDelta
 L_1111:
-	mov	a, $91+x
-	beq	L_1119
-	dec	$91+x
-	bra	L_112A
-L_1119:
-	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
-	and	a, $48			; |
-	bne	L_112A			; /
-	set1	$13.7			;
-	mov	a, #$b0			;
-	mov	y, #$02			;
-	dec	$90+x			;
-	call	L_1075			;
-L_112A:
-	call	DDEEFix	
+	call	L_09CDWPreCheck
+L_1133:
 	mov	a, $a1+x
 	beq	L_1140
 	mov	a, $0340+x
