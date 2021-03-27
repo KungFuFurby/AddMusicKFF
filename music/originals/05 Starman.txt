@@ -1,3 +1,9 @@
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Starman"
+	#game "Super Mario World"
+}
 
 #option TempoImmunity
 
@@ -14,9 +20,9 @@ t56 @1 y10 q3E o5 c8 c8 c8 r16 c16 r16 c8. c8 c8 o4 b8 b8 b8 r16 b8 b8. b8 b8
 @1 y20 q3E o4 f8 f8 f8 d16 f8 f8 d16 f16 d16 f8 e8 e8 e8 c16 e8 e8 c16 e16 c16 e8 
 
 #5
-y20 q6D @22c16 @22c16 @22c16 @22c16 @23c8 @22c16 @22c16 @22c16 @22c16 @22c16 @22c16 @23c8 @22c16 @22c16 @22c16 @22c16 @22c16 @22c16 @23c8 @22c16 @22c16 @22c16 @22c16 @22c16 @22c16 @23c8 @22c16 @22c16 
+[[y20 q6D @22c16 @22c16 @22c16 @22c16 @23c8 @22c16 @22c16]]4
 
-                
+
 
 #amk 2
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
