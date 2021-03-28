@@ -1001,9 +1001,10 @@ SubC_table2:
 	ret
 
 .VxDSPWrite
-	;A will contain our command ID shifted left once.
+	;X will contain our command ID shifted left once.
 	;Adjust by command ID to get the lower three bits of our voice DSP
 	;register ID. (The fourth is zeroed out.)
+	mov	a, x
 	setc
 	sbc	a, #$08<<1
 	xcn	a
