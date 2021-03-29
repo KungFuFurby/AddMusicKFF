@@ -384,8 +384,8 @@ PercNote:
 	setc
 	sbc	a, #$d0
 	mov	y, #$07
-	mov	$14, #PercussionTable
-	mov	$15, #PercussionTable>>8
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
