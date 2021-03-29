@@ -790,7 +790,14 @@ SubC_table2:
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
-	bra	.modifyEchoDelay
+.modifyEchoDelay
+	push	a
+	or	!NCKValue, #$20
+	call	ModifyEchoDelay		; /
+	pop	a			;
+	mov	!MaxEchoDelay, a	;
+	ret				;
+
 +
 	mov	!EchoDelay, a		; \
 	mov	$f2, #$7d		; | Write the new delay.
@@ -801,14 +808,6 @@ SubC_table2:
 	jmp	ModifyNoise
 	
 	ret
-	
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
 	
 .gainRest
 	;call	GetCommandData
