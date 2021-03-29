@@ -553,10 +553,11 @@ DDEEFix:
 	mov	a, $90+x
 	beq	+
 	mov	a, $02b0+x
-	ret
+	bra	++
 +
 	mov	a, $02d1+x
 	mov	$02b0+x, a
+++
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
