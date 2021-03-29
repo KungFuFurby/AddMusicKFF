@@ -472,8 +472,8 @@ PercNote:
 	setc
 	sbc	a, #$d0
 	mov	y, #$07
-	mov	$14, #PercussionTable
-	mov	$15, #PercussionTable>>8
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
@@ -675,7 +675,7 @@ DDEEFix:
 -
 	mov	a, #$00
 	mov	a, $02b0+x
-	ret
+	bra	++
 +
 if not(defined("noSFX"))
 	mov	a, $48		; If $48 is 0, then this is SFX code.
@@ -685,6 +685,7 @@ if not(defined("noSFX"))
 endif
 	mov	a, $02d1+x
 	mov	$02b0+x, a
+++
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
