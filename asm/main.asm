@@ -1243,16 +1243,7 @@ L_0A51:						;;;;;;;;/ Code change
 RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.7
 	mov	x, #$0e
-	mov	a, !BackupSRCN+$0e
-	bne	RestoreSample7
-	mov	a, $cf
-	beq	L_0A67
-	dec	a
-	jmp	SetInstrument			; Restore the current instrument on the channel?
-L_0A67:
-	ret
-RestoreSample7:
-	jmp	RestoreMusicSample
+	jmp	RestoreInstrumentInformation
 L_0A68:
 	call	L_0AB1
 	mov	a, #$b2
