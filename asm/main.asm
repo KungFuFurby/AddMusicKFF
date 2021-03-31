@@ -640,7 +640,7 @@ SetPitch:			;
 	addw	ya, $16
 	movw	$16, ya
 	mov	a, x               ; set voice X pitch DSP reg from $16/7
-	xcn	a                 ;  (if vbit clear in $1a)
+	xcn	a                 ;  (if vbit clear in $1d)
 	lsr	a
 	or	a, #$02
 	mov	y, a               ; Y = voice X pitch DSP reg
@@ -1512,7 +1512,7 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	beq	ProcessAPU1SFX
 	mov	a, $01
 	cmp	a, #$04
-	beq	L_0A0E             ; (jmp $0ace)
+	beq	L_0A14
 ;
 ProcessAPU1SFX:
 	mov	a, $05		; 
@@ -1522,8 +1522,6 @@ ProcessAPU1SFX:
 	beq	L_0A11             ; (jmp $0b08)
 L_0A0D:
 	ret
-L_0A0E:
-	jmp	L_0ACE
 L_0A11:
 	jmp	L_0B08
 PauseMusic:
@@ -1541,7 +1539,6 @@ UnpauseMusic:
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
-; $01 = 01
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
@@ -1551,6 +1548,7 @@ L_0A14:
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
 	ret
+; $01 = 01
 L_0A2E:
 	dec	$0383
 	bne	L_0A0D
@@ -1578,16 +1576,7 @@ L_0A51:						;;;;;;;;/ Code change
 RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.7
 	mov	x, #$0e
-	mov	a, !BackupSRCN+$0e
-	bne	RestoreSample7
-	mov	a, $cf
-	beq	L_0A67
-	dec	a
-	jmp	SetInstrument			; Restore the current instrument on the channel?
-L_0A67:
-	ret
-RestoreSample7:
-	jmp	RestoreMusicSample
+	jmp	RestoreInstrumentInformation
 L_0A68:
 	call	L_0AB1
 	mov	a, #$b2
@@ -1644,20 +1633,9 @@ L_0ABC:
 	mov	$021e, a
 	ret
 ; $01 = 04 && $05 != 01
-L_0ACE:
-	mov	$05, a
-	mov	a, #$04
-	mov	$0383, a
-	mov	a, #$80
-	;mov	y, #$5c
-	call	KeyOffVoices             ; key off voice 7 now
-	set1	$1d.7
-L_0AE7:
-	ret
-;
 L_0AE8:
 	dec	$0383
-	bne	L_0AE7
+	bne	L_0B3F
 	mov	$1c, #$18
 	bra	L_0AF7
 L_0AF2:
