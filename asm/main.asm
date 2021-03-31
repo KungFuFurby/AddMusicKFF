@@ -1819,18 +1819,21 @@ L_0B9C:
 L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
-	mov	a, !NCKValue		; \ 
-	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
-	mov	!NCKValue, a		; |
-	mov	a, #$00			; |
 if not(defined("noSFX"))
+	mov	a, !NCKValue		; \ 
+	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	mov	a, #$00			; | Only reset the noise clock if SFX is not using it.
++
 	call	ModifyNoise		; /
 	mov	a, $1d		
 	eor	a, #$ff		
 	;mov	y, #$5c
 	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
 else
-	jmp	ModifyNoise
+	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
+	jmp	ModifyNoise		; /
 endif
 ; fade volume out over 240 counts
 FadeOut:
