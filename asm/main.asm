@@ -63,7 +63,7 @@
 ; $0150: Don't use
 ; $0151: Don't use
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
-; $0383: Some sort of a timer for the jump SFX.
+; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
 ; $0386: Set if Mario is on Yoshi.  
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
@@ -1542,7 +1542,7 @@ UnpauseMusic:
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
-	mov	$0383, a	; / $0383 is a timer for the jump sound effect?
+	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
 	mov	a, #$80		; \ Key off channel 7.
 	
 	call	KeyOffVoices
