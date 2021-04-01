@@ -795,8 +795,16 @@ EndSFX:
 					; Of course, that doesn't work so well when some channels don't map to input ports...
 				
 	
-	mov	a, $18			; \
+	mov	a, $18
+	bpl	+			
+	push	a
+	mov	a, $0383
+	or	a, $1c
+	pop	a
+	bne	++
++					; \
 	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
+++
 	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
@@ -1547,7 +1555,8 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
-	ret
+	mov	x, #$0e
+	jmp	SFXTerminateCh
 ; $01 = 01
 L_0A2E:
 	dec	$0383
