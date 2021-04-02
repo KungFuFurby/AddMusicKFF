@@ -808,8 +808,48 @@ EndSFX:
 	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
-	
 
+	cmp	!SFXNoiseChannels, #$00
+	beq	.restoreMusicNoise
+	call	SetSFXNoise
+	call	ModifyNoise
+	bra	RestoreInstrumentInformation
+	
+.restoreMusicNoise:
+	mov	a, #$00
+	mov	$1f, a
+	mov	!ChSFXPriority|$0100+x, a
+	mov	a, !MusicNoiseChannels
+	and	a, $1a
+	beq	RestoreInstrumentInformation
+	mov	$12, a
+	mov	a, !SFXNoiseChannels
+	tclr	$12, a
+	mov	$13, #$01
+	mov	a, $0389
+	call	ModifyNoise
+	;Restore VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	++
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
 
 	mov	x, $46			; \ 
 endif
@@ -838,7 +878,9 @@ HandleSFXVoice:
 +
 .getMoreSFXData
 	call	GetNextSFXByte
-	beq	EndSFX			; If the current byte is zero, then end it.
+	bne	+			; If the current byte is zero, then end it.
+	jmp	EndSFX
++
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
 					; The current byte is the duration.
@@ -851,12 +893,13 @@ HandleSFXVoice:
 	xcn	a			; | Put the left volume DSP register for this channel into y.
 	mov	y, a			; |
 	pop	a			; |
+	call	.setVolFromNoiseSetting ; |
 	call	DSPWrite		; / Set the volume for the left speaker.
 	inc	y			; \
 	call	DSPWrite		; / Set the volume for the right speaker.  We might change it later, but this saves space.
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
-
+	call	.setVolFromNoiseSetting ;
 	call	DSPWrite		; > Set the volume for the right speaker.
 	call	GetNextSFXByte		;
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
@@ -956,6 +999,7 @@ HandleSFXVoice:
 	
 	mov	a, $18			; \ Disable noise for this channel.
 	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
+	tclr	$1a, a
 
 .getInstrumentByte
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
@@ -979,12 +1023,181 @@ HandleSFXVoice:
 	mov	$0210+x, a		; / Something to do with pitch...?
 	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
 .noise	
-	and	a, #$1f			; \ Noise can only be from #$00 - #$1F
-	call	ModifyNoise
-	
+	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
+	mov	$01f1+x, a
 	or	(!SFXNoiseChannels), ($18)
+	cmp	!SFXNoiseChannels, $18
+	beq	.noiseNoPrevSFXFrequency
+	call	SetSFXNoise
+	bra	.noiseCheckMusic
 
-	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+.noiseNoPrevSFXFrequency
+	mov	$1f, #$00
+	mov	$1e, a
+	;All music channels with noise need to have their VxVOL values
+	;zeroed out here if the frequency is not a match.
+	cmp	a, $0389
+	beq	.noiseSetFreq
+	cmp	!MusicNoiseChannels, #$00
+	beq	.noiseSetFreq
+	push	x
+	push	a
+	mov	$12, !MusicNoiseChannels
+	mov	a, $1a
+	or	a, !SFXNoiseChannels
+	or	a, $1d
+	tclr	$12, a
+	mov	$13, #$01
+	;Zero out VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	+
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
+
+	pop	a
+	pop	x
+
+.noiseSetFreq
+	call	ModifyNoise
+	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+
+.setVolFromNoiseSetting
+	mov	$11, a
+	mov	a, $18
+	and	a, !SFXNoiseChannels
+	beq	.setNormalVol
+	mov	a, $01f1+x
+	cmp	a, $1e
+	beq	.setNormalVol
+	mov	a, !ChSFXPriority|$0100+x
+	cmp	a, $1f
+	bcc	.storeVolFromNoiseSetting
+	bne	.setNormalVol
+;Now we scan the priorities of all channels higher than this one.
+	mov	$12, x
+-
+	inc	$12
+	inc	$12
+	push	x
+	mov	a, !ChSFXPriority|$0100+x
+	mov	x, $12
+	cmp	a, !ChSFXPriority|$0100+x
+	pop	x
+	bcc	.storeVolFromNoiseSetting
+	bne	.setNormalVol
+	cmp	$12, #$0e
+	bcc	-
+.storeVolFromNoiseSetting
+	mov	a, y
+	lsr	a
+	mov	a, $11
+	bcc	+
+	mov	$d1+x, a
+	bra	.setZeroVolFromNoiseSetting
++
+	mov	$d0+x, a
+.setZeroVolFromNoiseSetting	
+	mov	a, #$00
+	ret
+.setNormalVol
+	mov	a, $11
+	ret
+
+SetSFXNoise:
+	push	x
+	;Decide which SFX channel's noise frequency will be used as the
+	;comparison point, using priority as the factor. Ties favor highest
+	;channel ID.
+	mov	$12, !SFXNoiseChannels
+	mov	x, #$00
+	mov	$13, x
+	setc
+-
+	asl	$13
+	lsr	$12
+	push	p
+	bcc	+
+	mov	a, !ChSFXPriority|$0100+x
+	cmp	a, $1f
+	bcc	+
+	mov	$1f, a
+	mov	a, $01f1+x
+	mov	$1e, a
++
+	inc	x
+	inc	x
+	pop	p
+	bne	-
+	;OK, we have our winning frequency, now compare and set VxVOL values
+	;based off of noise frequency.
+	mov	$12, !SFXNoiseChannels
+	mov	a, $13
+	tclr	$12, a
+	mov	a, $1e
+	mov	x, #$00
+	mov	$f2, x
+	mov	$13, #$01
+-
+	lsr	$12
+	push	p
+	push	a
+	bcc	++
+	cmp	a, $01f1+x
+	beq	+
+	setc
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
+	bra	++
++
+	clrc
+	mov	a, $13
+	and	a, $1a
+	beq	++
+	setc
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	a
+	pop	p
+	bne	-
+
+	pop	x
+	ret
+
 }
 
 if !PSwitchIsSFX = !true
@@ -1828,7 +2041,10 @@ L_0B9C:
 L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
+	mov	a, #$00
 if not(defined("noSFX"))
+	mov	$0389, a
+
 	mov	a, !NCKValue		; \ 
 	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
 	cmp	!SFXNoiseChannels, #$00
@@ -2340,6 +2556,26 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
+	mov	a, $48
+	and	a, !MusicNoiseChannels
+	beq	++
+	and	a, $1d
+	bne	++
+	;Hardware limitations prevent more than one noise frequency from
+	;playing at once. Thus, we zero out the voice volume of the music
+	;if SFX is using the noise and the frequencies don't match.
+	mov	a, !NCKValue
+	and	a, #$1f
+	cmp	a, $0389
+	beq	++
+	push	x
+	bbc1	$12.0, +
+	inc	x
++
+	mov	$d0+x, y
+	mov	y, #$00
+	pop	x
+++
 	mov	a, y
 	mov	y, $12
 	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear

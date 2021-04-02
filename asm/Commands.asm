@@ -68,16 +68,22 @@ endif
 	
 	mov	($10)+y, a		; (save it in the backup table)
 	
-	bmi	+			; If the byte was positive, then it was a sample.  Just write it like normal.
+	bmi	.noiseInstrument	; If the byte was positive, then it was a sample.  Just write it like normal.
 
 	mov	$f2, x	
 	mov	$f3, a
 	bra	++
 
-+	
+.noiseInstrument
+	and	a, #$1f
+	mov	$0389, a
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
++
 	or	(!MusicNoiseChannels), ($48)
 ++
 	mov	a, x
@@ -880,7 +886,12 @@ cmdF8:					; Noise command.
 Noiz:
 		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
 		call	ModifyNoise
++
 		jmp	EffectModifier		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
