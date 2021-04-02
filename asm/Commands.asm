@@ -68,18 +68,24 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	
 	mov	($10)+y, a		; (save it in the backup table)
 	
-	bpl	+			; If the byte was positive, then it was a sample.  Just write it like normal.
+	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
+
+	and	a, #$1f
+	mov	$0389, a
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
 	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
++
 	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
 -
 	mov	a, ($14)+y		; \ 
-+	mov	$f2, x			; | 	
+++	mov	$f2, x			; | 	
 	mov	$f3, a			; |
 	mov	($10)+y, a		; |
 	inc	x			; | This loop will write to the correct DSP registers for this instrument.
@@ -719,7 +725,12 @@ cmdF8:					; Noise command.
 Noiz:
 		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
 		call	ModifyNoise
++
 		jmp	EffectModifier		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

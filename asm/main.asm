@@ -668,7 +668,41 @@ EndSFX:
 
 	call	EffectModifier
 	
-
+.restoreMusicNoise:
+	mov	a, #$00
+	mov	$1f, a
+	mov	!ChSFXPriority|$0100+x, a
+	mov	a, !MusicNoiseChannels
+	and	a, $1a
+	beq	RestoreInstrumentInformation
+	mov	$12, a
+	mov	a, !SFXNoiseChannels
+	tclr	$12, a
+	mov	$13, #$01
+	mov	a, $0389
+	call	ModifyNoise
+	;Restore VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	++
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
 
 	mov	x, $46			; \ 
 
@@ -697,7 +731,9 @@ HandleSFXVoice:
 +
 .getMoreSFXData
 	call	GetNextSFXByte
-	beq	EndSFX			; If the current byte is zero, then end it.
+	bne	+			; If the current byte is zero, then end it.
+	jmp	EndSFX
++
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
 					; The current byte is the duration.
@@ -838,12 +874,52 @@ HandleSFXVoice:
 	mov	$0210+x, a		; / Something to do with pitch...?
 	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
 .noise	
-	and	a, #$1f			; \ Noise can only be from #$00 - #$1F
-	call	ModifyNoise
-	
+	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
 	or	(!SFXNoiseChannels), ($18)
 
-	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+	cmp	a, $0389
+	beq	.noiseSetFreq
+	cmp	!MusicNoiseChannels, #$00
+	beq	.noiseSetFreq
+	push	x
+	push	a
+	mov	$12, !MusicNoiseChannels
+	mov	a, $1a
+	or	a, !SFXNoiseChannels
+	or	a, $1d
+	tclr	$12, a
+	mov	$13, #$01
+	;Zero out VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	+
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
+
+	pop	a
+	pop	x
+
+.noiseSetFreq
+	call	ModifyNoise
+	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+
 }
 
 if !PSwitchIsSFX = !true
@@ -1470,6 +1546,8 @@ L_0B9C:
 L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
+	mov	a, #$00
+	mov	$0389, a
 	mov	a, !NCKValue		; \ 
 	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
 	mov	!NCKValue, a		; |
@@ -1968,6 +2046,26 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
+	mov	a, $48
+	and	a, !MusicNoiseChannels
+	beq	++
+	and	a, $1d
+	bne	++
+	;Hardware limitations prevent more than one noise frequency from
+	;playing at once. Thus, we zero out the voice volume of the music
+	;if SFX is using the noise and the frequencies don't match.
+	mov	a, !NCKValue
+	and	a, #$1f
+	cmp	a, $0389
+	beq	++
+	push	x
+	bbc1	$12.0, +
+	inc	x
++
+	mov	$d0+x, y
+	mov	y, #$00
+	pop	x
+++
 	mov	a, y
 	mov	y, $12
 	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear
