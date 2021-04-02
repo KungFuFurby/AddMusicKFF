@@ -2557,6 +2557,7 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
+if not(defined("noSFX"))
 	mov	a, $48
 	and	a, !MusicNoiseChannels
 	beq	++
@@ -2577,6 +2578,7 @@ L_1061:
 	mov	y, #$00
 	pop	x
 ++
+endif
 	mov	a, y
 	mov	y, $12
 	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear
@@ -3238,8 +3240,9 @@ Start:
 	;mov	$0386, a
 	;mov	$0387, a
 	mov	!PauseMusic, a
+if not(defined("noSFX"))
 	mov	$0389, a
-	
+endif
 	mov	!MaxEchoDelay, a
 	
 	mov	x, #$cf		; Reset the stack pointer.
