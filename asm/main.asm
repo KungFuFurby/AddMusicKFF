@@ -895,6 +895,7 @@ HandleSFXVoice:
 	mov	$1e, a
 	;All music channels with noise need to have their VxVOL values
 	;zeroed out here if the frequency is not a match.
+.noiseCheckMusic
 	cmp	a, $0389
 	beq	.noiseSetFreq
 	cmp	!MusicNoiseChannels, #$00
