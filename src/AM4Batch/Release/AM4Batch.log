@@ -1,9 +1,1 @@
-﻿Build started 7/4/2015 8:43:15 PM.
-     1>Project "C:\Users\Josiah\Desktop\amk_src\AM4Batch\AM4Batch.vcxproj" on node 2 (Build target(s)).
-     1>Link:
-         AM4Batch.vcxproj -> C:\Users\Josiah\Desktop\amk_src\Release\AM4Batch.exe
-     1>Done Building Project "C:\Users\Josiah\Desktop\amk_src\AM4Batch\AM4Batch.vcxproj" (Build target(s)).
-
-Build succeeded.
-
-Time Elapsed 00:00:00.04
+﻿  AM4Batch.vcxproj -> D:\aless\Desktop\test_folders\AddMusicKFF\src\Release\AM4Batch.exe

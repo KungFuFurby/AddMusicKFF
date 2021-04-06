@@ -1957,6 +1957,7 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						pos++;
 						getInt();
 					}
 					else if (text[pos] == 'a' || text[pos] == 'b' || text[pos] == 'c' || text[pos] == 'd' || text[pos] == 'e' || text[pos] == 'f' || text[pos] == 'g' ||

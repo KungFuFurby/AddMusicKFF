@@ -6,15 +6,13 @@ cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 	mov	a, #$00			; \ It's not a raw sample playing on this channel.
 	mov	!BackupSRCN+x, a	; /
 	
-	mov	a, $48			; \ 
-	eor	a, #$ff			; | No noise is playing on this channel.
-	and	a, !MusicNoiseChannels	; | (EffectModifier is called later)
-	mov	!MusicNoiseChannels, a	; /
+	mov	a, $48			; \ No noise is playing on this channel.
+	tclr	!MusicNoiseChannels, a	; / (EffectModifier is called later)
 	
 	call	GetCommandData		; 
 SetInstrument:				; Call this to start playing the instrument in A.
-	mov	$14, #InstrumentTable	; \ $14w = the location of the instrument data.
-	mov	$15, #InstrumentTable>>8 ;/
+	mov	$10, #InstrumentTable	; \ $10w = the location of the instrument data.
+	mov	$11, #InstrumentTable>>8 ;/
 	mov	y, #$06			; Normal instruments have 6 bytes of data.
 	
 	inc	a			; \ 
@@ -23,8 +21,8 @@ L_0D4B:					; |		???
 	dec	a			; /
 	
 	bpl	.normalInstrument	; \ 
-	mov	$14,#PercussionTable	; | If the instrument was negative, then we use the percussion table instead.	
-	mov	$15,#PercussionTable>>8	; /
+	mov	$10,#PercussionTable	; | If the instrument was negative, then we use the percussion table instead.	
+	mov	$11,#PercussionTable>>8	; /
 	setc				; \ 
 	sbc	a, #$cf			; | Also "correct" A. (Percussion instruments are stored "as-is", otherwise we'd subtract #$d0.
 	inc	y			; / Percussion instruments have 7 bytes of data.
@@ -36,7 +34,7 @@ L_0D4B:					; |		???
 	bcc 	+			; | If this instrument is >= $30, then it's a custom instrument.
 	push	a			; |
 	movw	ya, !CustomInstrumentPos ;| So we'll use the custom instrument table.
-	movw	$14, ya			; |
+	movw	$10, ya			; |
 	pop	a			; |
 	setc				; |
 	sbc	a, #30			; |
@@ -46,15 +44,14 @@ L_0D4B:					; |		???
 
 ApplyInstrument:			; Call this to play the instrument in A whose data resides in a table pointed to by $14w with a width of y.
 	mul	ya			; \ 
-	addw	ya, $14			; |
+	addw	ya, $10			; |
 	movw	$14, ya			; /
 
 	mov   a, $48			; \ 
 	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
 	bne   .noSet			; /
 	
-	call	GetBackupInstrTable	; \
-	movw	$10, ya			; /
+	call	GetBackupInstrTable
 	
 	push	x			; \ 
 	mov	a, x			; |
@@ -113,20 +110,20 @@ RestoreMusicSample:
 	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
 	mov	!BackupSRCN+x, a	; /
 	call	GetBackupInstrTable	; \ 
-	movw	$14, ya			; |
 UpdateInstr:
 	mov	y, #$06
 	mov	a, #$00
-	jmp	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
 	mov	$11, #$01		; |
 	mov	y, #$06			; |
-	mov	a, x			; | This short routine sets ya to contain a pointer to the current channel's backup instrument data.
+	mov	a, x			; | This short routine sets $10 to contain a pointer to the current channel's backup instrument data.
 	lsr	a			; | 
 	mul	ya			; |	
-	addw	ya, $10			; /
+	addw	ya, $10			; |
+	movw	$10, ya			; /
 	ret
 
 }
@@ -256,20 +253,9 @@ cmdE5:					; Tremolo on
 	
 	;0DCA
 TSampleLoad:
-	and   a, #$7F
-MSampleLoad:
-	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	call	GetBackupInstrTable	; \ 
-	movw	$14, ya			; /
-	pop	a			; \ 
-	mov	y, #$00			; | Write the sample to the backup table.
-	mov	($14)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$04			; | Get the pitch multiplier byte.
-	mov	($14)+y, a		; /
-	jmp	UpdateInstr
+	;and   a, #$7F
+	;jmp	MSampleLoad
+
 
 }	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -285,29 +271,21 @@ cmdE6:					; Second loop
 	mov   a,#$ff			; \ ?
 	mov   $01f0+x,a			; /
 	ret				;
-label2:					;
-	push  a				;
-	mov   a,$01f0+x			;
-	cmp   a,#$01			;
-	bne   label3			;
-	pop   a				;
-	ret				;
-label3:	
-	cmp   a,#$ff
-	beq   label4
-	pop   a
-	mov   a,$01f0+x
+
+label2:
+	mov   a, $01f0+x
 	dec   a
+	beq   label4
+	cmp   a, #$fe
+	bne   label3
+	mov   a, y
+label3:
 	mov   $01f0+x,a
-	bra   label5
-label4:	
-	pop   a
-	mov   $01f0+x,a
-label5:	
 	mov   a,$01e0+x
 	mov   $30+x,a
 	mov   a,$01e1+x
 	mov   $31+x,a
+label4:
 	ret
 }	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -320,23 +298,22 @@ cmdED:					; ADSR
 	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
 	mov	!BackupSRCN+x, a	; /
 	
-	call	GetBackupInstrTable	; \ 
-	movw	$14, ya			; /
+	call	GetBackupInstrTable
 	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
 	bpl	.GAIN
 	mov	y, #$01			; | 
-	mov	($14)+y, a		; /
+	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$02			; | Write ADSR 2 to the table.
--	mov	($14)+y, a		; /
+-	mov	($10)+y, a		; /
 	
 	jmp	UpdateInstr
 	
 .GAIN
 	mov	y, #$01			; \ 
-	mov	($14)+y, a		; /
+	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$03			; | Write GAIN to the table.
 	bra	-
@@ -408,13 +385,11 @@ cmdEA:					; Fade the vibrato
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEB:					; Pitch envelope (release)
 {
-	mov   a, #$01
-	bra   L_0E55
+	inc   a
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEC:					; Pitch envelope (attack)
 {
-	mov   a, #$00
 L_0E55: 
 	mov   x, $46
 	mov   $0320+x, a
@@ -458,7 +433,6 @@ L_0EEB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
 {
-	mov	x, $46
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
 	push	a
 	call	EffectModifier
@@ -514,8 +488,6 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	a, #$10			;
 	mov	y, a			;
 	bpl	-			; set echo filter from table idx op3
-	mov	x, $46			;
-
 	jmp	L_0EEB			; Set the echo volume.
 	
 WaitForDelay:				; This stalls the SPC for the correct amount of time depending on the value in !EchoDelay.
@@ -535,24 +507,14 @@ WaitForDelay:				; This stalls the SPC for the correct amount of time depending 
 +	ret
 	
 GetBufferAddress:
-	cmp	a, #$00
+	xcn
 	beq	+
-	asl	a			; \
-	asl	a			; |
-	asl	a			; |
-	asl	a			; | Gets the size of the buffer needed to hold an echo delay this large.
-	mov	y, #$80			; |
-	mul	ya			; /
-	
-	eor	a, #$ff			; \
-	mov	x, a			; |
-	mov	a, y			; |
-	eor	a, #$ff			; | All this needed to flip a and y (at least it's only 8 bytes).
-	mov	y, a			; |
-	mov	a, x			; /
-	inc	a			; \ incw in this case.
-	inc	y			; /
-	
+	and	a, #$F0
+	lsr	a
+	mov	$14, #$00
+	mov	$15, a
+	movw	ya, $0e
+	subw	ya, $14		
 	ret				; 
 +
 	mov	a, #$fc			; \ A delay of 0 needs 4 bytes for no adequately explained reason.
@@ -621,7 +583,18 @@ cmdF2:					; Echo fade
 cmdF3:					; Sample load command
 {
 	call GetCommandData
-	jmp  MSampleLoad
+MSampleLoad:
+	push	a
+	mov	a, #$01
+	mov	!BackupSRCN+x, a
+	call	GetBackupInstrTable
+	pop	a			; \ 
+	mov	y, #$00			; | Write the sample to the backup table.
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \ 
+	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; /
+	jmp	UpdateInstr
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF4:					; Misc. command
@@ -644,16 +617,13 @@ SubC_table:
 	dw	SubC_9
 
 SubC_0:
-	mov     a, $6e				; 
-	eor     a, #$20				;
-	mov     $6e, a				;
+	eor     $6e, #$20			; 
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 SubC_01:	
 	mov	a,#$01
 SubC_00:
 	eor	a,$0160
 	mov	$0160,a
-	mov     x, $46
 	ret
 
 SubC_1:
@@ -661,22 +631,15 @@ SubC_1:
 	eor	a, $48
 	mov	$0161,a
 	mov	a,$48
-	eor	a,#$FF
-	and	a, $0162		
-	mov	$0162,a
-	mov     x, $46
+	tclr	$0162, a
 	ret
 
 SubC_2:
-	mov	a, !WaitTime
-	eor	a,#$03
-	mov	!WaitTime,a
-	mov     x, $46
+	eor	!WaitTime, #$03
 	ret
 
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
-	mov     x, $46
 	jmp	EffectModifier
 	
 SubC_5:
@@ -694,17 +657,14 @@ SubC_6:
 	bra	SubC_01
 	
 SubC_7:
-	mov	$ffff, a
 	mov	a, #$00				; \ 
 	mov	$0387, a			; | Set the tempo to normal.
-	mov	x, $46				; |
 	mov	a, $51				; |
 	jmp	L_0E14				; /
 	
 SubC_8:
-	mov	!SecondVTable, #$01		; \
-	mov	x, $46				; | Toggle which velocity table we're using.
-	ret					; /
+	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+	ret
 	
 SubC_9:
 	mov     x, $46				; \ 
@@ -801,16 +761,15 @@ SubC_table2:
 	mov	a, #$01
 	mov	!BackupSRCN+x, a
 	
-	call	GetBackupInstrTable	; \ 
-	movw	$14, ya			; /
+	call	GetBackupInstrTable
 	
 	pop	a			;
 	mov     y, #$03			; \ GAIN byte = parameter
-	mov 	($14)+y, a		; /
+	mov 	($10)+y, a		; /
 	mov	y, #$01			
-	mov	a, ($14)+y		; \ Clear ADSR bit 7.
+	mov	a, ($10)+y		; \ Clear ADSR bit 7.
 	and	a, #$7f			; /
-	mov	($14)+y, a		;
+	mov	($10)+y, a		;
 	jmp	UpdateInstr
 .HFDTune
 	call	GetCommandData
@@ -831,7 +790,14 @@ SubC_table2:
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
-	bra	.modifyEchoDelay
+.modifyEchoDelay
+	push	a
+	or	!NCKValue, #$20
+	call	ModifyEchoDelay		; /
+	pop	a			;
+	mov	!MaxEchoDelay, a	;
+	ret				;
+
 +
 	mov	!EchoDelay, a		; \
 	mov	$f2, #$7d		; | Write the new delay.
@@ -843,15 +809,6 @@ SubC_table2:
 	
 	ret
 	
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	mov	x, $46			;
-	ret				;
-	
 .gainRest
 	;call	GetCommandData
 	;mov	!RestGAINReplacement+x, a
@@ -861,7 +818,6 @@ SubC_table2:
 	call	GetCommandData		; \ Argument is which table we're using
 	mov	!SecondVTable, a	; |
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
-	mov	x, $46			;
 	ret				; /
 	
 }
@@ -948,11 +904,24 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 
 .doStuff
 	mov	a, !ArpType+x		;
-	cmp	a, #$01			; \ If it's 1, then it's a trill
+	beq	.normal			;
+	mov	y, a
+	mov	a, !ArpCurrentDelta+x	;
+	cmp	y, #$01			; \ If it's 1, then it's a trill
 	beq	.trill			; /
-	cmp	a, #$02			; \ If it's 2, then it's a glissando.
-	beq	.glissando		; /
-.normal					; Otherwise (it's a 0), it's a normal arpeggio.
+	;cmp	y, #$02			; \ If it's 2, then it's a glissando.
+	;beq	.glissando		; /
+
+.glissando
+	clrc				; \
+	adc	a, !ArpSpecial+x	; |
+	bra	++			; /
+
+.trill
+	eor	a, !ArpSpecial+x	; \ Opposite note.
+	bra	++			; /
+
+.normal					; If it's 0, it's a normal arpeggio.
 	mov	a, !ArpNoteIndex+x	; \
 	inc	a			; / Increment the note index.
 	cmp	a, !ArpNoteCount+x	; \ 
@@ -970,7 +939,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, ($14)+y		; Get the current delta.
 	cmp	a, #$80			; \
 	beq	.setLoopPoint		; / If the current delta is #$80, then it's actually the loop point.
-	mov	!ArpCurrentDelta+x, a	; 
+++	mov	!ArpCurrentDelta+x, a	; 
 	bra	.playNote
 .setLoopPoint
 	inc	y			; \
@@ -995,20 +964,6 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
 	ret
-	
-.trill
-	mov	a, !ArpCurrentDelta+x	; \ Opposite note.
-	eor	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
-.glissando
-	mov	a, !ArpCurrentDelta+x	; \
-	clrc				; |
-	adc	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
 }	
 	
 cmdFC:
