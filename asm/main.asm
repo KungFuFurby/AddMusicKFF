@@ -553,7 +553,6 @@ DDEEFix:
 	mov	a, $90+x
 	beq	+
 -
-	mov	a, #$00
 	mov	a, $02b0+x
 	bra	++
 +
