@@ -790,7 +790,14 @@ SubC_table2:
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
-	bra	.modifyEchoDelay
+.modifyEchoDelay
+	push	a
+	or	!NCKValue, #$20
+	call	ModifyEchoDelay		; /
+	pop	a			;
+	mov	!MaxEchoDelay, a	;
+	ret				;
+
 +
 	mov	!EchoDelay, a		; \
 	mov	$f2, #$7d		; | Write the new delay.
@@ -801,14 +808,6 @@ SubC_table2:
 	jmp	ModifyNoise
 	
 	ret
-	
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
 	
 .gainRest
 	;call	GetCommandData
@@ -905,11 +904,24 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 
 .doStuff
 	mov	a, !ArpType+x		;
-	cmp	a, #$01			; \ If it's 1, then it's a trill
+	beq	.normal			;
+	mov	y, a
+	mov	a, !ArpCurrentDelta+x	;
+	cmp	y, #$01			; \ If it's 1, then it's a trill
 	beq	.trill			; /
-	cmp	a, #$02			; \ If it's 2, then it's a glissando.
-	beq	.glissando		; /
-.normal					; Otherwise (it's a 0), it's a normal arpeggio.
+	;cmp	y, #$02			; \ If it's 2, then it's a glissando.
+	;beq	.glissando		; /
+
+.glissando
+	clrc				; \
+	adc	a, !ArpSpecial+x	; |
+	bra	++			; /
+
+.trill
+	eor	a, !ArpSpecial+x	; \ Opposite note.
+	bra	++			; /
+
+.normal					; If it's 0, it's a normal arpeggio.
 	mov	a, !ArpNoteIndex+x	; \
 	inc	a			; / Increment the note index.
 	cmp	a, !ArpNoteCount+x	; \ 
@@ -927,7 +939,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, ($14)+y		; Get the current delta.
 	cmp	a, #$80			; \
 	beq	.setLoopPoint		; / If the current delta is #$80, then it's actually the loop point.
-	mov	!ArpCurrentDelta+x, a	; 
+++	mov	!ArpCurrentDelta+x, a	; 
 	bra	.playNote
 .setLoopPoint
 	inc	y			; \
@@ -952,20 +964,6 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
 	ret
-	
-.trill
-	mov	a, !ArpCurrentDelta+x	; \ Opposite note.
-	eor	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
-.glissando
-	mov	a, !ArpCurrentDelta+x	; \
-	clrc				; |
-	adc	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
 }	
 	
 cmdFC:
