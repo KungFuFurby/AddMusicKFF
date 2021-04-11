@@ -1,3 +1,10 @@
+#SPC
+{
+	#author "Koji Kondo"
+	#title "P-Switch"
+	#game "Super Mario World"
+}
+
 #option TempoImmunity
 
 #0
@@ -19,11 +26,9 @@ $DC$60$14 c+=16 g+=8 ^=24 o3 c+=24 o2 g+=24]3
 
 #2
 (3)[@12 y10 q6B
-o4 g=8 g=8 o5 e=8 e=8 o4 g=8 g=8 o5 e=8 e=8
-o4 g=8 g=8 o5 e=8 e=8 o4 g=8 g=8 o5 e=8 e=8
-o4 g=8 g=8 o5 e=8 e=8 o4 g=8 g=8 o5 e=8 e=8]3
+o4 g=8 g=8 o5 e=8 e=8]18
 /
-(3)1                
+(3)6
 
 #amk 2
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 

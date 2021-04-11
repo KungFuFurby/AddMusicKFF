@@ -29,7 +29,13 @@
 	<li><p>vXXX (Set the volume to XXX.  Maximum is 127, not 255!)</p></li>
 	<li><p>vXXX, YYY (Set the left volume to XXX and the right volume to YYY.)</p></li>
 	<li><p>& (Pitch slide)</p></li>
-	<li><p>$XX (Insert the hex value XX directly.  Unlike music, SFX hex commands are not validated.  $FF will repeat the last note, and $FE will repeat the sound effect, $DD $WW $XX $YY $ZZ is a pitch slide command ($WW is the starting note, $XX is the delay, $YY is the duration, and $ZZ is the final note), and $EB $XX $YY $ZZ is another pitch slide command, which works exactly the same as $DD but without the first argument.</p></li>
+	<li><p>$XX (Insert the hex value XX directly.  Unlike music, SFX hex commands are not validated.
+		<ul><li>$E0 $XX sets SFX priority, with $XX being the priority. This is only valid at the very beginning of the SFX prior to all other data. If this value is less than the priority of the SFX currently playing, then this SFX will not play on top of the other SFX. If not present, then the default value is zero.</li>
+		<li>$FF will repeat the last note.</li>
+		<li>$FE will repeat the sound effect.</li>
+		<li>$DD $WW $XX $YY $ZZ is a pitch slide command ($WW is the starting note, $XX is the delay, $YY is the duration, and $ZZ is the final note).
+		<li>$EB $XX $YY $ZZ is another pitch slide command, which works exactly the same as $DD but without the first argument.</li></ul>
+	</p> </li>
 	<li><p>#asm <name> and #jsr <name>.  #asm <name> will insert some assembled SPC-700 code into this sound effect and give it the name you specify.  The ASM code is delimited by curly braces and may use labels and defines in main.asm, commands.asm, etc.  #jsr will execute the code with the given name.  For a specific example of how to use this, see "11 Pause.txt" and "12 Unpause.txt", as they use this command to pause and unpause the music.  You can use this to easily run SPC code on command from the SNES.</p></li> 
 	</ul>
 

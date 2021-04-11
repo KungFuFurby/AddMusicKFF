@@ -1,2 +1,2 @@
-#TargetFrameworkVersion=v4.0:PlatformToolSet=v140_xp:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
-Release|Win32|C:\Users\Josiah\Desktop\amk_src\|
+PlatformToolSet=v142:VCToolArchitecture=Native32Bit:VCToolsVersion=14.28.29333:TargetPlatformVersion=10.0.18362.0:
+Release|Win32|D:\aless\Desktop\test_folders\AddMusicKFF\src\|

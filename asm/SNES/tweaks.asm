@@ -14,7 +14,8 @@
 
 
 
-!JumpSFXOn1DFC = !true			; Change this to !false to move the jump sound effect to 1DFA.
+!JumpSFXOn1DFC = !true			; Change this to !false to move the jump sound effect to 1DF9.
+!GrinderSFXOn1DFC = !false		; Change this to !true to move the grinder sound effect from 1DF9 to 1DFC.
 				
 !Miss		= #$01			; If you've changed list.txt and plan on using the original SMW songs
 !GameOver	= #$02			; change these constants to whatever they are in list.txt
@@ -416,7 +417,7 @@ OWMusicHijack:
 
 
 
-; Remap the jump SFX to $1DFA or $1DFC.
+; Remap the jump SFX to $1DF9 or $1DFC.
 if !JumpSFXOn1DFC == !true
 	org $00D65E
 	LDA #$35
@@ -436,17 +437,31 @@ else
 endif
 
 ; Remap the grinder SFX too.
-org $01D745
-LDA #$1A
-STA $1DF9|!SA1Addr2
+if !GrinderSFXOn1DFC == !true
+	org $01D745
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $01DB70
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $01DB70
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $0392B8
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $0392B8
+	LDA #$36
+	STA $1DFC|!SA1Addr2
+else
+	org $01D745
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $01DB70
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $0392B8
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+endif
 
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD

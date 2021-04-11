@@ -1,4 +1,10 @@
-;title=Sub Castle Clear Fanfare
+#SPC
+{
+	#author "Koji Kondo"
+	#title "Boss Clear"
+	#game "Super Mario World"
+}
+
 ;ported by gocha
 
 "VCMD_PAN_FADE=$dc"
@@ -75,7 +81,7 @@ VCMD_ECHO_OFF
 	@4 y10
 	q7e
 	l2 @26c^ l16 ^^ @26c@26c@26c^@26c^ l12 @26c@26c@26c @26c2 @26c@26c@26c
-	[q7d l32 @26c]22 q6f @26c=12 ;c4-=36
+	[[q7d l32 @26c]]22 q6f @26c=12 ;c4-=36
 
 #5	r=84
 
@@ -85,20 +91,17 @@ VCMD_ECHO_OFF
 	y10 q7e
 	o2 c2 ^2 ^8 c16 c16 c8 c8 c12 c+12 d12 d+2 d+12 d+12 d+12 f2 ^4
 
-#6	r=84
+#6	[r=84
 
 	; $139C / $2CFE
-	@2 y20 q6b
-	r2 r2 VCMD_PAN_FADE $90 $00
-	o4 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
+	@2 y20
+	r2 r2 VCMD_PAN_FADE $90 $00]
+	q6b o4 h-5 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
 
-#7	
-r=84
-
+#7
 	; $139C / $2D27
-	@2 y20 q69
-	r48 r2 r2 VCMD_PAN_FADE $90 $00
-	o4 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
+	r48 *
+	q69 o4 h-5 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
                 
 
 #amk 2

@@ -211,7 +211,7 @@ void Music::init()
 	channel = 0;
 	octave = 4;
 	prevNoteLength = -1;
-	defaultNoteLength = 8;
+	defaultNoteLength = 192/8;
 
 	prevLoop = -1;
 	i = 0;
@@ -559,11 +559,21 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
+	if (i == -1 && text[pos] == '=')
+	{
+		pos++;
+		i = getInt();
 
-	if (i == -1) error("Error parsing \"l\" directive.")
-	if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
-
+		if (i == -1)
+		{
+			error("Error parsing \"l\" directive.");
+		}
 		defaultNoteLength = i;
+	}
+	else if (i == -1) error("Error parsing \"l\" directive.")
+	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
+	else {defaultNoteLength = 192 / i;}
+	defaultNoteLength = getNoteLengthModifier(defaultNoteLength);
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -1947,6 +1957,7 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						pos++;
 						getInt();
 					}
 					else if (text[pos] == 'a' || text[pos] == 'b' || text[pos] == 'c' || text[pos] == 'd' || text[pos] == 'e' || text[pos] == 'f' || text[pos] == 'g' ||
@@ -2795,15 +2806,19 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		return i;
+		//return i;
 		//if (i < 1) still = false; else return i;
 	}
 
 	//if (still)
 	//{
-	if (i < 1 || i > 192) i = defaultNoteLength;
-	i = 192 / i;
+	else if (i < 1 || i > 192) i = defaultNoteLength;
+	else i = 192 / i;
 
+	return getNoteLengthModifier(i);
+}
+
+int Music::getNoteLengthModifier(int i) {
 	int frac = i;
 
 	int times = 0;
@@ -2820,6 +2835,7 @@ int Music::getNoteLength(int i)
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
 	return i;
 }
+
 
 bool sortTempoPair(const std::pair<double, int> &p1, const std::pair<double, int> &p2)
 {
