@@ -393,6 +393,23 @@ int PCToSNES(int addr)
 	return addr;
 }
 
+bool findRATS(int offset)
+{
+	if (rom[offset] != 0x53) {
+		return false;
+	}
+	if (rom[offset+1] != 0x54) {
+		return false;
+	}
+	if (rom[offset+2] != 0x41) {
+		return false;
+	}
+	if (rom[offset+3] != 0x52) {
+		return false;
+	}
+	return true;
+}
+
 int clearRATS(int offset)
 {
 	int size = ((rom[offset + 5] << 8) | rom[offset+4]) + 8;

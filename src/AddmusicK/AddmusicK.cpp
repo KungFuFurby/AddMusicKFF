@@ -1953,7 +1953,7 @@ void tryToCleanAM4Data()
 
 void tryToCleanAMMData()
 {
-	if ((rom.size() % 0x8000 != 0 && rom[0x078200] == 0x53) || (rom.size() % 0x8000 == 0 && rom[0x078000] == 0x53))		// Since RATS tags only need to be in banks 0x10+, a tag here signals AMM usage.
+	if ((rom.size() % 0x8000 != 0 && findRATS(0x078200)) || (rom.size() % 0x8000 == 0 && findRATS(0x078000)))		// Since RATS tags only need to be in banks 0x10+, a tag here signals AMM usage.
 	{
 		if (rom.size() % 0x8000 == 0)
 			printError("AddmusicM ROMs can only be cleaned if they have a header. This does not\napply to any other aspect of the program.", true);
