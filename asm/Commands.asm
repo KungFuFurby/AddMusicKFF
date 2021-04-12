@@ -1175,9 +1175,8 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	cmp	a, #$c7			;  |(unless it's a rest)
-	bne	+			;  |
-	ret				;  |
-+	push	a			;  |
+	beq	.return2		;  |
+	push	a			;  |
 	mov	a, !runningArp		;  | If runningArp was set outside
 	eor	a, #$01			;  | of this routine, then remote
 	mov	!runningArp, a		;  | code event -2 should be able to
@@ -1189,12 +1188,13 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, $48			; \
 	push	a			; |
 	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162
-	pop	a
-	bne	.return			; |
+	and	a,$0162			; |
+	pop	a			; |
+	bne	.return2		; |
 +
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
+.return2
 	ret
 }	
 	
