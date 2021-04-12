@@ -1172,11 +1172,11 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
-
+if not(defined("noSFX"))
 	mov	a, $48
 	and	a, $1d
 	bne	.return2
-	
+endif
 	mov	a, !PreviousNote+x	; \ Play this note.
 	cmp	a, #$c7			;  |(unless it's a rest)
 	beq	.return2		;  |
