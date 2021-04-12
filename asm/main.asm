@@ -1411,13 +1411,9 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
 +	cmp	a, #$01			; 01 = jump SFX
-	beq	L_0A14			;
-	mov	a, $05			;
-	cmp	a, #$01			;
-	beq	ProcessAPU1SFX
-	mov	a, $01
+	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
-	beq	L_0A14
+	beq	CheckAPU1SFXPriority
 ;
 ProcessAPU1SFX:
 	mov	a, $05		; 
@@ -1444,6 +1440,25 @@ UnpauseMusic:
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, #$20		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, #$10		;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+$0e|$0100
+	bcc	ProcessAPU1SFX
+
+	mov	!ChSFXPriority+$0e|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
@@ -1478,9 +1493,11 @@ L_0A51:						;;;;;;;;/ Code change
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
-	mov	$05, #$00
 RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
 	clr1	$1d.7
+	mov	a, #$00
+	mov	!ChSFXPriority+$0e|$0100, a
 	mov	x, #$0e
 	jmp	RestoreInstrumentInformation
 L_0A68:
@@ -1560,7 +1577,6 @@ L_0B08:
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
-	mov	$05, #$00
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
