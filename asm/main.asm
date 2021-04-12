@@ -1279,8 +1279,8 @@ L_0A51:						;;;;;;;;/ Code change
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
-	mov	$05, #$00
 RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
 	clr1	$1d.7
 	mov	a, #$00
 	mov	!ChSFXPriority+$0e|$0100, a
@@ -1363,7 +1363,6 @@ L_0B08:
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
-	mov	$05, #$00
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
