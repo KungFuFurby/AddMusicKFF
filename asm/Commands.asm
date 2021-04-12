@@ -961,6 +961,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
+
+	mov	a, $48
+	and	a, $1d
+	bne	.return2
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
@@ -968,12 +972,13 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, $48			; \
 	push	a			; |
 	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162
-	pop	a
-	bne	.return			; |
+	and	a,$0162			; |
+	pop	a			; |
+	bne	.return2		; |
 +
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
+.return2
 	ret
 }	
 	
