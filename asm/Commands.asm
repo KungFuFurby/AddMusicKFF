@@ -11,7 +11,7 @@ cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 	
 	call	GetCommandData		; 
 SetInstrument:				; Call this to start playing the instrument in A.
-	mov	$10, #InstrumentTable	; \ $14w = the location of the instrument data.
+	mov	$10, #InstrumentTable	; \ $10w = the location of the instrument data.
 	mov	$11, #InstrumentTable>>8 ;/
 	mov	y, #$06			; Normal instruments have 6 bytes of data.
 	
@@ -113,7 +113,7 @@ RestoreMusicSample:
 UpdateInstr:
 	mov	y, #$06
 	mov	a, #$00
-	jmp	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
@@ -617,7 +617,7 @@ SubC_table:
 	dw	SubC_9
 
 SubC_0:
-	mov     $6e, #$20			; 
+	eor     $6e, #$20			; 
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 SubC_01:	
 	mov	a,#$01
@@ -790,7 +790,14 @@ SubC_table2:
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
-	bra	.modifyEchoDelay
+.modifyEchoDelay
+	push	a
+	or	!NCKValue, #$20
+	call	ModifyEchoDelay		; /
+	pop	a			;
+	mov	!MaxEchoDelay, a	;
+	ret				;
+
 +
 	mov	!EchoDelay, a		; \
 	mov	$f2, #$7d		; | Write the new delay.
@@ -801,14 +808,6 @@ SubC_table2:
 	jmp	ModifyNoise
 	
 	ret
-	
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
 	
 .gainRest
 	;call	GetCommandData
@@ -905,11 +904,24 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 
 .doStuff
 	mov	a, !ArpType+x		;
-	cmp	a, #$01			; \ If it's 1, then it's a trill
+	beq	.normal			;
+	mov	y, a
+	mov	a, !ArpCurrentDelta+x	;
+	cmp	y, #$01			; \ If it's 1, then it's a trill
 	beq	.trill			; /
-	cmp	a, #$02			; \ If it's 2, then it's a glissando.
-	beq	.glissando		; /
-.normal					; Otherwise (it's a 0), it's a normal arpeggio.
+	;cmp	y, #$02			; \ If it's 2, then it's a glissando.
+	;beq	.glissando		; /
+
+.glissando
+	clrc				; \
+	adc	a, !ArpSpecial+x	; |
+	bra	++			; /
+
+.trill
+	eor	a, !ArpSpecial+x	; \ Opposite note.
+	bra	++			; /
+
+.normal					; If it's 0, it's a normal arpeggio.
 	mov	a, !ArpNoteIndex+x	; \
 	inc	a			; / Increment the note index.
 	cmp	a, !ArpNoteCount+x	; \ 
@@ -927,7 +939,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, ($14)+y		; Get the current delta.
 	cmp	a, #$80			; \
 	beq	.setLoopPoint		; / If the current delta is #$80, then it's actually the loop point.
-	mov	!ArpCurrentDelta+x, a	; 
+++	mov	!ArpCurrentDelta+x, a	; 
 	bra	.playNote
 .setLoopPoint
 	inc	y			; \
@@ -938,6 +950,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
+
+	mov	a, $48
+	and	a, $1d
+	bne	.return2
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
@@ -945,27 +961,14 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, $48			; \
 	push	a			; |
 	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162
-	pop	a
-	bne	.return			; |
+	and	a,$0162			; |
+	pop	a			; |
+	bne	.return2		; |
 +
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
+.return2
 	ret
-	
-.trill
-	mov	a, !ArpCurrentDelta+x	; \ Opposite note.
-	eor	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
-.glissando
-	mov	a, !ArpCurrentDelta+x	; \
-	clrc				; |
-	adc	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
 }	
 	
 cmdFC:
