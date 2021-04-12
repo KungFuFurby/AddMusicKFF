@@ -2090,7 +2090,7 @@ L_10B4:							; |
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
 	bcs	+					; / So we have to key off in preparation
 	jmp	.L_10D1
-+:
++
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
 	incw	$14					; \
@@ -2110,11 +2110,11 @@ L_10B4:							; |
 	beq	.loopSection
 	cmp	a, #$e9
 	beq	.subroutine
--:
+-
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
 	mov	y, #$00					; |
-+:							; |
++							; |
 	clrc						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
