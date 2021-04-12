@@ -683,9 +683,15 @@ EndSFX:
 	bra	RestoreInstrumentInformation
 	
 .restoreMusicNoise:
+	mov	$1f, #$00
+	bbc7	$18, +
+	mov	a, $0383
+	or	a, $1c
+	bne	++
++
 	mov	a, #$00
-	mov	$1f, a
 	mov	!ChSFXPriority|$0100+x, a
+++
 	mov	a, !MusicNoiseChannels
 	and	a, $1a
 	beq	RestoreInstrumentInformation
