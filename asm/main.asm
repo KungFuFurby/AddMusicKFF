@@ -2057,6 +2057,7 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 {
 ;L_10AC:							;
 	;Scratch RAM usages ($14/$15 is in original, all others are new):
+	;$10 - Current note
 	;$11.7 - Subroutine entered
 	;        (and return address not initialized outside of readahead)
 	;$11.6 - Subroutine loop active
@@ -2123,18 +2124,18 @@ L_10B4:							; |
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
-	mov1	c, $11.6
+	mov1	c, $11.6	;Grab subroutine loop active flag...
 	notc
 	bbc7	$11, .subroutineNoPreviousEntry
-	mov1	$11.3, c
-	mov	$14, $12
+	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
+	mov	$14, $12	;Copy return address.
 	mov	$15, $13
 	bcs	L_10B4
-	clr1	$11.6
-	setc
+	clr1	$11.6		;Subroutine loop is no longer active.
+	setc			;We limit loops to one iteration to prevent excessive readahead iterations.
 	sbc	$14, #$03
 	sbc	$15, #$00
-	mov	a, ($14)+y
+	mov	a, ($14)+y	;Go back to the beginning of the subroutine pointer.
 	push	a
 	incw	$14
 	mov	a, ($14)+y
@@ -2153,11 +2154,11 @@ L_10B4:							; |
 	beq	.L_10D1
 	dec	a
 	mov1	$11.3, c
-	beq	.subroutineExit
-	bcc	.subroutineExit
-	clr1	$11.6
-	mov	a, $03f0+x
-	mov	$14, a
+	beq	.subroutineExit	;Branch if this was the last subroutine loop.
+	bcc	.subroutineExit	;Branch if subroutine was not exited...
+	clr1	$11.6		;Subroutine loop is no longer active.
+	mov	a, $03f0+x	;Restart subroutine just this once.
+	mov	$14, a		;We limit loops to one iteration to prevent excessive readahead iterations.
 	mov	a, $03f1+x
 	mov	$15, a
 	jmp	L_10B4
@@ -2177,15 +2178,15 @@ L_10B4:							; |
 	incw	$14
 	mov	a, ($14)+y
 	bne	.loopSectionNonZero
-	;Save return point for loop
-	set1	$11.5
+	;Save return point for loop.
+	set1	$11.5		;Loop section was entered.
 	incw	$14
 	mov	$16, $14
 	mov	$17, $15
 	jmp	L_10B4
 
 .subroutine:
-	set1	$11.7
+	set1	$11.7		;Subroutine has been entered.
 	incw	$14
 	mov	a, ($14)+y
 	push	a
@@ -2196,11 +2197,13 @@ L_10B4:							; |
 	mov	a, ($14)+y
 	cmp	a, #$01
 	beq	.subroutineNoLoop
-	set1	$11.6
+	set1	$11.6		;Subroutine loop is active.
 .subroutineNoLoop:
 	incw	$14
+	;Save return point for subroutine.
 	mov	$12, $14
 	mov	$13, $15
+	;Jump inside subroutine.
 	pop	a
 	mov	$15, a
 	pop	a
@@ -2234,14 +2237,14 @@ L_10B4:							; |
 	ret
 
 .loopSectionNonZero:
-	bbs4	$11, .loopSectionClearAndPassThrough
-	set1	$11.4
-	bbs5	$11, .loopSectionJumpFromScratchRAM
+	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
+	set1	$11.4	;Loop section is now active.
+	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
 	mov	a, $01f0+x
 	cmp	a, #$01
 	;$01 means that the loop section has been entered and terminated.
 	beq	.loopSectionPassThrough
-	
+	;Grab pre-existing return address and jump.
 	mov	a, $01e0+x
 	mov	$14, a
 	mov	a, $01e1+x
@@ -2254,7 +2257,7 @@ L_10B4:							; |
 	jmp	L_10B4
 
 .loopSectionClearAndPassThrough:
-	clr1	$11.4
+	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
 	jmp	L_10B4
