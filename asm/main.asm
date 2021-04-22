@@ -743,11 +743,17 @@ HandleSFXVoice:
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$da			; \ 
-	beq	.instrumentCommand	; / $DA is the instrument command.
+	bne	+			; |
+	jmp	.instrumentCommand	; / $DA is the instrument command.
++
 	cmp	a, #$dd			; \ 
-	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
++
 	cmp	a, #$eb			; \ 
-	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
++
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
@@ -769,11 +775,18 @@ HandleSFXVoice:
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	bra	.getMoreSFXData
+	jmp	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
+	push	a
+	mov	a, !InRest+x
+	pop	a
+	beq	+
+	call	KeyOffVoices
+	bra	.setNoteLength
++
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
