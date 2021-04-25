@@ -46,7 +46,7 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mul	ya			; \ 
 	addw	ya, $10			; |
 	movw	$14, ya			; /
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov   a, $48			; \ 
 	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
 	bne   .noSet			; /
@@ -949,7 +949,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48
 	and	a, $1d
 	bne	.return2
