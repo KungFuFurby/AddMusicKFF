@@ -21,6 +21,15 @@ includeonce
 
 ;=======================================
 ;---------------
+!noSFX = !false
+
+;Default setting: !false
+;---------------
+; Causes the sound driver to have no SFX-related code in it.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DFC = !true
 
 ;Default setting: !true
