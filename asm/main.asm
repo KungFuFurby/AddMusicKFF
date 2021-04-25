@@ -18,10 +18,7 @@
 !false = 0
 !true = 1
 
-!PSwitchIsSFX = !false		; If you set this to true, then the P-switch song will be a sound effect
-				; instead of a song that interrupts the current music.
-				; Note, however, that it is hardcoded and cannot be changed unless you
-				; do it yourself.
+incsrc "UserDefines.asm"
 
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
@@ -557,9 +554,14 @@ DDEEFix:
 	mov	y, a
 	mov	a, $90+x
 	beq	+
+-
 	mov	a, $02b0+x
 	bra	++
 +
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
 	mov	a, $02d1+x
 	mov	$02b0+x, a
 ++
