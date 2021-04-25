@@ -753,11 +753,17 @@ HandleSFXVoice:
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$da			; \ 
-	beq	.instrumentCommand	; / $DA is the instrument command.
+	bne	+			; |
+	jmp	.instrumentCommand	; / $DA is the instrument command.
++
 	cmp	a, #$dd			; \ 
-	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
++
 	cmp	a, #$eb			; \ 
-	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
++
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
@@ -779,11 +785,18 @@ HandleSFXVoice:
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	bra	.getMoreSFXData
+	jmp	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
+	push	a
+	mov	a, !InRest+x
+	pop	a
+	beq	+
+	call	KeyOffVoices
+	bra	.setNoteLength
++
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
@@ -1211,13 +1224,9 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
 +	cmp	a, #$01			; 01 = jump SFX
-	beq	L_0A14			;
-	mov	a, $05			;
-	cmp	a, #$01			;
-	beq	ProcessAPU1SFX
-	mov	a, $01
+	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
-	beq	L_0A14
+	beq	CheckAPU1SFXPriority
 ;
 ProcessAPU1SFX:
 	mov	a, $05		; 
@@ -1244,6 +1253,25 @@ UnpauseMusic:
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, #$20		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, #$10		;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+$0e|$0100
+	bcc	ProcessAPU1SFX
+
+	mov	!ChSFXPriority+$0e|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
@@ -1278,9 +1306,11 @@ L_0A51:						;;;;;;;;/ Code change
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
-	mov	$05, #$00
 RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
 	clr1	$1d.7
+	mov	a, #$00
+	mov	!ChSFXPriority+$0e|$0100, a
 	mov	x, #$0e
 	jmp	RestoreInstrumentInformation
 L_0A68:
@@ -1360,7 +1390,6 @@ L_0B08:
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
-	mov	$05, #$00
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
@@ -1522,18 +1551,21 @@ L_0B9C:
 L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
-	mov	a, !NCKValue		; \ 
-	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
-	mov	!NCKValue, a		; |
-	mov	a, #$00			; |
 if not(defined("noSFX"))
+	mov	a, !NCKValue		; \ 
+	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	mov	a, #$00			; | Only reset the noise clock if SFX is not using it.
++
 	call	ModifyNoise		; /
 	mov	a, $1d		
 	eor	a, #$ff		
 	;mov	y, #$5c
 	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
 else
-	jmp	ModifyNoise
+	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
+	jmp	ModifyNoise		; /
 endif
 ; fade volume out over 240 counts
 FadeOut:
