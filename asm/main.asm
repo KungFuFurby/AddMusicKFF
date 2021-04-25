@@ -558,10 +558,12 @@ DDEEFix:
 	mov	a, $02b0+x
 	bra	++
 +
+if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	-		; Don't adjust the pitch.
 	and	a, $1d
 	bne	-
+endif
 	mov	a, $02d1+x
 	mov	$02b0+x, a
 ++
