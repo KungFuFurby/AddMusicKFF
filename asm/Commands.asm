@@ -46,7 +46,7 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mul	ya			; \ 
 	addw	ya, $10			; |
 	movw	$14, ya			; /
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov   a, $48			; \ 
 	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
 	bne   .noSet			; /
@@ -75,7 +75,7 @@ endif
 	bra	++
 
 .noiseInstrument
-if not(defined("noSFX"))
+if !noSFX = !false
 	and	a, #$1f
 	mov	$0389, a
 	cmp	!SFXNoiseChannels, #$00
@@ -826,13 +826,13 @@ SyncInc_ret:
 
 SubC_1D:
 	mov	a, $48
-if not(defined("noSFX"))
+if !noSFX = !false
 	and	a, $1d
 	bne	SubC_1D_Ret
 	mov	a, $48
 endif
 	jmp	KeyOnVoices
-if not(defined("noSFX"))
+if !noSFX = !false
 SubC_1D_Ret:
 	ret
 endif
@@ -887,7 +887,7 @@ cmdF8:					; Noise command.
 Noiz:
 		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
-if not(defined("noSFX"))
+if !noSFX = !false
 		and	a, #$1f
 		mov	$0389, a
 		cmp	!SFXNoiseChannels, #$00
@@ -1172,7 +1172,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48
 	and	a, $1d
 	bne	.return2

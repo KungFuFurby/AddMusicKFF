@@ -190,7 +190,7 @@ MainLoop:
 	mov   y, $fd
 	beq   MainLoop             ; wait for counter 0 increment
 	push  y
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov   a, #$38
 	mul   ya
 	clrc
@@ -292,7 +292,7 @@ L_0573:
 	beq   L_058D
 	
 SoundTickOn:
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov   a, !PauseMusic
 	bne   L_0586
 endif
@@ -439,7 +439,7 @@ NoteVCMD:
 if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48
 	and	a, $1D
 	bne	L_05CD
@@ -482,7 +482,7 @@ NormalNote:						;;;;;;;;;;/ Code change
 	
 	mov	a, #$00
 	mov	!InRest+x, a
-if not(defined("noSFX"))	
+if !noSFX = !false	
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	NoPitchAdjust	; Don't adjust the pitch.
 endif
@@ -540,7 +540,7 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	L_062B		; Don't adjust the pitch.	
 endif
@@ -651,7 +651,7 @@ SetPitch:			;
 	mov	a, $17
 				; write A to DSP reg Y if vbit clear in $1d
 DSPWriteWithCheck:
-if not(defined("noSFX"))
+if !noSFX = !false
 	push	a
 	mov	a, $48
 	and	a, $1d
@@ -676,7 +676,7 @@ DDEEFix:
 	mov	a, $02b0+x
 	bra	++
 +
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	-		; Don't adjust the pitch.
 	and	a, $1d
@@ -712,7 +712,7 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 	xcn	a				; /
 	mov	$f2, a				;
 						
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $1d				; \ a = S
 	eor	a, #$ff				; | a = S'
 	and	a, !MusicPModChannels+x		; / a = S'M
@@ -741,7 +741,7 @@ endif
 
 
 }
-if not(defined("noSFX"))
+if !noSFX = !false
 ProcessSFX:				; Major code changes ahead.
 {					; Originally, the SMW SFX were handled within their port handling routines.
 					; This meant that there was a near duplicate copy of the 1DF9 code for 1DFC SFX.
@@ -872,7 +872,7 @@ RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore 
 .restoreSample				; \ 
 	jmp   RestoreMusicSample	; | Fix sample.
 }
-if not(defined("noSFX"))
+if !noSFX = !false
 HandleSFXVoice:
 {
 	setp
@@ -1655,7 +1655,7 @@ HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related
 	mov	a, $5e
 	call	KeyOffVoices
 	ret
-if not(defined("noSFX"))
+if !noSFX = !false
 EnableYoshiDrums:				; Enable Yoshi drums.
 	mov	a, #$01
 	bra	+
@@ -1685,7 +1685,7 @@ L_099C:
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	$1d, a
 endif
 	mov	a, !MaxEchoDelay	;
@@ -1702,7 +1702,7 @@ L_09CDWPreCheck:
 	dec	$91+x
 	bra	L_112A
 L_1119:
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
 	and	a, $48			; |
 	bne	L_112A			; /
@@ -1720,7 +1720,7 @@ L_112A:
 	ret
 
 ;
-if not(defined("noSFX"))
+if !noSFX = !false
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
@@ -1944,7 +1944,7 @@ PlaySong:
 	;mov	y, #$00		
 	;mov	$0387, y		; Zero out the tempo modifier.
 
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	!SFXEchoChannels, #$00
 endif
 
@@ -2000,7 +2000,7 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	$48, #$80
 endif
 L_0B6D:
@@ -2029,7 +2029,7 @@ L_0B6D:
 	mov	!ArpSpecial+x, a	; /
 	mov	!VolumeMult+x, a	
 	call	ClearRemoteCodeAddresses
-if not(defined("noSFX"))
+if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
 	mov	a, $1d
@@ -2040,7 +2040,7 @@ endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
 +
-if not(defined("noSFX"))
+if !noSFX = !false
 	lsr	$48
 endif
 	dec	x
@@ -2056,7 +2056,7 @@ endif
 	mov	$60, a             ; EchoVolumeFade = 0
 	mov	$52, a             ; TempoFade = 0
 	mov	$43, a             ; GlobalTranspose = 0
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	!PauseMusic, a		; Unpause the music, if it's been paused.
 	mov	!ProtectSFX6, a		; Protection against START + SELECT
 	mov	!ProtectSFX7, a		; Protection against START + SELECT
@@ -2082,7 +2082,7 @@ L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
 	mov	a, #$00
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	$0389, a
 
 	mov	a, !NCKValue		; \ 
@@ -2257,14 +2257,14 @@ L_0C9F:
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
 	push	a                 ; vcmd 80-d9 (note)
-if not(defined("noSFX"))	
+if !noSFX = !false	
 	mov	a, $48		; Current channel being processed.
 	and	a, $1d		; Check if there's a sound effect on the current channel.
 	mov	$10, a		; Save it. (Modified code up until the pop a).
 endif
 	mov	a, $48		; Current channel
 	and	a, $5e		; Check if this channel's music is muted.
-if not(defined("noSFX"))
+if !noSFX = !false
 	or	a, $10		; If it's muted or there's a sound effect playing...
 endif
 	mov	$10, a		; Save this status.
@@ -2390,7 +2390,7 @@ L_0D23:
 	dec	x
 	bpl	L_0D1C
 	mov	$5c, #$00          ; clear volchg flags
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $1d
 	eor	a, #$FF		;;;;;;;;;;;;;;;Code change
 	and	a, $47
@@ -2417,7 +2417,7 @@ KeyOnVoices:
 	ret
 
 KeyOffVoicesWithCheck:
-if not(defined("noSFX"))
+if !noSFX = !false
 	push	a
 	mov	a, $48
 	and	a, $1d
@@ -2428,7 +2428,7 @@ KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
 	jmp	DSPWrite
-if not(defined("noSFX"))
+if !noSFX = !false
 +
 	ret
 endif
@@ -2596,7 +2596,7 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48
 	and	a, !MusicNoiseChannels
 	beq	++
@@ -2917,7 +2917,7 @@ L_10A1:
 	
 	clr1	$13.7					;
 	mov	a, $90+x				;
-if not(defined("noSFX"))
+if !noSFX = !false
 	beq	L_10E4					;
 	mov	a, $48					;
 	and	a, $1d					;
@@ -2932,7 +2932,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
 	beq	L_10FB					; /
@@ -3282,7 +3282,7 @@ Start:
 	;mov	$0386, a
 	;mov	$0387, a
 	mov	!PauseMusic, a
-if not(defined("noSFX"))
+if !noSFX = !false
 	mov	$0389, a
 endif
 	mov	!MaxEchoDelay, a
