@@ -606,6 +606,10 @@ HandleSpecialSongs:
 	RTS
 	
 .powMusic
+	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
+	ora $1434|!SA1Addr2		;| (keyhole)
+	ora $14AB|!SA1Addr2		;| (bonus game)
+	bne +					;/ This prevents an issue with non-standard goal songs.
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	BNE .starMusic			;;; just play the star music
 	LDA !PSwitch
