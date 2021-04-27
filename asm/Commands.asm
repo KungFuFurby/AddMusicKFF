@@ -449,10 +449,9 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	or	a, #$20
-	mov	y, #$6c
-	mov	!NCKValue, a
-	jmp	DSPWrite             ; disable echo write, noise freq 0
+	mov	a, !NCKValue
+	or	!NCKValue, #$20           ; disable echo write
+	jmp	ModifyNoise
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -474,7 +473,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, #$00
+	mov	a, !NCKValue
 	call	ModifyNoise
 	
 	call	GetCommandData		; From here on is the normal code.
@@ -529,7 +528,7 @@ GetBufferAddress:
 	
 	
 ModifyEchoDelay:			; a should contain the requested delay.
-
+	mov	$10, !NCKValue
 	push	a			; Save the requested delay.
 	call	GetBufferAddress
 	push	y
@@ -560,7 +559,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	
 	mov	!NCKValue, #$00
-	mov	a, #$00
+	mov	a, $10
 	jmp	ModifyNoise
 	
 }
@@ -814,8 +813,8 @@ SubC_table2:
 	mov	$f2, #$7d		; | Write the new delay.
 	mov	$f3, a			; /
 	
+	mov	a, !NCKValue
 	and	!NCKValue, #$20
-	mov	a, #$00
 	jmp	ModifyNoise
 	
 	ret

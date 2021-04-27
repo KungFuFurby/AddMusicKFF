@@ -18,10 +18,7 @@
 !false = 0
 !true = 1
 
-!PSwitchIsSFX = !false		; If you set this to true, then the P-switch song will be a sound effect
-				; instead of a song that interrupts the current music.
-				; Note, however, that it is hardcoded and cannot be changed unless you
-				; do it yourself.
+incsrc "UserDefines.asm"
 
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
@@ -552,9 +549,14 @@ DDEEFix:
 	mov	y, a
 	mov	a, $90+x
 	beq	+
+-
 	mov	a, $02b0+x
 	bra	++
 +
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
 	mov	a, $02d1+x
 	mov	$02b0+x, a
 ++
@@ -792,11 +794,17 @@ HandleSFXVoice:
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$da			; \ 
-	beq	.instrumentCommand	; / $DA is the instrument command.
+	bne	+			; |
+	jmp	.instrumentCommand	; / $DA is the instrument command.
++
 	cmp	a, #$dd			; \ 
-	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
++
 	cmp	a, #$eb			; \ 
-	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
++
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
@@ -818,11 +826,18 @@ HandleSFXVoice:
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	bra	.getMoreSFXData
+	jmp	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
+	push	a
+	mov	a, !InRest+x
+	pop	a
+	beq	+
+	call	KeyOffVoices
+	bra	.setNoteLength
++
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
@@ -1734,9 +1749,11 @@ L_0BA5:
 	mov	a, #$00
 	mov	$0389, a
 	mov	a, !NCKValue		; \ 
-	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
-	mov	!NCKValue, a		; |
-	mov	a, #$00			; |
+	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	mov	a, #$00			; | Only reset the noise clock if SFX is not using it.
++
 	call	ModifyNoise		; /
 	mov	a, $1d		
 	eor	a, #$ff		
