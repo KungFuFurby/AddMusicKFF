@@ -1580,7 +1580,9 @@ if !noSFX = !false
 	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
 else
 	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
-	jmp	ModifyNoise		; /
+	call	ModifyNoise		; /
+	mov	a, #$ff
+	jmp	KeyOffVoices
 endif
 ; fade volume out over 240 counts
 FadeOut:
