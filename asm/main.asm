@@ -183,7 +183,6 @@ MainLoop:
 	mov   y, $fd
 	beq   MainLoop             ; wait for counter 0 increment
 	push  y
-if !noSFX = !false
 	mov   a, #$38
 	mul   ya
 	clrc
@@ -191,19 +190,21 @@ if !noSFX = !false
 	mov   $44, a
 	bcc   L_0573
 	inc   $45
-	
+if !noSFX = !false
 	call	ProcessSFX
-	
+endif
 	call  ProcessAPU1Input			; APU1 has to come first since it receives the "pause" sound effects that it pseudo-sends to APU0.
 	call  ProcessAPU0Input
+if !noSFX = !false
 	call  ProcessAPU3Input
+endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
 	mov   x, #$01
 	call  ReadInputRegister             ; read/send APU1
 	mov   x, #$03
 	call  ReadInputRegister             ; read/send APU3
-	
+if !noSFX = !false	
 	mov	a, !ProtectSFX6
 	beq	+
 	mov	$00, #$00
@@ -234,10 +235,8 @@ L_0573:
 	beq   L_058D
 	
 SoundTickOn:
-if !noSFX = !false
 	mov   a, !PauseMusic
 	bne   L_0586
-endif
 	call  ProcessAPU2Input		; Also handles playing the current music.
 L_0586:
 	mov   x, #$02
@@ -942,23 +941,30 @@ SFXTerminateCh:
 	mov	a, #$03
 	mov	!ChSFXNoteTimer|$0100+x, a
 	ret
-
+endif
 SpeedUpMusic:
 	mov	a, #$0a
 	mov	$0387, a
 	mov	a, $51
 	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
 	mov	$00, a
 	mov	a, #$00
 	mov	$04, a
 	mov	$07, a
+else
+	mov	a, #$00
+	mov	$00, a
+	mov	$04, a
+endif
 	;ret
 ;
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
+if !noSFX = !false
 	mov	x, #$0c				; \ 
 	mov	y, #$00				; | 
 	mov	$10, #$40			; | 
@@ -1108,10 +1114,10 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	setp
 	mov	!ChSFXNoteTimer+x, a		; Prevent an edge case.
 	clrp
+endif
 	ret
 
 }
-endif	
 
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
@@ -1132,7 +1138,7 @@ HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related
 	mov	a, $5e
 	call	KeyOffVoices
 	ret
-if !noSFX = !false
+
 EnableYoshiDrums:				; Enable Yoshi drums.
 	mov	a, #$01
 	bra	+
@@ -1143,8 +1149,10 @@ DisableYoshiDrums:				; And disable them.
 +
 	mov	$0386, a
 	call	HandleYoshiDrums
-
+if !noSFX = !false
 	jmp	ProcessAPU1SFX
+else
+	ret
 endif
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1206,7 +1214,7 @@ ForceSFXEchoOn:
 +	mov	!SFXEchoChannels, a
 	call	EffectModifier
 	bra	ProcessAPU1SFX
-	
+endif
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
 	cmp	a, #$ff
@@ -1215,10 +1223,13 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
+if !noSFX = !false
 	cmp	a, #$05			;
 	beq	ForceSFXEchoOff		;
 	cmp	a, #$06			;
 	beq	ForceSFXEchoOn		;
+;TODO modify pause so that it allows noSFX (this requires the ASM be removed
+;from the SFX)
 	cmp	a, #$07			; 07 pauses music
 	beq	PauseMusic		;
 	cmp	a, #$08			; 08 unpauses music
@@ -1413,8 +1424,8 @@ L_0B33:
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0B3F:
-	ret
 endif
+	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -1530,8 +1541,8 @@ endif
 	mov	$60, a             ; EchoVolumeFade = 0
 	mov	$52, a             ; TempoFade = 0
 	mov	$43, a             ; GlobalTranspose = 0
-if !noSFX = !false
 	mov	!PauseMusic, a		; Unpause the music, if it's been paused.
+if !noSFX = !false
 	mov	!ProtectSFX6, a		; Protection against START + SELECT
 	mov	!ProtectSFX7, a		; Protection against START + SELECT
 endif
