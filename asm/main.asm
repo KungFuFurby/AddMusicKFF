@@ -985,6 +985,8 @@ HandleSFXVoice:
 	cmp	a, $1f
 	bcc	.storeVolFromNoiseSetting
 	bne	.setNormalVol
+	cmp	x, #$0e
+	beq	.setNormalVol
 ;Now we scan the priorities of all channels higher than this one.
 	mov	$12, x
 -
