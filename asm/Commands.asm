@@ -670,7 +670,7 @@ SubC_D:
 	or	($6e), ($48)
 	eor	($6e), ($48)
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	mov	a,#$FE
+	mov	a,#$01
 	bra	SubC_04
 
 SubC_5:
@@ -688,8 +688,8 @@ SubC_19:
 SubC_18:
 	call	SubC_1B
 SubC_1A:
-	mov	a,#$FD
-	bra	SubC_03
+	mov	a,#$02
+	bra	SubC_04
 
 SubC_1:
 	mov	a, $0161
