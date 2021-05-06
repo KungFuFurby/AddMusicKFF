@@ -211,7 +211,7 @@ void Music::init()
 	channel = 0;
 	octave = 4;
 	prevNoteLength = -1;
-	defaultNoteLength = 8;
+	defaultNoteLength = 192/8;
 
 	prevLoop = -1;
 	i = 0;

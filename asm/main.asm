@@ -18,10 +18,7 @@
 !false = 0
 !true = 1
 
-!PSwitchIsSFX = !false		; If you set this to true, then the P-switch song will be a sound effect
-				; instead of a song that interrupts the current music.
-				; Note, however, that it is hardcoded and cannot be changed unless you
-				; do it yourself.
+incsrc "UserDefines.asm"
 
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
@@ -63,7 +60,7 @@
 ; $0150: Don't use
 ; $0151: Don't use
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
-; $0383: Some sort of a timer for the jump SFX.
+; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
 ; $0386: Set if Mario is on Yoshi.  
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
@@ -384,8 +381,8 @@ PercNote:
 	setc
 	sbc	a, #$d0
 	mov	y, #$07
-	mov	$14, #PercussionTable
-	mov	$15, #PercussionTable>>8
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
@@ -521,7 +518,7 @@ SetPitch:			;
 	addw	ya, $16
 	movw	$16, ya
 	mov	a, x               ; set voice X pitch DSP reg from $16/7
-	xcn	a                 ;  (if vbit clear in $1a)
+	xcn	a                 ;  (if vbit clear in $1d)
 	lsr	a
 	or	a, #$02
 	mov	y, a               ; Y = voice X pitch DSP reg
@@ -552,11 +549,17 @@ DDEEFix:
 	mov	y, a
 	mov	a, $90+x
 	beq	+
+-
 	mov	a, $02b0+x
-	ret
+	bra	++
 +
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
 	mov	a, $02d1+x
 	mov	$02b0+x, a
+++
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
@@ -661,8 +664,16 @@ EndSFX:
 					; Of course, that doesn't work so well when some channels don't map to input ports...
 				
 	
-	mov	a, $18			; \
+	mov	a, $18
+	bpl	+			
+	push	a
+	mov	a, $0383
+	or	a, $1c
+	pop	a
+	bne	++
++					; \
 	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
+++
 	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
@@ -734,11 +745,17 @@ HandleSFXVoice:
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$da			; \ 
-	beq	.instrumentCommand	; / $DA is the instrument command.
+	bne	+			; |
+	jmp	.instrumentCommand	; / $DA is the instrument command.
++
 	cmp	a, #$dd			; \ 
-	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
++
 	cmp	a, #$eb			; \ 
-	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
++
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
@@ -760,11 +777,18 @@ HandleSFXVoice:
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	bra	.getMoreSFXData
+	jmp	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
+	push	a
+	mov	a, !InRest+x
+	pop	a
+	beq	+
+	call	KeyOffVoices
+	bra	.setNoteLength
++
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
@@ -772,6 +796,11 @@ HandleSFXVoice:
 	mov     !ChSFXNoteTimer|$0100+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	clr1	$13.7			; I...still don't know what $13.7 does...
+	mov	a, $91+x
+	beq	+
+	dec	$91+x
+	ret
++
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
@@ -890,6 +919,17 @@ PSwitchCh7:
 	
 endif
 
+SFXTerminateVCMD:
+	db $00
+
+SFXTerminateCh:
+	mov	a, #SFXTerminateVCMD&$ff
+	mov	!ChSFXPtrs+x, a
+	mov	a, #SFXTerminateVCMD>>8
+	mov	!ChSFXPtrs+1+x, a
+	mov	a, #$03
+	mov	!ChSFXNoteTimer|$0100+x, a
+	ret
 
 SpeedUpMusic:
 	mov	a, #$0a
@@ -1172,13 +1212,9 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
 +	cmp	a, #$01			; 01 = jump SFX
-	beq	L_0A14			;
-	mov	a, $05			;
-	cmp	a, #$01			;
-	beq	ProcessAPU1SFX
-	mov	a, $01
+	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
-	beq	L_0A0E             ; (jmp $0ace)
+	beq	CheckAPU1SFXPriority
 ;
 ProcessAPU1SFX:
 	mov	a, $05		; 
@@ -1188,8 +1224,6 @@ ProcessAPU1SFX:
 	beq	L_0A11             ; (jmp $0b08)
 L_0A0D:
 	ret
-L_0A0E:
-	jmp	L_0ACE
 L_0A11:
 	jmp	L_0B08
 PauseMusic:
@@ -1207,16 +1241,36 @@ UnpauseMusic:
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
-; $01 = 01
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, #$20		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, #$10		;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+$0e|$0100
+	bcc	ProcessAPU1SFX
+
+	mov	!ChSFXPriority+$0e|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
-	mov	$0383, a	; / $0383 is a timer for the jump sound effect?
+	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
 	mov	a, #$80		; \ Key off channel 7.
 	
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
-	ret
+	mov	x, #$0e
+	jmp	SFXTerminateCh
+; $01 = 01
 L_0A2E:
 	dec	$0383
 	bne	L_0A0D
@@ -1240,20 +1294,13 @@ L_0A51:						;;;;;;;;/ Code change
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
-	mov	$05, #$00
 RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
 	clr1	$1d.7
+	mov	a, #$00
+	mov	!ChSFXPriority+$0e|$0100, a
 	mov	x, #$0e
-	mov	a, !BackupSRCN+$0e
-	bne	RestoreSample7
-	mov	a, $cf
-	beq	L_0A67
-	dec	a
-	jmp	SetInstrument			; Restore the current instrument on the channel?
-L_0A67:
-	ret
-RestoreSample7:
-	jmp	RestoreMusicSample
+	jmp	RestoreInstrumentInformation
 L_0A68:
 	call	L_0AB1
 	mov	a, #$b2
@@ -1310,20 +1357,9 @@ L_0ABC:
 	mov	$021e, a
 	ret
 ; $01 = 04 && $05 != 01
-L_0ACE:
-	mov	$05, a
-	mov	a, #$04
-	mov	$0383, a
-	mov	a, #$80
-	;mov	y, #$5c
-	call	KeyOffVoices             ; key off voice 7 now
-	set1	$1d.7
-L_0AE7:
-	ret
-;
 L_0AE8:
 	dec	$0383
-	bne	L_0AE7
+	bne	L_0B3F
 	mov	$1c, #$18
 	bra	L_0AF7
 L_0AF2:
@@ -1342,7 +1378,6 @@ L_0B08:
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
-	mov	$05, #$00
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
@@ -1492,9 +1527,11 @@ L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
 	mov	a, !NCKValue		; \ 
-	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
-	mov	!NCKValue, a		; |
-	mov	a, #$00			; |
+	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	mov	a, #$00			; | Only reset the noise clock if SFX is not using it.
++
 	call	ModifyNoise		; /
 	mov	a, $1d		
 	eor	a, #$ff		

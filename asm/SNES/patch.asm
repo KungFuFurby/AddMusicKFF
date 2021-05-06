@@ -1,5 +1,5 @@
-
-lorom
+;Don't stop program due to changing the mapper multiple times.
+warnings disable W1029
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -20,7 +20,7 @@ if !UsingSA1
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
 else
-	fastrom
+	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
 endif
@@ -606,6 +606,10 @@ HandleSpecialSongs:
 	RTS
 	
 .powMusic
+	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
+	ora $1434|!SA1Addr2		;| (keyhole)
+	ora $14AB|!SA1Addr2		;| (bonus game)
+	bne +					;/ This prevents an issue with non-standard goal songs.
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	BNE .starMusic			;;; just play the star music
 	LDA !PSwitch
