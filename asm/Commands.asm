@@ -653,8 +653,8 @@ SubC_table:
 
 SubC_0:
 	eor     $6e, #$20			; 
+SubC_01:
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
-SubC_01:	
 	mov	a,#$01
 SubC_00:
 	eor	a,$0160
@@ -672,7 +672,6 @@ SubC_04:
 
 SubC_6:
 	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
 	bra	SubC_01
 
 SubC_C:
