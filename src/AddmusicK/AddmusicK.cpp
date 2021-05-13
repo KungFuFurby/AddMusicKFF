@@ -1557,8 +1557,8 @@ void generateSPCs()
 				SPC[0xAF] = '0';
 				SPC[0xB0] = '0';
 
-				SPC[0x25] = programUploadPos & 0xFF;	// Set the PC to the main loop.
-				SPC[0x26] = programUploadPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
+				SPC[0x25] = mainLoopPos & 0xFF;	// Set the PC to the main loop.
+				SPC[0x26] = mainLoopPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
 
 				i = backupIndex;
 
