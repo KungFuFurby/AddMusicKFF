@@ -1176,17 +1176,17 @@ if !noSFX = !false
 	and	a, $1d
 	bne	.return2
 endif
-	mov	a, !PreviousNote+x	; \ Play this note.
-	cmp	a, #$c7			;  |(unless it's a rest)
-	beq	.return2		;  |
-	push	a			;  |
-	mov	a, !runningArp		;  | If runningArp was set outside
-	eor	a, #$01			;  | of this routine, then remote
-	mov	!runningArp, a		;  | code event -2 should be able to
-	pop	a			;  | fire.
-	call	NoteVCMD		;  |
-	mov	a, #$00			;  |
-	mov	!runningArp, a		; /
+	mov	a, !PreviousNote+x		; \ Play this note.
+	cmp	a, #$c7				;  |(unless it's a rest)
+	beq	.return2			;  |
+	push	a				;  |
+	mov	a, NormalNote_runningArpGate+1	;  | If runningArp was set outside
+	eor	a, #!runningArpGateOnJumpDistance;  | of this routine, then remote
+	mov	NormalNote_runningArpGate+1, a	;  | code event -2 should be able to
+	pop	a				;  | fire.
+	call	NoteVCMD			;  |
+	mov	a, #$00				;  |
+	mov	NormalNote_runningArpGate+1, a	; /
 	
 	mov	a, $48			; \
 	push	a			; |
