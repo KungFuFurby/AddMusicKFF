@@ -1057,6 +1057,7 @@ ClearRemoteCodeAddresses:
 	mov	!remoteCodeTimeValue+x, a
 	mov	!remoteCodeTimeLeft+x, a
 	mov	!remoteCodeType+x, a
+	mov	!remoteCodeType2+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
 	mov	!runningRemoteCode, a
