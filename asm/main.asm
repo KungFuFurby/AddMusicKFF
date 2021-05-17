@@ -1420,6 +1420,8 @@ L_0B5A:
 	mov	$06, a		; Song number goes into $06.
 	push	a
 	; MODIFIED CODE START
+	mov	a, #!runningArpGateOnJumpDistance
+	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
 	mov	a,#$00			; Clear various new addresses.
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
