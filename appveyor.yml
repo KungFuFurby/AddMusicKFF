@@ -3,36 +3,55 @@ version: 1.0.8.{build}
 for:
   -
     branches:
+      only:
+        - master
+    build:
+      verbosity: minimal
+    artifacts:
+      - path: AMKFF_latest.zip
+  -
+    branches:
+      only:
+        - bleeding-edge
+    build:
+      verbosity: minimal
+    artifacts:
+      - path: AMKFF_latestbeta.zip
+  -
+    branches:
       except:
         - master
+        - bleeding-edge
     only_commits:
       files:
         - src/
         - .appveyor.yml
     build:
       verbosity: minimal
-  -
-    branches:
-      only:
-        - master
-    build:
-      verbosity: minimal
+    artifacts:
+      - path: AMKFF_testbuild.zip
 
 configuration: Release
 
 after_build:
   - ps: .\zip_script.ps1
   
-artifacts:
-  - path: AMKFF_latest.zip
-  
 deploy:
-  provider: FTP
-  on:
-    branch: master
-  protocol: sftp
-  host: www.atarismwc.com
-  folder: html/amkff_releases/
-  username: pi
-  password:
-    secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: master
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: bleeding-edge
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==

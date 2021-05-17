@@ -393,6 +393,23 @@ int PCToSNES(int addr)
 	return addr;
 }
 
+bool findRATS(int offset)
+{
+	if (rom[offset] != 0x53) {
+		return false;
+	}
+	if (rom[offset+1] != 0x54) {
+		return false;
+	}
+	if (rom[offset+2] != 0x41) {
+		return false;
+	}
+	if (rom[offset+3] != 0x52) {
+		return false;
+	}
+	return true;
+}
+
 int clearRATS(int offset)
 {
 	int size = ((rom[offset + 5] << 8) | rom[offset+4]) + 8;
@@ -475,6 +492,21 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 				sampleToIndex[name] = i;
 				music->mySamples.push_back(i);
 				return;
+			}
+		}
+		fs::path p1 = "./"+newSample.name;
+		//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
+		for (int i = 0; i < bankDefines.size(); i++)
+		{
+			for (int j = 0; j < bankDefines[i]->samples.size(); j++)
+			{
+				fs::path p2 = "./samples/"+*(bankDefines[i]->samples[j]);
+				if (fs::equivalent(p1, p2))
+				{
+					//Copy the important flag from the sample group definition.
+					newSample.important = bankDefines[i]->importants[j];
+					break;
+				}
 			}
 		}
 	}
