@@ -638,58 +638,54 @@ SubC_table:
 
 SubC_0:
 	eor     $6e, #$20			; 
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-SubC_01:	
-	mov	a,#$01
 SubC_00:
-	eor	a,$0160
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	mov	a,#$01
+	push	a
+	mov	a,$6e
+	pop	a
+	beq	SubC_02
+
+SubC_01:
+	tset	$0160, a
+	ret
+
 SubC_02:
-	mov	$0160,a
+	tclr	$0160, a
 	ret
 
 SubC_03:
-	tset	$0160,a
+	eor	a,$0160
+	mov	$0160,a
 	ret
-
-SubC_04:
-	tclr	$0160,a
-	ret
-
-SubC_6:
-	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	bra	SubC_01
-
-SubC_C:
-	or	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	mov	a,#$01
-	bra	SubC_03
 
 SubC_D:
 	or	($6e), ($48)
+SubC_6:
 	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	mov	a,#$01
-	bra	SubC_04
+	bra	SubC_00
+
+SubC_C:
+	or	($6e), ($48)
+	bra	SubC_00
 
 SubC_5:
 	call	SubC_1B
 SubC_16:
 	mov	a,#$02
-	bra	SubC_00
+	bra	SubC_03
 
 SubC_17:
 	call	SubC_1B
 SubC_19:
 	mov	a,#$02
-	bra	SubC_03
+	bra	SubC_01
 
 SubC_18:
 	call	SubC_1B
 SubC_1A:
 	mov	a,#$02
-	bra	SubC_04
+	bra	SubC_02
 
 SubC_1:
 	mov	a, $0161

@@ -494,6 +494,21 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 				return;
 			}
 		}
+		fs::path p1 = "./"+newSample.name;
+		//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
+		for (int i = 0; i < bankDefines.size(); i++)
+		{
+			for (int j = 0; j < bankDefines[i]->samples.size(); j++)
+			{
+				fs::path p2 = "./samples/"+*(bankDefines[i]->samples[j]);
+				if (fs::equivalent(p1, p2))
+				{
+					//Copy the important flag from the sample group definition.
+					newSample.important = bankDefines[i]->importants[j];
+					break;
+				}
+			}
+		}
 	}
 	sampleToIndex[newSample.name] = samples.size();
 	music->mySamples.push_back(samples.size());
