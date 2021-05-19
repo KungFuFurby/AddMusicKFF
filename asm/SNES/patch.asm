@@ -94,7 +94,7 @@ endif
 !MusicBackup = $0DDA|!SA1Addr2
 
 
-!DefARAMRet = $044E	; This is the address that the SPC will jump to after uploading a block of data normally.
+!DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 !TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
