@@ -114,8 +114,9 @@ int main(int argc, char* argv[]) try		// // //
 			sfxDump = true;
 		else if (arguments[i] == "-visualize")
 			visualizeSongs = true;
-		else if (arguments[i] == "-g")
-			forceSPCGeneration = true;
+		//else if (arguments[i] == "-g")
+			//Removed because it was de-facto never functional due to the code this relied on being dummied out.
+			//forceSPCGeneration = true;
 		else if (arguments[i] == "-noblock")
 			forceNoContinuePrompt = true;
 		else if (arguments[i] == "-streamredirect")
@@ -210,16 +211,16 @@ int main(int argc, char* argv[]) try		// // //
 	loadMusicList();
 	loadSFXList();
 
-	checkMainTimeStamps();
+	//checkMainTimeStamps();
 
 	assembleSNESDriver();		// We need this for the upload position, where the SPC file's PC starts.  Luckily, this function is very short.
 
-	if (recompileMain || forceSPCGeneration)
-	{
-		assembleSPCDriver();
-		compileSFX();
-		compileGlobalData();
-	}
+	//if (recompileMain || forceSPCGeneration)
+	//{
+	assembleSPCDriver();
+	compileSFX();
+	compileGlobalData();
+	//}
 
 	if (justSPCsPlease)
 	{
@@ -1037,12 +1038,12 @@ void compileMusic()
 	{
 		if (musics[i].exists)
 		{
-			if (!(i <= highestGlobalSong && !recompileMain))
-			{
-				musics[i].index = i;
-				musics[i].compile();
-				totalSamplecount += musics[i].mySamples.size();
-			}
+			//if (!(i <= highestGlobalSong && !recompileMain))
+			//{
+			musics[i].index = i;
+			musics[i].compile();
+			totalSamplecount += musics[i].mySamples.size();
+			//}
 		}
 	}
 
@@ -1321,26 +1322,26 @@ void fixMusicPointers()
 		}
 	}
 
-	if (recompileMain)
-	{
-		std::string patch;
-		openTextFile("asm/tempmain.asm", patch);
+	//if (recompileMain)
+	//{
+	std::string patch;
+	openTextFile("asm/tempmain.asm", patch);
 
-		patch += globalPointers.str() + "\n" + incbins.str();
+	patch += globalPointers.str() + "\n" + incbins.str();
 
-		writeTextFile("asm/tempmain.asm", patch);
+	writeTextFile("asm/tempmain.asm", patch);
 
-		if (verbose)
-			std::cout << "Compiling main SPC program, final pass." << std::endl;
+	if (verbose)
+		std::cout << "Compiling main SPC program, final pass." << std::endl;
 
-		//removeFile("asm/SNES/bin/main.bin");
+	//removeFile("asm/SNES/bin/main.bin");
 
-		//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
+	//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
 
-		//if (fileExists("temp.log"))
-		if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
-			printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
-	}
+	//if (fileExists("temp.log"))
+	if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
+		printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
+	//}
 
 	programSize = getFileSize("asm/SNES/bin/main.bin");
 
@@ -1428,7 +1429,7 @@ void generateSPCs()
 	int SPCsGenerated = 0;
 
 	bool forceAll = false;
-
+	/*
 	time_t recentMod = 0;			// If any main program modifications were made, we need to update all SPCs.
 	for (int i = 1; i <= highestGlobalSong; i++)
 		recentMod = std::max(recentMod, getTimeStamp((File)("music/" + musics[i].name)));
@@ -1452,7 +1453,7 @@ void generateSPCs()
 		if (soundEffects[1][i].exists)
 			recentMod = std::max(recentMod, getTimeStamp((File)((std::string)"1DFC/" + soundEffects[1][i].getEffectiveName())));
 	}
-
+	*/
 	int mode = 0;		// 0 = dump music, 1 = dump SFX1, 2 = dump SFX2
 	int maxMode = 0;
 	if (sfxDump == true) maxMode = 2;
@@ -1974,7 +1975,7 @@ void checkMainTimeStamps()			// Disabled for now, as this only works if the ROM 
 	return;
 
 
-
+	/*
 	if (!fileExists("asm/SNES/bin/main.bin"))
 	{
 		goto recompile;				// Laziness!
@@ -2021,6 +2022,7 @@ recompile:
 	{
 		recompileMain = false;
 	}
+	*/
 }
 
 void generatePNGs()
