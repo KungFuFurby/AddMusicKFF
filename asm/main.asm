@@ -351,9 +351,7 @@ if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
 if !noSFX = !false
-	mov	a, $48
-	and	a, $1D
-	bne	L_05CD
+	call	TerminateIfSFXPlaying
 endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
@@ -1503,12 +1501,12 @@ CheckAPU1SFXPriority:
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
 	bne	+
-	mov	y, #$20		;Priority for jump SFX
+	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
 	bra	.gotPriority
 +
 	;cmp	a, #$04
 	;bne	+
-	mov	y, #$10		;Priority for girder SFX
+	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
 	;bra	.gotPriority
 +
 

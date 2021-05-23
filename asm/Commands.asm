@@ -1,5 +1,15 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+TerminateIfSFXPlaying:
+	mov	a, $48
+	and	a, $1d
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
 	mov	x, $46			;;; get channel*2 in X
@@ -47,10 +57,8 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	addw	ya, $10			; |
 	movw	$14, ya			; /
 if !noSFX = !false
-	mov   a, $48			; \ 
-	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
-	bne   .noSet			; /
-endif	
+	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
+endif
 	call	GetBackupInstrTable
 	
 	push	x			; \ 
@@ -109,7 +117,6 @@ endif
 	call	EffectModifier
 	pop	a
 
-.noSet
 	ret
 	
 RestoreMusicSample:
@@ -975,9 +982,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
 if !noSFX = !false
-	mov	a, $48
-	and	a, $1d
-	bne	.return2
+	call	TerminateIfSFXPlaying
 endif
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /

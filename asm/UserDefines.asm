@@ -1,7 +1,7 @@
 ;The following ASM file is shared between the SPC700-side and SNES-side
 ;code. Some defines will only affect the SPC700 side, and some will only
 ;affect the SNES-side, but all of them are stored here for the sake of
-;having the stored in a consistent location.
+;having them stored in a consistent location.
 
 includeonce
 
@@ -78,6 +78,26 @@ includeonce
 ;Vanilla SMW setting: !false
 ;---------------
 ; Change this to !true to move the grinder sound effect to 1DFC.
+;=======================================
+
+;=======================================
+;---------------
+!JumpSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$20
+;---------------
+; Sets the priority for the jump SFX in 1DFA.
+;=======================================
+
+;=======================================
+;---------------
+!GirderSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$10
+;---------------
+; Sets the priority for the girder SFX in 1DFA.
 ;=======================================
 
 ;=======================================
