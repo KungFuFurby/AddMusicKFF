@@ -830,17 +830,11 @@ SyncInc_ret:
 
 
 SubC_1D:
-	mov	a, $48
 if !noSFX = !false
-	and	a, $1d
-	bne	SubC_1D_Ret
-	mov	a, $48
+	call	TerminateIfSFXPlaying
 endif
+	mov	a, $48
 	jmp	KeyOnVoices
-if !noSFX = !false
-SubC_1D_Ret:
-	ret
-endif
 
 SubC_1E:
 	mov	a, $48
