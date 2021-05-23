@@ -1,5 +1,5 @@
-
-lorom
+;Don't stop program due to changing the mapper multiple times.
+warnings disable W1029
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -20,7 +20,7 @@ if !UsingSA1
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
 else
-	fastrom
+	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
 endif
@@ -94,7 +94,7 @@ endif
 !MusicBackup = $0DDA|!SA1Addr2
 
 
-!DefARAMRet = $044E	; This is the address that the SPC will jump to after uploading a block of data normally.
+!DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 !TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
