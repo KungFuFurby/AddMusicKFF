@@ -1,7 +1,7 @@
 ;The following ASM file is shared between the SPC700-side and SNES-side
 ;code. Some defines will only affect the SPC700 side, and some will only
 ;affect the SNES-side, but all of them are stored here for the sake of
-;having the stored in a consistent location.
+;having them stored in a consistent location.
 
 includeonce
 
