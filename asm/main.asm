@@ -437,9 +437,7 @@ if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
 if !noSFX = !false
-	mov	a, $48
-	and	a, $1D
-	bne	L_05CD
+	call	TerminateIfSFXPlaying
 endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
