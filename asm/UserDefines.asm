@@ -29,6 +29,19 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!noiseFrequencySFXInstanceResolution = !false
+
+;Default setting: !false
+;---------------
+; Adds in code that resolves noise frequency conflicts between SFX
+; instances.
+; Not needed unless you're using noise SFX across more than one channel.
+; Vanilla SMW doesn't use noise SFX across more than one channel.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DF9 = !false
 
 ;Default setting: !false
