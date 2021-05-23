@@ -800,13 +800,9 @@ SyncInc_ret:
 
 
 SubC_1D:
-	mov	a, $48
-	and	a, $1d
-	bne	SubC_1D_Ret
+	call	TerminateIfSFXPlaying
 	mov	a, $48
 	jmp	KeyOnVoices
-SubC_1D_Ret:
-	ret
 
 SubC_1E:
 	mov	a, $48
