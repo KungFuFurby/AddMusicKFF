@@ -677,13 +677,13 @@ EndSFX:
 	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
-
+if !noiseFrequencySFXInstanceResolution = !true
 	cmp	!SFXNoiseChannels, #$00
 	beq	.restoreMusicNoise
 	call	SetSFXNoise
 	call	ModifyNoise
 	bra	RestoreInstrumentInformation
-	
+endif
 .restoreMusicNoise:
 	mov	$1f, #$00
 	bbc7	$18, +
@@ -768,13 +768,17 @@ HandleSFXVoice:
 	xcn	a			; | Put the left volume DSP register for this channel into y.
 	mov	y, a			; |
 	pop	a			; |
+if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ; |
+endif
 	call	DSPWrite		; / Set the volume for the left speaker.
 	inc	y			; \
 	call	DSPWrite		; / Set the volume for the right speaker.  We might change it later, but this saves space.
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
+if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ;
+endif
 	call	DSPWrite		; > Set the volume for the right speaker.
 	call	GetNextSFXByte		;
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
@@ -892,7 +896,9 @@ HandleSFXVoice:
 	
 	mov	a, $18			; \ Disable noise for this channel.
 	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
+if !noiseFrequencySFXInstanceResolution = !true
 	tclr	$1a, a
+endif
 
 .getInstrumentByte
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
@@ -917,6 +923,7 @@ HandleSFXVoice:
 	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
+if !noiseFrequencySFXInstanceResolution = !true
 	mov	$01f1+x, a
 	or	(!SFXNoiseChannels), ($18)
 	cmp	!SFXNoiseChannels, $18
@@ -927,6 +934,7 @@ HandleSFXVoice:
 .noiseNoPrevSFXFrequency
 	mov	$1f, #$00
 	mov	$1e, a
+endif
 	;All music channels with noise need to have their VxVOL values
 	;zeroed out here if the frequency is not a match.
 .noiseCheckMusic
@@ -972,7 +980,7 @@ HandleSFXVoice:
 .noiseSetFreq
 	call	ModifyNoise
 	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
-
+if !noiseFrequencySFXInstanceResolution = !true
 .setVolFromNoiseSetting
 	mov	$11, a
 	mov	a, $18
@@ -1093,7 +1101,7 @@ SetSFXNoise:
 
 	pop	x
 	ret
-
+endif
 }
 
 if !PSwitchIsSFX = !true
