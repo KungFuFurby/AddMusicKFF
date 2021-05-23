@@ -1,7 +1,7 @@
 ;The following ASM file is shared between the SPC700-side and SNES-side
 ;code. Some defines will only affect the SPC700 side, and some will only
 ;affect the SNES-side, but all of them are stored here for the sake of
-;having the stored in a consistent location.
+;having them stored in a consistent location.
 
 includeonce
 
@@ -21,11 +21,44 @@ includeonce
 
 ;=======================================
 ;---------------
+!noiseFrequencySFXInstanceResolution = !false
+
+;Default setting: !false
+;---------------
+; Adds in code that resolves noise frequency conflicts between SFX
+; instances.
+; Not needed unless you're using noise SFX across more than one channel.
+; Vanilla SMW doesn't use noise SFX across more than one channel.
+;=======================================
+
+;=======================================
+;---------------
+!JumpSFXOn1DF9 = !false
+
+;Default setting: !false
+;Vanilla SMW setting: !false
+;---------------
+; Change this to !true to move the jump sound effect to 1DF9.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DFC = !true
 
 ;Default setting: !true
+;Vanilla SMW setting: !false
 ;---------------
-; Change this to !true to move the jump sound effect from 1DF9 to 1DFC.
+; Change this to !true to move the jump sound effect to 1DFC.
+;=======================================
+
+;=======================================
+;---------------
+!GrinderSFXOn1DF9 = !true
+
+;Default setting: !true
+;Vanilla SMW setting: !false
+;---------------
+; Change this to !true to move the grinder sound effect to 1DF9.
 ;=======================================
 
 ;=======================================
@@ -33,8 +66,29 @@ includeonce
 !GrinderSFXOn1DFC = !false
 
 ;Default setting: !false
+;Vanilla SMW setting: !false
 ;---------------
-; Change this to !true to move the grinder sound effect from 1DF9 to 1DFC.
+; Change this to !true to move the grinder sound effect to 1DFC.
+;=======================================
+
+;=======================================
+;---------------
+!JumpSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$20
+;---------------
+; Sets the priority for the jump SFX in 1DFA.
+;=======================================
+
+;=======================================
+;---------------
+!GirderSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$10
+;---------------
+; Sets the priority for the girder SFX in 1DFA.
 ;=======================================
 
 ;=======================================

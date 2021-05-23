@@ -1,5 +1,15 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+TerminateIfSFXPlaying:
+	mov	a, $48
+	and	a, $1d
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
 	mov	x, $46			;;; get channel*2 in X
@@ -47,9 +57,7 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	addw	ya, $10			; |
 	movw	$14, ya			; /
 
-	mov   a, $48			; \ 
-	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
-	bne   .noSet			; /
+	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
 	
 	call	GetBackupInstrTable
 	
@@ -68,18 +76,24 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	
 	mov	($10)+y, a		; (save it in the backup table)
 	
-	bpl	+			; If the byte was positive, then it was a sample.  Just write it like normal.
+	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
+
+	and	a, #$1f
+	mov	$0389, a
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
 	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
++
 	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
 -
 	mov	a, ($14)+y		; \ 
-+	mov	$f2, x			; | 	
+++	mov	$f2, x			; | 	
 	mov	$f3, a			; |
 	mov	($10)+y, a		; |
 	inc	x			; | This loop will write to the correct DSP registers for this instrument.
@@ -103,7 +117,6 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	call	EffectModifier
 	pop	a
 
-.noSet
 	ret
 	
 RestoreMusicSample:
@@ -845,7 +858,12 @@ cmdF8:					; Noise command.
 Noiz:
 		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
 		call	ModifyNoise
++
 		jmp	EffectModifier		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1110,9 +1128,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
 
-	mov	a, $48
-	and	a, $1d
-	bne	.return2
+	call	TerminateIfSFXPlaying
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /

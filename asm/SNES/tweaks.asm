@@ -381,7 +381,7 @@ if !JumpSFXOn1DFC == !true
 	org $00DBA5
 	LDA #$35
 	STA $1DFC|!SA1Addr2
-else
+elseif !JumpSFXOn1DF9 == !true
 	org $00D65E
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
@@ -404,7 +404,7 @@ if !GrinderSFXOn1DFC == !true
 	org $0392B8
 	LDA #$36
 	STA $1DFC|!SA1Addr2
-else
+elseif !GrinderSFXOn1DF9 == !true
 	org $01D745
 	LDA #$2D
 	STA $1DF9|!SA1Addr2
