@@ -1,4 +1,6 @@
-$E0 $20
+;Uncomment to use vanilla priority
+;(NOTE: this is not the original location that this SFX was used in!)
+;$E0 $20
 $DA $08
 $05 $38
 $DD $B2 $00 $05 $B5

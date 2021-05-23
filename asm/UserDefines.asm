@@ -60,6 +60,26 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!JumpSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$20
+;---------------
+; Sets the priority for the jump SFX in 1DFA.
+;=======================================
+
+;=======================================
+;---------------
+!GirderSFX1DFAPriority = #$00
+
+;Default setting: #$00
+;Vanilla SMW setting: #$10
+;---------------
+; Sets the priority for the girder SFX in 1DFA.
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,
