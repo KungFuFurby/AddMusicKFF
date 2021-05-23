@@ -1,5 +1,6 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+if !noSFX = !false
 TerminateIfSFXPlaying:
 	mov	a, $48
 	and	a, $1d
@@ -9,6 +10,7 @@ TerminateIfSFXPlaying:
 	pop	a	;terminate the entire preceding routine.
 +
 	ret
+endif
 
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
