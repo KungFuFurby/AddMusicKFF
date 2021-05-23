@@ -34,6 +34,7 @@ includeonce
 
 ;Default setting: !false
 ;---------------
+; Requires SFX code to actually be present (!noSFX is false).
 ; Adds in code that resolves noise frequency conflicts between SFX
 ; instances.
 ; Not needed unless you're using noise SFX across more than one channel.
