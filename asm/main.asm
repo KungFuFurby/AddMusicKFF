@@ -1804,12 +1804,12 @@ CheckAPU1SFXPriority:
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
 	bne	+
-	mov	y, #$20		;Priority for jump SFX
+	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
 	bra	.gotPriority
 +
 	;cmp	a, #$04
 	;bne	+
-	mov	y, #$10		;Priority for girder SFX
+	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
 	;bra	.gotPriority
 +
 
