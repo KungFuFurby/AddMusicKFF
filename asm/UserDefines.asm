@@ -21,11 +21,32 @@ includeonce
 
 ;=======================================
 ;---------------
+!JumpSFXOn1DF9 = !false
+
+;Default setting: !false
+;Vanilla SMW setting: !false
+;---------------
+; Change this to !true to move the jump sound effect to 1DF9.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DFC = !true
 
 ;Default setting: !true
+;Vanilla SMW setting: !false
 ;---------------
-; Change this to !true to move the jump sound effect from 1DF9 to 1DFC.
+; Change this to !true to move the jump sound effect to 1DFC.
+;=======================================
+
+;=======================================
+;---------------
+!GrinderSFXOn1DF9 = !true
+
+;Default setting: !true
+;Vanilla SMW setting: !false
+;---------------
+; Change this to !true to move the grinder sound effect to 1DF9.
 ;=======================================
 
 ;=======================================
@@ -33,8 +54,9 @@ includeonce
 !GrinderSFXOn1DFC = !false
 
 ;Default setting: !false
+;Vanilla SMW setting: !false
 ;---------------
-; Change this to !true to move the grinder sound effect from 1DF9 to 1DFC.
+; Change this to !true to move the grinder sound effect to 1DFC.
 ;=======================================
 
 ;=======================================
