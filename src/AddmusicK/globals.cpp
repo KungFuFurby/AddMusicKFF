@@ -494,18 +494,21 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 				return;
 			}
 		}
-		fs::path p1 = "./"+newSample.name;
-		//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
-		for (int i = 0; i < bankDefines.size(); i++)
-		{
-			for (int j = 0; j < bankDefines[i]->samples.size(); j++)
+		//BNK files don't qualify for the next check. 
+		if (newSample.name.find("__SRCNBANKBRR", 0) == -1) {
+			fs::path p1 = "./"+newSample.name;
+			//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
+			for (int i = 0; i < bankDefines.size(); i++)
 			{
-				fs::path p2 = "./samples/"+*(bankDefines[i]->samples[j]);
-				if (fs::equivalent(p1, p2))
+				for (int j = 0; j < bankDefines[i]->samples.size(); j++)
 				{
-					//Copy the important flag from the sample group definition.
-					newSample.important = bankDefines[i]->importants[j];
-					break;
+					fs::path p2 = "./samples/"+*(bankDefines[i]->samples[j]);
+					if (fs::equivalent(p1, p2))
+					{
+						//Copy the important flag from the sample group definition.
+						newSample.important = bankDefines[i]->importants[j];
+						break;
+					}
 				}
 			}
 		}
