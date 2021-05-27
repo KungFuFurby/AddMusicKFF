@@ -921,9 +921,9 @@ endif
 	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
+	or	(!SFXNoiseChannels), ($18)
 if !noiseFrequencySFXInstanceResolution = !true
 	mov	$01f1+x, a
-	or	(!SFXNoiseChannels), ($18)
 	cmp	!SFXNoiseChannels, $18
 	beq	.noiseNoPrevSFXFrequency
 	call	SetSFXNoise
