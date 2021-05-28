@@ -442,13 +442,11 @@ void addSample(const File &fileName, Music *music, bool important)
 	addSample(temp, actualPath, music, important, false);
 }
 
-void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint)
+void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint, bool isBNK)
 {
 	Sample newSample;
-	if (important)
-		newSample.important = true;
-	else
-		newSample.important = false;
+	newSample.important = important;
+	newSample.isBNK = isBNK;
 
 	if (sample.size() != 0)
 	{
@@ -495,7 +493,7 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 			}
 		}
 		//BNK files don't qualify for the next check. 
-		if (newSample.name.find("__SRCNBANKBRR", 0) == -1) {
+		if (!(newSample.isBNK)) {
 			fs::path p1 = "./"+newSample.name;
 			//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
 			for (int i = 0; i < bankDefines.size(); i++)
@@ -605,7 +603,7 @@ void addSampleBank(const File &fileName, Music *music)
 		char temp[20];
 		sprintf(temp, "__SRCNBANKBRR%04X", bankSampleCount++);
 		tempSample.name = temp;
-		addSample(tempSample.data, tempSample.name, music, true, true, tempSample.loopPoint);
+		addSample(tempSample.data, tempSample.name, music, true, true, tempSample.loopPoint, true);
 	}
 }
 
