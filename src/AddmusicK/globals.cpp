@@ -487,7 +487,10 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 		{
 			if (samples[i].data == newSample.data)
 			{
-				sampleToIndex[name] = i;
+				//Don't add samples from BNK files to the sampleToIndex map, because they're not valid filenames.
+				if (!(newSample.isBNK)) {
+					sampleToIndex[name] = i;
+				}
 				music->mySamples.push_back(i);
 				return;
 			}
@@ -511,7 +514,10 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 			}
 		}
 	}
-	sampleToIndex[newSample.name] = samples.size();
+	//Don't add samples from BNK files to the sampleToIndex map, because they're not valid filenames.
+	if (!(newSample.isBNK)) {
+		sampleToIndex[newSample.name] = samples.size();
+	}
 	music->mySamples.push_back(samples.size());
 	samples.push_back(newSample);					// This is a sample we haven't encountered before.  Add it.
 }
