@@ -1,5 +1,15 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+TerminateIfSFXPlaying:
+	mov	a, $48
+	and	a, $1d
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
 	mov	x, $46			;;; get channel*2 in X
@@ -11,7 +21,7 @@ cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 	
 	call	GetCommandData		; 
 SetInstrument:				; Call this to start playing the instrument in A.
-	mov	$10, #InstrumentTable	; \ $14w = the location of the instrument data.
+	mov	$10, #InstrumentTable	; \ $10w = the location of the instrument data.
 	mov	$11, #InstrumentTable>>8 ;/
 	mov	y, #$06			; Normal instruments have 6 bytes of data.
 	
@@ -47,9 +57,7 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	addw	ya, $10			; |
 	movw	$14, ya			; /
 
-	mov   a, $48			; \ 
-	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
-	bne   .noSet			; /
+	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
 	
 	call	GetBackupInstrTable
 	
@@ -68,18 +76,24 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	
 	mov	($10)+y, a		; (save it in the backup table)
 	
-	bpl	+			; If the byte was positive, then it was a sample.  Just write it like normal.
+	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
+
+	and	a, #$1f
+	mov	$0389, a
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
 	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
++
 	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
 -
 	mov	a, ($14)+y		; \ 
-+	mov	$f2, x			; | 	
+++	mov	$f2, x			; | 	
 	mov	$f3, a			; |
 	mov	($10)+y, a		; |
 	inc	x			; | This loop will write to the correct DSP registers for this instrument.
@@ -103,7 +117,6 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	call	EffectModifier
 	pop	a
 
-.noSet
 	ret
 	
 RestoreMusicSample:
@@ -113,7 +126,7 @@ RestoreMusicSample:
 UpdateInstr:
 	mov	y, #$06
 	mov	a, #$00
-	jmp	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
@@ -443,10 +456,9 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	or	a, #$20
-	mov	y, #$6c
-	mov	!NCKValue, a
-	jmp	DSPWrite             ; disable echo write, noise freq 0
+	mov	a, !NCKValue
+	or	!NCKValue, #$20           ; disable echo write
+	jmp	ModifyNoise
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -468,7 +480,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, #$00
+	mov	a, !NCKValue
 	call	ModifyNoise
 	
 	call	GetCommandData		; From here on is the normal code.
@@ -523,7 +535,7 @@ GetBufferAddress:
 	
 	
 ModifyEchoDelay:			; a should contain the requested delay.
-
+	mov	$10, !NCKValue
 	push	a			; Save the requested delay.
 	call	GetBufferAddress
 	push	y
@@ -554,7 +566,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	
 	mov	!NCKValue, #$00
-	mov	a, #$00
+	mov	a, $10
 	jmp	ModifyNoise
 	
 }
@@ -617,11 +629,24 @@ SubC_table:
 	dw	SubC_9
 
 SubC_0:
-	mov     $6e, #$20			; 
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-SubC_01:	
-	mov	a,#$01
+	eor     $6e, #$20			; 
 SubC_00:
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	mov	a,#$01
+	push	a
+	mov	a,$6e
+	pop	a
+	beq	SubC_02
+
+SubC_01:
+	tset	$0160, a
+	ret
+
+SubC_02:
+	tclr	$0160, a
+	ret
+
+SubC_03:
 	eor	a,$0160
 	mov	$0160,a
 	ret
@@ -647,14 +672,13 @@ SubC_5:
 	mov    $0167, a
 	mov    $0166, a
 	mov	a,#$02
-	bra	SubC_00	
+	bra	SubC_03	
 
 	;ret
 	
 SubC_6:
 	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	bra	SubC_01
+	bra	SubC_00
 	
 SubC_7:
 	mov	a, #$00				; \ 
@@ -719,7 +743,12 @@ cmdF8:					; Noise command.
 Noiz:
 		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
 		call	ModifyNoise
++
 		jmp	EffectModifier		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -790,18 +819,6 @@ SubC_table2:
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
-	bra	.modifyEchoDelay
-+
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
-	
-	and	!NCKValue, #$20
-	mov	a, #$00
-	jmp	ModifyNoise
-	
-	ret
-	
 .modifyEchoDelay
 	push	a
 	or	!NCKValue, #$20
@@ -809,6 +826,17 @@ SubC_table2:
 	pop	a			;
 	mov	!MaxEchoDelay, a	;
 	ret				;
+
++
+	mov	!EchoDelay, a		; \
+	mov	$f2, #$7d		; | Write the new delay.
+	mov	$f3, a			; /
+	
+	mov	a, !NCKValue
+	and	!NCKValue, #$20
+	jmp	ModifyNoise
+	
+	ret
 	
 .gainRest
 	;call	GetCommandData
@@ -905,11 +933,24 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 
 .doStuff
 	mov	a, !ArpType+x		;
-	cmp	a, #$01			; \ If it's 1, then it's a trill
+	beq	.normal			;
+	mov	y, a
+	mov	a, !ArpCurrentDelta+x	;
+	cmp	y, #$01			; \ If it's 1, then it's a trill
 	beq	.trill			; /
-	cmp	a, #$02			; \ If it's 2, then it's a glissando.
-	beq	.glissando		; /
-.normal					; Otherwise (it's a 0), it's a normal arpeggio.
+	;cmp	y, #$02			; \ If it's 2, then it's a glissando.
+	;beq	.glissando		; /
+
+.glissando
+	clrc				; \
+	adc	a, !ArpSpecial+x	; |
+	bra	++			; /
+
+.trill
+	eor	a, !ArpSpecial+x	; \ Opposite note.
+	bra	++			; /
+
+.normal					; If it's 0, it's a normal arpeggio.
 	mov	a, !ArpNoteIndex+x	; \
 	inc	a			; / Increment the note index.
 	cmp	a, !ArpNoteCount+x	; \ 
@@ -927,7 +968,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, ($14)+y		; Get the current delta.
 	cmp	a, #$80			; \
 	beq	.setLoopPoint		; / If the current delta is #$80, then it's actually the loop point.
-	mov	!ArpCurrentDelta+x, a	; 
+++	mov	!ArpCurrentDelta+x, a	; 
 	bra	.playNote
 .setLoopPoint
 	inc	y			; \
@@ -938,6 +979,8 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
+
+	call	TerminateIfSFXPlaying
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
@@ -945,27 +988,14 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, $48			; \
 	push	a			; |
 	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162
-	pop	a
-	bne	.return			; |
+	and	a,$0162			; |
+	pop	a			; |
+	bne	.return2		; |
 +
 	or	a, $47			; / Set this voice to be keyed on.
 	mov	$47, a
+.return2
 	ret
-	
-.trill
-	mov	a, !ArpCurrentDelta+x	; \ Opposite note.
-	eor	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
-.glissando
-	mov	a, !ArpCurrentDelta+x	; \
-	clrc				; |
-	adc	a, !ArpSpecial+x	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	bra	.playNote		; /
-	
 }	
 	
 cmdFC:

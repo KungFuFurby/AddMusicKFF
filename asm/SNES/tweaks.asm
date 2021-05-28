@@ -12,52 +12,7 @@
 !true = 1
 !false = 0
 
-
-
-!JumpSFXOn1DFC = !true			; Change this to !false to move the jump sound effect to 1DF9.
-!GrinderSFXOn1DFC = !false		; Change this to !true to move the grinder sound effect from 1DF9 to 1DFC.
-				
-!Miss		= #$01			; If you've changed list.txt and plan on using the original SMW songs
-!GameOver	= #$02			; change these constants to whatever they are in list.txt
-!BossClear	= #$03			; For example, if you changed the "Stage Clear" music to be number 9,
-!StageClear	= #$04			; Then you'd change "!StageClear = #$04" to "!StageClear = #$09".
-!Starman	= #$05
-!PSwitch	= #$06
-!Keyhole	= #$07
-!IrisOut	= #$08
-!BonusEnd	= #$09
-!Piano		= #$0A
-!HereWeGo	= #$0B
-!Water		= #$0C
-!Bowser		= #$0D
-!Boss		= #$0E
-!Cave		= #$0F
-!GhostHouse	= #$10
-!Castle		= #$11
-!SwitchPalace	= #$12
-!Welcome	= #$13
-!RescueEgg	= #$14
-!Title		= #$15
-!VoBAppears	= #$16
-!Overworld	= #$17
-!YoshisIsland	= #$18
-!VanillaDome	= #$19
-!StarRoad	= #$1A
-!ForestOfIllusion = #$1B
-!ValleyOfBowser	= #$1C
-!SpecialWorld	= #$1D
-!NintPresents   = #$1E		; Note that this is a song, not a sound effect!
-
-!Bowser2	= #$1F		;
-!Bowser3	= #$20
-!BowserDefeated = #$21
-!BowserIntrlude = #$22
-!BowserZoomIn	= #$23
-!BowserZoomOut	= #$24
-!PrincessSaved	= #$25
-!StaffRoll	= #$26
-!YoshisAreHome	= #$27
-!CastList	= #$28
+incsrc "../UserDefines.asm"
 
 
 org $9724		; Fix the title music
@@ -426,7 +381,7 @@ if !JumpSFXOn1DFC == !true
 	org $00DBA5
 	LDA #$35
 	STA $1DFC|!SA1Addr2
-else
+elseif !JumpSFXOn1DF9 == !true
 	org $00D65E
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
@@ -449,7 +404,7 @@ if !GrinderSFXOn1DFC == !true
 	org $0392B8
 	LDA #$36
 	STA $1DFC|!SA1Addr2
-else
+elseif !GrinderSFXOn1DF9 == !true
 	org $01D745
 	LDA #$2D
 	STA $1DF9|!SA1Addr2
