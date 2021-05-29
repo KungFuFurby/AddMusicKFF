@@ -3360,8 +3360,10 @@ GetSampleTableLocation:
 	incsrc "InstrumentData.asm"
 	
 
+if !noSFX = !false
 	SFXTable0:
 	SFXTable1:
+endif
 	SongPointers:
 
 	
