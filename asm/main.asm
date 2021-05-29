@@ -1028,24 +1028,8 @@ endif
 .getInstrumentByte
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
 	bmi	.noise			; If it's negative, then it's a noise command.
-	mov	y, #$09			; \ No noise here!
-	mul	ya			; | Set up the instrument table for SFX
-	mov	x, a			; |
-	mov	a, $46			; | \
-	xcn	a			; | | Get the correct DSP register "base" into y.
-	lsr	a			; | |
-	mov	y, a			; | /
-	mov	$12, #$08		; / 9 bytes of instrument data.
--					; \
-	mov	a, SFXInstrumentTable+x	; |
-	call	DSPWrite		; | Loop that sets various DSP registers.
-	inc	x			; |
-	inc	y			; |
-	dbnz	$12, -    		; / 
-	mov	a, SFXInstrumentTable+x ; \
-	mov	x, $46			; |
-	mov	$0210+x, a		; / Something to do with pitch...?
-	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
+	call	SetSFXInstrument	; No noise here!
+	jmp	.getMoreSFXData		; We're done here; get the next SFX command.
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
 	or	(!SFXNoiseChannels), ($18)
@@ -1227,6 +1211,26 @@ SetSFXNoise:
 	pop	x
 	ret
 endif
+
+SetSFXInstrument:
+	mov	y, #$09			; \ 
+	mul	ya			; | Set up the instrument table for SFX
+	mov	x, a			; |
+	mov	a, $46			; | \
+	xcn	a			; | | Get the correct DSP register "base" into y.
+	lsr	a			; | |
+	mov	y, a			; | /
+	mov	$12, #$08		; / 9 bytes of instrument data.
+-					; \
+	mov	a, SFXInstrumentTable+x	; |
+	call	DSPWrite		; | Loop that sets various DSP registers.
+	inc	x			; |
+	inc	y			; |
+	dbnz	$12, -    		; / 
+	mov	a, SFXInstrumentTable+x ; \
+	mov	x, $46			; |
+	mov	$0210+x, a		; / Something to do with pitch...?
+	ret
 }
 
 if !PSwitchIsSFX = !true
@@ -1858,10 +1862,10 @@ RestoreInstrumentFromAPU1SFX:
 	mov	x, #$0e
 	jmp	RestoreInstrumentInformation
 L_0A68:
-	call	L_0AB1
-	mov	a, #$b2
 	mov	$46, #$0e
-	mov	x, #$0e
+	mov	a, #$08
+	call	SetSFXInstrument
+	mov	a, #$b2
 	call	NoteVCMD
 	mov	y, #$00
 	mov	$9f, y
@@ -1873,9 +1877,7 @@ L_0A68:
 	mov	$10, a
 	mov	y, #$70
 	call	DSPWrite
-	mov	a, #$38
-	mov	$10, a
-	mov	y, #$71
+	inc	y
 	call	DSPWrite
 	mov	a, #$80
 	call	KeyOnVoices
@@ -1895,23 +1897,7 @@ L_0AA5:
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
-L_0AB1:
-	mov	a, #$08
-L_0AB3:
-	mov	y, #$09
-	mul	ya
-	mov	x, a
-	mov	y, #$70
-	mov	$12, #$08
-L_0ABC:
-	mov	a, SFXInstrumentTable+x
-	call	DSPWrite
-	inc	x
-	inc	y
-	dbnz	$12, L_0ABC
-	mov	a, SFXInstrumentTable+x
-	mov	$021e, a
-	ret
+
 ; $01 = 04 && $05 != 01
 L_0AE8:
 	dec	$0383
@@ -1922,11 +1908,10 @@ L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	a, #$07
-	call	L_0AB3
-	mov	a, #$a4
 	mov	$46, #$0e
-	mov	x, #$0e
+	mov	a, #$07
+	call	SetSFXInstrument
+	mov	a, #$a4
 	call	NoteVCMD
 	bra	L_0B1C
 L_0B08:
@@ -1940,9 +1925,7 @@ L_0B1C:
 	mov	$10, a
 	mov	y, #$70
 	call	DSPWrite
-	mov	a, #$28
-	mov	$10, a
-	mov	y, #$71
+	inc	y
 	call	DSPWrite
 	mov	a, #$80
 	call	KeyOnVoices
