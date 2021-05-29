@@ -414,6 +414,13 @@ L_0E55:
 	mov   $0321+x, a
 	ret
 }
+cmdFE:					; Pitch envelope off
+{
+	mov   x, $46
+	mov   $0300+x, a
+	ret
+}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEE:					; Set the tuning
 {
@@ -1084,7 +1091,6 @@ ClearRemoteCodeAddresses:
 	ret
 }
 
-cmdFE:
 cmdFF:
 ;ret
 
