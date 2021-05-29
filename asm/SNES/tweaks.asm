@@ -444,7 +444,7 @@ org $00E301
 org $01AAFD
 ;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
 	LDA #$C0
-	STA $1DF9|!SA1Addr2
+	STA $1DFC|!SA1Addr2
 ;;; WARNING: This overwrites a hijack at $01AB02 above!
 ;;; This is because we don't play the P-Switch music anymore.
 	BRA +
@@ -458,7 +458,7 @@ org $01AAFD
 	;BMI +
 	;LDA.b #$C0
 +
-	;STA $1DF9|!SA1Addr2
+	;STA $1DFC|!SA1Addr2
 	;NOP #3
 
 
@@ -467,7 +467,7 @@ org $028967
 ;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
 ;;; NOTE: This overwrites the $0B that was just stored there!
 	LDA.b #$C0
-	STA $1DF9|!SA1Addr2
+	STA $1DFC|!SA1Addr2
 
 org $00C53E
 ;;; Don't factor in the previous level music.
@@ -479,6 +479,6 @@ org $00C53E
 
 
 org $00C54C
-	STA $1DF9|!SA1Addr2
+	STA $1DFC|!SA1Addr2
 
 endif
