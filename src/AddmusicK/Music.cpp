@@ -61,7 +61,7 @@ static const int instrToSample[30] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x07, 0x08,
 
 static const int hexLengths[] = { 2, 2, 3, 4, 4, 1,
 2, 3, 2, 3, 2, 4, 2, 2, 3, 4, 2, 4, 4, 3, 2, 4,
-1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5 };
+1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5, 1 };
 static int transposeMap[256];
 //static bool htranspose[256];
 static int hTranspose;
@@ -408,10 +408,7 @@ void Music::compile()
 		{
 			if (currentHex == 0xE6 && songTargetProgram == 1)
 			{
-				data[channel][data[channel].size() - 1] = 0xE5;
-				append(0);
-				append(0);
-				append(0);
+				data[channel][data[channel].size() - 1] = 0xFD;
 				hexLeft = 0;
 			}
 			else
@@ -1545,7 +1542,7 @@ void Music::parseHexCommand()
 					}
 				}
 			}
-			else if (i > 0xFC)
+			else if (i > 0xFD)
 			{
 				error("Unknown hex command.");
 			}

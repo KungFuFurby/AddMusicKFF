@@ -259,7 +259,7 @@ cmdE5:					; Tremolo on
 	call  GetCommandDataFast
 	mov   $0361+x, a
 	call  GetCommandDataFast
-;cmdE6:					; Normally would be tremolo off
+cmdFD:					; Tremolo off
 	mov   x, $46
 	mov   $b1+x, a
 	ret
@@ -1084,7 +1084,6 @@ ClearRemoteCodeAddresses:
 	ret
 }
 
-cmdFD:
 cmdFE:
 cmdFF:
 ;ret
