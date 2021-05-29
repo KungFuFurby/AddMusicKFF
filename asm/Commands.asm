@@ -731,12 +731,12 @@ cmdF7:					; Originally the "write to ARAM command". Disabled by default.
 ;	call GetCommandData
 ;	push a
 ;	call GetCommandDataFast
-;	mov $21, a
+;	mov $15, a
 ;	call GetCommandDataFast
-;	mov $20, a
+;	mov $14, a
 ;	pop a
 ;	mov y, #$00
-;	mov ($20)+y, a
+;	mov ($14)+y, a
 ;	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
