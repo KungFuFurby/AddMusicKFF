@@ -270,7 +270,7 @@ cmdE5:					; Tremolo on
 	call  GetCommandDataFast
 	mov   $0361+x, a
 	call  GetCommandDataFast
-;cmdE6:					; Normally would be tremolo off
+cmdFD:					; Tremolo off
 	mov   x, $46
 	mov   $b1+x, a
 	ret
@@ -425,6 +425,13 @@ L_0E55:
 	mov   $0321+x, a
 	ret
 }
+cmdFE:					; Pitch envelope off
+{
+	mov   x, $46
+	mov   $0300+x, a
+	ret
+}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEE:					; Set the tuning
 {
@@ -872,12 +879,12 @@ cmdF7:					; Originally the "write to ARAM command". Disabled by default.
 ;	call GetCommandData
 ;	push a
 ;	call GetCommandDataFast
-;	mov $21, a
+;	mov $15, a
 ;	call GetCommandDataFast
-;	mov $20, a
+;	mov $14, a
 ;	pop a
 ;	mov y, #$00
-;	mov ($20)+y, a
+;	mov ($14)+y, a
 ;	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1287,8 +1294,6 @@ ClearRemoteCodeAddresses:
 	ret
 }
 
-cmdFD:
-cmdFE:
 cmdFF:
 ;ret
 
