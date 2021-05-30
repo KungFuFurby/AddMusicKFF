@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) try		// // //
 			optimizeSampleUsage = false;
 		else if (arguments[i] == "-s")
 			allowSA1 = false;
-		else if (arguments[i] == "-dumpsfx")
+		else if ((arguments[i] == "-dumpsfx") || (arguments[i] == "-sfxdump"))
 			sfxDump = true;
 		else if (arguments[i] == "-visualize")
 			visualizeSongs = true;
