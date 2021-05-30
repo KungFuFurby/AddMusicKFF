@@ -205,8 +205,10 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
+if !PSwitchIsSFX = !false
 ;	CMP !PSwitch
 ;	BEQ .doExtraChecks
+endif
 ;	CMP !Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
@@ -256,8 +258,10 @@ Okay:
 	BEQ Fade			; /
 	
 	LDA !CurrentSong		; \ 
+if !PSwitchIsSFX = !false
 	CMP !PSwitch			; |
 	BEQ +				; |
+endif
 	CMP !Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
 	;;;BRA ++			; |
@@ -612,8 +616,10 @@ HandleSpecialSongs:
 	bne +					;/ This prevents an issue with non-standard goal songs.
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	BNE .starMusic			;;; just play the star music
+if !PSwitchIsSFX = !false
 	LDA !PSwitch
 	STA !MusicMir
+endif
 +
 	RTS
 	
