@@ -42,6 +42,18 @@
 	<li><p>-noblock: Normally if AMK encounters an error while running, it will display the error(s) and then wait for the user to press the enter key to continue.  This flag will turn this behavior off, so on failure the program will simply quit.
 	<li><p>-norom: Only do what's necessary to generate SPC files; this makes it possible to generate SPCs without a Super Mario World ROM.  After using this option, you must specify the files you wish to compile (with quotes if they contain spaces).  For example, <code>-norom test.txt "test2.txt"</code>.  Please note that global songs and sound effects must still be parsed, so Addmusic_list.txt, Addmusic_sound effects.txt, and Addmusic_sample groups.txt must all be valid.</p></li>
 	<li><p>-sfxdump/-dumpsfx: Dumps all sound effects to the SPC folder inside their respective SFX directories. Note the samples used will be from the song you specify or, when modifying a ROM, the lowest numbered local song.</p></li>
+	<li><p>-visualize: Creates a series of PNG files for the memory usage of local song(s). Each PNG contains a set of color strips, 16 bytes per column, that contains the following memory usage data:
+		<ul>
+			<li><b>Red:</b> Variable storage</li>
+			<li><b>Yellow:</b> Sound engine code + embedded variables + data</li>
+			<li><b>Dark Green:</b> Song + custom instrument data</li>
+			<li><b>Light Green:</b> Sample directory table (4 bytes per sample: two for the starting pointer, and two for the loop point)</li>
+			<li><b>Cyan:</b> Important sample. Changes shade on a per-sample basis.</li>
+			<li><b>Blue:</b> Non-important sample. Changes shade on a per-sample basis.</li>
+			<li><b>Purple:</b> Echo buffer</li>
+			<li><b>Black:</b> Unused data</li>
+		</ul>
+	</p></li>
 	<li><p>Finally, inputting your ROM name as an argument at any point will cause the program to load that ROM without prompting you for its name.</p></li></ul>
 	<br>
 	<br>Be aware that turning off hex command validation implicitly turns off
