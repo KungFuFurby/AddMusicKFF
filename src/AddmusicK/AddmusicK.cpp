@@ -2051,11 +2051,11 @@ void generatePNGs()
 			unsigned char b = 0;
 			unsigned char a = 255;
 
-			if (i >= 0 && i < programUploadPos)
+			if (i >= 0 && i < programPos)
 			{
 				r = 255;
 			}
-			else if (i >= programUploadPos && i < programPos + programSize)
+			else if (i >= programPos && i < programPos + programSize)
 			{
 				r = 255;
 				g = 255;
