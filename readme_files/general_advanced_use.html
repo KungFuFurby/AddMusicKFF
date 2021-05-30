@@ -27,7 +27,7 @@
 	
 	
 	<br><br><h2>Command Line Arguments</h2>
-	There are 12 command line arguments that you may pass to this program.  To do this, run the program using cmd.exe and use any of these options along with your ROM name.  Note that using these when the program asks for your ROM name <i>will not work</i>!
+	There are several command line arguments that you may pass to this program.  To do this, run the program using cmd.exe and use any of these options along with your ROM name.  Note that using these when the program asks for your ROM name <i>will not work</i>!
 	<ul>
 	<li><p>-c: Turn off conversion.  The program changes certain things to make songs made with both Addmusic 4.05 and AddmusicM compatible with this program.  Changes mostly include ignoring the header at the start of AM 4.05 songs, converting $ED $8X commands, etc.  If this is not functioning correctly for some reason, use this argument to turn this behavior off.</p></li>
 	<li><p>-e: Turn off echo buffer bounds checking.  By default the program will examine your songs, the samples they include, and the echo buffer sizes it uses.  If it detects that their total is too large to fit into ARAM, it will give an error and stop.  You can use this to turn that behavior off if it, for some reason, is not working.  Turning this off, however, will disable SPC generation.</p></li>
@@ -41,7 +41,19 @@
 	<li><p>-s: Turn off SA-1 addressing.   By default, if $00FFD5 in the ROM is $23, then the program will use SA-1 addressing for the generated patch.  If this option is used, that behavior will be disabled.  Note that this will only affect addressing used for generated features; for the full effect, you must make some minor changes in asm/SNES/patch.asm.
 	<li><p>-noblock: Normally if AMK encounters an error while running, it will display the error(s) and then wait for the user to press the enter key to continue.  This flag will turn this behavior off, so on failure the program will simply quit.
 	<li><p>-norom: Only do what's necessary to generate SPC files; this makes it possible to generate SPCs without a Super Mario World ROM.  After using this option, you must specify the files you wish to compile (with quotes if they contain spaces).  For example, <code>-norom test.txt "test2.txt"</code>.  Please note that global songs and sound effects must still be parsed, so Addmusic_list.txt, Addmusic_sound effects.txt, and Addmusic_sample groups.txt must all be valid.</p></li>
-	<li><p>-sfxdump: Dumps all sound effects to the SPC folder. Note the samples used will be from the lowest numbered global song.</p></li>
+	<li><p>-sfxdump/-dumpsfx: Dumps all sound effects to the SPC folder inside their respective SFX directories. Note the samples used will be from the song you specify or, when modifying a ROM, the lowest numbered local song.</p></li>
+	<li><p>-visualize: Creates a series of PNG files for the memory usage of local song(s). Each PNG contains a set of color strips, 16 bytes per column, that contains the following memory usage data:
+		<ul>
+			<li><b>Red:</b> Variable storage</li>
+			<li><b>Yellow:</b> Sound engine code + embedded variables + data</li>
+			<li><b>Dark Green:</b> Song + custom instrument data</li>
+			<li><b>Light Green:</b> Sample directory table (4 bytes per sample: two for the starting pointer, and two for the loop point)</li>
+			<li><b>Cyan:</b> Important sample. Changes shade on a per-sample basis.</li>
+			<li><b>Blue:</b> Non-important sample. Changes shade on a per-sample basis.</li>
+			<li><b>Purple:</b> Echo buffer</li>
+			<li><b>Black:</b> Unused data</li>
+		</ul>
+	</p></li>
 	<li><p>Finally, inputting your ROM name as an argument at any point will cause the program to load that ROM without prompting you for its name.</p></li></ul>
 	<br>
 	<br>Be aware that turning off hex command validation implicitly turns off
