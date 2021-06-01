@@ -18,10 +18,7 @@
 !false = 0
 !true = 1
 
-!PSwitchIsSFX = !false		; If you set this to true, then the P-switch song will be a sound effect
-				; instead of a song that interrupts the current music.
-				; Note, however, that it is hardcoded and cannot be changed unless you
-				; do it yourself.
+incsrc "UserDefines.asm"
 
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
@@ -63,7 +60,7 @@
 ; $0150: Don't use
 ; $0151: Don't use
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
-; $0383: Some sort of a timer for the jump SFX.
+; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
 ; $0386: Set if Mario is on Yoshi.  
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
@@ -143,18 +140,6 @@
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !InRest = $01a1
 
-
-macro DDEEFix()
-	mov	a, $90+x
-	beq	+
-	mov	a, $02b0+x
-	bra ++
-+
-	mov	a, $02d1+x
-	mov	$02b0+x, a
-++
-endmacro
-
 arch spc700-raw
 org $000000
 base $0400			; Do not change this.
@@ -164,14 +149,11 @@ base $0400			; Do not change this.
 	mov   x, #$cf
 	mov   sp, x              ; set SP to 01cf
 	mov   a, #$00
-	
-	mov	y, #$00
+	mov	y, a
 	
 -	mov	$0100+y, a
-	dbnz	y, -
--	mov	$0200+y, a
-	dbnz	y, -
--	mov	$0300+y, a
+	mov	$0200+y, a
+	mov	$0300+y, a
 	dbnz	y, -
 	
 	movw	$00, ya
@@ -407,6 +389,7 @@ RunRemoteCode:
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr+1+x
 	mov	$31+x, a
+RunRemoteCode_Exec:
 	mov	a, #$01
 	mov	!runningRemoteCode, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -429,16 +412,7 @@ RunRemoteCode2:
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr2+1+x
 	mov	$31+x, a
-	mov	a, #$01
-	mov	!runningRemoteCode, a
-	call	L_0C57
-	mov	a, #$00
-	mov	!runningRemoteCode, a
-	pop	a
-	mov	$31+x, a
-	pop	a
-	mov	$30+x, a
-	ret
+	bra	RunRemoteCode_Exec
 }
 	
 ; handle a note vcmd
@@ -456,17 +430,13 @@ if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
 	
-	mov	a, $48
-	and	a, $1D
-	bne	L_05CD
+	call	TerminateIfSFXPlaying
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
-	eor	a, #$FF
-	and	a, $0162
-	mov	$0162, a
+	tclr	$0162, a
 L_05CD:
 	ret
 ;UseGainInstead:
@@ -489,8 +459,8 @@ PercNote:
 	setc
 	sbc	a, #$d0
 	mov	y, #$07
-	mov	$14, #PercussionTable
-	mov	$15, #PercussionTable>>8
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
@@ -569,11 +539,7 @@ L_0621:				;
 	adc	a, $02b1+x	;
 	call	CalcPortamentoDelta
 L_062B:
-	mov	a, $02b1+x	;
-	mov	y, a		;
-	%DDEEFix()
-	;mov	a, $02b0+x	;
-	movw	$10, ya		;
+	call	DDEEFix	
 ; set DSP pitch from $10/11
 SetPitch:			;
 	push	x
@@ -630,7 +596,7 @@ SetPitch:			;
 	addw	ya, $16
 	movw	$16, ya
 	mov	a, x               ; set voice X pitch DSP reg from $16/7
-	xcn	a                 ;  (if vbit clear in $1a)
+	xcn	a                 ;  (if vbit clear in $1d)
 	lsr	a
 	or	a, #$02
 	mov	y, a               ; Y = voice X pitch DSP reg
@@ -655,18 +621,34 @@ DSPWrite:
 	
 }
 
+DDEEFix:
+{
+	mov	a, $02b1+x
+	mov	y, a
+	mov	a, $90+x
+	beq	+
+-
+	mov	a, $02b0+x
+	bra	++
++
+	mov	a, $48		; If $48 is 0, then this is SFX code.
+	beq	-		; Don't adjust the pitch.
+	and	a, $1d
+	bne	-
+	mov	a, $02d1+x
+	mov	$02b0+x, a
+++
+	movw	$10, ya            ; notenum to $10/11
+	ret
+}
+
 
 EffectModifier:					; Call this whenever either $1d or the various echo, noise, or pitch modulaion addresses are modified.
 {	
 	push	x
 	push	y
-	mov	$10, #!MusicPModChannels	;
-	mov	$12, #!SFXPModChannels		;
-	mov	$14, #$d1			; The DSP register for pitch modulation - $10 and reversed.
-	mov	y, #$00				;
-	mov	$11, y				;
-	mov	$13, y				;
-	
+	mov	x, #$00
+	mov	y, #$d1				; The DSP register for pitch modulation reversed.
 						; $10 = the current music whatever
 						; $12 = the current SFX whatever
 -						
@@ -677,32 +659,27 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 						; E is !WhateverSFXChannels.
 						; and S is $1d (the current channels for which SFX are enabled)
 						; Yay logic!
+
+	inc	y				; \
+	mov	a, y				; | Get the next DSP register into a.
+	xcn	a				; /
+	mov	$f2, a				;
 						
 	mov	a, $1d				; \ a = S
 	eor	a, #$ff				; | a = S'
-	and	a, ($10)+y			; / a = S'M
+	and	a, !MusicPModChannels+x		; / a = S'M
 	
 	mov	$15, a
 
-	mov	a, ($12)+y			; \ a = S
+	mov	a, !SFXPModChannels+x		; \ a = S
 	and	a, $1d				; | a = SE
 	or	a, $15				; / a = S'M + SE
 	
-	push	y
-
-	mov	y, a
-
-	inc	$14				; \
-	mov	a, $14				; | Get the next DSP register into a.
-	xcn	a				; /
+						; \ Write to the relevant DSP register.
+	mov	$f3, a				; / (coincidentally, the order is the opposite of DSPWrite)
 	
-	mov	$f2, a				; \ Write to the relevant DSP register.
-	mov	$f3, y				; / (coincidentally, the order is the opposite of DSPWrite)
-	
-	pop	y				; \ Do this three times.
-	;inc	y				; |
-	inc	y				; |
-	cmp	y, #$03				; |
+	inc	x				; \
+	cmp	x, #$03				; | Do this three times.
 	bne	-				; /
 
 	pop	y
@@ -765,19 +742,67 @@ EndSFX:
 					; Of course, that doesn't work so well when some channels don't map to input ports...
 				
 	
-	mov	a, $18			; \
-	eor	a, #$ff			; | Clear the bit of $1d that this SFX corresponds to.
-	mov	$10, a			; |
-	and	a, $1d			; |
-	mov	$1d, a			; /
-	
-	mov	a, $10			; \
-	and	a, !SFXNoiseChannels	; | Turn noise off for this channel's SFX.
-	mov	!SFXNoiseChannels, a	; /
+	mov	a, $18
+	bpl	+			
+	push	a
+	mov	a, $0383
+	or	a, $1c
+	pop	a
+	bne	++
++					; \
+	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
+++
+	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
-	
-
+if !noiseFrequencySFXInstanceResolution = !true
+	cmp	!SFXNoiseChannels, #$00
+	beq	.restoreMusicNoise
+	call	SetSFXNoise
+	call	ModifyNoise
+	bra	RestoreInstrumentInformation
+endif
+.restoreMusicNoise:
+	mov	$1f, #$00
+	bbc7	$18, +
+	mov	a, $0383
+	or	a, $1c
+	bne	++
++
+	mov	a, #$00
+	mov	!ChSFXPriority|$0100+x, a
+++
+	mov	a, !MusicNoiseChannels
+	and	a, $1a
+	beq	RestoreInstrumentInformation
+	mov	$12, a
+	mov	a, !SFXNoiseChannels
+	tclr	$12, a
+	mov	$13, #$01
+	mov	a, $0389
+	call	ModifyNoise
+	;Restore VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	++
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
 
 	mov	x, $46			; \ 
 
@@ -806,7 +831,9 @@ HandleSFXVoice:
 +
 .getMoreSFXData
 	call	GetNextSFXByte
-	beq	EndSFX			; If the current byte is zero, then end it.
+	bne	+			; If the current byte is zero, then end it.
+	jmp	EndSFX
++
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
 					; The current byte is the duration.
@@ -819,12 +846,17 @@ HandleSFXVoice:
 	xcn	a			; | Put the left volume DSP register for this channel into y.
 	mov	y, a			; |
 	pop	a			; |
+if !noiseFrequencySFXInstanceResolution = !true
+	call	.setVolFromNoiseSetting ; |
+endif
 	call	DSPWrite		; / Set the volume for the left speaker.
 	inc	y			; \
 	call	DSPWrite		; / Set the volume for the right speaker.  We might change it later, but this saves space.
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
-
+if !noiseFrequencySFXInstanceResolution = !true
+	call	.setVolFromNoiseSetting ;
+endif
 	call	DSPWrite		; > Set the volume for the right speaker.
 	call	GetNextSFXByte		;
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
@@ -844,11 +876,17 @@ HandleSFXVoice:
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$da			; \ 
-	beq	.instrumentCommand	; / $DA is the instrument command.
+	bne	+			; |
+	jmp	.instrumentCommand	; / $DA is the instrument command.
++
 	cmp	a, #$dd			; \ 
-	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
++
 	cmp	a, #$eb			; \ 
-	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+	bne	+			; |
+	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
++
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
@@ -870,24 +908,35 @@ HandleSFXVoice:
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	bra	.getMoreSFXData
+	jmp	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
+	push	a
+	mov	a, !InRest+x
+	pop	a
+	beq	+
+	call	KeyOffVoices
+	bra	.setNoteLength
++
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
-					; \ Get the length of the note back
-	setp
-	mov	!ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
-	clrp
+						; \ Get the length of the note back
+	mov     !ChSFXNoteTimer|$0100+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	clr1	$13.7			; I...still don't know what $13.7 does...
+	mov	a, $91+x
+	beq	+
+	dec	$91+x
+	ret
++
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
-	bra	.return1
+	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
+	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
 	;setp				; |
@@ -923,15 +972,201 @@ HandleSFXVoice:
 	mov	a, #$00			; \ Disable sub-tuning
 	mov	$02f0+x, a		; /
 	
-	mov	a, $18			; \
-	eor	a, #$ff			; |
-	and	a, !SFXNoiseChannels	; | Disable noise for this channel.
-	mov	!SFXNoiseChannels, a	; /
-					; (EffectModifier is called a bit later)
+	mov	a, $18			; \ Disable noise for this channel.
+	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
+if !noiseFrequencySFXInstanceResolution = !true
+	tclr	$1a, a
+endif
+
 .getInstrumentByte
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
 	bmi	.noise			; If it's negative, then it's a noise command.
-	mov	y, #$09			; \ No noise here!
+	call	SetSFXInstrument	; No noise here!
+	jmp	.getMoreSFXData		; We're done here; get the next SFX command.
+.noise	
+	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
+	or	(!SFXNoiseChannels), ($18)
+if !noiseFrequencySFXInstanceResolution = !true
+	mov	$01f1+x, a
+	cmp	!SFXNoiseChannels, $18
+	beq	.noiseNoPrevSFXFrequency
+	call	SetSFXNoise
+	bra	.noiseCheckMusic
+
+.noiseNoPrevSFXFrequency
+	mov	$1f, #$00
+	mov	$1e, a
+endif
+	;All music channels with noise need to have their VxVOL values
+	;zeroed out here if the frequency is not a match.
+.noiseCheckMusic
+	cmp	a, $0389
+	beq	.noiseSetFreq
+	cmp	!MusicNoiseChannels, #$00
+	beq	.noiseSetFreq
+	push	x
+	push	a
+	mov	$12, !MusicNoiseChannels
+	mov	a, $1a
+	or	a, !SFXNoiseChannels
+	or	a, $1d
+	tclr	$12, a
+	mov	$13, #$01
+	;Zero out VxVOL DSP registers of all music noise channels.
+	mov	x, #$00
+	mov	$f2, x
+-
+	lsr	$12
+	push	p
+	bcc	+
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	p
+	bne	-
+
+	pop	a
+	pop	x
+
+.noiseSetFreq
+	call	ModifyNoise
+	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+if !noiseFrequencySFXInstanceResolution = !true
+.setVolFromNoiseSetting
+	mov	$11, a
+	mov	a, $18
+	and	a, !SFXNoiseChannels
+	beq	.setNormalVol
+	mov	a, $01f1+x
+	cmp	a, $1e
+	beq	.setNormalVol
+	mov	a, !ChSFXPriority|$0100+x
+	cmp	a, $1f
+	bcc	.storeVolFromNoiseSetting
+	bne	.setNormalVol
+	cmp	x, #$0e
+	beq	.setNormalVol
+;Now we scan the priorities of all channels higher than this one.
+	mov	$12, x
+-
+	inc	$12
+	inc	$12
+	push	x
+	mov	a, !ChSFXPriority|$0100+x
+	mov	x, $12
+	cmp	a, !ChSFXPriority|$0100+x
+	pop	x
+	bcc	.storeVolFromNoiseSetting
+	bne	.setNormalVol
+	cmp	$12, #$0e
+	bcc	-
+.storeVolFromNoiseSetting
+	mov	a, y
+	lsr	a
+	mov	a, $11
+	bcc	+
+	mov	$d1+x, a
+	bra	.setZeroVolFromNoiseSetting
++
+	mov	$d0+x, a
+.setZeroVolFromNoiseSetting	
+	mov	a, #$00
+	ret
+.setNormalVol
+	mov	a, $11
+	ret
+
+SetSFXNoise:
+	push	x
+	;Decide which SFX channel's noise frequency will be used as the
+	;comparison point, using priority as the factor. Ties favor highest
+	;channel ID.
+	mov	$12, !SFXNoiseChannels
+	mov	x, #$00
+	mov	$13, x
+	setc
+-
+	asl	$13
+	lsr	$12
+	push	p
+	bcc	+
+	mov	a, !ChSFXPriority|$0100+x
+	cmp	a, $1f
+	bcc	+
+	mov	$1f, a
+	mov	a, $01f1+x
+	mov	$1e, a
++
+	inc	x
+	inc	x
+	pop	p
+	bne	-
+	;OK, we have our winning frequency, now compare and set VxVOL values
+	;based off of noise frequency.
+	mov	$12, !SFXNoiseChannels
+	mov	a, $13
+	tclr	$12, a
+	mov	a, $1e
+	mov	x, #$00
+	mov	$f2, x
+	mov	$13, #$01
+-
+	lsr	$12
+	push	p
+	push	a
+	bcc	++
+	cmp	a, $01f1+x
+	beq	+
+	setc
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
+	bra	++
++
+	clrc
+	mov	a, $13
+	and	a, $1a
+	beq	++
+	setc
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+++
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	pop	a
+	pop	p
+	bne	-
+
+	pop	x
+	ret
+endif
+
+SetSFXInstrument:
+	mov	y, #$09			; \ 
 	mul	ya			; | Set up the instrument table for SFX
 	mov	x, a			; |
 	mov	a, $46			; | \
@@ -948,14 +1183,7 @@ HandleSFXVoice:
 	mov	a, SFXInstrumentTable+x ; \
 	mov	x, $46			; |
 	mov	$0210+x, a		; / Something to do with pitch...?
-	jmp	.getMoreSFXData		; / We're done here; get the next SFX command.
-.noise	
-	and	a, #$1f			; \ Noise can only be from #$00 - #$1F
-	call	ModifyNoise
-	
-	or	(!SFXNoiseChannels), ($18)
-
-	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+	ret
 }
 
 if !PSwitchIsSFX = !true
@@ -1003,6 +1231,17 @@ PSwitchCh7:
 	
 endif
 
+SFXTerminateVCMD:
+	db $00
+
+SFXTerminateCh:
+	mov	a, #SFXTerminateVCMD&$ff
+	mov	!ChSFXPtrs+x, a
+	mov	a, #SFXTerminateVCMD>>8
+	mov	!ChSFXPtrs+1+x, a
+	mov	a, #$03
+	mov	!ChSFXNoteTimer|$0100+x, a
+	ret
 
 SpeedUpMusic:
 	mov	a, #$0a
@@ -1177,19 +1416,20 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	a, $0386			;
+	push	p
+	mov	a, $6e				; 
+	pop	p
 	bne	.drumsOn			;
 					
-					
-	mov	a, $6e				; 
-	or	a, $5e				;
+	tset	$5e, a				;
 	bra	+
 	
 .drumsOn					
-	mov	a, $6e				; \ $5E = ($5E --/--> $6E)
-	eor	a, #$ff				; | (Or $5E = $5E & ~$5C)
-	and	a, $5e				; / Basically, we're reverting whatever the Yoshi drums did to $5E.
+						; $5E = ($5E --/--> $6E)
+						; (Or $5E = $5E & ~$5C)
+	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
 +
-	mov	$5e, a
+	mov	a, $5e
 	call	KeyOffVoices
 	ret
 
@@ -1230,21 +1470,28 @@ L_099C:
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
+
+L_09CDWPreCheck:
+	mov	a, $91+x
+	beq	L_1119
+	dec	$91+x
+	bra	L_112A
+L_1119:
+	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
+	and	a, $48			; |
+	bne	L_112A			; /
+	set1	$13.7			;
+
 ; add pitch slide delta and set DSP pitch
 L_09CD:
 	mov	a, #$b0
 	mov	y, #$02            ; pitch (notenum fixed-point)
 	dec	$90+x
 	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-	mov	a, $02b1+x
-	mov	y, a
-	
-	%DDEEFix()
-	
-	;mov	a, $02b0+x
-	movw	$10, ya
-	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
-	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
+L_112A:
+	call	DDEEFix	
+	ret
+
 ;
 
 ForceSFXEchoOff:
@@ -1277,13 +1524,9 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
 +	cmp	a, #$01			; 01 = jump SFX
-	beq	L_0A14			;
-	mov	a, $05			;
-	cmp	a, #$01			;
-	beq	ProcessAPU1SFX
-	mov	a, $01
+	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
-	beq	L_0A0E             ; (jmp $0ace)
+	beq	CheckAPU1SFXPriority
 ;
 ProcessAPU1SFX:
 	mov	a, $05		; 
@@ -1293,8 +1536,6 @@ ProcessAPU1SFX:
 	beq	L_0A11             ; (jmp $0b08)
 L_0A0D:
 	ret
-L_0A0E:
-	jmp	L_0ACE
 L_0A11:
 	jmp	L_0B08
 PauseMusic:
@@ -1312,16 +1553,36 @@ UnpauseMusic:
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
-; $01 = 01
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+$0e|$0100
+	bcc	ProcessAPU1SFX
+
+	mov	!ChSFXPriority+$0e|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
-	mov	$0383, a	; / $0383 is a timer for the jump sound effect?
+	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
 	mov	a, #$80		; \ Key off channel 7.
 	
 	call	KeyOffVoices
 	set1	$1d.7		; Turn off channel 7's music
-	ret
+	mov	x, #$0e
+	jmp	SFXTerminateCh
+; $01 = 01
 L_0A2E:
 	dec	$0383
 	bne	L_0A0D
@@ -1345,25 +1606,18 @@ L_0A51:						;;;;;;;;/ Code change
 	mov	a, $0383			; Process the jump SFX.
 	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
 	dbnz	$1c, L_0A38
-	mov	$05, #$00
 RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
 	clr1	$1d.7
+	mov	a, #$00
+	mov	!ChSFXPriority+$0e|$0100, a
 	mov	x, #$0e
-	mov	a, !BackupSRCN+$0e
-	bne	RestoreSample7
-	mov	a, $cf
-	beq	L_0A67
-	dec	a
-	jmp	SetInstrument			; Restore the current instrument on the channel?
-L_0A67:
-	ret
-RestoreSample7:
-	jmp	RestoreMusicSample
+	jmp	RestoreInstrumentInformation
 L_0A68:
-	call	L_0AB1
-	mov	a, #$b2
 	mov	$46, #$0e
-	mov	x, #$0e
+	mov	a, #$08
+	call	SetSFXInstrument
+	mov	a, #$b2
 	call	NoteVCMD
 	mov	y, #$00
 	mov	$9f, y
@@ -1375,9 +1629,7 @@ L_0A68:
 	mov	$10, a
 	mov	y, #$70
 	call	DSPWrite
-	mov	a, #$38
-	mov	$10, a
-	mov	y, #$71
+	inc	y
 	call	DSPWrite
 	mov	a, #$80
 	call	KeyOnVoices
@@ -1393,51 +1645,25 @@ L_0AA5:
 	beq	L_0AB0
 	mov	x, #$0e
 	call	L_09CD
+	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
+	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
-L_0AB1:
-	mov	a, #$08
-L_0AB3:
-	mov	y, #$09
-	mul	ya
-	mov	x, a
-	mov	y, #$70
-	mov	$12, #$08
-L_0ABC:
-	mov	a, SFXInstrumentTable+x
-	call	DSPWrite
-	inc	x
-	inc	y
-	dbnz	$12, L_0ABC
-	mov	a, SFXInstrumentTable+x
-	mov	$021e, a
-	ret
+
 ; $01 = 04 && $05 != 01
-L_0ACE:
-	mov	$05, a
-	mov	a, #$04
-	mov	$0383, a
-	mov	a, #$80
-	;mov	y, #$5c
-	call	KeyOffVoices             ; key off voice 7 now
-	set1	$1d.7
-L_0AE7:
-	ret
-;
 L_0AE8:
 	dec	$0383
-	bne	L_0AE7
+	bne	L_0B3F
 	mov	$1c, #$18
 	bra	L_0AF7
 L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	a, #$07
-	call	L_0AB3
-	mov	a, #$a4
 	mov	$46, #$0e
-	mov	x, #$0e
+	mov	a, #$07
+	call	SetSFXInstrument
+	mov	a, #$a4
 	call	NoteVCMD
 	bra	L_0B1C
 L_0B08:
@@ -1445,16 +1671,13 @@ L_0B08:
 	mov	a, $0383
 	bne	L_0AE8
 	dbnz	$1c, L_0AF2
-	mov	$05, #$00
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
 	mov	a, #$28
 	mov	$10, a
 	mov	y, #$70
 	call	DSPWrite
-	mov	a, #$28
-	mov	$10, a
-	mov	y, #$71
+	inc	y
 	call	DSPWrite
 	mov	a, #$80
 	call	KeyOnVoices
@@ -1597,10 +1820,14 @@ L_0B9C:
 L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
+	mov	a, #$00
+	mov	$0389, a
 	mov	a, !NCKValue		; \ 
-	and	a, #$20			; | Disable mute and reset, reset the noise clock, keep echo off.
-	mov	!NCKValue, a		; |
-	mov	a, #$00			; |
+	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+	mov	a, #$00			; | Only reset the noise clock if SFX is not using it.
++
 	call	ModifyNoise		; /
 	mov	a, $1d		
 	eor	a, #$ff		
@@ -1912,15 +2139,11 @@ L_0D23:
 	;and     a, $47
 ; key on voices in A
 KeyOnVoices:
-	push	a
-	;mov	y, #$5c
-	mov	a, #$00
-	call	KeyOffVoices             ; key off none
-	pop	a
-	mov	y, #$4c
-	call	DSPWrite             ; key on voices from A
-	or	a, !PlayingVoices
-	mov	!PlayingVoices, a
+	mov	$F2, #$5C
+	mov	$F3, #$00
+	mov	$F2, #$4C
+	mov	$F3, a
+	tset	!PlayingVoices, a
 	ret
 
 KeyOffVoicesWithCheck:
@@ -1930,11 +2153,7 @@ KeyOffVoicesWithCheck:
 	pop	a
 	bne	+
 KeyOffVoices:
-	push	a
-	eor	a, #$ff
-	and	a, !PlayingVoices
-	mov	!PlayingVoices, a
-	pop	a
+	tclr	!PlayingVoices, a
 	mov	y, #$5c
 	jmp	DSPWrite
 +
@@ -2103,6 +2322,26 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
+	mov	a, $48
+	and	a, !MusicNoiseChannels
+	beq	++
+	and	a, $1d
+	bne	++
+	;Hardware limitations prevent more than one noise frequency from
+	;playing at once. Thus, we zero out the voice volume of the music
+	;if SFX is using the noise and the frequencies don't match.
+	mov	a, !NCKValue
+	and	a, #$1f
+	cmp	a, $0389
+	beq	++
+	push	x
+	bbc1	$12.0, +
+	inc	x
++
+	mov	$d0+x, y
+	mov	y, #$00
+	pop	x
+++
 	mov	a, y
 	mov	y, $12
 	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear
@@ -2276,7 +2515,10 @@ L_10A1:
 L_10E4:
 	mov	a, ($30+x)				; Code for handling the $DD command.
 	cmp	a, #$dd					; I don't know why this is here instead of in its dispatch table.
-	bne	L_112A					; Maybe so that it can properly do the "read-ahead" effect?
+	beq	+					; Maybe so that it can properly do the "read-ahead" effect?
+	call	L_112A
+	bra	L_1133
++
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
 	beq	L_10FB					; /
@@ -2296,25 +2538,8 @@ L_10FB:
 	adc	a, $43
 	call	CalcPortamentoDelta
 L_1111:
-	mov	a, $91+x
-	beq	L_1119
-	dec	$91+x
-	bra	L_112A
-L_1119:
-	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
-	and	a, $48			; |
-	bne	L_112A			; /
-	set1	$13.7			;
-	mov	a, #$b0			;
-	mov	y, #$02			;
-	dec	$90+x			;
-	call	L_1075			;
-L_112A:
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
-	;mov	a, $02b0+x
-	movw	$10, ya            ; note num -> $10/11
+	call	L_09CDWPreCheck
+L_1133:
 	mov	a, $a1+x
 	beq	L_1140
 	mov	a, $0340+x
@@ -2412,11 +2637,7 @@ L_11C3:
 	call	L_1036             ; set voice DSP regs, pan from $10/11
 L_11C6:
 	clr1	$13.7
-	mov	a, $02b1+x
-	mov	y, a
-	%DDEEFix()
-	;mov	a, $02b0+x
-	movw	$10, ya            ; notenum to $10/11
+	call	DDEEFix	
 	mov	a, $90+x           ; pitch slide counter
 	beq	L_11E3
 	mov	a, $91+x

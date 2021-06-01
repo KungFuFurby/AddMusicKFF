@@ -211,7 +211,7 @@ void Music::init()
 	channel = 0;
 	octave = 4;
 	prevNoteLength = -1;
-	defaultNoteLength = 8;
+	defaultNoteLength = 192/8;
 
 	prevLoop = -1;
 	i = 0;
@@ -2613,7 +2613,7 @@ void Music::parseSampleDefinitions()
 			if (extension == ".bnk")
 				addSampleBank(tempstr, this);
 			else if (extension == ".brr")
-				addSample(tempstr, this, false);
+				addSample(tempstr, this, true);
 			else
 				fatalError("The filename for the sample was invalid.  Only \".brr\" and \".bnk\" are allowed.")
 
