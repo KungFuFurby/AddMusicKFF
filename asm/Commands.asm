@@ -1190,7 +1190,7 @@ endif
 	mov	NormalNote_runningArpGate+1, a	;  | code event -2 should be able to
 	pop	a				;  | fire.
 	call	NoteVCMD			;  |
-	mov	a, #$00				;  |
+	mov	a, #!runningArpGateOnJumpDistance ;  |
 	mov	NormalNote_runningArpGate+1, a	; /
 	
 	mov	a, $48			; \
