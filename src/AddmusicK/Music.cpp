@@ -2876,14 +2876,38 @@ void Music::pointersFirstPass()
 
 	if (resizedChannel != -1)
 	{
-		data[resizedChannel][0] = 0xFA;
-		data[resizedChannel][1] = 0x04;
-		data[resizedChannel][2] = echoBufferSize;
+		int z = 0;
+		int specialWaveSampleIndex = ::getSample("SPECIALWAVE.brr", this);
+		if (specialWaveSampleIndex != -1) {
+			for (int a = 0; a < mySamples.size(); a++)
+			{
+				if (mySamples[a] == specialWaveSampleIndex)
+				{
+					data[resizedChannel].insert(data[resizedChannel].begin(), a);
+					data[resizedChannel].insert(data[resizedChannel].begin(), 0x10);
+					data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+					z += 3;
+					//All pointers that were previously output must be recalibrated for the channel.
+					//This specifically involves loop locations and remote gain positions.
+					//Why isn't this done sooner? Because we don't know if the special wave sample is even included.
+					for (int b = 0; b < loopLocations[resizedChannel].size(); b++) {				
+						loopLocations[resizedChannel][b] = loopLocations[resizedChannel][b]+3;
+					}
+					for (int b = 0; b < remoteGainPositions[resizedChannel].size(); b++) {				
+						remoteGainPositions[resizedChannel][b] = remoteGainPositions[resizedChannel][b]+3;
+					}
+					break;
+				}
+			}
+		}
+		data[resizedChannel][z] = 0xFA;
+		data[resizedChannel][z+1] = 0x04;
+		data[resizedChannel][z+2] = echoBufferSize;
 		if (targetAMKVersion > 1)
 		{
-			data[resizedChannel][3] = 0xFA;
-			data[resizedChannel][4] = 0x06;
-			data[resizedChannel][5] = 0x01;
+			data[resizedChannel][z+3] = 0xFA;
+			data[resizedChannel][z+4] = 0x06;
+			data[resizedChannel][z+5] = 0x01;
 		}
 	}
 
