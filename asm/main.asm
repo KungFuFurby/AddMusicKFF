@@ -1743,9 +1743,8 @@ L_0CA8:
 	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.	
 	mov	a, #$01			; | But we do have to restart the timer so that it will work correctly (and start right now).
 	mov	!ArpTimeLeft+x, a	; /
-	mov	a, #$00				; \
-	mov	NormalNote_runningArpGate+1, a	; / Have this trigger remote code type -2.
 	dec	a
+	mov	NormalNote_runningArpGate+1, a	; Have this trigger remote code type -2.
 	dec	a
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
