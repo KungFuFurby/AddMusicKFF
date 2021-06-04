@@ -1834,7 +1834,9 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+if !PSwitchIsSFX = !true
 	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
+endif
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
