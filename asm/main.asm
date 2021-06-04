@@ -1230,6 +1230,8 @@ SetSFXInstrument:
 	mov	a, SFXInstrumentTable+x ; \
 	mov	x, $46			; |
 	mov	$0210+x, a		; / Something to do with pitch...?
+	mov	a, #$00			; \ Disable sub-tuning
+	mov	$02f0+x, a		; /
 	ret
 }
 
@@ -1424,6 +1426,10 @@ SFXTerminateVCMD:
 	db $00
 
 SFXTerminateCh:
+	mov	a, !ChSFXPtrs+1+x
+	bne	+
+	ret
++
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8
@@ -1828,6 +1834,7 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
