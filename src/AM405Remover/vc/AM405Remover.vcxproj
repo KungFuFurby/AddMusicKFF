@@ -14,21 +14,20 @@
     <ProjectGuid>{3C645DDA-D863-4CCE-A1A2-DEAC4CEBA2F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>AM405Remover</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -81,21 +80,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
+    <ClInclude Include="..\AddMusic.h" />
+    <ClInclude Include="..\AM405Remover.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AddMusic.h" />
-    <ClInclude Include="AM405Remover.h" />
-    <ClInclude Include="class_int.h" />
-    <ClInclude Include="class_string.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="AddMusic.cpp" />
-    <ClCompile Include="class_int.cpp" />
-    <ClCompile Include="class_string.cpp" />
-    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="..\AddMusic.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

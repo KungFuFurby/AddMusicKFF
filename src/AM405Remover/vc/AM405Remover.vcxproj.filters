@@ -15,39 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="..\AddMusic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="class_int.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="class_string.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AddMusic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AM405Remover.h">
+    <ClInclude Include="..\AM405Remover.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="class_string.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AddMusic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="class_int.cpp">
+    <ClCompile Include="..\AddMusic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
