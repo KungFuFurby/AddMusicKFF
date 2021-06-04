@@ -8,3 +8,4 @@ src/Release
 src/Debug
 src/**/Release
 src/**/Debug
+**/addmusick
