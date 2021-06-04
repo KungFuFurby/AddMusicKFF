@@ -663,7 +663,7 @@ EndSFX:
 				
 	
 	mov	a, $18
-	bpl	+			
+	bbc!1DFASFXChannel	$18, +
 	push	a
 	mov	a, $0383
 	or	a, $1c
@@ -684,7 +684,7 @@ if !noiseFrequencySFXInstanceResolution = !true
 endif
 .restoreMusicNoise:
 	mov	$1f, #$00
-	bbc7	$18, +
+	bbc!1DFASFXChannel	$18, +
 	mov	a, $0383
 	or	a, $1c
 	bne	++
@@ -1179,9 +1179,9 @@ SpeedUpMusic:
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
-	mov	x, #$0c				; \ 
+	mov	x, #(!1DF9SFXChannel*2)		; \ 
 	mov	y, #$00				; | 
-	mov	$10, #$40			; | 
+	mov	$10, #(1<<!1DF9SFXChannel)	; | 
 --						; | 
 	bra 	ProcessSFXInput			; / Actually a subroutine.
 	
@@ -1221,9 +1221,9 @@ if !PSwitchIsSFX = !true
 	mov	a, $03				;
 	bmi	PlayPSwitchSFX			;
 endif
-	mov	x, #$0e				; \
+	mov	x, #(!1DFCSFXChannel*2)		; \ 
 	mov	y, #$03				; | 
-	mov	$10, #$80			; |
+	mov	$10, #(1<<!1DFCSFXChannel)	; |
 	;bra	ProcessSFXInput			; /
 
 
@@ -1488,19 +1488,19 @@ CheckAPU1SFXPriority:
 +
 
 .gotPriority
-	cmp	y, !ChSFXPriority+$0e|$0100
+	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)|$0100
 	bcc	ProcessAPU1SFX
 
-	mov	!ChSFXPriority+$0e|$0100, y
+	mov	!ChSFXPriority+(!1DFASFXChannel*2)|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
 	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
-	mov	a, #$80		; \ Key off channel 7.
+	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
 	
 	call	KeyOffVoices
-	set1	$1d.7		; Turn off channel 7's music
-	mov	x, #$0e
+	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
 L_0A2E:
@@ -1511,12 +1511,12 @@ L_0A2E:
 L_0A38:
 	cmp	$1c, #$2a
 	bne	L_0A99
-	mov	$46, #$0e
-	mov	x, #$0e
+	mov	x, #(!1DFASFXChannel*2)
+	mov	$46, x
 	mov	y, #$00
-	mov	$9f, y
+	mov	$91+x, y
 	mov	y, #$12
-	mov	$9e, y
+	mov	$90+x, y
 	mov	a, #$b9
 	call	CalcPortamentoDelta
 	bra	L_0A99
@@ -1528,42 +1528,43 @@ L_0A51:						;;;;;;;;/ Code change
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
 	mov	$05, #$00
-	clr1	$1d.7
+	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
-	mov	!ChSFXPriority+$0e|$0100, a
-	mov	x, #$0e
+	mov	!ChSFXPriority+(!1DFASFXChannel*2)|$0100, a
+	mov	x, #(!1DFASFXChannel*2)
 	jmp	RestoreInstrumentInformation
+
 L_0A68:
-	mov	$46, #$0e
+	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$08
 	call	SetSFXInstrument
 	mov	a, #$b2
 	call	NoteVCMD
 	mov	y, #$00
-	mov	$9f, y
+	mov	$91+x, y
 	mov	y, #$05
-	mov	$9e, y
+	mov	$90+x, y
 	mov	a, #$b5
 	call	CalcPortamentoDelta
 	mov	a, #$38
 	mov	$10, a
-	mov	y, #$70
+	mov	y, #(!1DFASFXChannel*$10)
 	call	DSPWrite
 	inc	y
 	call	DSPWrite
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
 L_0A99:
 	mov	a, #$02
 	cbne	$1c, L_0AA5
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0AA5:
 	clr1	$13.7
-	mov	a, $9e
+	mov	x, #(!1DFASFXChannel*2)
+	mov	a, $90+x
 	beq	L_0AB0
-	mov	x, #$0e
 	call	L_09CD
 	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
@@ -1580,7 +1581,7 @@ L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	$46, #$0e
+	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$07
 	call	SetSFXInstrument
 	mov	a, #$a4
@@ -1595,16 +1596,16 @@ L_0B08:
 L_0B1C:
 	mov	a, #$28
 	mov	$10, a
-	mov	y, #$70
+	mov	y, #(!1DFASFXChannel*$10)
 	call	DSPWrite
 	inc	y
 	call	DSPWrite
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
 L_0B33:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0B3F:
