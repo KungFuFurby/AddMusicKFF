@@ -1,5 +1,5 @@
-#include <experimental/filesystem>		// // //
-namespace fs = std::experimental::filesystem;
+#include <filesystem>		// // //
+namespace fs = std::filesystem;
 #include <fstream>
 
 void openTextFile(const fs::path &fileName, std::string &s) {		// // //
