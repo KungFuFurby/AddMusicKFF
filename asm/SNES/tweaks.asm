@@ -33,16 +33,47 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-org $00E304
-	db !PSwitch
+
+org $00E301
+if !PSwitchIsSFX = !true
+;;; Don't factor in the P-Switch and directional coin timers. Instead, only
+;;; use the star power timer. This is because the P-Switch music is now
+;;; a SFX instance playing with the actual level music.
+	BRA +
+	NOP #2
++
+else
+	BEQ +
+	LDX.B !PSwitch
++
+endif
+
 org $00EEC3
 	db !StageClear
 org $00F60B
 	db !Miss
 org $018784
 	db !BossClear
-org $01AB08
-	db !PSwitch
+
+org $01AAFD
+if !PSwitchIsSFX = !true
+	LDA.B #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.B #$0B
+	STA $1DF9|!SA1Addr2
+endif
+	BRA Skip10 : NOP
+	NOP : NOP
+if !PSwitchIsSFX = !true
+	NOP #5
+Skip10:
+else
+Skip10:
+	LDA.B !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $01C0F0
 	db !StageClear
 org $01C586
@@ -53,8 +84,17 @@ org $01E216
 	db !Keyhole
 org $01FB2E
 	db !BossClear
-org $028968
-	db !PSwitch
+org $028967
+if !PSwitchIsSFX = !true
+;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
+;;; NOTE: This overwrites the $0B that was just stored there!
+	LDA.b #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.b !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $03809D
 	db !BossClear
 org $0398E7
@@ -244,8 +284,16 @@ org $00A286
 	jmp StartSelectSfx
 
 org $00C53E
+if !PSwitchIsSFX = !true
+;;; Don't factor in the previous level music.
+	LDA.b #$80
+	NOP
+	NOP : NOP
+
+else
 	LDA !MusicBackup
 	NOP	: NOP
+endif
 
 ;org $00C53E
 	
@@ -256,6 +304,13 @@ org $00C53E
 ;org $00C54C
 ;	BRA Skip4 : NOP
 ;	Skip4:
+
+org $00C54C
+if !PSwitchIsSFX = !true
+	STA $1DFC|!SA1Addr2
+else
+	STA $1DFB|!SA1Addr2
+endif
 	
 org $02E277		;;; fix for the directional coins (more like code restore)
 	LDA $14AD|!SA1Addr2
@@ -315,11 +370,6 @@ org $00E2EE
 	NOP : NOP : NOP
 	;NOP
 Skip9:
-
-org $01AB02
-	BRA Skip10 : NOP
-	NOP : NOP
-Skip10:
 
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
@@ -431,54 +481,3 @@ org $009E17
 	NOP #3
 	+
 	
-if !PSwitchIsSFX = !true
-
-org $00E301
-;;; Don't factor in the P-Switch and directional coin timers. Instead, only
-;;; use the star power timer. This is because the P-Switch music is now
-;;; a SFX instance playing with the actual level music.
-	BRA +
-	NOP #2
-+
-
-org $01AAFD
-;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
-	LDA #$C0
-	STA $1DFC|!SA1Addr2
-;;; WARNING: This overwrites a hijack at $01AB02 above!
-;;; This is because we don't play the P-Switch music anymore.
-	BRA +
-	NOP #8
-+
-
-;;; This section of code is overwritten by NOPs above, so we don't use
-;;; this... but it's here just in case the NOPs are removed in the future.
-	;LDA.b #$0B
-	;LDY $0DDA|!SA1Addr2
-	;BMI +
-	;LDA.b #$C0
-+
-	;STA $1DFC|!SA1Addr2
-	;NOP #3
-
-
-
-org $028967
-;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
-;;; NOTE: This overwrites the $0B that was just stored there!
-	LDA.b #$C0
-	STA $1DFC|!SA1Addr2
-
-org $00C53E
-;;; Don't factor in the previous level music.
-;;; WARNING: This overwrites a hijack at $00C53E above!
-;;; This is because we don't need to retrieve the music ID anymore.
-	LDA.b #$80
-	NOP
-	NOP : NOP
-
-
-org $00C54C
-	STA $1DFC|!SA1Addr2
-
-endif
