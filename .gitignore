@@ -8,3 +8,17 @@ src/Release
 src/Debug
 src/**/Release
 src/**/Debug
+**/addmusick
+**/asar
+tempmain.asm
+asm/SFX1DF9Table.bin
+asm/SFX1DFCTable.bin
+asm/SFXData.bin
+asm/main.bin
+asm/tempmain.asm
+stats/*
+temp.asm
+temp.bin
+temp.log
+temp.txt
+SPCs/*
