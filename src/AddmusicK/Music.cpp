@@ -211,7 +211,7 @@ void Music::init()
 	channel = 0;
 	octave = 4;
 	prevNoteLength = -1;
-	defaultNoteLength = 8;
+	defaultNoteLength = 192/8;
 
 	prevLoop = -1;
 	i = 0;
@@ -1957,6 +1957,7 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						pos++;
 						getInt();
 					}
 					else if (text[pos] == 'a' || text[pos] == 'b' || text[pos] == 'c' || text[pos] == 'd' || text[pos] == 'e' || text[pos] == 'f' || text[pos] == 'g' ||
@@ -2612,7 +2613,7 @@ void Music::parseSampleDefinitions()
 			if (extension == ".bnk")
 				addSampleBank(tempstr, this);
 			else if (extension == ".brr")
-				addSample(tempstr, this, false);
+				addSample(tempstr, this, true);
 			else
 				fatalError("The filename for the sample was invalid.  Only \".brr\" and \".bnk\" are allowed.")
 

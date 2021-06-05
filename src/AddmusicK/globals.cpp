@@ -393,6 +393,23 @@ int PCToSNES(int addr)
 	return addr;
 }
 
+bool findRATS(int offset)
+{
+	if (rom[offset] != 0x53) {
+		return false;
+	}
+	if (rom[offset+1] != 0x54) {
+		return false;
+	}
+	if (rom[offset+2] != 0x41) {
+		return false;
+	}
+	if (rom[offset+3] != 0x52) {
+		return false;
+	}
+	return true;
+}
+
 int clearRATS(int offset)
 {
 	int size = ((rom[offset + 5] << 8) | rom[offset+4]) + 8;
@@ -425,13 +442,11 @@ void addSample(const File &fileName, Music *music, bool important)
 	addSample(temp, actualPath, music, important, false);
 }
 
-void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint)
+void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint, bool isBNK)
 {
 	Sample newSample;
-	if (important)
-		newSample.important = true;
-	else
-		newSample.important = false;
+	newSample.important = important;
+	newSample.isBNK = isBNK;
 
 	if (sample.size() != 0)
 	{
@@ -472,13 +487,37 @@ void addSample(const std::vector<uint8_t> &sample, const std::string &name, Musi
 		{
 			if (samples[i].data == newSample.data)
 			{
-				sampleToIndex[name] = i;
+				//Don't add samples from BNK files to the sampleToIndex map, because they're not valid filenames.
+				if (!(newSample.isBNK)) {
+					sampleToIndex[name] = i;
+				}
 				music->mySamples.push_back(i);
 				return;
 			}
 		}
+		//BNK files don't qualify for the next check. 
+		if (!(newSample.isBNK)) {
+			fs::path p1 = "./"+newSample.name;
+			//If the sample in question was taken from a sample group, then use the sample group's important flag instead.
+			for (int i = 0; i < bankDefines.size(); i++)
+			{
+				for (int j = 0; j < bankDefines[i]->samples.size(); j++)
+				{
+					fs::path p2 = "./samples/"+*(bankDefines[i]->samples[j]);
+					if (fs::equivalent(p1, p2))
+					{
+						//Copy the important flag from the sample group definition.
+						newSample.important = bankDefines[i]->importants[j];
+						break;
+					}
+				}
+			}
+		}
 	}
-	sampleToIndex[newSample.name] = samples.size();
+	//Don't add samples from BNK files to the sampleToIndex map, because they're not valid filenames.
+	if (!(newSample.isBNK)) {
+		sampleToIndex[newSample.name] = samples.size();
+	}
 	music->mySamples.push_back(samples.size());
 	samples.push_back(newSample);					// This is a sample we haven't encountered before.  Add it.
 }
@@ -570,7 +609,7 @@ void addSampleBank(const File &fileName, Music *music)
 		char temp[20];
 		sprintf(temp, "__SRCNBANKBRR%04X", bankSampleCount++);
 		tempSample.name = temp;
-		addSample(tempSample.data, tempSample.name, music, true, true, tempSample.loopPoint);
+		addSample(tempSample.data, tempSample.name, music, true, true, tempSample.loopPoint, true);
 	}
 }
 

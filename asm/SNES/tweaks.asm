@@ -12,51 +12,7 @@
 !true = 1
 !false = 0
 
-
-
-!JumpSFXOn1DFC = !true			; Change this to !false to move the jump sound effect to 1DFA.
-				
-!Miss		= #$01			; If you've changed list.txt and plan on using the original SMW songs
-!GameOver	= #$02			; change these constants to whatever they are in list.txt
-!BossClear	= #$03			; For example, if you changed the "Stage Clear" music to be number 9,
-!StageClear	= #$04			; Then you'd change "!StageClear = #$04" to "!StageClear = #$09".
-!Starman	= #$05
-!PSwitch	= #$06
-!Keyhole	= #$07
-!IrisOut	= #$08
-!BonusEnd	= #$09
-!Piano		= #$0A
-!HereWeGo	= #$0B
-!Water		= #$0C
-!Bowser		= #$0D
-!Boss		= #$0E
-!Cave		= #$0F
-!GhostHouse	= #$10
-!Castle		= #$11
-!SwitchPalace	= #$12
-!Welcome	= #$13
-!RescueEgg	= #$14
-!Title		= #$15
-!VoBAppears	= #$16
-!Overworld	= #$17
-!YoshisIsland	= #$18
-!VanillaDome	= #$19
-!StarRoad	= #$1A
-!ForestOfIllusion = #$1B
-!ValleyOfBowser	= #$1C
-!SpecialWorld	= #$1D
-!NintPresents   = #$1E		; Note that this is a song, not a sound effect!
-
-!Bowser2	= #$1F		;
-!Bowser3	= #$20
-!BowserDefeated = #$21
-!BowserIntrlude = #$22
-!BowserZoomIn	= #$23
-!BowserZoomOut	= #$24
-!PrincessSaved	= #$25
-!StaffRoll	= #$26
-!YoshisAreHome	= #$27
-!CastList	= #$28
+incsrc "../UserDefines.asm"
 
 
 org $9724		; Fix the title music
@@ -77,16 +33,47 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-org $00E304
-	db !PSwitch
+
+org $00E301
+if !PSwitchIsSFX = !true
+;;; Don't factor in the P-Switch and directional coin timers. Instead, only
+;;; use the star power timer. This is because the P-Switch music is now
+;;; a SFX instance playing with the actual level music.
+	BRA +
+	NOP #2
++
+else
+	BEQ +
+	LDX.B !PSwitch
++
+endif
+
 org $00EEC3
 	db !StageClear
 org $00F60B
 	db !Miss
 org $018784
 	db !BossClear
-org $01AB08
-	db !PSwitch
+
+org $01AAFD
+if !PSwitchIsSFX = !true
+	LDA.B #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.B #$0B
+	STA $1DF9|!SA1Addr2
+endif
+	BRA Skip10 : NOP
+	NOP : NOP
+if !PSwitchIsSFX = !true
+	NOP #5
+Skip10:
+else
+Skip10:
+	LDA.B !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $01C0F0
 	db !StageClear
 org $01C586
@@ -97,8 +84,17 @@ org $01E216
 	db !Keyhole
 org $01FB2E
 	db !BossClear
-org $028968
-	db !PSwitch
+org $028967
+if !PSwitchIsSFX = !true
+;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
+;;; NOTE: This overwrites the $0B that was just stored there!
+	LDA.b #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.b !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $03809D
 	db !BossClear
 org $0398E7
@@ -288,8 +284,16 @@ org $00A286
 	jmp StartSelectSfx
 
 org $00C53E
+if !PSwitchIsSFX = !true
+;;; Don't factor in the previous level music.
+	LDA.b #$80
+	NOP
+	NOP : NOP
+
+else
 	LDA !MusicBackup
 	NOP	: NOP
+endif
 
 ;org $00C53E
 	
@@ -300,6 +304,13 @@ org $00C53E
 ;org $00C54C
 ;	BRA Skip4 : NOP
 ;	Skip4:
+
+org $00C54C
+if !PSwitchIsSFX = !true
+	STA $1DFC|!SA1Addr2
+else
+	STA $1DFB|!SA1Addr2
+endif
 	
 org $02E277		;;; fix for the directional coins (more like code restore)
 	LDA $14AD|!SA1Addr2
@@ -360,11 +371,6 @@ org $00E2EE
 	;NOP
 Skip9:
 
-org $01AB02
-	BRA Skip10 : NOP
-	NOP : NOP
-Skip10:
-
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
 	;STA $0DDA|!SA1Addr2
@@ -416,7 +422,7 @@ OWMusicHijack:
 
 
 
-; Remap the jump SFX to $1DFA or $1DFC.
+; Remap the jump SFX to $1DF9 or $1DFC.
 if !JumpSFXOn1DFC == !true
 	org $00D65E
 	LDA #$35
@@ -425,7 +431,7 @@ if !JumpSFXOn1DFC == !true
 	org $00DBA5
 	LDA #$35
 	STA $1DFC|!SA1Addr2
-else
+elseif !JumpSFXOn1DF9 == !true
 	org $00D65E
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
@@ -436,17 +442,31 @@ else
 endif
 
 ; Remap the grinder SFX too.
-org $01D745
-LDA #$1A
-STA $1DF9|!SA1Addr2
+if !GrinderSFXOn1DFC == !true
+	org $01D745
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $01DB70
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $01DB70
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $0392B8
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $0392B8
+	LDA #$36
+	STA $1DFC|!SA1Addr2
+elseif !GrinderSFXOn1DF9 == !true
+	org $01D745
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $01DB70
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $0392B8
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+endif
 
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD
