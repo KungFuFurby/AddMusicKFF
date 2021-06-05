@@ -57,9 +57,25 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	addw	ya, $10			; |
 	movw	$14, ya			; /
 
-	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
-	
 	call	GetBackupInstrTable
+
+	mov	y, #$00			; \ 
+	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
+	bpl	+
+	and	a, #$1f
+	mov	$0389, a
+	or	(!MusicNoiseChannels), ($48)
+	bra	++
++
+	mov	($10)+y, a		; (save it in the backup table)
+++
+	mov	y, #$05
+-
+	mov	a, ($14)+y
+	mov	($10)+y, a
+	dbnz	y, -
+
+	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
 	
 	push	x			; \ 
 	mov	a, x			; |
@@ -74,12 +90,8 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	
-	mov	($10)+y, a		; (save it in the backup table)
-	
 	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
 
-	and	a, #$1f
-	mov	$0389, a
 	cmp	!SFXNoiseChannels, #$00
 	bne	+
 	
@@ -95,7 +107,6 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	a, ($14)+y		; \ 
 ++	mov	$f2, x			; | 	
 	mov	$f3, a			; |
-	mov	($10)+y, a		; |
 	inc	x			; | This loop will write to the correct DSP registers for this instrument.
 	inc	y			; | And correctly set up the backup table.
 	cmp	y, #$04			; |
@@ -104,11 +115,9 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	pop	x
 	mov	a, ($14)+y		; The next byte is the pitch multiplier.
 	mov	$0210+x, a		;
-	mov	($10)+y, a		;
 	inc	y			;
 	mov	a, ($14)+y		; The final byte is the sub multiplier.
 	mov	$02f0+x, a		;
-	mov	($10)+y, a		;
 	
 	inc	y			; If this was a percussion instrument,
 	mov	a, ($14)+y		; Then it had one extra pitch byte.  Get it just in case.
