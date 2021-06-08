@@ -63,6 +63,11 @@
 	
 	</span>
 	
+	<br><br><h2>UserDefines.asm</h2>
+	<p>This file, located in the asm directory, is a quick and easy way to customize the sound driver functionality without digging too deep into the code.
+           Some of the defines affect the SNES side only, while other affect the SPC700 side, while others affect both.
+           If you find yourself using too much memory on the SPC side, then disabling some code fragments through these defines might help save some ARAM.</p>
+
 	<br><br><h2>Sample Groups</h2>
 	<p>A "sample group" is just what it sounds like: a group of samples.  Whenever a song is loaded, so is its sample group and any auxilary samples it uses (which, in a song, is defined by the #samples command).
 	There are two sample groups included by default, #default, and #optimized.  The first contains all the samples the normal SMW ROM contains, so any song that uses #default will also use all those samples.
