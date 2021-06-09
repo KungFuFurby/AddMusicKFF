@@ -149,6 +149,9 @@ arch spc700-raw
 org $000000
 base $0400			; Do not change this.
 
+if !noSFX = !true
+print "NoSFX is enabled"
+endif
 {		; Program setup
 	clrp
 	mov   x, #$cf
