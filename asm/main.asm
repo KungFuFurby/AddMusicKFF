@@ -140,6 +140,9 @@ incsrc "UserDefines.asm"
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !InRest = $01a1
 
+!PSwitchLoopCounter = $0385
+
+
 arch spc700-raw
 org $000000
 base $0400			; Do not change this.
@@ -743,7 +746,7 @@ EndSFX:
 				
 	
 	mov	a, $18
-	bpl	+			
+	bbc!1DFASFXChannel	$18, +
 	push	a
 	mov	a, $0383
 	or	a, $1c
@@ -764,7 +767,7 @@ if !noiseFrequencySFXInstanceResolution = !true
 endif
 .restoreMusicNoise:
 	mov	$1f, #$00
-	bbc7	$18, +
+	bbc!1DFASFXChannel	$18, +
 	mov	a, $0383
 	or	a, $1c
 	bne	++
@@ -1183,58 +1186,206 @@ SetSFXInstrument:
 	mov	a, SFXInstrumentTable+x ; \
 	mov	x, $46			; |
 	mov	$0210+x, a		; / Something to do with pitch...?
+	mov	a, #$00			; \ Disable sub-tuning
+	mov	$02f0+x, a		; /
 	ret
 }
 
 if !PSwitchIsSFX = !true
-PSwitchCh5:
+
+PSwitchPtrs:
+	dw PSwitchCh5
+	dw PSwitchCh6
+	dw PSwitchCh7
+
+PSwitchCh7:
+	db $FD				; #jsr PSwitchInit
+	dw PSwitchInit
 	db $DA, $02			; @2
+PSwitchCh7NoteLen3X1:
 	db $30, $00,      $C6 		; r=24
+PSwitchCh7NoteLen2X1:
 	db $20, $00, $26, $A4		; y0o4c=16
+PSwitchCh7NoteLen1:
 	db $10, $0A, $1D, $9F		; y5o3g=8
+PSwitchCh7NoteLen2:
 	db $10, $00,      $C6		; r=8
+PSwitchCh7NoteLen3:
 	db $10, $13, $13, $AB		; y10o4g=8
+PSwitchCh7NoteLen4:
 	db $10, $17, $0F, $9F		; y12o3c=8
+PSwitchCh7NoteLen2X2:
 	db $20, $1D, $0A, $A4		; y15o4c=4
+PSwitchCh7NoteLen5:
 	db $10, $26, $00, $9F		; y20o3g=8
-	
+PSwitchCh7NoteLen3X2:
 	db $30, $00,      $C6		; r=24
+PSwitchCh7NoteLen2X3:
 	db $20, $26, $00, $A5		; y20o4c+=16
+PSwitchCh7NoteLen6:
 	db $10, $1D, $0A, $A0		; y15o3g+=8
+PSwitchCh7NoteLen7:
 	db $10, $00,      $C6		; r=8
+PSwitchCh7NoteLen8:
 	db $10, $13, $13, $AC		; y10o4g+=8
+PSwitchCh7NoteLen9:
 	db $10, $0C, $18, $A0		; y7o3c+=8
+PSwitchCh7NoteLen2X4:
 	db $20, $1D, $0A, $A5		; y5o4c+=4
+PSwitchCh7NoteLen10:
 	db $10, $00, $26, $A0		; y0o3g+=8
+	db $FD				; #jsr PSwitchNextLoopCh7
+	dw PSwitchNextLoopCh7
 	db $FE				; loop
 	
 PSwitchCh6:
+	db $FD				; #jsr PSwitchInit
+	dw PSwitchInit
 	db $DA, $02	; @2
-	db $20, $26, $00, $8C		; y0o2c=16	
+PSwitchCh6NoteLen2X1:
+	db $20, $26, $00, $8C		; y0o2c=16
+PSwitchCh6NoteLen4X1:	
 	db $40,           $93		; y0o2g=8^24
+PSwitchCh6NoteLen3X1:
 	db $30,           $98		; y0o3c=24
 	db                $93		; y0o2g=24
-
-	db $20, $04, $22, $8D		; y2o2c+=16	
+PSwitchCh6NoteLen2X2:
+	db $20, $04, $22, $8D		; y2o2c+=16
+PSwitchCh6NoteLen4X2:
 	db $40, $0A, $1D, $94		; y5o2g+=8^24
+PSwitchCh6NoteLen3X2:
 	db $30, $13, $13, $99		; y10o3c+=24
+PSwitchCh6NoteLen3X3:
 	db $30, $1E, $08, $94		; y16o2g+=24
+	db $FD				; #jsr PSwitchNextLoopCh6
+	dw PSwitchNextLoopCh6
 	db $FE
 	
-PSwitchCh7:
+PSwitchCh5:
+	db $FD				; #jsr PSwitchInitCh5
+	dw PSwitchInitCh5
 	db $DA, $09			; @9
+PSwitchCh5NoteLen:
 	db $10, $0D, $B0		; o4g=8
 	db 	$B0			; o4g=8
 	db	$B9			; o5e=8
 	db	$B9			; o5e=8
+	db $FD				; #jsr PSwitchNextLoopCh5
+	dw PSwitchNextLoopCh5
 	db $FE			
-	
+
+PSwitchInitCh5:
+	mov	a, #$00
+	mov	PSwitchCh5LoopCounter+1, a
+PSwitchInit:
+	;Don't call this again for subsequent loops.
+	mov	x, $46
+	mov	a, !ChSFXPtrBackup+x
+	clrc
+	adc	a, #$03
+	mov	!ChSFXPtrBackup+x, a
+	mov	a, !ChSFXPtrBackup+1+x
+	adc	a, #$00
+	mov	!ChSFXPtrBackup+1+x, a
+	;Init loop counter
+	mov	a, #$00
+	mov	!PSwitchLoopCounter, a
+	call	PSwitchSetNoteLengthCh5
+	call	PSwitchSetNoteLengthCh6
+	call	PSwitchSetNoteLengthCh7
+	ret
+
+PSwitchNextLoopCh7:
+	call	PSwitchIncLoopCounter
+
+PSwitchSetNoteLengthCh7:
+	mov	y, !PSwitchLoopCounter
+	mov	a, PSwitchNoteLengths+y
+	mov	PSwitchCh7NoteLen1, a
+	mov	PSwitchCh7NoteLen2, a
+	mov	PSwitchCh7NoteLen3, a
+	mov	PSwitchCh7NoteLen4, a
+	mov	PSwitchCh7NoteLen5, a
+	mov	PSwitchCh7NoteLen6, a
+	mov	PSwitchCh7NoteLen7, a
+	mov	PSwitchCh7NoteLen8, a
+	mov	PSwitchCh7NoteLen9, a
+	mov	PSwitchCh7NoteLen10, a
+	clrc
+	adc	a, PSwitchNoteLengths+y
+	mov	PSwitchCh7NoteLen2X1, a
+	mov	PSwitchCh7NoteLen2X2, a
+	mov	PSwitchCh7NoteLen2X3, a
+	mov	PSwitchCh7NoteLen2X4, a
+	clrc
+	adc	a, PSwitchNoteLengths+y
+	mov	PSwitchCh7NoteLen3X1, a
+	mov	PSwitchCh7NoteLen3X2, a
+	ret
+
+PSwitchNextLoopCh6:
+	bbs7	$1b, PSwitchSetNoteLengthCh6
+	call	PSwitchIncLoopCounter
+
+PSwitchSetNoteLengthCh6:
+	mov	y, !PSwitchLoopCounter
+	mov	a, PSwitchNoteLengths+y
+	clrc
+	adc	a, PSwitchNoteLengths+y
+	mov	PSwitchCh6NoteLen2X1, a
+	mov	PSwitchCh6NoteLen2X2, a
+	clrc
+	adc	a, PSwitchNoteLengths+y
+	mov	PSwitchCh6NoteLen3X1, a
+	mov	PSwitchCh6NoteLen3X2, a
+	mov	PSwitchCh6NoteLen3X3, a
+	clrc
+	adc	a, PSwitchNoteLengths+y
+	mov	PSwitchCh6NoteLen4X1, a
+	mov	PSwitchCh6NoteLen4X2, a
+	ret
+
+PSwitchNextLoopCh5:
+PSwitchCh5LoopCounter:
+	mov	a, #$00
+	inc	a
+	mov	PSwitchCh5LoopCounter+1, a
+	cmp 	a, #$06
+	bcc	PSwitchSetNoteLengthCh5
+	mov	a, #$00
+	mov	PSwitchCh5LoopCounter+1, a
+
+PSwitchCh5IncMainLoopCounter:
+	bbs7	$1b, PSwitchSetNoteLengthCh5
+	bbs6	$1b, PSwitchSetNoteLengthCh5
+	call	PSwitchIncLoopCounter
+
+PSwitchSetNoteLengthCh5:
+	mov	y, !PSwitchLoopCounter
+	mov	a, PSwitchNoteLengths+y
+	mov	PSwitchCh5NoteLen, a
+	ret
+
+PSwitchIncLoopCounter:
+	mov	a, !PSwitchLoopCounter
+	cmp	a, #$04
+	bcs	+
+	inc	!PSwitchLoopCounter
++
+	ret
+
+PSwitchNoteLengths:
+	db $0D, $0D, $0B, $09, $07	
 endif
 
 SFXTerminateVCMD:
 	db $00
 
 SFXTerminateCh:
+	mov	a, !ChSFXPtrs+1+x
+	bne	+
+	ret
++
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8
@@ -1259,51 +1410,75 @@ SpeedUpMusic:
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
-	mov	x, #$0c				; \ 
+	mov	x, #(!1DF9SFXChannel*2)		; \ 
 	mov	y, #$00				; | 
-	mov	$10, #$40			; | 
+	mov	$10, #(1<<!1DF9SFXChannel)	; | 
 --						; | 
 	bra 	ProcessSFXInput			; / Actually a subroutine.
 	
 if !PSwitchIsSFX = !true
-PlayPSwitchSFX:
-	mov	!ChSFXPtrs+$0a, #PSwitchCh5
-	mov	!ChSFXPtrs+$0b, #PSwitchCh5>>8
-	mov	!ChSFXPtrs+$0c, #PSwitchCh6
-	mov	!ChSFXPtrs+$0d, #PSwitchCh6>>8
-	mov	!ChSFXPtrs+$0e, #PSwitchCh7
-	mov	!ChSFXPtrs+$0f, #PSwitchCh7>>8
-
-	mov	y, #$06				; \
--						; |
-	mov	a, !ChSFXPtrs+$0009+y		; | Copy the SFX pointers to the backup pointers.
-	mov	!ChSFXPtrBackup+$09+y, a	; |
-	dbnz	y, -				; /
-	
-	mov	a, #$03
-	setp
-	mov	!ChSFXNoteTimer+$0e, a		; \
-	mov	!ChSFXNoteTimer+$0c, a		; | Set the timers to 3, not 1.
-	mov	!ChSFXNoteTimer+$0a, a		; /
-	clrp
-	;mov	$f2, #$5c			; \ Key off these 3 voices.
-	;mov	$f3, #$e0			; /
-	mov	a, #$e0
-	call	KeyOffVoices
-	
-	or	$1d, #$e0			; Mute these channels.
+PSwitchSFX:
+	cmp	a, #$80
+	bne	PlayPSwitchSFX
+StopPSwitchSFX:
+	mov	x, #$0e
+StopPSwitchSFXLoop:
+	asl	$1b
+	push	p
+	bcc	StopPSwitchSFXSkipCh
+	call	SFXTerminateCh
+StopPSwitchSFXSkipCh:
+	dec	x
+	dec	x
+	pop	p
+	bne	StopPSwitchSFXLoop
 	ret
+
+PlayPSwitchSFX:
+	push	a
+	mov	y, #$03
+	push	y
+	mov	x, #$0e
+	mov	$10, #$80
+	call	ProcessSFXInput
+
+	pop	y
+	pop	a
+	push	a
+	push	y
+	mov	x, #$0c
+	mov	$10, #$40
+	call	ProcessSFXInput
+
+	pop	y
+	pop	a
+	push	a
+	mov	x, #$0a
+	mov	$10, #$20
+	call	ProcessSFXInput
+
+	pop	a
+	and	a, #$40
+	bne	PlayPSwitchActivateSFX
+	ret
+
+PlayPSwitchActivateSFX:
+	mov	x, #$08
+	mov	$10, #$10
+	mov	a, #$0b
+	mov	y, #$00
+	bra	ProcessSFXInput_prepareForSFX
 
 endif
 	
 ProcessAPU3Input:
 if !PSwitchIsSFX = !true
 	mov	a, $03				;
-	bmi	PlayPSwitchSFX			;
+	bmi	PSwitchSFX			;
 endif
-	mov	x, #$0e				; \
+	mov	x, #(!1DFCSFXChannel*2)		; \ 
 	mov	y, #$03				; | 
-	mov	$10, #$80			; |
+	mov	$10, #(1<<!1DFCSFXChannel)	; |
 	;bra	ProcessSFXInput			; /
 
 
@@ -1329,6 +1504,10 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	push	a
 	beq	+				; /
 						;
+if !PSwitchIsSFX = !true
+	cmp	$03, #$81			;
+	bcs	.PSwitchSFX
+endif
 	mov	a, SFXTable1-1+y		; \
 	push	a				; | Move the pointer to the current SFX to the correct pointer.
 	mov	a, SFXTable1-2+y		; |
@@ -1338,7 +1517,15 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	mov	a, SFXTable0-1+y		; \
 	push	a				; |
 	mov	a, SFXTable0-2+y		; /
-	
+if !PSwitchIsSFX = !true
+	bra	.gottenPointer
+
+.PSwitchSFX	
+	mov	a, PSwitchPtrs-$09+x
+	push	a
+	mov	a, PSwitchPtrs-$0a+x
+
+endif	
 .gottenPointer
 	pop	y
 	movw	$14, ya
@@ -1382,6 +1569,13 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	call	KeyOffVoices
 	pop	y
 	or	($1d), ($10)			;
+if !PSwitchIsSFX = !true
+	cmp	$03, #$81			;
+	or	($1b), ($10)
+	bcs	.PSwitchSFXChSet
+	eor	($1b), ($10)
+.PSwitchSFXChSet
+endif
 	
 	mov	a, $15
 	mov	!ChSFXPtrs+1+x, a		; Store to current pointer
@@ -1568,19 +1762,22 @@ CheckAPU1SFXPriority:
 +
 
 .gotPriority
-	cmp	y, !ChSFXPriority+$0e|$0100
+	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)|$0100
 	bcc	ProcessAPU1SFX
 
-	mov	!ChSFXPriority+$0e|$0100, y
+	mov	!ChSFXPriority+(!1DFASFXChannel*2)|$0100, y
 L_0A14:
 	mov	$05, a		;
 	mov	a, #$04		; \
 	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
-	mov	a, #$80		; \ Key off channel 7.
+	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
 	
 	call	KeyOffVoices
-	set1	$1d.7		; Turn off channel 7's music
-	mov	x, #$0e
+	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+if !PSwitchIsSFX = !true
+	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
+endif
+	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
 L_0A2E:
@@ -1591,12 +1788,12 @@ L_0A2E:
 L_0A38:
 	cmp	$1c, #$2a
 	bne	L_0A99
-	mov	$46, #$0e
-	mov	x, #$0e
+	mov	x, #(!1DFASFXChannel*2)
+	mov	$46, x
 	mov	y, #$00
-	mov	$9f, y
+	mov	$91+x, y
 	mov	y, #$12
-	mov	$9e, y
+	mov	$90+x, y
 	mov	a, #$b9
 	call	CalcPortamentoDelta
 	bra	L_0A99
@@ -1608,42 +1805,43 @@ L_0A51:						;;;;;;;;/ Code change
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
 	mov	$05, #$00
-	clr1	$1d.7
+	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
-	mov	!ChSFXPriority+$0e|$0100, a
-	mov	x, #$0e
+	mov	!ChSFXPriority+(!1DFASFXChannel*2)|$0100, a
+	mov	x, #(!1DFASFXChannel*2)
 	jmp	RestoreInstrumentInformation
+
 L_0A68:
-	mov	$46, #$0e
+	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$08
 	call	SetSFXInstrument
 	mov	a, #$b2
 	call	NoteVCMD
 	mov	y, #$00
-	mov	$9f, y
+	mov	$91+x, y
 	mov	y, #$05
-	mov	$9e, y
+	mov	$90+x, y
 	mov	a, #$b5
 	call	CalcPortamentoDelta
 	mov	a, #$38
 	mov	$10, a
-	mov	y, #$70
+	mov	y, #(!1DFASFXChannel*$10)
 	call	DSPWrite
 	inc	y
 	call	DSPWrite
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
 L_0A99:
 	mov	a, #$02
 	cbne	$1c, L_0AA5
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0AA5:
 	clr1	$13.7
-	mov	a, $9e
+	mov	x, #(!1DFASFXChannel*2)
+	mov	a, $90+x
 	beq	L_0AB0
-	mov	x, #$0e
 	call	L_09CD
 	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
@@ -1660,7 +1858,7 @@ L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	$46, #$0e
+	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$07
 	call	SetSFXInstrument
 	mov	a, #$a4
@@ -1675,16 +1873,16 @@ L_0B08:
 L_0B1C:
 	mov	a, #$28
 	mov	$10, a
-	mov	y, #$70
+	mov	y, #(!1DFASFXChannel*$10)
 	call	DSPWrite
 	inc	y
 	call	DSPWrite
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
 L_0B33:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
-	mov	a, #$80
+	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0B3F:
@@ -2884,7 +3082,9 @@ Start:
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
-
+if !PSwitchIsSFX = !true
+	mov	$1b, #$00
+endif
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode

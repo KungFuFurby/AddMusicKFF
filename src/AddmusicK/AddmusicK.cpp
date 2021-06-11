@@ -1505,8 +1505,15 @@ void generateSPCs()
 
 
 				int backupIndex = i;
-				if (mode != 0)
-					i = highestGlobalSong + 1;		// While dumping SFX, pretend that the current song is the lowest local song
+				if (mode != 0) {
+					i = highestGlobalSong + 1;
+					for (int j = highestGlobalSong+1; j < 256; j++) {
+						if (musics[j].exists) {
+							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+							break;
+						}
+					}
+				}
 
 				if (mode == 0)
 				{
