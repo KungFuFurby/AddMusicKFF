@@ -2999,8 +2999,9 @@ Start:
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
+if !PSwitchIsSFX = !true
 	mov	$1b, #$00
-	
+endif	
 	jmp	($0014+x)		; Jump to address
 	
 GetSampleTableLocation:
