@@ -3319,8 +3319,9 @@ endif
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
+if !PSwitchIsSFX = !true
 	mov	$1b, #$00
-
+endif	
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
