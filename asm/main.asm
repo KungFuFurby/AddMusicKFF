@@ -1119,9 +1119,9 @@ PSwitchPtrs:
 	dw PSwitchCh7
 
 PSwitchCh7:
-	db $FD				; #jsr PSwitchInit
-	dw PSwitchInit
 	db $DA, $02			; @2
+	db $FD				; #jsr PSwitchInitCh6And7
+	dw PSwitchInitCh6And7
 PSwitchCh7NoteLen3X1:
 	db $30, $00,      $C6 		; r=24
 PSwitchCh7NoteLen2X1:
@@ -1159,9 +1159,9 @@ PSwitchCh7NoteLen10:
 	db $FE				; loop
 	
 PSwitchCh6:
-	db $FD				; #jsr PSwitchInit
-	dw PSwitchInit
 	db $DA, $02	; @2
+	db $FD				; #jsr PSwitchInitCh6And7
+	dw PSwitchInitCh6And7
 PSwitchCh6NoteLen2X1:
 	db $20, $26, $00, $8C		; y0o2c=16
 PSwitchCh6NoteLen4X1:	
@@ -1182,9 +1182,9 @@ PSwitchCh6NoteLen3X3:
 	db $FE
 	
 PSwitchCh5:
+	db $DA, $09			; @9
 	db $FD				; #jsr PSwitchInitCh5
 	dw PSwitchInitCh5
-	db $DA, $09			; @9
 PSwitchCh5NoteLen:
 	db $10, $0D, $B0		; o4g=8
 	db 	$B0			; o4g=8
@@ -1194,6 +1194,17 @@ PSwitchCh5NoteLen:
 	dw PSwitchNextLoopCh5
 	db $FE			
 
+PSwitchInitCh6And7:
+	;Set the ADSR of the current channel to match the real one, since
+	;there is no SFX instrument that exactly replicates this parameter.
+	mov	a, $46
+	lsr	a
+	xcn	a
+	or	a, #$06
+	mov	$f2, a
+	mov	$f3, #$6a
+	bra	PSwitchInit
+
 PSwitchInitCh5:
 	mov	a, #$00
 	mov	PSwitchCh5LoopCounter+1, a
@@ -1202,7 +1213,7 @@ PSwitchInit:
 	mov	x, $46
 	mov	a, !ChSFXPtrBackup+x
 	clrc
-	adc	a, #$03
+	adc	a, #$05
 	mov	!ChSFXPtrBackup+x, a
 	mov	a, !ChSFXPtrBackup+1+x
 	adc	a, #$00
