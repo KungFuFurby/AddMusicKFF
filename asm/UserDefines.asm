@@ -33,6 +33,45 @@ includeonce
 
 ;=======================================
 ;---------------
+!1DF9SFXChannel = 6
+
+;Default setting: 6
+;Vanilla SMW setting: 4
+;---------------
+; Changes the channel assigned to 1DF9.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!1DFASFXChannel = 7
+
+;Default setting: 7
+;Vanilla SMW setting: 7
+;---------------
+; Changes the channel assigned to 1DFA.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!1DFCSFXChannel = 7
+
+;Default setting: 7
+;Vanilla SMW setting: 6
+;---------------
+; Changes the channel assigned to 1DFC.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DF9 = !false
 
 ;Default setting: !false

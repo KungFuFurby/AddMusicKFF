@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) try		// // //
 			optimizeSampleUsage = false;
 		else if (arguments[i] == "-s")
 			allowSA1 = false;
-		else if (arguments[i] == "-dumpsfx")
+		else if ((arguments[i] == "-dumpsfx") || (arguments[i] == "-sfxdump"))
 			sfxDump = true;
 		else if (arguments[i] == "-visualize")
 			visualizeSongs = true;
@@ -1505,8 +1505,15 @@ void generateSPCs()
 
 
 				int backupIndex = i;
-				if (mode != 0)
-					i = highestGlobalSong + 1;		// While dumping SFX, pretend that the current song is the lowest local song
+				if (mode != 0) {
+					i = highestGlobalSong + 1;
+					for (int j = highestGlobalSong+1; j < 256; j++) {
+						if (musics[j].exists) {
+							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+							break;
+						}
+					}
+				}
 
 				if (mode == 0)
 				{
@@ -2051,11 +2058,11 @@ void generatePNGs()
 			unsigned char b = 0;
 			unsigned char a = 255;
 
-			if (i >= 0 && i < programUploadPos)
+			if (i >= 0 && i < programPos)
 			{
 				r = 255;
 			}
-			else if (i >= programUploadPos && i < programPos + programSize)
+			else if (i >= programPos && i < programPos + programSize)
 			{
 				r = 255;
 				g = 255;
