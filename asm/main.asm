@@ -236,9 +236,9 @@ SquareGate:
 		clrc
 ;The same slowdown fix that the music got gets applied here.
 ;However, it has been upgraded.
-		addw	ya,$6a
-		movw	$6a,ya
-		cmp	$6b, #$00
+		addw	ya,$016a&$FF
+		movw	$016a&$FF,ya
+		cmp	$016b&$FF, #$00
 		clrp
 		beq	Sq_ret
 ;Original used fixed memory location references (and sample ID $09).
