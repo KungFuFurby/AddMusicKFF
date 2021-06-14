@@ -853,7 +853,6 @@ SubC_table2:
 ;	
 	
 	call	GetCommandData
-	beq	.modifyEchoDelay
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
