@@ -829,11 +829,11 @@ SubC_1B:
 SubC_1C:
 SyncInc:
 	setp
-	inc	$66		; Increase $166.
-	cmp	$66, $6c
+	inc.b	$0166&$FF		; Increase $166.
+	cmp	$0166&$FF, $016c&$FF
 	bne	SyncInc_ret
-	mov	$66, #$00
-	inc	$67
+	mov	$0166&$FF, #$00
+	inc.b	$0167&$FF
 	; Note that this is different from AMM's code.
 	; The old code never let the low byte go above #$C0.
 	; A good idea in theory, but it both assumes that all
