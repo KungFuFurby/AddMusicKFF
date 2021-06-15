@@ -140,9 +140,6 @@ incsrc "UserDefines.asm"
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !InRest = $01a1
 
-!PSwitchLoopCounter = $0385
-
-
 arch spc700-raw
 org $000000
 base $0400			; Do not change this.
@@ -1316,13 +1313,14 @@ endif
 	call	PSwitchIncLoopCounter
 
 PSwitchSetNoteLengthCh0:
-	mov	y, !PSwitchLoopCounter
+	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
 	mov	PSwitchCh0NoteLen, a
 	ret
 
+PSwitchLoopCounter:
 PSwitchIncLoopCounter:
-	mov	a, !PSwitchLoopCounter
+	mov	a, #$00
 	cmp	a, #$04
 	bcs	+
 	inc	!PSwitchLoopCounter
