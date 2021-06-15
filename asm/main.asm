@@ -103,9 +103,9 @@ incsrc "UserDefines.asm"
 !PauseMusic = $0388		; Pauses the music if not zero.  Used in the pause SFX.
 
 !ChSFXPtrs = $20		; Two bytes per channel, so $20 - $2f.
-!ChSFXNoteTimer = $01d0		; Actually $01d0.  Use setp/clrp.
-!ChSFXPriority = $01d1		; (Same as above, use setp and clrp)
-;!ChSFXTimeToStart = $01d1		; Time until the SFX on this channel starts. (Same as above, use setp and clrp).
+!ChSFXNoteTimer = $01d0
+!ChSFXPriority = $01d1
+;!ChSFXTimeToStart = $01d1		; Time until the SFX on this channel starts.
 !ChSFXNoteTimerBackup = $03d1	; Used to save space when two consecutive notes use the same length.
 !ChSFXPtrBackup = $03c0		; A copy of $20w, only updated when a sound effect starts.  Used by the #$FE command to restart a sound effect.
 
