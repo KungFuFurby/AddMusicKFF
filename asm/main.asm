@@ -1451,7 +1451,7 @@ PSwitchIncLoopCounter:
 	mov	a, #$00
 	cmp	a, #$04
 	bcs	+
-	inc	!PSwitchLoopCounter
+	inc	PSwitchLoopCounter+1
 +
 	ret
 
