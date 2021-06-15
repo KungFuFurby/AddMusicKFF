@@ -1114,87 +1114,87 @@ SetSFXInstrument:
 if !PSwitchIsSFX = !true
 
 PSwitchPtrs:
-	dw PSwitchCh5
-	dw PSwitchCh6
-	dw PSwitchCh7
+	dw PSwitchCh0
+	dw PSwitchCh1
+	dw PSwitchCh2
 
-PSwitchCh7:
+PSwitchCh2:
 	db $DA, $02			; @2
-	db $FD				; #jsr PSwitchInitCh6And7
-	dw PSwitchInitCh6And7
-PSwitchCh7NoteLen3X1:
+	db $FD				; #jsr PSwitchInitCh1And2
+	dw PSwitchInitCh1And2
+PSwitchCh2NoteLen3X1:
 	db $30, $00,      $C6 		; r=24
-PSwitchCh7NoteLen2X1:
+PSwitchCh2NoteLen2X1:
 	db $20, $00, $26, $A4		; y0o4c=16
-PSwitchCh7NoteLen1:
+PSwitchCh2NoteLen1:
 	db $10, $0A, $1D, $9F		; y5o3g=8
-PSwitchCh7NoteLen2:
+PSwitchCh2NoteLen2:
 	db $10, $00,      $C6		; r=8
-PSwitchCh7NoteLen3:
+PSwitchCh2NoteLen3:
 	db $10, $13, $13, $AB		; y10o4g=8
-PSwitchCh7NoteLen4:
+PSwitchCh2NoteLen4:
 	db $10, $17, $0F, $9F		; y12o3c=8
-PSwitchCh7NoteLen2X2:
+PSwitchCh2NoteLen2X2:
 	db $20, $1D, $0A, $A4		; y15o4c=4
-PSwitchCh7NoteLen5:
+PSwitchCh2NoteLen5:
 	db $10, $26, $00, $9F		; y20o3g=8
-PSwitchCh7NoteLen3X2:
+PSwitchCh2NoteLen3X2:
 	db $30, $00,      $C6		; r=24
-PSwitchCh7NoteLen2X3:
+PSwitchCh2NoteLen2X3:
 	db $20, $26, $00, $A5		; y20o4c+=16
-PSwitchCh7NoteLen6:
+PSwitchCh2NoteLen6:
 	db $10, $1D, $0A, $A0		; y15o3g+=8
-PSwitchCh7NoteLen7:
+PSwitchCh2NoteLen7:
 	db $10, $00,      $C6		; r=8
-PSwitchCh7NoteLen8:
+PSwitchCh2NoteLen8:
 	db $10, $13, $13, $AC		; y10o4g+=8
-PSwitchCh7NoteLen9:
+PSwitchCh2NoteLen9:
 	db $10, $0C, $18, $A0		; y7o3c+=8
-PSwitchCh7NoteLen2X4:
+PSwitchCh2NoteLen2X4:
 	db $20, $1D, $0A, $A5		; y5o4c+=4
-PSwitchCh7NoteLen10:
+PSwitchCh2NoteLen10:
 	db $10, $00, $26, $A0		; y0o3g+=8
-	db $FD				; #jsr PSwitchNextLoopCh7
-	dw PSwitchNextLoopCh7
+	db $FD				; #jsr PSwitchNextLoopCh2
+	dw PSwitchNextLoopCh2
 	db $FE				; loop
 	
-PSwitchCh6:
+PSwitchCh1:
 	db $DA, $02	; @2
-	db $FD				; #jsr PSwitchInitCh6And7
-	dw PSwitchInitCh6And7
-PSwitchCh6NoteLen2X1:
+	db $FD				; #jsr PSwitchInitCh1And2
+	dw PSwitchInitCh1And2
+PSwitchCh1NoteLen2X1:
 	db $20, $26, $00, $8C		; y0o2c=16
-PSwitchCh6NoteLen4X1:	
+PSwitchCh1NoteLen4X1:	
 	db $40,           $93		; y0o2g=8^24
-PSwitchCh6NoteLen3X1:
+PSwitchCh1NoteLen3X1:
 	db $30,           $98		; y0o3c=24
 	db                $93		; y0o2g=24
-PSwitchCh6NoteLen2X2:
+PSwitchCh1NoteLen2X2:
 	db $20, $04, $22, $8D		; y2o2c+=16
-PSwitchCh6NoteLen4X2:
+PSwitchCh1NoteLen4X2:
 	db $40, $0A, $1D, $94		; y5o2g+=8^24
-PSwitchCh6NoteLen3X2:
+PSwitchCh1NoteLen3X2:
 	db $30, $13, $13, $99		; y10o3c+=24
-PSwitchCh6NoteLen3X3:
+PSwitchCh1NoteLen3X3:
 	db $30, $1E, $08, $94		; y16o2g+=24
-	db $FD				; #jsr PSwitchNextLoopCh6
-	dw PSwitchNextLoopCh6
+	db $FD				; #jsr PSwitchNextLoopCh1
+	dw PSwitchNextLoopCh1
 	db $FE
 	
-PSwitchCh5:
+PSwitchCh0:
 	db $DA, $09			; @9
-	db $FD				; #jsr PSwitchInitCh5
-	dw PSwitchInitCh5
-PSwitchCh5NoteLen:
+	db $FD				; #jsr PSwitchInitCh0
+	dw PSwitchInitCh0
+PSwitchCh0NoteLen:
 	db $10, $0D, $B0		; o4g=8
 	db 	$B0			; o4g=8
 	db	$B9			; o5e=8
 	db	$B9			; o5e=8
-	db $FD				; #jsr PSwitchNextLoopCh5
-	dw PSwitchNextLoopCh5
+	db $FD				; #jsr PSwitchNextLoopCh0
+	dw PSwitchNextLoopCh0
 	db $FE			
 
-PSwitchInitCh6And7:
+PSwitchInitCh1And2:
 	;Set the ADSR of the current channel to match the real one, since
 	;there is no SFX instrument that exactly replicates this parameter.
 	mov	a, $46
@@ -1205,9 +1205,9 @@ PSwitchInitCh6And7:
 	mov	$f3, #$6a
 	bra	PSwitchInit
 
-PSwitchInitCh5:
+PSwitchInitCh0:
 	mov	a, #$00
-	mov	PSwitchCh5LoopCounter+1, a
+	mov	PSwitchCh0LoopCounter+1, a
 PSwitchInit:
 	;Don't call this again for subsequent loops.
 	mov	x, $46
@@ -1220,81 +1220,105 @@ PSwitchInit:
 	mov	!ChSFXPtrBackup+1+x, a
 	;Init loop counter
 	mov	a, #$00
-	mov	!PSwitchLoopCounter, a
-	call	PSwitchSetNoteLengthCh5
-	call	PSwitchSetNoteLengthCh6
-	call	PSwitchSetNoteLengthCh7
+	mov	PSwitchLoopCounter+1, a
+	call	PSwitchSetNoteLengthCh0
+	call	PSwitchSetNoteLengthCh1
+	call	PSwitchSetNoteLengthCh2
 	ret
 
-PSwitchNextLoopCh7:
+PSwitchNextLoopCh2:
+if !PSwitchSFXCh2ID < 7
+	clrc
+	mov	a, $1b
+	and	a, #($ff<<(!PSwitchSFXCh2ID+1))&$ff
+-
+	asl	a
+	bcs	PSwitchSetNoteLengthCh2
+	bne	-
+endif
 	call	PSwitchIncLoopCounter
 
-PSwitchSetNoteLengthCh7:
-	mov	y, !PSwitchLoopCounter
+PSwitchSetNoteLengthCh2:
+	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
-	mov	PSwitchCh7NoteLen1, a
-	mov	PSwitchCh7NoteLen2, a
-	mov	PSwitchCh7NoteLen3, a
-	mov	PSwitchCh7NoteLen4, a
-	mov	PSwitchCh7NoteLen5, a
-	mov	PSwitchCh7NoteLen6, a
-	mov	PSwitchCh7NoteLen7, a
-	mov	PSwitchCh7NoteLen8, a
-	mov	PSwitchCh7NoteLen9, a
-	mov	PSwitchCh7NoteLen10, a
+	mov	PSwitchCh2NoteLen1, a
+	mov	PSwitchCh2NoteLen2, a
+	mov	PSwitchCh2NoteLen3, a
+	mov	PSwitchCh2NoteLen4, a
+	mov	PSwitchCh2NoteLen5, a
+	mov	PSwitchCh2NoteLen6, a
+	mov	PSwitchCh2NoteLen7, a
+	mov	PSwitchCh2NoteLen8, a
+	mov	PSwitchCh2NoteLen9, a
+	mov	PSwitchCh2NoteLen10, a
 	clrc
 	adc	a, PSwitchNoteLengths+y
-	mov	PSwitchCh7NoteLen2X1, a
-	mov	PSwitchCh7NoteLen2X2, a
-	mov	PSwitchCh7NoteLen2X3, a
-	mov	PSwitchCh7NoteLen2X4, a
+	mov	PSwitchCh2NoteLen2X1, a
+	mov	PSwitchCh2NoteLen2X2, a
+	mov	PSwitchCh2NoteLen2X3, a
+	mov	PSwitchCh2NoteLen2X4, a
 	clrc
 	adc	a, PSwitchNoteLengths+y
-	mov	PSwitchCh7NoteLen3X1, a
-	mov	PSwitchCh7NoteLen3X2, a
+	mov	PSwitchCh2NoteLen3X1, a
+	mov	PSwitchCh2NoteLen3X2, a
 	ret
 
-PSwitchNextLoopCh6:
-	bbs7	$1b, PSwitchSetNoteLengthCh6
+PSwitchNextLoopCh1:
+if !PSwitchSFXCh1ID < 7
+	clrc
+	mov	a, $1b
+	and	a, #($ff<<(!PSwitchSFXCh1ID+1))&$ff
+-
+	asl	a
+	bcs	PSwitchSetNoteLengthCh1
+	bne	-
+endif
 	call	PSwitchIncLoopCounter
 
-PSwitchSetNoteLengthCh6:
-	mov	y, !PSwitchLoopCounter
+PSwitchSetNoteLengthCh1:
+	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
 	clrc
 	adc	a, PSwitchNoteLengths+y
-	mov	PSwitchCh6NoteLen2X1, a
-	mov	PSwitchCh6NoteLen2X2, a
+	mov	PSwitchCh1NoteLen2X1, a
+	mov	PSwitchCh1NoteLen2X2, a
 	clrc
 	adc	a, PSwitchNoteLengths+y
-	mov	PSwitchCh6NoteLen3X1, a
-	mov	PSwitchCh6NoteLen3X2, a
-	mov	PSwitchCh6NoteLen3X3, a
+	mov	PSwitchCh1NoteLen3X1, a
+	mov	PSwitchCh1NoteLen3X2, a
+	mov	PSwitchCh1NoteLen3X3, a
 	clrc
 	adc	a, PSwitchNoteLengths+y
-	mov	PSwitchCh6NoteLen4X1, a
-	mov	PSwitchCh6NoteLen4X2, a
+	mov	PSwitchCh1NoteLen4X1, a
+	mov	PSwitchCh1NoteLen4X2, a
 	ret
 
-PSwitchNextLoopCh5:
-PSwitchCh5LoopCounter:
+PSwitchNextLoopCh0:
+PSwitchCh0LoopCounter:
 	mov	a, #$00
 	inc	a
-	mov	PSwitchCh5LoopCounter+1, a
+	mov	PSwitchCh0LoopCounter+1, a
 	cmp 	a, #$06
-	bcc	PSwitchSetNoteLengthCh5
+	bcc	PSwitchSetNoteLengthCh0
 	mov	a, #$00
-	mov	PSwitchCh5LoopCounter+1, a
+	mov	PSwitchCh0LoopCounter+1, a
 
-PSwitchCh5IncMainLoopCounter:
-	bbs7	$1b, PSwitchSetNoteLengthCh5
-	bbs6	$1b, PSwitchSetNoteLengthCh5
+PSwitchCh0IncMainLoopCounter:
+if !PSwitchSFXCh0ID < 7
+	clrc
+	mov	a, $1b
+	and	a, #($ff<<(!PSwitchSFXCh0ID+1))&$ff
+-
+	asl	a
+	bcs	PSwitchSetNoteLengthCh0
+	bne	-
+endif
 	call	PSwitchIncLoopCounter
 
-PSwitchSetNoteLengthCh5:
+PSwitchSetNoteLengthCh0:
 	mov	y, !PSwitchLoopCounter
 	mov	a, PSwitchNoteLengths+y
-	mov	PSwitchCh5NoteLen, a
+	mov	PSwitchCh0NoteLen, a
 	ret
 
 PSwitchIncLoopCounter:
@@ -1367,25 +1391,24 @@ StopPSwitchSFXSkipCh:
 
 PlayPSwitchSFX:
 	push	a
+	mov	$03, #$81
 	mov	y, #$03
 	push	y
-	mov	x, #$0e
-	mov	$10, #$80
+	mov	x, #(!PSwitchSFXCh0ID*2)
+	mov	$10, #(1<<!PSwitchSFXCh0ID)
 	call	ProcessSFXInput
 
 	pop	y
-	pop	a
-	push	a
+	mov	$03, #$82
 	push	y
-	mov	x, #$0c
-	mov	$10, #$40
+	mov	x, #(!PSwitchSFXCh1ID*2)
+	mov	$10, #(1<<!PSwitchSFXCh1ID)
 	call	ProcessSFXInput
 
 	pop	y
-	pop	a
-	push	a
-	mov	x, #$0a
-	mov	$10, #$20
+	mov	$03, #$83
+	mov	x, #(!PSwitchSFXCh2ID*2)
+	mov	$10, #(1<<!PSwitchSFXCh2ID)
 	call	ProcessSFXInput
 
 	pop	a
@@ -1394,8 +1417,8 @@ PlayPSwitchSFX:
 	ret
 
 PlayPSwitchActivateSFX:
-	mov	x, #$08
-	mov	$10, #$10
+	mov	x, #(!PSwitchSFXTriggerChID*2)
+	mov	$10, #(1<<!PSwitchSFXTriggerChID)
 	mov	a, #$0b
 	mov	y, #$00
 	bra	ProcessSFXInput_prepareForSFX
@@ -1450,9 +1473,11 @@ if !PSwitchIsSFX = !true
 	bra	.gottenPointer
 
 .PSwitchSFX	
-	mov	a, PSwitchPtrs-$09+x
+	;Because the high bit gets shifted out, we don't need to do any more
+	;modifications to Y.
+	mov	a, PSwitchPtrs-1+y
 	push	a
-	mov	a, PSwitchPtrs-$0a+x
+	mov	a, PSwitchPtrs-2+y
 
 endif	
 .gottenPointer

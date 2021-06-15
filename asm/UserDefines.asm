@@ -131,6 +131,58 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!PSwitchSFXCh0ID = 5
+
+;Default setting: 5
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the first channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh1ID = 6
+
+;Default setting: 6
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the second channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh2ID = 7
+
+;Default setting: 7
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the third channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXTriggerChID = 4
+
+;Default setting: 4
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the trigger SFX for the P-Switch.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,
