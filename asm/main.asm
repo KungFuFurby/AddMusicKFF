@@ -161,14 +161,13 @@ base $0400			; Do not change this.
 
 	
 	
-	mov   x, #$0b
+	mov   y, #$0c
 L_0529:
-	mov   a, DefDSPRegs+x
-	mov   y, a
-	mov   a, DefDSPValues+x
-	call  DSPWrite             ; write A to DSP reg Y
-	dec   x
-	bpl   L_0529             ; set initial DSP reg values
+	mov   a, DefDSPRegs-1+y
+	mov   $f2, a
+	mov   a, DefDSPValues-1+y
+	mov   $f3, a               ; write A to DSP reg Y
+	dbnz  y, L_0529            ; set initial DSP reg values
 	
 	mov   $f1, #$f0		; Reset ports, disable timers
 	mov   $fa, #$10		; Set Timer 0's frequency to 2 ms
@@ -2904,7 +2903,7 @@ PanValues:
 ;  source dir = $8000, echo ram = $6000, echo delay = 32ms
 
 DefDSPValues:
-		db $7F, $7F, $00, $00, $2F, $60, $00, $00, $00, $2F, $60, $00 
+		db $7F, $7F, $00, $00, $2F, $00, $00, $00, $00, $2F, $88, $00 
 
 DefDSPRegs:
 		db $0C, $1C, $2C, $3C, $6C, $0D, $2D, $3D, $4D, $5D, $6D, $7D
