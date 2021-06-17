@@ -477,9 +477,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	beq	.justSet
 	bcs	.needsModifying
 .justSet
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	bra	+++++++++		; Go to the rest of the routine.
 .needsModifying
 	call	ModifyEchoDelay
@@ -557,10 +555,8 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	mov	$f3, y			; / 
 	
 	pop	a
-	mov	$f2, #$7d		; \
-	mov	$f3, a			; | Write the new delay.
-	mov	!EchoDelay, a		; |
-	mov	!MaxEchoDelay, a	; /
+	call	SetEDLVarDSP		; Write the new delay.
+	mov	!MaxEchoDelay, a
 	
 	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
 
@@ -576,6 +572,13 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	mov	!NCKValue, #$00
 	mov	a, $10
 	jmp	ModifyNoise
+
+SetEDLVarDSP:
+	mov	!EchoDelay, a		; \
+SetEDLDSP:
+	mov	$f2, #$7d		; | Write the new delay.
+	mov	$f3, a			; /
+	ret
 	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -835,9 +838,7 @@ SubC_table2:
 	ret				;
 
 +
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	
 	mov	a, !NCKValue
 	and	!NCKValue, #$20

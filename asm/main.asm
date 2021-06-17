@@ -1595,12 +1595,9 @@ L_099C:
 	
 	mov	a, #$ff
 	call	KeyOffVoices
-	
-	mov	$f2, #$7d		; Also set the delay to 0.
-	mov	$f3, #$00		; 
-
 
 	mov	a, #$00
+	call	SetEDLDSP		; Also set the delay to 0.
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
