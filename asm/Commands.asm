@@ -376,7 +376,7 @@ cmdE8:					; Fade the volume
 	sbc   a, !Volume+x
 	pop   x
 	call  Divide16
-	mov   $0250+x, a		; Never referenced?
+	mov   $0250+x, a
 	mov   a, y
 	mov   $0251+x, a
 	ret
@@ -465,12 +465,11 @@ cmdEF:					; Echo command 1 (channels, volume)
 				
 ; set echo vols from shadows
 L_0EEB: 
-	mov	a, $62
-	mov	y, #$2c
-	call	DSPWrite             ; set echo vol L DSP from $62
-	mov	a, $64
-	mov	y, #$3c
-	jmp	DSPWrite             ; set echo vol R DSP from $64
+	mov	$f2, #$2c            ; set echo vol L DSP from $62
+	mov	$f3, $62
+	mov	$f2, #$3c            ; set echo vol R DSP from $64 
+	mov	$f3, $64          
+	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
@@ -495,12 +494,9 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	call	GetCommandData
 	cmp	a, !MaxEchoDelay
 	beq	.justSet
-	bcc	.justSet
-	bra	.needsModifying
+	bcs	.needsModifying
 .justSet
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	bra	+++++++++		; Go to the rest of the routine.
 .needsModifying
 	call	ModifyEchoDelay
@@ -513,21 +509,19 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	call	ModifyNoise
 	
 	call	GetCommandData		; From here on is the normal code.
-	mov	y, #$0d			;
-	call	DSPWrite		; set echo feedback from op2
+	mov	a, #$0d			;
+	movw	$f2, ya			; set echo feedback from op2
 	call	GetCommandDataFast	;
 	mov	y, #$08			;
 	mul	ya			;
 	mov	x, a			;
-	mov	y, #$0f			;
-- 					;
+	mov	$f2, #$0f		;
+-					;
 	mov	a, EchoFilter0+x	; filter table
-	call	DSPWrite		;
+	mov	$f3, a			;
 	inc	x			;
-	mov	a, y			;
 	clrc				;
-	adc	a, #$10			;
-	mov	y, a			;
+	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
 	
@@ -578,10 +572,8 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	mov	$f3, y			; / 
 	
 	pop	a
-	mov	$f2, #$7d		; \
-	mov	$f3, a			; | Write the new delay.
-	mov	!EchoDelay, a		; |
-	mov	!MaxEchoDelay, a	; /
+	call	SetEDLVarDSP		; Write the new delay.
+	mov	!MaxEchoDelay, a
 	
 	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
 
@@ -597,6 +589,13 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	mov	!NCKValue, #$00
 	mov	a, $10
 	jmp	ModifyNoise
+
+SetEDLVarDSP:
+	mov	!EchoDelay, a		; \
+SetEDLDSP:
+	mov	$f2, #$7d		; | Write the new delay.
+	mov	$f3, a			; /
+	ret
 	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -862,15 +861,11 @@ SubC_1E:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
 {
-		mov   y,#$0f
--		push  y
-		call  GetCommandData
-		pop   y
-		call  DSPWrite
-		mov   a,y
+		mov   $f2, #$0f
+-		call  GetCommandData
+		mov   $f3, a
 		clrc
-		adc   a,#$10
-		mov   y,a
+		adc   $f2,#$10
 		bpl   -
 		ret
 }
@@ -1002,9 +997,7 @@ SubC_table2:
 	ret				;
 
 +
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	
 	mov	a, !NCKValue
 	and	!NCKValue, #$20

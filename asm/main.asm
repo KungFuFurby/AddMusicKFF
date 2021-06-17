@@ -103,9 +103,9 @@ incsrc "UserDefines.asm"
 !PauseMusic = $0388		; Pauses the music if not zero.  Used in the pause SFX.
 
 !ChSFXPtrs = $20		; Two bytes per channel, so $20 - $2f.
-!ChSFXNoteTimer = $01d0		; Actually $01d0.  Use setp/clrp.
-!ChSFXPriority = $01d1		; (Same as above, use setp and clrp)
-;!ChSFXTimeToStart = $01d1		; Time until the SFX on this channel starts. (Same as above, use setp and clrp).
+!ChSFXNoteTimer = $01d0
+!ChSFXPriority = $01d1
+;!ChSFXTimeToStart = $01d1		; Time until the SFX on this channel starts.
 !ChSFXNoteTimerBackup = $03d1	; Used to save space when two consecutive notes use the same length.
 !ChSFXPtrBackup = $03c0		; A copy of $20w, only updated when a sound effect starts.  Used by the #$FE command to restart a sound effect.
 
@@ -167,14 +167,13 @@ endif
 
 	
 	
-	mov   x, #$0b
+	mov   y, #$0c
 L_0529:
-	mov   a, DefDSPRegs+x
-	mov   y, a
-	mov   a, DefDSPValues+x
-	call  DSPWrite             ; write A to DSP reg Y
-	dec   x
-	bpl   L_0529             ; set initial DSP reg values
+	mov   a, DefDSPRegs-1+y
+	mov   $f2, a
+	mov   a, DefDSPValues-1+y
+	mov   $f3, a               ; write A to DSP reg Y
+	dbnz  y, L_0529            ; set initial DSP reg values
 	
 	mov   $f1, #$f0		; Reset ports, disable timers
 	mov   $fa, #$10		; Set Timer 0's frequency to 2 ms
@@ -431,9 +430,9 @@ NoteVCMD:
 	cmp	a, #$d0
 	bcs	PercNote             ; percussion note
 	cmp	a,#$C6			;;;;;;;;;;;;Code change
+	bcc	NormalNote
 	beq	L_05CD
-	bcs	if_rest
-	bra	NormalNote
+
 if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
@@ -560,6 +559,9 @@ L_062B:
 	call	DDEEFix	
 ; set DSP pitch from $10/11
 SetPitch:			;
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
 	push	x
 	mov	a, $11
 	asl	a
@@ -638,26 +640,17 @@ SetPitch:			;
 	mov	a, x               ; set voice X pitch DSP reg from $16/7
 	xcn	a                 ;  (if vbit clear in $1d)
 	lsr	a
-	or	a, #$02
-	mov	y, a               ; Y = voice X pitch DSP reg
-	mov	a, $16
-	
-	call	DSPWriteWithCheck
-	inc	y
-	mov	a, $17
-				; write A to DSP reg Y if vbit clear in $1d
-DSPWriteWithCheck:
-if !noSFX = !false
-	push	a
-	mov	a, $48
-	and	a, $1d
-	pop	a
-	bne	+
-endif				; write A to DSP reg Y
+	or	a, #$02            ; A = voice X pitch DSP reg
+	mov	y, $16
+	movw	$f2, ya
+	inc	a
+	mov	y, $17
+	movw	$f2, ya
+	ret
+
 DSPWrite:
-	mov	$f2, y
-	mov	$f3, a
-+	
+	mov	$f2, y	; write A to DSP reg Y
+	mov	$f3, a	
 	ret
 	
 }
@@ -1732,12 +1725,9 @@ L_099C:
 	
 	mov	a, #$ff
 	call	KeyOffVoices
-	
-	mov	$f2, #$7d		; Also set the delay to 0.
-	mov	$f3, #$00		; 
-
 
 	mov	a, #$00
+	call	SetEDLDSP		; Also set the delay to 0.
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
@@ -1916,14 +1906,8 @@ L_0A68:
 	mov	$90+x, y
 	mov	a, #$b5
 	call	CalcPortamentoDelta
-	mov	a, #$38
-	mov	$10, a
-	mov	y, #(!1DFASFXChannel*$10)
-	call	DSPWrite
-	inc	y
-	call	DSPWrite
-	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	mov	y, #$38
+	call	Quick1DFAMonoVolDSPWritesWKON
 L_0A99:
 	mov	a, #$02
 	cbne	$1c, L_0AA5
@@ -1964,14 +1948,8 @@ L_0B08:
 	dbnz	$1c, L_0AF2
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
-	mov	a, #$28
-	mov	$10, a
-	mov	y, #(!1DFASFXChannel*$10)
-	call	DSPWrite
-	inc	y
-	call	DSPWrite
-	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	mov	y, #$28
+	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
@@ -1979,6 +1957,16 @@ L_0B33:
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0B3F:
+	ret
+
+Quick1DFAMonoVolDSPWritesWKON:
+	mov	$10, y
+	mov	a, #(!1DFASFXChannel*$10)
+	movw	$f2, ya
+	inc	a
+	movw	$f2, ya
+	mov	a, #(1<<!1DFASFXChannel)
+	call	KeyOnVoices
 endif
 	ret
 				; Call this routine to play the song currently in A.
@@ -2354,14 +2342,12 @@ endif
 	mov	!ArpNoteCount+x, a	; |
 	bne	.glissandoIsStillOn	; |
 	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
-	bra	.glissandoOver		; / And actually play the next note.
++
+.glissandoOver
+	mov	a, y			; / And actually play the next note.
+	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn
 .notGlissando
-	bra	L_0CB3
-	+
-.glissandoOver
-	mov	a, y
-	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 L_0CB3:
 	mov	a, $0200+x
 	mov	$70+x, a           ; set duration counter from duration
@@ -2608,6 +2594,9 @@ L_102D:
 	movw	$10, ya            ; set $10/1 from voice pan
 ; set voice volume DSP regs with pan value from $10/1
 L_1036:
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
 	mov	a, x		;
 	xcn	a			;
 	lsr	a			;
@@ -2666,10 +2655,8 @@ if !noSFX = !false
 	mov	y, #$00
 	pop	x
 ++
-endif
-	mov	a, y
-	mov	y, $12
-	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear
+	mov	a, $12
+	movw	$f2, ya             ; set DSP vol if vbit 1D clear
 	mov	a, #$00
 	mov	y, #$14
 	subw	ya, $10
@@ -3238,7 +3225,7 @@ PanValues:
 ;  source dir = $8000, echo ram = $6000, echo delay = 32ms
 
 DefDSPValues:
-		db $7F, $7F, $00, $00, $2F, $60, $00, $00, $00, $2F, $60, $00 
+		db $7F, $7F, $00, $00, $2F, $00, $00, $00, $00, $2F, $88, $00 
 
 DefDSPRegs:
 		db $0C, $1C, $2C, $3C, $6C, $0D, $2D, $3D, $4D, $5D, $6D, $7D
@@ -3370,10 +3357,9 @@ GetSampleTableLocation:
 	bne -			; By then it should have also written DIR to $2141
 				; as well as the jump address to $2142-$2143.
 				
-	mov	y, #$5d	
-	mov	$f2, y
-	mov	a, $f5
-	call	DSPWrite		; Set DIR to the 5A22's $2141
+	mov	a, #$5d
+	mov	y, $f5		; Set DIR to the 5A22's $2141
+	movw	$f2, ya
 	push	a
 	
 	movw	ya, $f6
