@@ -363,7 +363,7 @@ cmdE8:					; Fade the volume
 	sbc   a, !Volume+x
 	pop   x
 	call  Divide16
-	mov   $0250+x, a		; Never referenced?
+	mov   $0250+x, a
 	mov   a, y
 	mov   $0251+x, a
 	ret
