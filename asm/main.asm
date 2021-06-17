@@ -3029,10 +3029,9 @@ GetSampleTableLocation:
 	bne -			; By then it should have also written DIR to $2141
 				; as well as the jump address to $2142-$2143.
 				
-	mov	y, #$5d	
-	mov	$f2, y
-	mov	a, $f5
-	call	DSPWrite		; Set DIR to the 5A22's $2141
+	mov	a, #$5d
+	mov	y, $f5		; Set DIR to the 5A22's $2141
+	movw	$f2, ya
 	push	a
 	
 	movw	ya, $f6
