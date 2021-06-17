@@ -916,22 +916,18 @@ endif
 	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
-	cmp	a, #$da			; \ 
-	bne	+			; |
-	jmp	.instrumentCommand	; / $DA is the instrument command.
-+
 	cmp	a, #$dd			; \ 
-	bne	+			; |
-	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
-+
-	cmp	a, #$eb			; \ 
-	bne	+			; |
-	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
-+
+	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+
+	cmp	a, #$eb			; \
+	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
 	beq	.loopSFX		; / $FE is the restart SFX command.
+	cmp	a, #$da			; \ 
+	beq	.instrumentCommand	; / $DA is the instrument command.
 	cmp	a, #$ff			; \ 
 	bne	.playNote		; / Play a note.
 	mov	y, #$03			; Move back three bytes.
@@ -949,7 +945,7 @@ endif
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	jmp	.getMoreSFXData
+	bra	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
@@ -1082,7 +1078,7 @@ endif
 
 .noiseSetFreq
 	call	ModifyNoise
-	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
 if !noiseFrequencySFXInstanceResolution = !true
 .setVolFromNoiseSetting
 	mov	$11, a
