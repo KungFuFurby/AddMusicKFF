@@ -1772,14 +1772,8 @@ L_0A68:
 	mov	$90+x, y
 	mov	a, #$b5
 	call	CalcPortamentoDelta
-	mov	a, #$38
-	mov	$10, a
-	mov	y, #(!1DFASFXChannel*$10)
-	call	DSPWrite
-	inc	y
-	call	DSPWrite
-	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	mov	y, #$38
+	call	Quick1DFAMonoVolDSPWritesWKON
 L_0A99:
 	mov	a, #$02
 	cbne	$1c, L_0AA5
@@ -1820,14 +1814,8 @@ L_0B08:
 	dbnz	$1c, L_0AF2
 	jmp	RestoreInstrumentFromAPU1SFX
 L_0B1C:
-	mov	a, #$28
-	mov	$10, a
-	mov	y, #(!1DFASFXChannel*$10)
-	call	DSPWrite
-	inc	y
-	call	DSPWrite
-	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	mov	y, #$28
+	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
@@ -1835,6 +1823,16 @@ L_0B33:
 	;mov	y, #$5c
 	call	KeyOffVoices
 L_0B3F:
+	ret
+
+Quick1DFAMonoVolDSPWritesWKON:
+	mov	$10, y
+	mov	a, #(!1DFASFXChannel*$10)
+	movw	$f2, ya
+	inc	a
+	movw	$f2, ya
+	mov	a, #(1<<!1DFASFXChannel)
+	call	KeyOnVoices
 	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
