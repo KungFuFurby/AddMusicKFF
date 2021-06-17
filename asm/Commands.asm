@@ -445,12 +445,11 @@ cmdEF:					; Echo command 1 (channels, volume)
 				
 ; set echo vols from shadows
 L_0EEB: 
-	mov	a, $62
-	mov	y, #$2c
-	call	DSPWrite             ; set echo vol L DSP from $62
-	mov	a, $64
-	mov	y, #$3c
-	jmp	DSPWrite             ; set echo vol R DSP from $64
+	mov	$f2, #$2c            ; set echo vol L DSP from $62
+	mov	$f3, $62
+	mov	$f2, #$3c            ; set echo vol R DSP from $64 
+	mov	$f3, $64          
+	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
@@ -490,21 +489,19 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	call	ModifyNoise
 	
 	call	GetCommandData		; From here on is the normal code.
-	mov	y, #$0d			;
-	call	DSPWrite		; set echo feedback from op2
+	mov	a, #$0d			;
+	movw	$f2, ya			; set echo feedback from op2
 	call	GetCommandDataFast	;
 	mov	y, #$08			;
 	mul	ya			;
 	mov	x, a			;
-	mov	y, #$0f			;
-- 					;
+	mov	$f2, #$0f		;
+-					;
 	mov	a, EchoFilter0+x	; filter table
-	call	DSPWrite		;
+	mov	$f3, a			;
 	inc	x			;
-	mov	a, y			;
 	clrc				;
-	adc	a, #$10			;
-	mov	y, a			;
+	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
 	
@@ -712,15 +709,11 @@ SubC_9:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
 {
-		mov   y,#$0f
--		push  y
-		call  GetCommandData
-		pop   y
-		call  DSPWrite
-		mov   a,y
+		mov   $f2, #$0f
+-		call  GetCommandData
+		mov   $f3, a
 		clrc
-		adc   a,#$10
-		mov   y,a
+		adc   $f2,#$10
 		bpl   -
 		ret
 }
