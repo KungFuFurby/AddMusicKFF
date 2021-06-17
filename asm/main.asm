@@ -343,9 +343,9 @@ NoteVCMD:
 	cmp	a, #$d0
 	bcs	PercNote             ; percussion note
 	cmp	a,#$C6			;;;;;;;;;;;;Code change
+	bcc	NormalNote
 	beq	L_05CD
-	bcs	if_rest
-	bra	NormalNote
+
 if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
@@ -2185,14 +2185,12 @@ L_0CA8:
 	mov	!ArpNoteCount+x, a	; |
 	bne	.glissandoIsStillOn	; |
 	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
-	bra	.glissandoOver		; / And actually play the next note.
++
+.glissandoOver
+	mov	a, y			; / And actually play the next note.
+	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn
 .notGlissando
-	bra	L_0CB3
-	+
-.glissandoOver
-	mov	a, y
-	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 L_0CB3:
 	mov	a, $0200+x
 	mov	$70+x, a           ; set duration counter from duration

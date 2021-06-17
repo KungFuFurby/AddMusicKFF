@@ -475,8 +475,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	call	GetCommandData
 	cmp	a, !MaxEchoDelay
 	beq	.justSet
-	bcc	.justSet
-	bra	.needsModifying
+	bcs	.needsModifying
 .justSet
 	mov	!EchoDelay, a		; \
 	mov	$f2, #$7d		; | Write the new delay.
