@@ -462,6 +462,7 @@ L_062B:
 	call	DDEEFix	
 ; set DSP pitch from $10/11
 SetPitch:			;
+	call	TerminateIfSFXPlaying
 	push	x
 	mov	a, $11
 	asl	a
@@ -518,25 +519,17 @@ SetPitch:			;
 	mov	a, x               ; set voice X pitch DSP reg from $16/7
 	xcn	a                 ;  (if vbit clear in $1d)
 	lsr	a
-	or	a, #$02
-	mov	y, a               ; Y = voice X pitch DSP reg
-	mov	a, $16
-	
-	call	DSPWriteWithCheck
-	inc	y
-	mov	a, $17
-				; write A to DSP reg Y if vbit clear in $1d
-DSPWriteWithCheck:	
-	push	a
-	mov	a, $48
-	and	a, $1d
-	pop	a
-	bne	+
-				; write A to DSP reg Y
+	or	a, #$02            ; A = voice X pitch DSP reg
+	mov	y, $16
+	movw	$f2, ya
+	inc	a
+	mov	y, $17
+	movw	$f2, ya
+	ret
+
 DSPWrite:
-	mov	$f2, y
-	mov	$f3, a
-+	
+	mov	$f2, y	; write A to DSP reg Y
+	mov	$f3, a	
 	ret
 	
 }
@@ -2424,6 +2417,7 @@ L_102D:
 	movw	$10, ya            ; set $10/1 from voice pan
 ; set voice volume DSP regs with pan value from $10/1
 L_1036:
+	call	TerminateIfSFXPlaying
 	mov	a, x		;
 	xcn	a			;
 	lsr	a			;
@@ -2481,9 +2475,8 @@ L_1061:
 	mov	y, #$00
 	pop	x
 ++
-	mov	a, y
-	mov	y, $12
-	call	DSPWriteWithCheck             ; set DSP vol if vbit 1D clear
+	mov	a, $12
+	movw	$f2, ya             ; set DSP vol if vbit 1D clear
 	mov	a, #$00
 	mov	y, #$14
 	subw	ya, $10
