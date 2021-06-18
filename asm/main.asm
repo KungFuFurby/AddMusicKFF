@@ -528,11 +528,6 @@ SetPitch:			;
 	mov	y, $17
 	movw	$f2, ya
 	ret
-
-DSPWrite:
-	mov	$f2, y	; write A to DSP reg Y
-	mov	$f3, a	
-	ret
 	
 }
 
@@ -2285,7 +2280,9 @@ KeyOffVoicesWithCheck:
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
-	jmp	DSPWrite
+DSPWrite:
+	mov	$f2, y	; write A to DSP reg Y
+	mov	$f3, a	
 +
 	ret
 	
