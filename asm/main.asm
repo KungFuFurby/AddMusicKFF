@@ -3028,7 +3028,7 @@ GetSampleTableLocation:
 	mov	a, #$5d
 	mov	y, $f5		; Set DIR to the 5A22's $2141
 	movw	$f2, ya
-	push	a
+	push	y
 	
 	movw	ya, $f6
 	movw	$14, ya
