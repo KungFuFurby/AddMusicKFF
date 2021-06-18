@@ -132,7 +132,6 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
-!runningRemoteCode = $0380	; Set if we're running remote code.  Used so that, when we hit a 0, we return to RunRemoteCode, instead of ending the song track/loop.
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -302,6 +301,11 @@ L_05C1:				; \
 	ret			; / 
 }	
 
+macro OpenRunningRemoteCodeGate()
+	mov	a, #$f4				;mov a, d+x opcode
+	mov	runningRemoteCodeGate, a
+endmacro
+
 RunRemoteCode:
 {
 	mov	a, $30+x
@@ -313,11 +317,10 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+1+x
 	mov	$31+x, a
 RunRemoteCode_Exec:
-	mov	a, #$01
-	mov	!runningRemoteCode, a
+	mov	a, #$6f			;RET opcode
+	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
-	mov	a, #$00
-	mov	!runningRemoteCode, a
+	%OpenRunningRemoteCodeGate()
 	pop	a
 	mov	$31+x, a
 	pop	a
@@ -532,11 +535,6 @@ endif
 	inc	a
 	mov	y, $17
 	movw	$f2, ya
-	ret
-
-DSPWrite:
-	mov	$f2, y	; write A to DSP reg Y
-	mov	$f3, a	
 	ret
 	
 }
@@ -802,22 +800,18 @@ endif
 	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
-	cmp	a, #$da			; \ 
-	bne	+			; |
-	jmp	.instrumentCommand	; / $DA is the instrument command.
-+
 	cmp	a, #$dd			; \ 
-	bne	+			; |
-	jmp	.pitchBendCommand	; / $DD is the pitch bend command.
-+
-	cmp	a, #$eb			; \ 
-	bne	+			; |
-	jmp	.pitchBendCommand2	; / $EB is...another pitch bend command.
-+
+	beq	.pitchBendCommand	; / $DD is the pitch bend command.
+
+	cmp	a, #$eb			; \
+	beq	.pitchBendCommand2	; / $EB is...another pitch bend command.
+
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
 	cmp	a, #$fe			; \
 	beq	.loopSFX		; / $FE is the restart SFX command.
+	cmp	a, #$da			; \ 
+	beq	.instrumentCommand	; / $DA is the instrument command.
 	cmp	a, #$ff			; \ 
 	bne	.playNote		; / Play a note.
 	mov	y, #$03			; Move back three bytes.
@@ -835,7 +829,7 @@ endif
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
-	jmp	.getMoreSFXData
+	bra	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
@@ -968,7 +962,7 @@ endif
 
 .noiseSetFreq
 	call	ModifyNoise
-	jmp	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
+	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
 if !noiseFrequencySFXInstanceResolution = !true
 .setVolFromNoiseSetting
 	mov	$11, a
@@ -1928,20 +1922,12 @@ L_0B6D:
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; ?
-	mov	$c0+x, a           ; repeat ctr
-	mov	$c1+x, a           ; Instrument[ch] = 0
 	mov	$0161+x, a	; Strong portamento
 	mov	!HTuneValues+x, a	
 	
-	mov	!ArpLength+x, a		; \
-	mov	!ArpNotePtrs+x, a	; |
-	mov	!ArpNotePtrs+1+x, a	; |
-	mov	!ArpTimeLeft+x, a	; | All things arpeggio-related.
-	mov	!ArpNoteIndex+x, a	; |
-	mov	!ArpNoteCount+x, a	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	mov	!ArpSpecial+x, a	; /
-	mov	!VolumeMult+x, a	
+	mov	!ArpNoteIndex+x, a
+	mov	!ArpNoteCount+x, a
+	mov	!ArpCurrentDelta+x, a
 	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
@@ -1986,8 +1972,20 @@ endif
 	mov	y, #$20
 	
 L_0B9C:
-	mov	$02ff+y, a		
+	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
+	mov	$0300-1+y, a
 	dbnz	y, L_0B9C		; Clear out 0300-031f (this is a useful opcode...)
+
+	; MODIFIED CODE START
+	mov	y, #$10
+-	
+	; repeat ctr + Instrument[ch] = 0
+	mov	$c0-1+y, a
+	;(!ArpSpecial + !VolumeMult get zeroed out here...)
+	mov	!ArpSpecial-1+y, a
+	mov	!ArpNotePtrs-1+y, a
+	dbnz	y, -
+	; MODIFIED CODE END
 	
 	call	EffectModifier
 	bra	L_0BA5
@@ -2130,10 +2128,8 @@ L_0C4D:
 L_0C57:
 	call	GetCommandData             ; get next vbyte
 	bne	L_0C7A
-	mov	a, !runningRemoteCode
-	beq	+
-	ret
-+
+
+runningRemoteCodeGate:
 	mov	a, $c0+x           ; vcmd 00: end repeat/return
 	beq	L_0C01             ;  goto next $40 section if rpt count 0
 	dec	$c0+x             ;  dec repeat count
@@ -2344,11 +2340,11 @@ endif
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
-	jmp	DSPWrite
-if !noSFX = !false
+DSPWrite:
+	mov	$f2, y	; write A to DSP reg Y
+	mov	$f3, a	
 +
 	ret
-endif
 	
 ; dispatch vcmd in A
 L_0D40:
@@ -3105,7 +3101,7 @@ GetSampleTableLocation:
 	mov	a, #$5d
 	mov	y, $f5		; Set DIR to the 5A22's $2141
 	movw	$f2, ya
-	push	a
+	push	y
 	
 	movw	ya, $f6
 	movw	$14, ya
