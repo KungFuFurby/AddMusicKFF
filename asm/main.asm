@@ -650,11 +650,6 @@ endif
 	mov	y, $17
 	movw	$f2, ya
 	ret
-
-DSPWrite:
-	mov	$f2, y	; write A to DSP reg Y
-	mov	$f3, a	
-	ret
 	
 }
 
@@ -2461,11 +2456,11 @@ endif
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
-	jmp	DSPWrite
-if !noSFX = !false
+DSPWrite:
+	mov	$f2, y	; write A to DSP reg Y
+	mov	$f3, a	
 +
 	ret
-endif
 	
 ; dispatch vcmd in A
 L_0D40:
