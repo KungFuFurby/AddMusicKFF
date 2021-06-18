@@ -1890,20 +1890,12 @@ L_0B6D:
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; ?
-	mov	$c0+x, a           ; repeat ctr
-	mov	$c1+x, a           ; Instrument[ch] = 0
 	mov	$0161+x, a	; Strong portamento
 	mov	!HTuneValues+x, a	
 	
-	mov	!ArpLength+x, a		; \
-	mov	!ArpNotePtrs+x, a	; |
-	mov	!ArpNotePtrs+1+x, a	; |
-	mov	!ArpTimeLeft+x, a	; | All things arpeggio-related.
-	mov	!ArpNoteIndex+x, a	; |
-	mov	!ArpNoteCount+x, a	; |
-	mov	!ArpCurrentDelta+x, a	; |
-	mov	!ArpSpecial+x, a	; /
-	mov	!VolumeMult+x, a	
+	mov	!ArpNoteIndex+x, a
+	mov	!ArpNoteCount+x, a
+	mov	!ArpCurrentDelta+x, a
 	call	ClearRemoteCodeAddresses
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
@@ -1941,8 +1933,20 @@ L_0B6D:
 	mov	y, #$20
 	
 L_0B9C:
-	mov	$02ff+y, a		
+	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
+	mov	$0300-1+y, a
 	dbnz	y, L_0B9C		; Clear out 0300-031f (this is a useful opcode...)
+
+	; MODIFIED CODE START
+	mov	y, #$10
+-	
+	; repeat ctr + Instrument[ch] = 0
+	mov	$c0-1+y, a
+	;(!ArpSpecial + !VolumeMult get zeroed out here...)
+	mov	!ArpSpecial-1+y, a
+	mov	!ArpNotePtrs-1+y, a
+	dbnz	y, -
+	; MODIFIED CODE END
 	
 	call	EffectModifier
 	bra	L_0BA5
