@@ -1071,6 +1071,7 @@ ClearRemoteCodeAddressesPre:
 	call	GetCommandDataFast
 	
 ClearRemoteCodeAddresses:
+	%OpenRunningRemoteCodeGate()
 	mov	a, #$00
 	mov	!remoteCodeTargetAddr2+1+x, a
 	mov	!remoteCodeTargetAddr2+x, a
@@ -1081,7 +1082,6 @@ ClearRemoteCodeAddresses:
 	mov	!remoteCodeType+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
-	mov	!runningRemoteCode, a
 	ret
 }
 

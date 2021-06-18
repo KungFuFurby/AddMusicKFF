@@ -132,7 +132,6 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
-!runningRemoteCode = $0380	; Set if we're running remote code.  Used so that, when we hit a 0, we return to RunRemoteCode, instead of ending the song track/loop.
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -298,6 +297,11 @@ L_05C1:				; \
 	ret			; / 
 }	
 
+macro OpenRunningRemoteCodeGate()
+	mov	a, #$f4				;mov a, d+x opcode
+	mov	runningRemoteCodeGate, a
+endmacro
+
 RunRemoteCode:
 {
 	mov	a, $30+x
@@ -309,11 +313,10 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+1+x
 	mov	$31+x, a
 RunRemoteCode_Exec:
-	mov	a, #$01
-	mov	!runningRemoteCode, a
+	mov	a, #$6f			;RET opcode
+	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
-	mov	a, #$00
-	mov	!runningRemoteCode, a
+	%OpenRunningRemoteCodeGate()
 	pop	a
 	mov	$31+x, a
 	pop	a
@@ -2075,10 +2078,8 @@ L_0C4D:
 L_0C57:
 	call	GetCommandData             ; get next vbyte
 	bne	L_0C7A
-	mov	a, !runningRemoteCode
-	beq	+
-	ret
-+
+
+runningRemoteCodeGate:
 	mov	a, $c0+x           ; vcmd 00: end repeat/return
 	beq	L_0C01             ;  goto next $40 section if rpt count 0
 	dec	$c0+x             ;  dec repeat count
