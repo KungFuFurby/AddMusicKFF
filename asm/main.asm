@@ -2651,6 +2651,7 @@ if !noSFX = !false
 	mov	y, #$00
 	pop	x
 ++
+endif
 	mov	a, $12
 	movw	$f2, ya             ; set DSP vol if vbit 1D clear
 	mov	a, #$00
