@@ -33,16 +33,47 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-org $00E304
-	db !PSwitch
+
+org $00E301
+if !PSwitchIsSFX = !true
+;;; Don't factor in the P-Switch and directional coin timers. Instead, only
+;;; use the star power timer. This is because the P-Switch music is now
+;;; a SFX instance playing with the actual level music.
+	BRA +
+	NOP #2
++
+else
+	BEQ +
+	LDX.B !PSwitch
++
+endif
+
 org $00EEC3
 	db !StageClear
 org $00F60B
 	db !Miss
 org $018784
 	db !BossClear
-org $01AB08
-	db !PSwitch
+
+org $01AAFD
+if !PSwitchIsSFX = !true
+	LDA.B #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.B #$0B
+	STA $1DF9|!SA1Addr2
+endif
+	BRA Skip10 : NOP
+	NOP : NOP
+if !PSwitchIsSFX = !true
+	NOP #5
+Skip10:
+else
+Skip10:
+	LDA.B !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $01C0F0
 	db !StageClear
 org $01C586
@@ -53,8 +84,17 @@ org $01E216
 	db !Keyhole
 org $01FB2E
 	db !BossClear
-org $028968
-	db !PSwitch
+org $028967
+if !PSwitchIsSFX = !true
+;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
+;;; NOTE: This overwrites the $0B that was just stored there!
+	LDA.b #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.b !PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $03809D
 	db !BossClear
 org $0398E7
@@ -244,8 +284,16 @@ org $00A286
 	jmp StartSelectSfx
 
 org $00C53E
+if !PSwitchIsSFX = !true
+;;; Don't factor in the previous level music.
+	LDA.b #$80
+	NOP
+	NOP : NOP
+
+else
 	LDA !MusicBackup
 	NOP	: NOP
+endif
 
 ;org $00C53E
 	
@@ -256,6 +304,13 @@ org $00C53E
 ;org $00C54C
 ;	BRA Skip4 : NOP
 ;	Skip4:
+
+org $00C54C
+if !PSwitchIsSFX = !true
+	STA $1DFC|!SA1Addr2
+else
+	STA $1DFB|!SA1Addr2
+endif
 	
 org $02E277		;;; fix for the directional coins (more like code restore)
 	LDA $14AD|!SA1Addr2
@@ -315,11 +370,6 @@ org $00E2EE
 	NOP : NOP : NOP
 	;NOP
 Skip9:
-
-org $01AB02
-	BRA Skip10 : NOP
-	NOP : NOP
-Skip10:
 
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
@@ -389,6 +439,14 @@ elseif !JumpSFXOn1DF9 == !true
 	org $00DBA5
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
+else
+	org $00D65E
+	LDA #$01
+	STA $1DFA|!SA1Addr2
+
+	org $00DBA5
+	LDA #$01
+	STA $1DFA|!SA1Addr2
 endif
 
 ; Remap the grinder SFX too.
@@ -416,6 +474,18 @@ elseif !GrinderSFXOn1DF9 == !true
 	org $0392B8
 	LDA #$2D
 	STA $1DF9|!SA1Addr2
+else
+	org $01D745
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $01DB70
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $0392B8
+	LDA #$04
+	STA $1DFA|!SA1Addr2
 endif
 
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore

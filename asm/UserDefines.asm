@@ -33,6 +33,45 @@ includeonce
 
 ;=======================================
 ;---------------
+!1DF9SFXChannel = 6
+
+;Default setting: 6
+;Vanilla SMW setting: 4
+;---------------
+; Changes the channel assigned to 1DF9.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!1DFASFXChannel = 7
+
+;Default setting: 7
+;Vanilla SMW setting: 7
+;---------------
+; Changes the channel assigned to 1DFA.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!1DFCSFXChannel = 7
+
+;Default setting: 7
+;Vanilla SMW setting: 6
+;---------------
+; Changes the channel assigned to 1DFC.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
 !JumpSFXOn1DF9 = !false
 
 ;Default setting: !false
@@ -89,6 +128,58 @@ includeonce
 ;Vanilla SMW setting: #$10
 ;---------------
 ; Sets the priority for the girder SFX in 1DFA.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh0ID = 5
+
+;Default setting: 5
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the first channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh1ID = 6
+
+;Default setting: 6
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the second channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh2ID = 7
+
+;Default setting: 7
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the third channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXTriggerChID = 4
+
+;Default setting: 4
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the trigger SFX for the P-Switch.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
 ;=======================================
 
 ;=======================================
