@@ -407,7 +407,6 @@ L_0E55:
 }
 cmdFE:					; Pitch envelope off
 {
-	mov   x, $46
 	mov   $0300+x, a
 	ret
 }
