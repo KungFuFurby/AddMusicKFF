@@ -397,7 +397,7 @@ cmdEC:					; Pitch envelope (attack)
 	mov   a, #$00
 L_0E55: 
 	mov   $0320+x, a
-	call  GetCommandData
+	mov   a, y
 	mov   $0301+x, a
 	call  GetCommandDataFast
 	mov   $0300+x, a
