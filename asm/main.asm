@@ -132,6 +132,8 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!MusicEchoChOnCarryGateDistance = MusicEchoChOnSkipClear-MusicEchoChOnCarryGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -1584,6 +1586,7 @@ L_099C:
 
 	mov	a, #$00
 	call	SetEDLDSP		; Also set the delay to 0.
+	mov	!MusicEchoChannels, a	;
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
@@ -1649,7 +1652,12 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	bne +				; KevinM's edit:
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
-+	cmp	a, #$01			; 01 = jump SFX
++
+	cmp	a, #$0b
+	beq	MusicEchoCarryOn
+	cmp	a, #$0c
+	beq	MusicEchoCarryOff
+	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
 	beq	CheckAPU1SFXPriority
@@ -1664,6 +1672,17 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
+
+MusicEchoCarryOn:
+	mov	a, #!MusicEchoChOnCarryGateDistance
+	mov	MusicEchoChOnCarryGate+1, a
+	ret
+
+MusicEchoCarryOff:
+	mov	a, #$00
+	mov	MusicEchoChOnCarryGate+1, a
+	ret
+
 PauseMusic:
 	mov	a, #$11
 	mov	$00, a
@@ -1906,8 +1925,12 @@ L_0B6D:
 	bpl	L_0B6D	
 	; MODIFIED CODE START
 	mov	!MusicPModChannels, a
-	mov	!MusicEchoChannels, a
 	mov	!MusicNoiseChannels, a
+MusicEchoChOnCarryGate:
+	bra	+		;Default state of gate is open
++
+	mov	!MusicEchoChannels, a
+MusicEchoChOnSkipClear:
 	mov	!SecondVTable, a
 	; MODIFIED CODE END	
 	mov	$58, a             ; MasterVolumeFade = 0
