@@ -132,6 +132,8 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -555,6 +557,10 @@ DDEEFix:
 
 EffectModifier:					; Call this whenever either $1d or the various echo, noise, or pitch modulaion addresses are modified.
 {	
+MusicToSFXEchoGate:
+	bra	MusicToSFXEchoNoCopy
+	mov	!SFXEchoChannels, !MusicEchoChannels
+MusicToSFXEchoNoCopy:
 	push	x
 	push	y
 	mov	x, #$00
@@ -1626,6 +1632,7 @@ ForceSFXEchoOff:
 ForceSFXEchoOn:
 	mov	a, #$ff
 +	mov	!SFXEchoChannels, a
+	call	MusicSFXEchoCarryOff
 	call	EffectModifier
 	bra	ProcessAPU1SFX
 	
@@ -1649,7 +1656,10 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	bne +				; KevinM's edit:
 	mov a, #$2C			; 09 unpauses music, but with the silent sfx
 	bra UnpauseMusic_2	;
-+	cmp	a, #$01			; 01 = jump SFX
++
+	cmp	a, #$0a
+	beq	MusicSFXEchoCarryOn
+	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
 	beq	CheckAPU1SFXPriority
@@ -1664,6 +1674,17 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
+
+MusicSFXEchoCarryOn:
+	mov	a, #$00
+	mov	MusicToSFXEchoGate+1, a
+	ret
+
+MusicSFXEchoCarryOff:
+	mov	a, #!MusicToSFXEchoGateDistance
+	mov	MusicToSFXEchoGate+1, a
+	ret
+
 PauseMusic:
 	mov	a, #$11
 	mov	$00, a
