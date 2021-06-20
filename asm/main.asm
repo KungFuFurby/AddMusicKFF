@@ -567,10 +567,12 @@ endif
 
 EffectModifier:					; Call this whenever either $1d or the various echo, noise, or pitch modulaion addresses are modified.
 {	
+if !noSFX = !false
 MusicToSFXEchoGate:
 	bra	MusicToSFXEchoNoCopy
 	mov	!SFXEchoChannels, !MusicEchoChannels
 MusicToSFXEchoNoCopy:
+endif
 	push	x
 	push	y
 	mov	x, #$00
