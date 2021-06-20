@@ -1034,6 +1034,7 @@ void compileMusic()
 
 	int totalSamplecount = 0;
 	int totalSize = 0;
+	int maxGlobalEchoBufferSize = 0;
 	for (int i = 0; i < 256; i++)
 	{
 		if (musics[i].exists)
@@ -1041,7 +1042,13 @@ void compileMusic()
 			//if (!(i <= highestGlobalSong && !recompileMain))
 			//{
 			musics[i].index = i;
+			if (i > highestGlobalSong) {
+				musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+			}
 			musics[i].compile();
+			if (i <= highestGlobalSong) {
+				maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+			}
 			totalSamplecount += musics[i].mySamples.size();
 			//}
 		}
