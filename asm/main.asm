@@ -1807,10 +1807,12 @@ if !noSFX = !false
 +
 	cmp	a, #$0a
 	beq	MusicSFXEchoCarryOn
+endif
 	cmp	a, #$0b
 	beq	MusicEchoCarryOn
 	cmp	a, #$0c
 	beq	MusicEchoCarryOff
+if !noSFX = !false
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
@@ -1835,6 +1837,7 @@ MusicSFXEchoCarryOn:
 MusicSFXEchoCarryOff:
 	mov	a, #!MusicToSFXEchoGateDistance
 	mov	MusicToSFXEchoGate+1, a
+endif
 	ret
 
 MusicEchoCarryOn:
@@ -1847,6 +1850,9 @@ MusicEchoCarryOff:
 	mov	MusicEchoChOnCarryGate+1, a
 	ret
 
+if !noSFX = !false
+;TODO modify pause so that it allows noSFX (this requires the ASM be removed
+;from the SFX)
 PauseMusic:
 	mov	a, #$11
 	mov	$00, a
@@ -1999,8 +2005,8 @@ Quick1DFAMonoVolDSPWritesWKON:
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
-endif
 	ret
+endif
 				; Call this routine to play the song currently in A.
 PlaySong:
 
