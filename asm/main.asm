@@ -134,6 +134,7 @@ incsrc "UserDefines.asm"
 
 !runningArpGateOnJumpDistance = NormalNote_runRemoteCodeKON-NormalNote_runningArpGate-2
 !MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
+!MusicEchoChOnCarryGateDistance = MusicEchoChOnSkipClear-MusicEchoChOnCarryGate-2
 
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
@@ -1729,6 +1730,7 @@ L_099C:
 
 	mov	a, #$00
 	call	SetEDLDSP		; Also set the delay to 0.
+	mov	!MusicEchoChannels, a	;
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
@@ -1805,6 +1807,10 @@ if !noSFX = !false
 +
 	cmp	a, #$0a
 	beq	MusicSFXEchoCarryOn
+	cmp	a, #$0b
+	beq	MusicEchoCarryOn
+	cmp	a, #$0c
+	beq	MusicEchoCarryOff
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
@@ -1829,6 +1835,16 @@ MusicSFXEchoCarryOn:
 MusicSFXEchoCarryOff:
 	mov	a, #!MusicToSFXEchoGateDistance
 	mov	MusicToSFXEchoGate+1, a
+	ret
+
+MusicEchoCarryOn:
+	mov	a, #!MusicEchoChOnCarryGateDistance
+	mov	MusicEchoChOnCarryGate+1, a
+	ret
+
+MusicEchoCarryOff:
+	mov	a, #$00
+	mov	MusicEchoChOnCarryGate+1, a
 	ret
 
 PauseMusic:
@@ -2089,8 +2105,12 @@ endif
 	bpl	L_0B6D	
 	; MODIFIED CODE START
 	mov	!MusicPModChannels, a
-	mov	!MusicEchoChannels, a
 	mov	!MusicNoiseChannels, a
+MusicEchoChOnCarryGate:
+	bra	+		;Default state of gate is open
++
+	mov	!MusicEchoChannels, a
+MusicEchoChOnSkipClear:
 	mov	!SecondVTable, a
 	; MODIFIED CODE END	
 	mov	$58, a             ; MasterVolumeFade = 0
