@@ -1627,10 +1627,11 @@ UnpauseMusic:
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
+	dec a
 	mov $f2, #$2c		;\
-	mov $f3, #$00		;| Mute echo.
+	mov $f3, a		;| Mute echo.
 	mov $f2, #$3c		;|
-	mov $f3, #$00		;/
+	mov $f3, a		;/
 	bra .unsetMute
 
 EnableYoshiDrums:				; Enable Yoshi drums.
