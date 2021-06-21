@@ -1610,34 +1610,28 @@ HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related
 	ret
 
 UnpauseMusic:
-	mov a, !SpeedUpBackUp	;\
-	mov $0387, a			;/ Restore the tempo.
-
 	mov a, #$00
 	mov !PauseMusic, a
-	
+.unsetMute:
 	mov $f2, #$6c			;\ Unset the mute flag.
 	and $f3, #$bf			;/
-	ret
 
-.silent:
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
-	
+	ret
+
+.silent:	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
 	
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
-	
-	mov $f2, #$6c		;\ Unset the mute flag.
-	and $f3, #$bf		;/
 
 	mov $f2, #$2c		;\
 	mov $f3, #$00		;| Mute echo.
 	mov $f2, #$3c		;|
 	mov $f3, #$00		;/
-	ret
+	bra .unsetMute
 
 EnableYoshiDrums:				; Enable Yoshi drums.
 	mov	a, #$01
