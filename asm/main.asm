@@ -1674,14 +1674,12 @@ if !noSFX = !false
 ;TODO modify pause so that it allows noSFX (this requires the ASM be removed
 ;from the SFX)
 	cmp	a, #$07			; 07 pauses music
-	beq	PauseMusic		;
+	beq	PlayPauseSFX		;
 	cmp	a, #$08			; 08 unpauses music
-	beq	UnpauseMusic		;
-	cmp a, #$09			;
-	bne +				; KevinM's edit:
-	mov a, #$2C			; 09 unpauses music, but with the silent sfx
-	bra UnpauseMusic_2	;
-+	cmp	a, #$01			; 01 = jump SFX
+	beq	PlayUnpauseSFX		;
+	cmp	a, #$09			; KevinM's edit:
+	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx			
+	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
 	beq	CheckAPU1SFXPriority
@@ -1696,18 +1694,22 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
-PauseMusic:
+
+PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
 	mov	!ProtectSFX6, a
+	bra	ProcessAPU1SFX
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
 	bra	+
-UnpauseMusic:
+PlayUnpauseSFX:
 	mov	a, #$12
-.2:
++
 	mov	$00, a
 	mov	a, #$00
 	mov	!ProtectSFX6, a
-+
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
 	
