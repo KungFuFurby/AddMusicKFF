@@ -1592,11 +1592,11 @@ DisableYoshiDrums:				; And disable them.
 	mov	a, #$00
 +
 	mov	$0386, a
-	call	HandleYoshiDrums
 if !noSFX = !false
-	jmp	ProcessAPU1SFX
+	call	HandleYoshiDrums
+	bra	ProcessAPU1SFX
 else
-	ret
+	bra	HandleYoshiDrums
 endif
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
