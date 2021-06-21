@@ -2348,10 +2348,31 @@ DSPWrite:
 	
 ; dispatch vcmd in A
 L_0D40:
-	asl	a
 	mov	x, a
-	mov	a, #$00
-	jmp	(CommandDispatchTable-$B4+x)         ; $DA minimum? (F90)
+	asl	a
+	mov	y, a
+	mov	a, CommandDispatchTable-$B3+y        ; $DA minimum? (F90)
+	push	a
+	mov	a, CommandDispatchTable-$B4+y
+	push	a
+	mov	a, CommandLengthTable-$DA+x
+	mov	x, $46
+	dec	a
+	beq	L_1266
+
+; get next vcmd stream byte for voice $46
+GetCommandData:
+	mov	x, $46
+; get next vcmd stream byte into A/Y
+GetCommandDataFast:
+	mov	a, ($30+x)
+L_1260:
+	inc	$30+x
+	bne	L_1266
+	inc	$31+x
+L_1266:
+	mov	y, a
+	ret
 
 	incsrc "Commands.asm"
 	
@@ -2923,19 +2944,6 @@ L_124D:
 	mul	ya		; \ Vol = [(Vol^2) / 2] ?
 	mov	a, y		; /
 	mov	$0371+x, a         ; voice volume
-	ret
-; get next vcmd stream byte for voice $46
-GetCommandData:
-	mov	x, $46
-; get next vcmd stream byte into A/Y
-GetCommandDataFast:
-	mov	a, ($30+x)
-L_1260:
-	inc	$30+x
-	bne	L_1266
-	inc	$31+x
-L_1266:
-	mov	y, a
 	ret
 	
 ModifyNoise:				; A should contain the noise value.
