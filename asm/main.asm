@@ -1609,6 +1609,36 @@ HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related
 	call	KeyOffVoices
 	ret
 
+UnpauseMusic:
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+
+	mov a, #$00
+	mov !PauseMusic, a
+	
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+	ret
+
+.silent:
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+	
+	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
+	mov !PauseMusic, a	;/
+	
+	mov $f2, #$5c		; \ Key off voices
+	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
+	
+	mov $f2, #$6c		;\ Unset the mute flag.
+	and $f3, #$bf		;/
+
+	mov $f2, #$2c		;\
+	mov $f3, #$00		;| Mute echo.
+	mov $f2, #$3c		;|
+	mov $f3, #$00		;/
+	ret
+
 EnableYoshiDrums:				; Enable Yoshi drums.
 	mov	a, #$01
 	bra	+
@@ -1624,6 +1654,7 @@ if !noSFX = !false
 else
 	bra	HandleYoshiDrums
 endif
+
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
 	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
@@ -1671,14 +1702,26 @@ if !noSFX = !false
 	beq	ForceSFXEchoOff		;
 	cmp	a, #$06			;
 	beq	ForceSFXEchoOn		;
-;TODO modify pause so that it allows noSFX (this requires the ASM be removed
-;from the SFX)
+endif
 	cmp	a, #$07			; 07 pauses music
+if !noSFX = !false
 	beq	PlayPauseSFX		;
+else
+	beq	PauseMusic
+endif
 	cmp	a, #$08			; 08 unpauses music
-	beq	PlayUnpauseSFX		;
-	cmp	a, #$09			; KevinM's edit:
-	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx			
+if !noSFX = !false
+	beq	PlayUnpauseSFX
+else
+	beq	UnpauseMusic
+endif
+	cmp 	a, #$09			; KevinM's edit:
+if !noSFX = !false
+	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx
+else
+	beq	UnpauseMusic_silent
+endif
+if !noSFX = !false
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
@@ -1712,7 +1755,20 @@ PlayUnpauseSFX:
 	mov	!ProtectSFX6, a
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
+endif
+
+PauseMusic:
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+
+	mov a, #$00
+	mov !PauseMusic, a
 	
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+	ret
+
+if !noSFX = !false	
 CheckAPU1SFXPriority:
 	mov	y, a
 	;mov	y, #$00		;Default priority
