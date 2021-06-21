@@ -1563,6 +1563,32 @@ endif
 
 }
 
+L_09CDWPreCheck:
+	mov	a, $91+x
+	beq	L_1119
+	dec	$91+x
+	bra	L_112A
+L_1119:
+if !noSFX = !false
+	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
+	and	a, $48			; |
+	bne	L_112A			; /
+endif
+	set1	$13.7			;
+
+; add pitch slide delta and set DSP pitch
+L_09CD:
+	mov	a, #$02b0&$FF
+	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
+	dec	$90+x
+	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
+	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+L_112A:
+	call	DDEEFix	
+	ret
+
+;
+
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	a, $0386			;
@@ -1622,31 +1648,6 @@ endif
 				; The stack is also cleared.
 	;ret
 
-L_09CDWPreCheck:
-	mov	a, $91+x
-	beq	L_1119
-	dec	$91+x
-	bra	L_112A
-L_1119:
-if !noSFX = !false
-	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
-	and	a, $48			; |
-	bne	L_112A			; /
-endif
-	set1	$13.7			;
-
-; add pitch slide delta and set DSP pitch
-L_09CD:
-	mov	a, #$02b0&$FF
-	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
-	dec	$90+x
-	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
-	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-L_112A:
-	call	DDEEFix	
-	ret
-
-;
 if !noSFX = !false
 ForceSFXEchoOff:
 	mov	a, #$00
