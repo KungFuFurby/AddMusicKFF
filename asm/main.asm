@@ -1756,34 +1756,6 @@ UnpauseMusic:
 	mov $f3, a		;/
 	bra .unsetMute
 
-EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$01
-	bra	+
-
-
-DisableYoshiDrums:				; And disable them.
-	mov	a, #$00
-+
-	mov	$0386, a
-if !noSFX = !false
-	call	HandleYoshiDrums
-	bra	ProcessAPU1SFX
-else
-	bra	HandleYoshiDrums
-endif
-
-if !noSFX = !false
-MusicSFXEchoCarryOn:
-	mov	a, #$00
-	bra	+
-
-MusicSFXEchoCarryOff:
-	mov	a, #!MusicToSFXEchoGateDistance
-+
-	mov	MusicToSFXEchoGate+1, a
-	ret
-endif
-
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
 	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
@@ -1808,6 +1780,33 @@ endif
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
+
+DisableYoshiDrums:				; And disable them.
+	mov	a, #$00
+-
+	mov	$0386, a
+if !noSFX = !false
+	call	HandleYoshiDrums
+	bra	ProcessAPU1SFX
+else
+	bra	HandleYoshiDrums
+endif
+
+EnableYoshiDrums:				; Enable Yoshi drums.
+	mov	a, #$01
+	bra	-
+
+if !noSFX = !false
+MusicSFXEchoCarryOn:
+	mov	a, #$00
+	bra	+
+
+MusicSFXEchoCarryOff:
+	mov	a, #!MusicToSFXEchoGateDistance
++
+	mov	MusicToSFXEchoGate+1, a
+	ret
+endif
 
 if !noSFX = !false
 PlayPauseSFX:
