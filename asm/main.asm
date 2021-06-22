@@ -1744,11 +1744,11 @@ L_0A11:
 
 MusicSFXEchoCarryOn:
 	mov	a, #$00
-	mov	MusicToSFXEchoGate+1, a
-	ret
+	bra	+
 
 MusicSFXEchoCarryOff:
 	mov	a, #!MusicToSFXEchoGateDistance
++
 	mov	MusicToSFXEchoGate+1, a
 	ret
 
