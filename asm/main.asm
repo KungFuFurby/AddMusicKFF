@@ -1666,7 +1666,7 @@ L_099C:
 if !noSFX = !false
 	mov	$1d, a
 endif
-	mov	a, !MaxEchoDelay	;
+	mov	!MaxEchoDelay, a	;
 	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
