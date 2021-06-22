@@ -1685,66 +1685,6 @@ endif
 
 }
 
-HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
-
-	mov	a, $0386			;
-	push	p
-	mov	a, $6e				; 
-	pop	p
-	bne	.drumsOn			;
-					
-	tset	$5e, a				;
-	bra	+
-	
-.drumsOn					
-						; $5E = ($5E --/--> $6E)
-						; (Or $5E = $5E & ~$5C)
-	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
-+
-	mov	a, $5e
-	call	KeyOffVoices
-	ret
-
-EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$01
-	bra	+
-
-
-DisableYoshiDrums:				; And disable them.
-	mov	a, #$00
-+
-	mov	$0386, a
-	call	HandleYoshiDrums
-if !noSFX = !false
-	jmp	ProcessAPU1SFX
-else
-	ret
-endif
-L_099C:
-	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	mov	!NCKValue, #$60
-	
-	mov	a, #$ff
-	call	KeyOffVoices
-
-	mov	a, #$00
-	call	SetEDLDSP		; Also set the delay to 0.
-	mov	!MusicEchoChannels, a	;
-	mov	$02, a			; 
-	mov	$06, a			; Reset the song number
-	mov	$0A, a			; 
-if !noSFX = !false
-	mov	$1d, a
-endif
-	mov	a, !MaxEchoDelay	;
-	call	EffectModifier
-
-	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
-				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
-				; The stack is also cleared.
-	;ret
-
 L_09CDWPreCheck:
 	mov	a, $91+x
 	beq	L_1119
@@ -1770,7 +1710,112 @@ L_112A:
 	ret
 
 ;
+
+HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
+
+	mov	a, $0386			;
+	push	p
+	mov	a, $6e				; 
+	pop	p
+	bne	.drumsOn			;
+					
+	tset	$5e, a				;
+	bra	+
+	
+.drumsOn					
+						; $5E = ($5E --/--> $6E)
+						; (Or $5E = $5E & ~$5C)
+	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
++
+	mov	a, $5e
+	call	KeyOffVoices
+	ret
+
+UnpauseMusic:
+	mov a, #$00
+	mov !PauseMusic, a
+.unsetMute:
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+	ret
+
+.silent:	
+	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
+	mov !PauseMusic, a	;/
+	
+	mov $f2, #$5c		; \ Key off voices
+	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
+
+	dec a
+	mov $f2, #$2c		;\
+	mov $f3, a		;| Mute echo.
+	mov $f2, #$3c		;|
+	mov $f3, a		;/
+	bra .unsetMute
+
+EnableYoshiDrums:				; Enable Yoshi drums.
+	mov	a, #$01
+	bra	+
+
+
+DisableYoshiDrums:				; And disable them.
+	mov	a, #$00
++
+	mov	$0386, a
 if !noSFX = !false
+	call	HandleYoshiDrums
+	bra	ProcessAPU1SFX
+else
+	bra	HandleYoshiDrums
+endif
+
+L_099C:
+	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
+	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
+	mov	!NCKValue, #$60
+	
+	mov	a, #$ff
+	call	KeyOffVoices
+
+	mov	a, #$00
+	call	SetEDLDSP		; Also set the delay to 0.
+	mov	!MusicEchoChannels, a	;
+	mov	$02, a			; 
+	mov	$06, a			; Reset the song number
+	mov	$0A, a			; 
+if !noSFX = !false
+	mov	$1d, a
+endif
+	mov	a, !MaxEchoDelay	;
+	call	EffectModifier
+
+	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
+				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
+				; The stack is also cleared.
+	;ret
+
+if !noSFX = !false
+PlayPauseSFX:
+	mov	a, #$11
+	mov	$00, a
+	mov	!ProtectSFX6, a
+	bra	ProcessAPU1SFX
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
+	bra	+
+PlayUnpauseSFX:
+	mov	a, #$12
++
+	mov	$00, a
+	mov	a, #$00
+	mov	!ProtectSFX6, a
+	;mov	$08, #$00
+	bra ProcessAPU1SFX
+
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
@@ -1794,17 +1839,26 @@ if !noSFX = !false
 	beq	ForceSFXEchoOff		;
 	cmp	a, #$06			;
 	beq	ForceSFXEchoOn		;
-;TODO modify pause so that it allows noSFX (this requires the ASM be removed
-;from the SFX)
+endif
 	cmp	a, #$07			; 07 pauses music
-	beq	PauseMusic		;
+if !noSFX = !false
+	beq	PlayPauseSFX		;
+else
+	beq	PauseMusic
+endif
 	cmp	a, #$08			; 08 unpauses music
-	beq	UnpauseMusic		;
-	cmp a, #$09			;
-	bne +				; KevinM's edit:
-	mov a, #$2C			; 09 unpauses music, but with the silent sfx
-	bra UnpauseMusic_2	;
-+
+if !noSFX = !false
+	beq	PlayUnpauseSFX
+else
+	beq	UnpauseMusic
+endif
+	cmp 	a, #$09			; KevinM's edit:
+if !noSFX = !false
+	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx
+else
+	beq	UnpauseMusic_silent
+endif
+if !noSFX = !false
 	cmp	a, #$0a
 	beq	MusicSFXEchoCarryOn
 endif
@@ -1842,32 +1896,26 @@ endif
 
 MusicEchoCarryOn:
 	mov	a, #!MusicEchoChOnCarryGateDistance
-	mov	MusicEchoChOnCarryGate+1, a
-	ret
+	bra	+
 
 MusicEchoCarryOff:
 	mov	a, #$00
++
 	mov	MusicEchoChOnCarryGate+1, a
 	ret
 
-if !noSFX = !false
-;TODO modify pause so that it allows noSFX (this requires the ASM be removed
-;from the SFX)
 PauseMusic:
-	mov	a, #$11
-	mov	$00, a
-	mov	!ProtectSFX6, a
-	bra	+
-UnpauseMusic:
-	mov	a, #$12
-.2:
-	mov	$00, a
-	mov	a, #$00
-	mov	!ProtectSFX6, a
-+
-	;mov	$08, #$00
-	bra ProcessAPU1SFX
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+
+	mov a, #$00
+	mov !PauseMusic, a
 	
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+	ret
+
+if !noSFX = !false	
 CheckAPU1SFXPriority:
 	mov	y, a
 	;mov	y, #$00		;Default priority
