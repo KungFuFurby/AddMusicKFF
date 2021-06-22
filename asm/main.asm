@@ -143,6 +143,9 @@ arch spc700-raw
 org $000000
 base $0400			; Do not change this.
 
+if !noSFX = !true
+print "NoSFX is enabled"
+endif
 {		; Program setup
 	clrp
 	mov   x, #$cf
@@ -181,7 +184,6 @@ MainLoop:
 	mov   y, $fd
 	beq   MainLoop             ; wait for counter 0 increment
 	push  y
-
 	mov   a, #$38
 	mul   ya
 	clrc
@@ -189,19 +191,21 @@ MainLoop:
 	mov   $44, a
 	bcc   L_0573
 	inc   $45
-	
+if !noSFX = !false
 	call	ProcessSFX
-	
+endif
 	call  ProcessAPU1Input			; APU1 has to come first since it receives the "pause" sound effects that it pseudo-sends to APU0.
 	call  ProcessAPU0Input
+if !noSFX = !false
 	call  ProcessAPU3Input
+endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
 	mov   x, #$01
 	call  ReadInputRegister             ; read/send APU1
 	mov   x, #$03
 	call  ReadInputRegister             ; read/send APU3
-	
+if !noSFX = !false	
 	mov	a, !ProtectSFX6
 	beq	+
 	mov	$00, #$00
@@ -210,7 +214,7 @@ MainLoop:
 	beq	+
 	mov	$03, #$00
 +
-
+endif
 L_0573:
 	mov   a, $51
 	pop   y
@@ -351,8 +355,9 @@ NoteVCMD:
 if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
-	
+if !noSFX = !false
 	call	TerminateIfSFXPlaying
+endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
@@ -391,10 +396,10 @@ NormalNote:						;;;;;;;;;;/ Code change
 	
 	mov	a, #$00
 	mov	!InRest+x, a
-	
+if !noSFX = !false	
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	NoPitchAdjust	; Don't adjust the pitch.
-	
+endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
 	mov	a, !remoteCodeType+x
@@ -441,9 +446,10 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-
+if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	L_062B		; Don't adjust the pitch.	
+endif
 	mov	a, $0300+x	; \ 
 	mov	$90+x, a	; / 
 	beq	L_062B
@@ -464,7 +470,9 @@ L_062B:
 	call	DDEEFix	
 ; set DSP pitch from $10/11
 SetPitch:			;
+if !noSFX = !false
 	call	TerminateIfSFXPlaying
+endif
 	push	x
 	mov	a, $11
 	asl	a
@@ -541,10 +549,12 @@ DDEEFix:
 	mov	a, $02b0+x
 	bra	++
 +
+if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	-		; Don't adjust the pitch.
 	and	a, $1d
 	bne	-
+endif
 	mov	a, $02d1+x
 	mov	$02b0+x, a
 ++
@@ -575,6 +585,7 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 	xcn	a				; /
 	mov	$f2, a				;
 						
+if !noSFX = !false
 	mov	a, $1d				; \ a = S
 	eor	a, #$ff				; | a = S'
 	and	a, !MusicPModChannels+x		; / a = S'M
@@ -584,6 +595,9 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 	mov	a, !SFXPModChannels+x		; \ a = S
 	and	a, $1d				; | a = SE
 	or	a, $15				; / a = S'M + SE
+else
+	mov	a, !MusicPModChannels+x
+endif
 	
 						; \ Write to the relevant DSP register.
 	mov	$f3, a				; / (coincidentally, the order is the opposite of DSPWrite)
@@ -600,6 +614,7 @@ EffectModifier:					; Call this whenever either $1d or the various echo, noise, 
 
 
 }
+if !noSFX = !false
 ProcessSFX:				; Major code changes ahead.
 {					; Originally, the SMW SFX were handled within their port handling routines.
 					; This meant that there was a near duplicate copy of the 1DF9 code for 1DFC SFX.
@@ -715,7 +730,7 @@ endif
 	bne	-
 
 	mov	x, $46			; \ 
-
+endif
 RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore all instrument properties for that channel.
 	
 	mov	a, !BackupSRCN+x	; |
@@ -730,7 +745,7 @@ RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore 
 .restoreSample				; \ 
 	jmp   RestoreMusicSample	; | Fix sample.
 }
-	
+if !noSFX = !false
 HandleSFXVoice:
 {
 	setp
@@ -1332,23 +1347,30 @@ SFXTerminateCh:
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
 	ret
-
+endif
 SpeedUpMusic:
 	mov	a, #$0a
 	mov	$0387, a
 	mov	a, $51
 	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
 	mov	$00, a
 	mov	a, #$00
 	mov	$04, a
 	mov	$07, a
+else
+	mov	a, #$00
+	mov	$00, a
+	mov	$04, a
+endif
 	;ret
 ;
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
+if !noSFX = !false
 	mov	x, #(!1DF9SFXChannel*2)		; \ 
 	mov	y, #$00				; | 
 	mov	$10, #(1<<!1DF9SFXChannel)	; | 
@@ -1536,10 +1558,36 @@ endif
 	
 	mov	a, #$02
 	mov	!ChSFXNoteTimer+x, a		; Prevent an edge case.
+endif
 	ret
 
 }
-	
+
+L_09CDWPreCheck:
+	mov	a, $91+x
+	beq	L_1119
+	dec	$91+x
+	bra	L_112A
+L_1119:
+if !noSFX = !false
+	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
+	and	a, $48			; |
+	bne	L_112A			; /
+endif
+	set1	$13.7			;
+
+; add pitch slide delta and set DSP pitch
+L_09CD:
+	mov	a, #$02b0&$FF
+	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
+	dec	$90+x
+	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
+	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+L_112A:
+	call	DDEEFix	
+	ret
+
+;
 
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
@@ -1561,6 +1609,31 @@ HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related
 	call	KeyOffVoices
 	ret
 
+UnpauseMusic:
+	mov a, #$00
+	mov !PauseMusic, a
+.unsetMute:
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+	ret
+
+.silent:	
+	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
+	mov !PauseMusic, a	;/
+	
+	mov $f2, #$5c		; \ Key off voices
+	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
+
+	dec a
+	mov $f2, #$2c		;\
+	mov $f3, a		;| Mute echo.
+	mov $f2, #$3c		;|
+	mov $f3, a		;/
+	bra .unsetMute
+
 EnableYoshiDrums:				; Enable Yoshi drums.
 	mov	a, #$01
 	bra	+
@@ -1570,9 +1643,12 @@ DisableYoshiDrums:				; And disable them.
 	mov	a, #$00
 +
 	mov	$0386, a
+if !noSFX = !false
 	call	HandleYoshiDrums
-
-	jmp	ProcessAPU1SFX
+	bra	ProcessAPU1SFX
+else
+	bra	HandleYoshiDrums
+endif
 
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1587,7 +1663,9 @@ L_099C:
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
+if !noSFX = !false
 	mov	$1d, a
+endif
 	mov	a, !MaxEchoDelay	;
 	call	EffectModifier
 
@@ -1596,30 +1674,7 @@ L_099C:
 				; The stack is also cleared.
 	;ret
 
-L_09CDWPreCheck:
-	mov	a, $91+x
-	beq	L_1119
-	dec	$91+x
-	bra	L_112A
-L_1119:
-	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
-	and	a, $48			; |
-	bne	L_112A			; /
-	set1	$13.7			;
-
-; add pitch slide delta and set DSP pitch
-L_09CD:
-	mov	a, #$02b0&$FF
-	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
-	dec	$90+x
-	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
-	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-L_112A:
-	call	DDEEFix	
-	ret
-
-;
-
+if !noSFX = !false
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
@@ -1628,7 +1683,7 @@ ForceSFXEchoOn:
 +	mov	!SFXEchoChannels, a
 	call	EffectModifier
 	bra	ProcessAPU1SFX
-	
+endif
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
 	cmp	a, #$ff
@@ -1637,19 +1692,32 @@ ProcessAPU1Input:				; Input from SMW $1DFA
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
+if !noSFX = !false
 	cmp	a, #$05			;
 	beq	ForceSFXEchoOff		;
 	cmp	a, #$06			;
 	beq	ForceSFXEchoOn		;
+endif
 	cmp	a, #$07			; 07 pauses music
-	beq	PauseMusic		;
+if !noSFX = !false
+	beq	PlayPauseSFX		;
+else
+	beq	PauseMusic
+endif
 	cmp	a, #$08			; 08 unpauses music
-	beq	UnpauseMusic		;
-	cmp a, #$09			;
-	bne +				; KevinM's edit:
-	mov a, #$2C			; 09 unpauses music, but with the silent sfx
-	bra UnpauseMusic_2	;
-+	cmp	a, #$01			; 01 = jump SFX
+if !noSFX = !false
+	beq	PlayUnpauseSFX
+else
+	beq	UnpauseMusic
+endif
+	cmp 	a, #$09			; KevinM's edit:
+if !noSFX = !false
+	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx
+else
+	beq	UnpauseMusic_silent
+endif
+if !noSFX = !false
+	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
 	beq	CheckAPU1SFXPriority
@@ -1664,21 +1732,38 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
-PauseMusic:
+
+PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
 	mov	!ProtectSFX6, a
+	bra	ProcessAPU1SFX
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
 	bra	+
-UnpauseMusic:
+PlayUnpauseSFX:
 	mov	a, #$12
-.2:
++
 	mov	$00, a
 	mov	a, #$00
 	mov	!ProtectSFX6, a
-+
 	;mov	$08, #$00
 	bra ProcessAPU1SFX
+endif
+
+PauseMusic:
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+
+	mov a, #$00
+	mov !PauseMusic, a
 	
+	mov $f2, #$6c			;\ Unset the mute flag.
+	and $f3, #$bf			;/
+	ret
+
+if !noSFX = !false	
 CheckAPU1SFXPriority:
 	mov	y, a
 	;mov	y, #$00		;Default priority
@@ -1816,14 +1901,18 @@ Quick1DFAMonoVolDSPWritesWKON:
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
 	call	KeyOnVoices
+endif
 	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
 
 	;mov	y, #$00		
 	;mov	$0387, y		; Zero out the tempo modifier.
-	
+
+if !noSFX = !false
 	mov	!SFXEchoChannels, #$00
+endif
+
 L_0B5A:
 	mov	$06, a		; Song number goes into $06.
 	push	a
@@ -1873,7 +1962,9 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
+if !noSFX = !false
 	mov	$48, #$80
+endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
@@ -1892,15 +1983,20 @@ L_0B6D:
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
 	call	ClearRemoteCodeAddresses
+if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
 	mov	a, $1d
 	and	a, $48
 	pop	a
 	bne	+
+endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
-+	lsr	$48
++
+if !noSFX = !false
+	lsr	$48
+endif
 	dec	x
 	dec	x
 	bpl	L_0B6D	
@@ -1915,8 +2011,10 @@ L_0B6D:
 	mov	$52, a             ; TempoFade = 0
 	mov	$43, a             ; GlobalTranspose = 0
 	mov	!PauseMusic, a		; Unpause the music, if it's been paused.
+if !noSFX = !false
 	mov	!ProtectSFX6, a		; Protection against START + SELECT
 	mov	!ProtectSFX7, a		; Protection against START + SELECT
+endif
 	mov	$6e,a						; MODIFIED, channels affected by Yoshi drums.
 	mov	$5e,a						; Also MODIFIED
 	mov	!MasterVolume, #$c0          ; MasterVolume = #$C0
@@ -1950,6 +2048,7 @@ L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
 	mov	a, #$00
+if !noSFX = !false
 	mov	$0389, a
 	mov	a, !NCKValue		; \ 
 	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
@@ -1962,6 +2061,12 @@ L_0BA5:
 	eor	a, #$ff		
 	;mov	y, #$5c
 	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
+else
+	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
+	call	ModifyNoise		; /
+	mov	a, #$ff
+	jmp	KeyOffVoices
+endif
 ; fade volume out over 240 counts
 FadeOut:
 	mov	x, #$f0
@@ -2125,13 +2230,16 @@ L_0C9F:
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
 	push	a                 ; vcmd 80-d9 (note)
-	
+if !noSFX = !false	
 	mov	a, $48		; Current channel being processed.
 	and	a, $1d		; Check if there's a sound effect on the current channel.
 	mov	$10, a		; Save it. (Modified code up until the pop a).
+endif
 	mov	a, $48		; Current channel
 	and	a, $5e		; Check if this channel's music is muted.
+if !noSFX = !false
 	or	a, $10		; If it's muted or there's a sound effect playing...
+endif
 	mov	$10, a		; Save this status.
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
@@ -2249,10 +2357,14 @@ L_0D23:
 	dec	x
 	bpl	L_0D1C
 	mov	$5c, #$00          ; clear volchg flags
+if !noSFX = !false
 	mov	a, $1d
 	eor	a, #$FF		;;;;;;;;;;;;;;;Code change
 	and	a, $47
 	mov	$12, a
+else
+	mov	$12, $47
+endif
 	mov	a, $0162
 	push	a
 	or	a, $12
@@ -2272,11 +2384,13 @@ KeyOnVoices:
 	ret
 
 KeyOffVoicesWithCheck:
+if !noSFX = !false
 	push	a
 	mov	a, $48
 	and	a, $1d
 	pop	a
 	bne	+
+endif
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
@@ -2435,7 +2549,9 @@ L_102D:
 	movw	$10, ya            ; set $10/1 from voice pan
 ; set voice volume DSP regs with pan value from $10/1
 L_1036:
+if !noSFX = !false
 	call	TerminateIfSFXPlaying
+endif
 	mov	a, x		;
 	xcn	a			;
 	lsr	a			;
@@ -2473,6 +2589,7 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
+if !noSFX = !false
 	mov	a, $48
 	and	a, !MusicNoiseChannels
 	beq	++
@@ -2493,6 +2610,7 @@ L_1061:
 	mov	y, #$00
 	pop	x
 ++
+endif
 	mov	a, $12
 	movw	$f2, ya             ; set DSP vol if vbit 1D clear
 	mov	a, #$00
@@ -2658,10 +2776,14 @@ L_10A1:
 	
 	clr1	$13.7					;
 	mov	a, $90+x				;
+if !noSFX = !false
 	beq	L_10E4					;
 	mov	a, $48					;
 	and	a, $1d					;
 	beq	L_1111					;
+else
+	bne	L_1111
+endif
 L_10E4:
 	mov	a, ($30+x)				; Code for handling the $DD command.
 	cmp	a, #$dd					; I don't know why this is here instead of in its dispatch table.
@@ -2669,6 +2791,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
+if !noSFX = !false
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
 	beq	L_10FB					; /
@@ -2677,6 +2800,7 @@ L_10F3:
 	call	L_1260
 	dbnz	$10, L_10F3
 	bra	L_1111
+endif
 L_10FB:
 	call	L_1260					; \ 
 	call	GetCommandDataFast			; |
@@ -3002,8 +3126,9 @@ Start:
 	;mov	$0386, a
 	;mov	$0387, a
 	mov	!PauseMusic, a
+if !noSFX = !false
 	mov	$0389, a
-	
+endif
 	mov	!MaxEchoDelay, a
 	
 	mov	x, #$cf		; Reset the stack pointer.
@@ -3052,8 +3177,10 @@ GetSampleTableLocation:
 	incsrc "InstrumentData.asm"
 	
 
+if !noSFX = !false
 	SFXTable0:
 	SFXTable1:
+endif
 	SongPointers:
 
 	

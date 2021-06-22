@@ -42,6 +42,7 @@ bool forceNoContinuePrompt = false;
 bool sfxDump = false;
 bool visualizeSongs = false;
 bool redirectStandardStreams = false;
+bool noSFX = false;
 
 int programPos;
 int programUploadPos;
