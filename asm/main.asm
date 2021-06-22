@@ -1772,6 +1772,18 @@ else
 	bra	HandleYoshiDrums
 endif
 
+if !noSFX = !false
+MusicSFXEchoCarryOn:
+	mov	a, #$00
+	bra	+
+
+MusicSFXEchoCarryOff:
+	mov	a, #!MusicToSFXEchoGateDistance
++
+	mov	MusicToSFXEchoGate+1, a
+	ret
+endif
+
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
 	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
@@ -1882,17 +1894,9 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
-
-MusicSFXEchoCarryOn:
-	mov	a, #$00
-	mov	MusicToSFXEchoGate+1, a
+else
 	ret
-
-MusicSFXEchoCarryOff:
-	mov	a, #!MusicToSFXEchoGateDistance
-	mov	MusicToSFXEchoGate+1, a
 endif
-	ret
 
 MusicEchoCarryOn:
 	mov	a, #!MusicEchoChOnCarryGateDistance
