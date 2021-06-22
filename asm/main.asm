@@ -819,6 +819,8 @@ endif
 	mov	a, #$00
 	mov	!ChSFXPriority+x, a
 ++
+	mov	a, $0389
+	call	ModifyNoise
 	mov	a, !MusicNoiseChannels
 	and	a, $1a
 	beq	RestoreInstrumentInformation
@@ -826,8 +828,6 @@ endif
 	mov	a, !SFXNoiseChannels
 	tclr	$12, a
 	mov	$13, #$01
-	mov	a, $0389
-	call	ModifyNoise
 	;Restore VxVOL DSP registers of all music noise channels.
 	mov	x, #$00
 	mov	$f2, x
