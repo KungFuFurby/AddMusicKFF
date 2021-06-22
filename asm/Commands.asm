@@ -788,7 +788,9 @@ SyncInc_ret:
 
 
 SubC_1D:
+if !noSFX = !false
 	call	TerminateIfSFXPlaying
+endif
 	mov	a, $48
 	jmp	KeyOnVoices
 
