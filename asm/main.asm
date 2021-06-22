@@ -1739,6 +1739,9 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
+else
+	ret
+endif
 
 MusicEchoCarryOn:
 	mov	a, #!MusicEchoChOnCarryGateDistance
@@ -1750,6 +1753,7 @@ MusicEchoCarryOff:
 	mov	MusicEchoChOnCarryGate+1, a
 	ret
 
+if !noSFX = !false
 PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
