@@ -1678,6 +1678,24 @@ endif
 	;ret
 
 if !noSFX = !false
+PlayPauseSFX:
+	mov	a, #$11
+	mov	$00, a
+	mov	!ProtectSFX6, a
+	bra	ProcessAPU1SFX
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
+	bra	+
+PlayUnpauseSFX:
+	mov	a, #$12
++
+	mov	$00, a
+	mov	a, #$00
+	mov	!ProtectSFX6, a
+	;mov	$08, #$00
+	bra ProcessAPU1SFX
+
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
@@ -1752,26 +1770,6 @@ MusicEchoCarryOff:
 	mov	a, #$00
 	mov	MusicEchoChOnCarryGate+1, a
 	ret
-
-if !noSFX = !false
-PlayPauseSFX:
-	mov	a, #$11
-	mov	$00, a
-	mov	!ProtectSFX6, a
-	bra	ProcessAPU1SFX
-
-PlayUnpauseSilentSFX:
-	mov	a, #$2C
-	bra	+
-PlayUnpauseSFX:
-	mov	a, #$12
-+
-	mov	$00, a
-	mov	a, #$00
-	mov	!ProtectSFX6, a
-	;mov	$08, #$00
-	bra ProcessAPU1SFX
-endif
 
 PauseMusic:
 	mov a, !SpeedUpBackUp	;\
