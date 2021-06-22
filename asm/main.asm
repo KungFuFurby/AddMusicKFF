@@ -1776,14 +1776,16 @@ PlayUnpauseSFX:
 endif
 
 PauseMusic:
-	mov a, !SpeedUpBackUp	;\
-	mov $0387, a			;/ Restore the tempo.
+	mov a, $0387		;\
+	mov !SpeedUpBackUp, a	;| Set the tempo increase to 0 and save it.
+	mov a, #$00		;|
+	mov $0387, a		;/
 
-	mov a, #$00
+	inc a
 	mov !PauseMusic, a
 	
-	mov $f2, #$6c			;\ Unset the mute flag.
-	and $f3, #$bf			;/
+	mov $f2, #$6c			;\ Set the mute flag.
+	or  $f3, #$40			;/
 	ret
 
 if !noSFX = !false	
