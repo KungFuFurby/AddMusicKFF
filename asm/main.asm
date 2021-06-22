@@ -1735,9 +1735,9 @@ if !noSFX = !false
 else
 	beq	UnpauseMusic_silent
 endif
+if !noSFX = !false
 	cmp	a, #$0a
 	beq	MusicSFXEchoCarryOn
-if !noSFX = !false
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
