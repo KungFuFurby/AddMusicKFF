@@ -1,5 +1,6 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+if !noSFX = !false
 TerminateIfSFXPlaying:
 	mov	a, $48
 	and	a, $1d
@@ -9,6 +10,7 @@ TerminateIfSFXPlaying:
 	pop	a	;terminate the entire preceding routine.
 +
 	ret
+endif
 
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
@@ -75,7 +77,9 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	($10)+y, a
 	dbnz	y, -
 
+if !noSFX = !false
 	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
+endif
 	
 	push	x			; \ 
 	mov	a, x			; |
@@ -91,10 +95,10 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	
 	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
-
+if !noSFX = !false
 	cmp	!SFXNoiseChannels, #$00
 	bne	+
-	
+endif	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
@@ -722,10 +726,12 @@ cmdF8:					; Noise command.
 {
 Noiz:
 		or	(!MusicNoiseChannels), ($48)
+if !noSFX = !false
 		and	a, #$1f
 		mov	$0389, a
 		cmp	!SFXNoiseChannels, #$00
 		bne	+
+endif
 		call	ModifyNoise
 +
 		jmp	EffectModifier		
@@ -952,9 +958,9 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
-
+if !noSFX = !false
 	call	TerminateIfSFXPlaying
-	
+endif
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
 	

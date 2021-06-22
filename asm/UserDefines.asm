@@ -21,10 +21,20 @@ includeonce
 
 ;=======================================
 ;---------------
+!noSFX = !false
+
+;Default setting: !false
+;---------------
+; Causes the sound driver to have no SFX-related code in it.
+;=======================================
+
+;=======================================
+;---------------
 !noiseFrequencySFXInstanceResolution = !false
 
 ;Default setting: !false
 ;---------------
+; Requires SFX code to actually be present (!noSFX is false).
 ; Adds in code that resolves noise frequency conflicts between SFX
 ; instances.
 ; Not needed unless you're using noise SFX across more than one channel.
