@@ -21,10 +21,20 @@ includeonce
 
 ;=======================================
 ;---------------
+!noSFX = !false
+
+;Default setting: !false
+;---------------
+; Causes the sound driver to have no SFX-related code in it.
+;=======================================
+
+;=======================================
+;---------------
 !noiseFrequencySFXInstanceResolution = !false
 
 ;Default setting: !false
 ;---------------
+; Requires SFX code to actually be present (!noSFX is false).
 ; Adds in code that resolves noise frequency conflicts between SFX
 ; instances.
 ; Not needed unless you're using noise SFX across more than one channel.
@@ -128,6 +138,58 @@ includeonce
 ;Vanilla SMW setting: #$10
 ;---------------
 ; Sets the priority for the girder SFX in 1DFA.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh0ID = 5
+
+;Default setting: 5
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the first channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh1ID = 6
+
+;Default setting: 6
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the second channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXCh2ID = 7
+
+;Default setting: 7
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the third channel of the P-Switch SFX.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchSFXTriggerChID = 4
+
+;Default setting: 4
+;---------------
+; Requires !PSwitchIsSFX to be true to do anything.
+; Changes the channel assigned to the trigger SFX for the P-Switch.
+; WARNING: This number starts from zero, not 1, like the MML channels!
+; Also, please don't include the # sign: this is used for more than just a
+; constant number: it's also involved in math operations.
 ;=======================================
 
 ;=======================================
