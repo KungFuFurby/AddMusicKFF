@@ -1763,11 +1763,11 @@ endif
 
 MusicEchoCarryOn:
 	mov	a, #!MusicEchoChOnCarryGateDistance
-	mov	MusicEchoChOnCarryGate+1, a
-	ret
+	bra	+
 
 MusicEchoCarryOff:
 	mov	a, #$00
++
 	mov	MusicEchoChOnCarryGate+1, a
 	ret
 
