@@ -2760,7 +2760,6 @@ int Music::getHex(bool anyLength)
 
 	while (pos < text.size())
 	{
-		if (d >= 2 && songTargetProgram == 1) break;
 		if (d >= 2 && anyLength == false)
 			break;
 

@@ -81,6 +81,7 @@ extern bool forceNoContinuePrompt;
 extern bool sfxDump;
 extern bool visualizeSongs;
 extern bool redirectStandardStreams;
+extern bool noSFX;
 
 extern int programPos;
 extern int programUploadPos;
