@@ -307,12 +307,11 @@ L_0586:
 	movw  ya, $0168&$FF		;	
 	clrp				;
 	movw  $f6, ya			;
-	
+-
 	jmp   MainLoop             ; restart main loop
 L_058D:
 	mov   a, $06             ; if writing 0 to APU2 then
-	bne   +
-	jmp   MainLoop             ;   restart main loop
+	beq   -                  ;   restart main loop
 	
 { ; Execute code for each channel.
 
