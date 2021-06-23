@@ -94,7 +94,7 @@ endif
 !MusicBackup = $0DDA|!SA1Addr2
 
 
-!DefARAMRet = $044E	; This is the address that the SPC will jump to after uploading a block of data normally.
+!DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 !TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
@@ -205,8 +205,10 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
+if !PSwitchIsSFX = !false
 ;	CMP !PSwitch
 ;	BEQ .doExtraChecks
+endif
 ;	CMP !Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
@@ -256,8 +258,10 @@ Okay:
 	BEQ Fade			; /
 	
 	LDA !CurrentSong		; \ 
+if !PSwitchIsSFX = !false
 	CMP !PSwitch			; |
 	BEQ +				; |
+endif
 	CMP !Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
 	;;;BRA ++			; |
@@ -612,8 +616,10 @@ HandleSpecialSongs:
 	bne +					;/ This prevents an issue with non-standard goal songs.
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	BNE .starMusic			;;; just play the star music
+if !PSwitchIsSFX = !false
 	LDA !PSwitch
 	STA !MusicMir
+endif
 +
 	RTS
 	
