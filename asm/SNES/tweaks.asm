@@ -439,6 +439,14 @@ elseif !JumpSFXOn1DF9 == !true
 	org $00DBA5
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
+else
+	org $00D65E
+	LDA #$01
+	STA $1DFA|!SA1Addr2
+
+	org $00DBA5
+	LDA #$01
+	STA $1DFA|!SA1Addr2
 endif
 
 ; Remap the grinder SFX too.
@@ -466,6 +474,18 @@ elseif !GrinderSFXOn1DF9 == !true
 	org $0392B8
 	LDA #$2D
 	STA $1DF9|!SA1Addr2
+else
+	org $01D745
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $01DB70
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $0392B8
+	LDA #$04
+	STA $1DFA|!SA1Addr2
 endif
 
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore

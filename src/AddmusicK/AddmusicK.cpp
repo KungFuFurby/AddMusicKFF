@@ -456,6 +456,11 @@ void assembleSPCDriver()
 	mainLoopPos = scanInt(temptxt, "MainLoopPos: ");
 	reuploadPos = scanInt(temptxt, "ReuploadPos: ");
 	SRCNTableCodePos = scanInt(temptxt, "SRCNTableCodePos: ");
+	noSFX = (temptxt.find("NoSFX is enabled") != -1);
+	if (sfxDump && noSFX) {
+		printWarning("The sound driver build does not support sound effects due to the !noSFX flag\r\nbeing enabled in asm/UserDefines.asm, yet you requested to dump SFX. There will\r\nbe no new SPC dumps of the sound effects since the data is not included by\r\ndefault, nor is the playback code for the sound effects.");
+		sfxDump = false;
+	}
 
 	remove("temp.log");
 
@@ -1023,7 +1028,15 @@ void compileGlobalData()
 
 	programSize = getFileSize("asm/main.bin");
 
-	std::cout << "Total size of main program + all sound effects: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
+	std::string totalSizeStr;
+	if (noSFX) {
+		std::cout << "!noSFX is enabled in asm/UserDefines.asm, sound effects are not included" << std::endl;
+		totalSizeStr = "Total size of main program: 0x";
+	}
+	else {
+		totalSizeStr = "Total size of main program + all sound effects: 0x";
+	}
+	std::cout << totalSizeStr << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
 
 }
 
@@ -1505,8 +1518,15 @@ void generateSPCs()
 
 
 				int backupIndex = i;
-				if (mode != 0)
-					i = highestGlobalSong + 1;		// While dumping SFX, pretend that the current song is the lowest local song
+				if (mode != 0) {
+					i = highestGlobalSong + 1;
+					for (int j = highestGlobalSong+1; j < 256; j++) {
+						if (musics[j].exists) {
+							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+							break;
+						}
+					}
+				}
 
 				if (mode == 0)
 				{

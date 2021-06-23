@@ -41,7 +41,7 @@
 	<li><p>-s: Turn off SA-1 addressing.   By default, if $00FFD5 in the ROM is $23, then the program will use SA-1 addressing for the generated patch.  If this option is used, that behavior will be disabled.  Note that this will only affect addressing used for generated features; for the full effect, you must make some minor changes in asm/SNES/patch.asm.
 	<li><p>-noblock: Normally if AMK encounters an error while running, it will display the error(s) and then wait for the user to press the enter key to continue.  This flag will turn this behavior off, so on failure the program will simply quit.
 	<li><p>-norom: Only do what's necessary to generate SPC files; this makes it possible to generate SPCs without a Super Mario World ROM.  After using this option, you must specify the files you wish to compile (with quotes if they contain spaces).  For example, <code>-norom test.txt "test2.txt"</code>.  Please note that global songs and sound effects must still be parsed, so Addmusic_list.txt, Addmusic_sound effects.txt, and Addmusic_sample groups.txt must all be valid.</p></li>
-	<li><p>-sfxdump/-dumpsfx: Dumps all sound effects to the SPC folder inside their respective SFX directories. Note the samples used will be from the song you specify or, when modifying a ROM, the lowest numbered local song.</p></li>
+	<li><p>-sfxdump/-dumpsfx: Dumps all sound effects to the SPC folder inside their respective SFX directories. Note the samples used will be from the song you specify or, when modifying a ROM, the lowest numbered local song. Please make sure !noSFX is set to !false in asm/UserDefines.asm: otherwise, this option will not work.</p></li>
 	<li><p>-visualize: Creates a series of PNG files for the memory usage of local song(s). Each PNG contains a set of color strips, 16 bytes per column, that contains the following memory usage data:
 		<ul>
 			<li><b>Red:</b> Variable storage</li>
@@ -63,6 +63,11 @@
 	
 	</span>
 	
+	<br><br><h2>UserDefines.asm</h2>
+	<p>This file, located in the asm directory, is a quick and easy way to customize the sound driver functionality without digging too deep into the code.
+           Some of the defines affect the SNES side only, while other affect the SPC700 side, while others affect both.
+           If you find yourself using too much memory on the SPC side, then disabling some code fragments through these defines might help save some ARAM.</p>
+
 	<br><br><h2>Sample Groups</h2>
 	<p>A "sample group" is just what it sounds like: a group of samples.  Whenever a song is loaded, so is its sample group and any auxilary samples it uses (which, in a song, is defined by the #samples command).
 	There are two sample groups included by default, #default, and #optimized.  The first contains all the samples the normal SMW ROM contains, so any song that uses #default will also use all those samples.
