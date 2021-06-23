@@ -1,15 +1,27 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+if !noSFX = !false
+TerminateIfSFXPlaying:
+	mov	a, $48
+	and	a, $1d
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+endif
+
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
-	mov	x, $46			;;; get channel*2 in X
 	mov	a, #$00			; \ It's not a raw sample playing on this channel.
 	mov	!BackupSRCN+x, a	; /
 	
 	mov	a, $48			; \ No noise is playing on this channel.
 	tclr	!MusicNoiseChannels, a	; / (EffectModifier is called later)
 	
-	call	GetCommandData		; 
+	mov	a, y
+
 SetInstrument:				; Call this to start playing the instrument in A.
 	mov	$10, #InstrumentTable	; \ $10w = the location of the instrument data.
 	mov	$11, #InstrumentTable>>8 ;/
@@ -47,11 +59,27 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	addw	ya, $10			; |
 	movw	$14, ya			; /
 
-	mov   a, $48			; \ 
-	and   a, $1d			; | If there's a sound effect playing, then don't change anything.
-	bne   .noSet			; /
-	
 	call	GetBackupInstrTable
+
+	mov	y, #$00			; \ 
+	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
+	bpl	+
+	and	a, #$1f
+	mov	$0389, a
+	or	(!MusicNoiseChannels), ($48)
+	bra	++
++
+	mov	($10)+y, a		; (save it in the backup table)
+++
+	mov	y, #$05
+-
+	mov	a, ($14)+y
+	mov	($10)+y, a
+	dbnz	y, -
+
+if !noSFX = !false
+	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
+endif
 	
 	push	x			; \ 
 	mov	a, x			; |
@@ -66,22 +94,23 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	
-	mov	($10)+y, a		; (save it in the backup table)
-	
-	bpl	+			; If the byte was positive, then it was a sample.  Just write it like normal.
-	
+	bpl	++			; If the byte was positive, then it was a sample.  Just write it like normal.
+if !noSFX = !false
+	cmp	!SFXNoiseChannels, #$00
+	bne	+
+endif	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
++
 	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
 -
 	mov	a, ($14)+y		; \ 
-+	mov	$f2, x			; | 	
+++	mov	$f2, x			; | 	
 	mov	$f3, a			; |
-	mov	($10)+y, a		; |
 	inc	x			; | This loop will write to the correct DSP registers for this instrument.
 	inc	y			; | And correctly set up the backup table.
 	cmp	y, #$04			; |
@@ -90,11 +119,9 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	pop	x
 	mov	a, ($14)+y		; The next byte is the pitch multiplier.
 	mov	$0210+x, a		;
-	mov	($10)+y, a		;
 	inc	y			;
 	mov	a, ($14)+y		; The final byte is the sub multiplier.
 	mov	$02f0+x, a		;
-	mov	($10)+y, a		;
 	
 	inc	y			; If this was a percussion instrument,
 	mov	a, ($14)+y		; Then it had one extra pitch byte.  Get it just in case.
@@ -103,7 +130,6 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	call	EffectModifier
 	pop	a
 
-.noSet
 	ret
 	
 RestoreMusicSample:
@@ -131,7 +157,6 @@ GetBackupInstrTable:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdDB:					; Change the pan
 {
-	call  GetCommandData
 	and   a, #$1f
 	mov   !Pan+x, a         ; voice pan value
 	mov   a, y
@@ -145,7 +170,6 @@ cmdDB:					; Change the pan
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdDC:					; Fade the pan
 {
-	call  GetCommandData
 	mov   !PanFadeDuration+x, a
 	push  a
 	call  GetCommandDataFast
@@ -167,7 +191,6 @@ cmdDD:					; Pitch bend
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdDE:					; Vibrato on
 {
-	call  GetCommandData
 	mov   $0340+x, a
 	mov   a, #$00
 	mov   $0341+x, a
@@ -178,14 +201,12 @@ cmdDE:					; Vibrato on
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdDF:					; Vibrato off (vibrato on goes straight into this, so be wary.)
 {
-	mov   x, $46
 	mov   $a1+x, a
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE0:					; Change the master volume
 {
-	call  GetCommandData
 	mov   !MasterVolume, a
 	mov   $56, #$00
 	mov   $5c, #$ff          ; all vol chgd
@@ -194,7 +215,6 @@ cmdE0:					; Change the master volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE1:					; Fade the master volume
 {
-	call  GetCommandData
 	mov   $58, a
 	call  GetCommandDataFast
 	mov   $59, a
@@ -208,7 +228,6 @@ cmdE1:					; Fade the master volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE2:					; Change the tempo
 {
-	call  GetCommandData
 L_0E14: 
 	adc   a, $0387			; WARNING: This is sometimes called to change the tempo.  Changing this function is NOT recommended!
 	mov   $51, a
@@ -218,7 +237,6 @@ L_0E14:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE3:					; Fade the tempo
 {
-	call  GetCommandData
 	mov   $52, a
 	call  GetCommandDataFast
 	adc   a, $0387
@@ -233,21 +251,18 @@ cmdE3:					; Fade the tempo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE4:					; Change the global transposition
 {
-	call  GetCommandData
 	mov   $43, a
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE5:					; Tremolo on
 {
-	call  GetCommandData
 	;bmi   TSampleLoad		; We're allowed the whole range now.
 	mov   $0370+x, a
 	call  GetCommandDataFast
 	mov   $0361+x, a
 	call  GetCommandDataFast
 ;cmdE6:					; Normally would be tremolo off
-	mov   x, $46
 	mov   $b1+x, a
 	ret
 	
@@ -261,8 +276,6 @@ TSampleLoad:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE6:					; Second loop
 {
-	call  GetCommandData
-	
 	bne   label2
 	mov   a,$30+x			; \
 	mov   $01e0+x,a			; | Save the current song position into $01e0
@@ -291,9 +304,7 @@ label4:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdED:					; ADSR
 {
-	
-	call	GetCommandData		; \ 
-	push	a			; /
+	push	a
 	
 	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
 	mov	!BackupSRCN+x, a	; /
@@ -322,7 +333,6 @@ cmdED:					; ADSR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE7:					; Change the volume
 {
-	call  GetCommandData
 	mov   !Volume+x, a
 	mov   a, #$00
 	mov   $0240+x, a
@@ -332,7 +342,6 @@ cmdE7:					; Change the volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE8:					; Fade the volume
 {
-	call  GetCommandData
 	mov   $80+x, a
 	push  a
 	call  GetCommandDataFast
@@ -341,7 +350,7 @@ cmdE8:					; Fade the volume
 	sbc   a, !Volume+x
 	pop   x
 	call  Divide16
-	mov   $0250+x, a		; Never referenced?
+	mov   $0250+x, a
 	mov   a, y
 	mov   $0251+x, a
 	ret
@@ -349,7 +358,6 @@ cmdE8:					; Fade the volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
 {
-	call  GetCommandData
 	push  a
 	call  GetCommandDataFast
 	push  a
@@ -370,7 +378,6 @@ cmdE9:					; Loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEA:					; Fade the vibrato
 {
-	call  GetCommandData
 	mov   $0341+x, a
 	push  a
 	mov   a, $a1+x
@@ -385,15 +392,16 @@ cmdEA:					; Fade the vibrato
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEB:					; Pitch envelope (release)
 {
-	inc   a
+	mov   a, #$01
+	bra   L_0E55
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEC:					; Pitch envelope (attack)
 {
+	mov   a, #$00
 L_0E55: 
-	mov   x, $46
 	mov   $0320+x, a
-	call  GetCommandData
+	mov   a, y
 	mov   $0301+x, a
 	call  GetCommandDataFast
 	mov   $0300+x, a
@@ -404,14 +412,12 @@ L_0E55:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEE:					; Set the tuning
 {
-	call  GetCommandData
 	mov   $02d1+x, a
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEF:					; Echo command 1 (channels, volume)
 {
-	call	GetCommandData
 	mov	!MusicEchoChannels, a
 	call	EffectModifier
 	call	GetCommandDataFast
@@ -423,12 +429,11 @@ cmdEF:					; Echo command 1 (channels, volume)
 				
 ; set echo vols from shadows
 L_0EEB: 
-	mov	a, $62
-	mov	y, #$2c
-	call	DSPWrite             ; set echo vol L DSP from $62
-	mov	a, $64
-	mov	y, #$3c
-	jmp	DSPWrite             ; set echo vol R DSP from $64
+	mov	$f2, #$2c            ; set echo vol L DSP from $62
+	mov	$f3, $62
+	mov	$f2, #$3c            ; set echo vol R DSP from $64 
+	mov	$f3, $64          
+	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
@@ -443,23 +448,18 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	or	a, #$20
-	mov	y, #$6c
-	mov	!NCKValue, a
-	jmp	DSPWrite             ; disable echo write, noise freq 0
+	mov	a, !NCKValue
+	or	!NCKValue, #$20           ; disable echo write
+	jmp	ModifyNoise
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
 {
-	call	GetCommandData
 	cmp	a, !MaxEchoDelay
 	beq	.justSet
-	bcc	.justSet
-	bra	.needsModifying
+	bcs	.needsModifying
 .justSet
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	bra	+++++++++		; Go to the rest of the routine.
 .needsModifying
 	call	ModifyEchoDelay
@@ -468,25 +468,23 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, #$00
+	mov	a, !NCKValue
 	call	ModifyNoise
 	
 	call	GetCommandData		; From here on is the normal code.
-	mov	y, #$0d			;
-	call	DSPWrite		; set echo feedback from op2
+	mov	a, #$0d			;
+	movw	$f2, ya			; set echo feedback from op2
 	call	GetCommandDataFast	;
 	mov	y, #$08			;
 	mul	ya			;
 	mov	x, a			;
-	mov	y, #$0f			;
-- 					;
+	mov	$f2, #$0f		;
+-					;
 	mov	a, EchoFilter0+x	; filter table
-	call	DSPWrite		;
+	mov	$f3, a			;
 	inc	x			;
-	mov	a, y			;
 	clrc				;
-	adc	a, #$10			;
-	mov	y, a			;
+	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
 	
@@ -523,7 +521,7 @@ GetBufferAddress:
 	
 	
 ModifyEchoDelay:			; a should contain the requested delay.
-
+	mov	$10, !NCKValue
 	push	a			; Save the requested delay.
 	call	GetBufferAddress
 	push	y
@@ -537,10 +535,8 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	mov	$f3, y			; / 
 	
 	pop	a
-	mov	$f2, #$7d		; \
-	mov	$f3, a			; | Write the new delay.
-	mov	!EchoDelay, a		; |
-	mov	!MaxEchoDelay, a	; /
+	call	SetEDLVarDSP		; Write the new delay.
+	mov	!MaxEchoDelay, a
 	
 	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
 
@@ -554,14 +550,20 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	
 	mov	!NCKValue, #$00
-	mov	a, #$00
+	mov	a, $10
 	jmp	ModifyNoise
+
+SetEDLVarDSP:
+	mov	!EchoDelay, a		; \
+SetEDLDSP:
+	mov	$f2, #$7d		; | Write the new delay.
+	mov	$f3, a			; /
+	ret
 	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF2:					; Echo fade
 {
-	call  GetCommandData
 	mov   $60, a
 	call  GetCommandDataFast
 	mov   $69, a
@@ -582,7 +584,6 @@ cmdF2:					; Echo fade
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF3:					; Sample load command
 {
-	call GetCommandData
 MSampleLoad:
 	push	a
 	mov	a, #$01
@@ -599,7 +600,6 @@ MSampleLoad:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF4:					; Misc. command
 {
-	call	GetCommandData
 	asl	a
 	mov	x,a
 	jmp	(SubC_table+x)
@@ -618,10 +618,23 @@ SubC_table:
 
 SubC_0:
 	eor     $6e, #$20			; 
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-SubC_01:	
-	mov	a,#$01
 SubC_00:
+	call	HandleYoshiDrums		; Handle the Yoshi drums.
+	mov	a,#$01
+	push	a
+	mov	a,$6e
+	pop	a
+	beq	SubC_02
+
+SubC_01:
+	tset	$0160, a
+	ret
+
+SubC_02:
+	tclr	$0160, a
+	ret
+
+SubC_03:
 	eor	a,$0160
 	mov	$0160,a
 	ret
@@ -647,14 +660,13 @@ SubC_5:
 	mov    $0167, a
 	mov    $0166, a
 	mov	a,#$02
-	bra	SubC_00	
+	bra	SubC_03	
 
 	;ret
 	
 SubC_6:
 	eor	($6e), ($48)
-	call	HandleYoshiDrums		; Handle the Yoshi drums.
-	bra	SubC_01
+	bra	SubC_00
 	
 SubC_7:
 	mov	a, #$00				; \ 
@@ -677,22 +689,19 @@ SubC_9:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
 {
-		mov   y,#$0f
--		push  y
+		mov   a, #$0f
+		movw  $f2, ya
+-		clrc
+		adc   $f2,#$10
+		bmi   +
 		call  GetCommandData
-		pop   y
-		call  DSPWrite
-		mov   a,y
-		clrc
-		adc   a,#$10
-		mov   y,a
-		bpl   -
-		ret
+		mov   $f3, a
+		bra   -
++		ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF6:					; DSP Write command.
 {
-	call GetCommandData
 	push a
 	call GetCommandDataFast
 	pop y
@@ -702,31 +711,35 @@ cmdF6:					; DSP Write command.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF7:					; Originally the "write to ARAM command". Disabled by default.
 {
-;	call GetCommandData
 ;	push a
 ;	call GetCommandDataFast
-;	mov $21, a
+;	mov $15, a
 ;	call GetCommandDataFast
-;	mov $20, a
+;	mov $14, a
 ;	pop a
 ;	mov y, #$00
-;	mov ($20)+y, a
+;	mov ($14)+y, a
 ;	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF8:					; Noise command.
 {
 Noiz:
-		call	GetCommandData
 		or	(!MusicNoiseChannels), ($48)
+if !noSFX = !false
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
+endif
 		call	ModifyNoise
++
 		jmp	EffectModifier		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF9:					; Send data to 5A22 command.
 {
-	call	GetCommandData		; \ Get the next byte
-	mov	$0167,a			; / Store it to the low byte of the timer.
+	mov	$0167,a			; Store it to the low byte of the timer.
 	call	GetCommandDataFast	; \ Get the next byte
 	mov	$0166,a			; / Store it to the high byte of the timer.
 	ret
@@ -735,7 +748,6 @@ cmdF9:					; Send data to 5A22 command.
 cmdFA:					; Misc. comamnd that takes a parameter.
 ;HTuneValues
 {
-	call 	GetCommandData
 	asl	a
 	mov	x,a
 	jmp	(SubC_table2+x)
@@ -786,7 +798,6 @@ SubC_table2:
 ;	
 	
 	call	GetCommandData
-	beq	.modifyEchoDelay
 	cmp	a, !MaxEchoDelay
 	beq	+
 	bcc	+
@@ -799,12 +810,10 @@ SubC_table2:
 	ret				;
 
 +
-	mov	!EchoDelay, a		; \
-	mov	$f2, #$7d		; | Write the new delay.
-	mov	$f3, a			; /
+	call	SetEDLVarDSP		; Write the new delay.
 	
+	mov	a, !NCKValue
 	and	!NCKValue, #$20
-	mov	a, #$00
 	jmp	ModifyNoise
 	
 	ret
@@ -824,9 +833,8 @@ SubC_table2:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
 {
-	call	GetCommandData		; \ Save the number of notes.
-	bmi	.special		; | (But if it's negative, then it's a special command).
-	mov	!ArpNoteCount+x, a	; /
+	bmi	.special		; \ Save the number of notes.
+	mov	!ArpNoteCount+x, a	; / (But if it's negative, then it's a special command).
 	push	a			; Remember it.
 	
 	call	GetCommandDataFast	; \ Save the length between each change.
@@ -950,6 +958,9 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	cmp	a, #$c7			;  |(unless it's a rest)
@@ -971,8 +982,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	
 cmdFC:
 {
-	call	GetCommandData				; \
-	push	a					; | Get and save the remote address (we don't know where it's going).
+	push	a					; \ Get and save the remote address (we don't know where it's going).
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
@@ -1041,6 +1051,7 @@ ClearRemoteCodeAddressesPre:
 	call	GetCommandDataFast
 	
 ClearRemoteCodeAddresses:
+	%OpenRunningRemoteCodeGate()
 	mov	a, #$00
 	mov	!remoteCodeTargetAddr2+1+x, a
 	mov	!remoteCodeTargetAddr2+x, a
@@ -1051,7 +1062,6 @@ ClearRemoteCodeAddresses:
 	mov	!remoteCodeType+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
-	mov	!runningRemoteCode, a
 	ret
 }
 

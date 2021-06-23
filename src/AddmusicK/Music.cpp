@@ -2613,7 +2613,7 @@ void Music::parseSampleDefinitions()
 			if (extension == ".bnk")
 				addSampleBank(tempstr, this);
 			else if (extension == ".brr")
-				addSample(tempstr, this, false);
+				addSample(tempstr, this, true);
 			else
 				fatalError("The filename for the sample was invalid.  Only \".brr\" and \".bnk\" are allowed.")
 
@@ -2760,7 +2760,6 @@ int Music::getHex(bool anyLength)
 
 	while (pos < text.size())
 	{
-		if (d >= 2 && songTargetProgram == 1) break;
 		if (d >= 2 && anyLength == false)
 			break;
 
