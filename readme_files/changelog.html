@@ -52,6 +52,49 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
+	<h2>Version 1.0.9 - 2021-07-02</h2>
+	<ul>
+	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
+	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
+	<li>"Added #spc tags to every global song." - KevinM</li>
+	<li>"Global songs have better optimization, saving 0x44 (68) bytes total." - KevinM</li>
+	<li>"Upgraded to Visual Studio 2019." - Atari 2.0</li>
+	<li>"The asar version has been updated from 1.33b to 1.81. The code has also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - Atari 2.0 and KungFuFurby</li>
+	<li>"This version makes AddmusicK's core compiler cross-platform." - HertzDevil</li>
+	<li>"This version now contains a more accurate ADSR envelope viewer." - HertzDevil</li>
+	<li>"The rest of this update log is a gigantic collection of fixes, optimizations and new material as following..." - KungFuFurby
+	<ul>
+		<li>Various code optimizations, some of them adapted from Akaginite's optimizations.</li>
+		<li>Fixed a bug where using a long chain of loops or label loops (or anything that causes readahead to try to read more than 256 bytes) would crash the sound driver.</li>
+		<li>All user-redefinable variables now have a new home in asm/UserDefines.asm. This allows both SNES-side and SPC-side code to share defines put here.</li>
+		<li>Fixed various interferences between the SFX and instrument setup, arpeggio, pitch envelope, note, switching global songs, and fine tune (the last one dating all the way back to vanilla SMW). Note that one of the snippets of code, regarding noise frequency conflicts between SFX instances, has been made optional through asm/UserDefines.asm because it never actually happens in vanilla SMW since only one channel uses noise.</li>
+		<li>The P-Switch SFX, which had existed earlier but had both not been programmed on the SNES-side and had some problems on the SPC-side, is now in full working condition, complete with updates to the SNES-side hijacks to account for whenever it is active.</li>
+		<li>The old hardcoded SFX priority system has been replaced with a more soft-coded one stored directly in sound effect files. All SFX, including $1DFA SFX, have been adapted accordingly to utilize the SFX priority system. Although most of these priorities are not used by default, vanilla values are provided.</li>
+		<li>All SFX can now have their channels redefined through asm/UserDefines.asm. Vanilla values are provided, since they're different than what the default values were from past AMK versions.</li>
+		<li>All SFX data has been optimized to remove redundant bytes across the board. In addition, $C7 is now fully functional and pitch envelope delays are now working, and 21 Valley of Bowser appears.txt in $1DF9 now properly restarts like vanilla SMW.</li>
+		<li>Both the jump and girder/grinder SFX from $1DFA now have exact replicas. For the jump SFX, the one from previous versions is still there as an alternative. <b>Please note that these new SFX take SFX $1DF9 slots $2D-$2E and SFX $1DFC slots $36-$37: please do not change these IDs.</b></li>
+		<li>Fixed a bug where specifying an o after a $DD command would freeze AddmusicK during hex validation.</li>
+		<li>Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music.</li>
+		<li>Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation.</li>
+		<li>Made sample filtering more consistent between SPCs and ROMs by factoring in the user individually picking samples from sample groups (and thus inheriting their important flags), as well as having all user-defined samples be important.</li>
+		<li>Fixed a serious bug where mixing .bnk and .brr files between songs was causing the entire ROM to fail to include the soundtrack due to an exception occurring.</li>
+		<li>Visualizations, which has been present since AMK 1.0.2, has now been documented and its folder is now included by default.</li>
+		<li>A leftover from AddmusicM's behavior of how it handled Yoshi Drums, which currently doesn't affect anything else, has been modified to have its flag, stored in $0160, turn itself on if any channel has Yoshi Drums active, and otherwise be off.</li>
+		<li>SPC files no longer have a one-byte stack underflow when being generated.</li>
+		<li>The relocation for jump and girder SFX to either $1DF9 or $1DFC is now optional, rather than being required between these two locations. Now, if neither of them are true, $1DFA is the default, and the fixes in question ensure that these don't wreck too much havoc.</li>
+		<li>-sfxdump and -dumpsfx can now be interchangably used with each other: the former was in the documentation, and the latter was what was officially used in the C++ code.</li>
+		<li>Fixed a bug where using -sfxdump/-dumpsfx while the lowest numbered local song did not exist outputted SPC files with no samples included.</li>
+		<li>Fixed a critical bug where having a global song using echo and a local song setting up a buffer with an EDL size of 0 through the $FA $04 VCMD would cause a sound driver crash. The main cause is not waiting for the echo buffer to finish after shrinking the EDL, and probably a misinterpretation of what happens when the EDL is zero... because the echo buffer writes are still on, and thus anytime the buffer is to be shrinked and relocated, the previous buffer must have done one round of writes.</li>
+		<li>The SPC-side assembly files have been modified to make tracking of raw memory locations in the $0000-$03FF section easier when searching the text files, mainly in between setp/clrp sections, but also just prior to calls for L_1075.</li>
+		<li>Fixed a bug where the #pad command was only supporting two hex digits with #am4 songs.</li>
+		<li>Fixed a typo in the code where !MaxEchoDelay was not being zeroed out prior to loading new data.</li>
+		<li>Added the ability to filter out sound effects and the playback code through !noSFX in asm/UserDefines.asm.</li>
+		<li>Added an ARAM map page, complete with predecessor Addmusic memory usages.</li>
+		<li>Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten.</li>
+		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
+	</ul>
+	</li>
+	</ul>
 	<br><br>
 	
 
