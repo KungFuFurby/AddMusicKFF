@@ -31,6 +31,14 @@ for:
       - path: AddmusicK1.0.9_latestRC.zip
   -
     branches:
+      only:
+        - AddmusicK1.0.9bleeding-edge
+    build:
+      verbosity: minimal
+    artifacts:
+      - path: AddmusicK1.0.9_latestRCbeta.zip
+  -
+    branches:
       except:
         - master
         - bleeding-edge
