@@ -1,4 +1,4 @@
-version: 1.0.8.{build}
+version: 1.0.9.{build}
 
 branches:
   except:
@@ -21,6 +21,14 @@ for:
       verbosity: minimal
     artifacts:
       - path: AMKFF_latestbeta.zip
+  -
+    branches:
+      only:
+        - AddmusicK1.0.9
+    build:
+      verbosity: minimal
+    artifacts:
+      - path: AddmusicK1.0.9_latestRC.zip
   -
     branches:
       except:
@@ -53,6 +61,15 @@ deploy:
   - provider: FTP
     on:
       branch: bleeding-edge
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: AddmusicK1.0.9
     protocol: sftp
     host: www.atarismwc.com
     folder: html/amkff_releases/
