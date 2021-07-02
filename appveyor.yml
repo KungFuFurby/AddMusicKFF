@@ -84,3 +84,12 @@ deploy:
     username: pi
     password:
       secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: FTP
+    on:
+      branch: AddmusicK1.0.9bleeding-edge
+    protocol: sftp
+    host: www.atarismwc.com
+    folder: html/amkff_releases/
+    username: pi
+    password:
+      secure: N90u+68BQTm8IHH9p3O78A==
