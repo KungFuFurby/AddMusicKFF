@@ -1,9 +1,5 @@
 version: 1.0.9.{build}
 
-branches:
-  except:
-    - AddmusicK1.0.9
-
 for:
   -
     branches:
