@@ -92,6 +92,14 @@
 		<li>Added an ARAM map page, complete with predecessor Addmusic memory usages.</li>
 		<li>Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten.</li>
 		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
+		<li><b>WARNING: The following changes may affect playback of your songs:</b>
+		<ul>
+			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
+			<li>GAIN is now the first thing written to the voice DSP registers when setting up an instrument. This prevents a problem with unexpectedly using a previous gain value (which can be a direct gain volume, and thus suddenly changes the volume value) while switching from ADSR mode to GAIN mode.</li>
+			<li>Arpeggios now pause their sound output when going through rests. They resume upon another note playing.</li>
+			<li>Readahead now looks inside subroutines ($E9 VCMD) and superloops ($E6 VCMD), rather than jumping over each one. There is a limit of one loop iteration each before exiting to avoid excessive reading of bytes.</li>
+		</ul>
+		</li>
 	</ul>
 	</li>
 	</ul>
