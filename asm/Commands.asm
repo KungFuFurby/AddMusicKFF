@@ -609,6 +609,9 @@ MSampleLoad:
 	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; |
+	inc	y			; | Zero out pitch sub-multiplier.
+	mov	a, #$00			; |
 	mov	($10)+y, a		; /
 	jmp	UpdateInstr
 }
