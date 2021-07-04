@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2021-07-02</h2>
+	<h2>Version 1.0.9 - 2021-07-04</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -92,6 +92,7 @@
 		<li>Added an ARAM map page, complete with predecessor Addmusic memory usages.</li>
 		<li>Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten.</li>
 		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
+		<li>Fixed a bug where the $F3 VCMD was failing to zero out the pitch base fractional multiplier.</li>
 		<li><b>WARNING: The following changes may affect playback of your songs:</b>
 		<ul>
 			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
