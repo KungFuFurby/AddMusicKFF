@@ -93,6 +93,7 @@
 		<li>Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten.</li>
 		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
 		<li>Fixed a bug where the $F3 VCMD was failing to zero out the pitch base fractional multiplier.</li>
+		<li>The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards.</li>
 		<li><b>WARNING: The following changes may affect playback of your songs:</b>
 		<ul>
 			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
