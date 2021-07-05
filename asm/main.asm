@@ -814,15 +814,13 @@ endif
 	beq	.instrumentCommand	; / $DA is the instrument command.
 	cmp	a, #$ff			; \ 
 	bne	.playNote		; / Play a note.
-	mov	y, #$03			; Move back three bytes.
-	;mov	x, $46			; \
--	mov	a, !ChSFXPtrs+x		; |
+	mov	a, !ChSFXPtrs+x		; \ Move back one byte.
 	bne	+			; |
-	dec	!ChSFXPtrs+1+x		; | #$FF is the loop the last note command.
+	dec	!ChSFXPtrs+1+x		; |
 +					; |
 	dec	!ChSFXPtrs+x		; |
-	dbnz	y, -
-	bra	.getMoreSFXData		; /
+	mov	a, $18			; | #$FF is the loop the last note command.
+	bra	.keyOnNote		; /
 ; other $80+
 .loopSFX
 	mov	a, !ChSFXPtrBackup+1+x	; \
@@ -837,10 +835,10 @@ endif
 	push	a
 	mov	a, !InRest+x
 	pop	a
-	beq	+
+	beq	.keyOnNote
 	call	KeyOffVoices
 	bra	.setNoteLength
-+
+.keyOnNote
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
