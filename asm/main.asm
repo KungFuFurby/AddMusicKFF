@@ -1613,8 +1613,9 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	mov $f2, #$6c			;\ Unset the mute flag.
-	and $f3, #$bf			;/
+	and !NCKValue, #$bf		; Unset the mute flag.
+	mov a, !NCKValue
+	call ModifyNoise
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -1761,8 +1762,9 @@ PauseMusic:
 	inc a
 	mov !PauseMusic, a
 	
-	mov $f2, #$6c			;\ Set the mute flag.
-	or  $f3, #$40			;/
+	or  !NCKValue, #$40	; Set the mute flag.
+	;ModifyNoise, called when restoring the noise frequency, will handle
+	;setting the FLG DSP register.
 	ret
 
 if !noSFX = !false	
