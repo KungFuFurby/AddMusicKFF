@@ -822,15 +822,13 @@ endif
 	beq	.instrumentCommand	; / $DA is the instrument command.
 	cmp	a, #$ff			; \ 
 	bne	.playNote		; / Play a note.
-	mov	y, #$03			; Move back three bytes.
-	;mov	x, $46			; \
--	mov	a, !ChSFXPtrs+x		; |
+	mov	a, !ChSFXPtrs+x		; \ Move back one byte.
 	bne	+			; |
-	dec	!ChSFXPtrs+1+x		; | #$FF is the loop the last note command.
+	dec	!ChSFXPtrs+1+x		; |
 +					; |
 	dec	!ChSFXPtrs+x		; |
-	dbnz	y, -
-	bra	.getMoreSFXData		; /
+	mov	a, $18			; | #$FF is the loop the last note command.
+	bra	.keyOnNote		; /
 ; other $80+
 .loopSFX
 	mov	a, !ChSFXPtrBackup+1+x	; \
@@ -845,10 +843,10 @@ endif
 	push	a
 	mov	a, !InRest+x
 	pop	a
-	beq	+
+	beq	.keyOnNote
 	call	KeyOffVoices
 	bra	.setNoteLength
-+
+.keyOnNote
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
@@ -1621,8 +1619,9 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	mov $f2, #$6c			;\ Unset the mute flag.
-	and $f3, #$bf			;/
+	and !NCKValue, #$bf		; Unset the mute flag.
+	mov a, !NCKValue
+	call ModifyNoise
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -1686,7 +1685,7 @@ L_099C:
 if !noSFX = !false
 	mov	$1d, a
 endif
-	mov	a, !MaxEchoDelay	;
+	mov	!MaxEchoDelay, a	;
 	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
@@ -1784,8 +1783,9 @@ PauseMusic:
 	inc a
 	mov !PauseMusic, a
 	
-	mov $f2, #$6c			;\ Set the mute flag.
-	or  $f3, #$40			;/
+	or  !NCKValue, #$40	; Set the mute flag.
+	;ModifyNoise, called when restoring the noise frequency, will handle
+	;setting the FLG DSP register.
 	ret
 
 if !noSFX = !false	
