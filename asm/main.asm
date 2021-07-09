@@ -1666,7 +1666,7 @@ MusicSFXEchoCarryOff:
 	mov	a, #!MusicToSFXEchoGateDistance
 +
 	mov	MusicToSFXEchoGate+1, a
-	ret
+	bra	ProcessAPU1SFX
 endif
 
 L_099C:
