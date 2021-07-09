@@ -1797,13 +1797,8 @@ EnableYoshiDrums:				; Enable Yoshi drums.
 if !noSFX = !false
 MusicSFXEchoCarryOn:
 	mov	a, #$00
-	bra	+
-
-MusicSFXEchoCarryOff:
-	mov	a, #!MusicToSFXEchoGateDistance
-+
 	mov	MusicToSFXEchoGate+1, a
-	ret
+	bra	ProcessAPU1SFX
 endif
 
 if !noSFX = !false
@@ -1831,7 +1826,9 @@ ForceSFXEchoOff:
 ForceSFXEchoOn:
 	mov	a, #$ff
 +	mov	!SFXEchoChannels, a
-	call	MusicSFXEchoCarryOff
+	;Turn off music echo channels being copied to SFX echo channels
+	mov	a, #!MusicToSFXEchoGateDistance
+	mov	MusicToSFXEchoGate+1, a
 	call	EffectModifier
 	bra	ProcessAPU1SFX
 endif
