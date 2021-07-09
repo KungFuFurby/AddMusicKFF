@@ -1768,7 +1768,11 @@ MusicEchoCarryOff:
 	mov	a, #$00
 +
 	mov	MusicEchoChOnCarryGate+1, a
+if !noSFX = !false
+	bra	ProcessAPU1SFX
+else
 	ret
+endif
 
 PauseMusic:
 	mov a, $0387		;\
