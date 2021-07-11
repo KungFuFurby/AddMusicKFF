@@ -2080,7 +2080,7 @@ void Music::parseNote()
 		{
 			i = 0xD0 + (instrument[channel] - 21);
 
-			if ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false)	// If this is not a SFX channel,
+			if (songTargetProgram != 0 || ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false))	// If this is not a SFX channel,
 				instrument[channel] = 0xFF;										// Then don't force the drum pitch on every note.
 		}
 	}
