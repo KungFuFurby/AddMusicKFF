@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2021-07-04</h2>
+	<h2>Version 1.0.9 - 2021-07-11</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -94,6 +94,7 @@
 		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
 		<li>Fixed a bug where the $F3 VCMD was failing to zero out the pitch base fractional multiplier.</li>
 		<li>The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards.</li>
+		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the percussion was outputting percussion note data on #6 and #7 instead of normal notes after the initial percussion note was defined.</li>
 	</ul>
 	</li>
 	</ul>
