@@ -132,6 +132,8 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -565,6 +567,12 @@ endif
 
 EffectModifier:					; Call this whenever either $1d or the various echo, noise, or pitch modulaion addresses are modified.
 {	
+if !noSFX = !false
+MusicToSFXEchoGate:
+	bra	MusicToSFXEchoNoCopy
+	mov	!SFXEchoChannels, !MusicEchoChannels
+MusicToSFXEchoNoCopy:
+endif
 	push	x
 	push	y
 	mov	x, #$00
@@ -1649,6 +1657,13 @@ else
 	bra	HandleYoshiDrums
 endif
 
+if !noSFX = !false
+MusicSFXEchoCarryOn:
+	mov	a, #$00
+	mov	MusicToSFXEchoGate+1, a
+	bra	ProcessAPU1SFX
+endif
+
 L_099C:
 	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
 	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
@@ -1680,6 +1695,9 @@ ForceSFXEchoOff:
 ForceSFXEchoOn:
 	mov	a, #$ff
 +	mov	!SFXEchoChannels, a
+	;Turn off music echo channels being copied to SFX echo channels
+	mov	a, #!MusicToSFXEchoGateDistance
+	mov	MusicToSFXEchoGate+1, a
 	call	EffectModifier
 	bra	ProcessAPU1SFX
 endif
@@ -1716,6 +1734,8 @@ else
 	beq	UnpauseMusic_silent
 endif
 if !noSFX = !false
+	cmp	a, #$0a
+	beq	MusicSFXEchoCarryOn
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
 	cmp	a, #$04
