@@ -132,6 +132,8 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!MusicEchoChOnCarryGateDistance = MusicEchoChOnSkipClear-MusicEchoChOnCarryGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -1659,6 +1661,7 @@ L_099C:
 
 	mov	a, #$00
 	call	SetEDLDSP		; Also set the delay to 0.
+	mov	!MusicEchoChannels, a	;
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
@@ -1674,6 +1677,24 @@ endif
 	;ret
 
 if !noSFX = !false
+PlayPauseSFX:
+	mov	a, #$11
+	mov	$00, a
+	mov	!ProtectSFX6, a
+	bra	ProcessAPU1SFX
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
+	bra	+
+PlayUnpauseSFX:
+	mov	a, #$12
++
+	mov	$00, a
+	mov	a, #$00
+	mov	!ProtectSFX6, a
+	;mov	$08, #$00
+	bra ProcessAPU1SFX
+
 ForceSFXEchoOff:
 	mov	a, #$00
 	bra	+
@@ -1715,6 +1736,10 @@ if !noSFX = !false
 else
 	beq	UnpauseMusic_silent
 endif
+	cmp	a, #$0b
+	beq	MusicEchoCarryOn
+	cmp	a, #$0c
+	beq	MusicEchoCarryOff
 if !noSFX = !false
 	cmp	a, #$01			; 01 = jump SFX
 	beq	CheckAPU1SFXPriority	;
@@ -1731,24 +1756,22 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
+else
+	ret
+endif
 
-PlayPauseSFX:
-	mov	a, #$11
-	mov	$00, a
-	mov	!ProtectSFX6, a
-	bra	ProcessAPU1SFX
-
-PlayUnpauseSilentSFX:
-	mov	a, #$2C
+MusicEchoCarryOn:
+	mov	a, #!MusicEchoChOnCarryGateDistance
 	bra	+
-PlayUnpauseSFX:
-	mov	a, #$12
-+
-	mov	$00, a
+
+MusicEchoCarryOff:
 	mov	a, #$00
-	mov	!ProtectSFX6, a
-	;mov	$08, #$00
-	bra ProcessAPU1SFX
++
+	mov	MusicEchoChOnCarryGate+1, a
+if !noSFX = !false
+	bra	ProcessAPU1SFX
+else
+	ret
 endif
 
 PauseMusic:
@@ -2004,8 +2027,12 @@ endif
 	bpl	L_0B6D	
 	; MODIFIED CODE START
 	mov	!MusicPModChannels, a
-	mov	!MusicEchoChannels, a
 	mov	!MusicNoiseChannels, a
+MusicEchoChOnCarryGate:
+	bra	+		;Default state of gate is open
++
+	mov	!MusicEchoChannels, a
+MusicEchoChOnSkipClear:
 	mov	!SecondVTable, a
 	; MODIFIED CODE END	
 	mov	$58, a             ; MasterVolumeFade = 0
