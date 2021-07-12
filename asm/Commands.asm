@@ -618,7 +618,7 @@ SubC_table:
 	dw	SubC_1
 	dw	SubC_2
 	dw	SubC_3
-	dw	$0000
+	dw	SubC_4
 	dw	SubC_5
 	dw	SubC_6
 	dw	SubC_7
@@ -663,6 +663,25 @@ SubC_2:
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
 	jmp	EffectModifier
+
+SubC_4:
+SubC_4Gate:
+	ret ;Will be turned into a call opcode
+	dw	Square_getSpecialWavePtr
+	mov	a,#$00
+	mov	y,#$07
+SubC_4l:
+	mov	($14)+y,a
+	clrc
+	adc	$14,#$09
+	adc	$15,#$00
+	mov	($14)+y,a
+	setc
+	sbc	$14,#$09
+	sbc	$15,#$00
+	dec	y
+	bpl	SubC_4l
+	ret
 	
 SubC_5:
 	mov    a, #$00
@@ -769,6 +788,16 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	.gainRest		; 05
 	dw	.manualVTable		; 06
+	dw	.oldFA_com		; 07
+	dw	$0000			; 08
+	dw	$0000			; 09
+	dw	$0000			; 0A
+	dw	$0000			; 0B
+	dw	$0000			; 0C
+	dw	$0000			; 0D
+	dw	$0000			; 0E
+	dw	$0000			; 0F
+	dw	.SquareFormatClearSRCN	; 10
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -838,6 +867,20 @@ SubC_table2:
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
+.oldFA_com
+	call	GetCommandData
+	mov	$0165,a
+	ret
+
+.SquareFormatClearSRCN
+	call	GetCommandData
+	mov	$0163, a
+	mov	a, #$F0 ;BEQ opcode
+	mov	SquareGate, a ;Special wave will now be initialized
+	mov	a, #$3F ;CALL opcode
+	mov	SubC_4Gate,a
+	jmp	SubC_4
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
