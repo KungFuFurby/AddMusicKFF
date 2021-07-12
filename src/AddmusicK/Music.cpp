@@ -2122,7 +2122,7 @@ void Music::parseNote()
 		j += getNoteLength(getInt());
 		skipSpaces;
 
-		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0) && okayToRewind)
+		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0 || (songTargetProgram != 0 && strncmp(text.c_str() + pos, "&", 1) == 0)) && okayToRewind)
 		{
 			j = tempsize;		//
 			pos = temppos;		// "Rewind" so we forcibly place a tie before the bend.
