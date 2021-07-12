@@ -624,6 +624,27 @@ SubC_table:
 	dw	SubC_7
 	dw	SubC_8
 	dw	SubC_9
+	dw	SubC_A
+	dw	SubC_B
+	dw	SubC_C
+	dw	SubC_D
+	dw	SubC_E
+	dw	SubC_F
+	dw	SubC_10
+	dw	SubC_11
+	dw	SubC_12
+	dw	SubC_13
+	dw	SubC_14
+	dw	SubC_15
+	dw	SubC_16
+	dw	SubC_17
+	dw	SubC_18
+	dw	SubC_19
+	dw	SubC_1A
+	dw	SubC_1B
+	dw	SubC_1C
+	dw	SubC_1D
+	dw	SubC_1E
 
 SubC_0:
 	eor     $6e, #$20			; 
@@ -648,34 +669,67 @@ SubC_03:
 	mov	$0160,a
 	ret
 
+SubC_D:
+	or	($6e), ($48)
+SubC_6:
+	eor	($6e), ($48)
+	bra	SubC_00
+
+SubC_C:
+	or	($6e), ($48)
+	bra	SubC_00
+
+SubC_5:
+	call	SubC_1B
+SubC_16:
+	mov	a,#$02
+	bra	SubC_03
+
+SubC_17:
+	call	SubC_1B
+SubC_19:
+	mov	a,#$02
+	bra	SubC_01
+
+SubC_18:
+	call	SubC_1B
+SubC_1A:
+	mov	a,#$02
+	bra	SubC_02
+
 SubC_1:
 	mov	a, $0161
 	eor	a, $48
 	mov	$0161,a
+SubC_1_Clear162Bit:
 	mov	a,$48
 	tclr	$0162, a
+	ret
+
+SubC_12:
+	mov	a, $48
+	tset	$0161,a
+	bra	SubC_1_Clear162Bit
+
+SubC_13:
+	mov	a,$48
+	tclr	$0161,a
+	tset	$0162,a
 	ret
 
 SubC_2:
 	eor	!WaitTime, #$03
 	ret
 
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
 	jmp	EffectModifier
-	
-SubC_5:
-	mov    a, #$00
-	mov    $0167, a
-	mov    $0166, a
-	mov	a,#$02
-	bra	SubC_03	
 
-	;ret
-	
-SubC_6:
-	eor	($6e), ($48)
-	bra	SubC_00
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
+	jmp	EffectModifier
 	
 SubC_7:
 	mov	a, #$00				; \ 
@@ -692,8 +746,67 @@ SubC_9:
 	mov	a, #$00				; | Turn the current instrument back on.
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	jmp	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
-	
-	
+
+SubC_A:
+	mov	!SecondVTable, #$00		; Toggle which velocity table we're using.
+	ret
+
+SubC_10:
+	or	(!MusicPModChannels), ($48)
+	jmp	EffectModifier
+
+SubC_11:
+	or	(!MusicPModChannels), ($48)
+SubC_B:
+	eor	(!MusicPModChannels), ($48)
+	jmp	EffectModifier
+
+SubC_14:
+	mov	!WaitTime, #$01
+	ret
+
+SubC_15:
+	mov	!WaitTime, #$02
+	ret
+
+SubC_1B:
+	mov    a, #$00
+	mov    $0167, a
+	mov    $0166, a
+	ret
+
+SubC_1C:
+SyncInc:
+	setp
+	inc.b	$0166&$FF		; Increase $166.
+	cmp	$0166&$FF, $016c&$FF
+	bne	SyncInc_ret
+	mov	$0166&$FF, #$00
+	inc.b	$0167&$FF
+	; Note that this is different from AMM's code.
+	; The old code never let the low byte go above #$C0.
+	; A good idea in theory, but it both assumes that all
+	; songs use 4/4 time, and it makes, for example,
+	; using the song's time as an index to a table more difficult.
+	; Thus, it is optional, and can be restored via the $FA $12 VCMD.
+	; By default, this is de facto treated as a word increment.
+
+SyncInc_ret:
+	clrp
+	ret
+
+
+SubC_1D:
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+	mov	a, $48
+	jmp	KeyOnVoices
+
+SubC_1E:
+	mov	a, $48
+	jmp	KeyOffVoicesWithCheck
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -769,6 +882,18 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	.gainRest		; 05
 	dw	.manualVTable		; 06
+	dw	$0000			; 07
+	dw	.VxDSPWrite		; 08
+	dw	.VxDSPWrite		; 09
+	dw	.VxDSPWrite		; 0A
+	dw	.VxDSPWrite		; 0B
+	dw	.VxDSPWrite		; 0C
+	dw	.VxDSPWrite		; 0D
+	dw	.VxDSPWrite		; 0E
+	dw	.VxDSPWrite		; 0F
+	dw	$0000			; 10
+	dw	$0000			; 11
+	dw	.SyncClockDivider	; 12
 
 .PitchMod
 	call    GetCommandData		; \ Get the next byte
@@ -838,6 +963,27 @@ SubC_table2:
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
+.VxDSPWrite
+	;X will contain our command ID shifted left once.
+	;Adjust by command ID to get the lower three bits of our voice DSP
+	;register ID. (The fourth is zeroed out.)
+	mov	a, x
+	setc
+	sbc	a, #$08<<1
+	xcn	a
+	or	a, $46
+	xcn	a
+	lsr	a
+	push	a
+	call	GetCommandData
+	pop	y
+	jmp	DSPWrite
+
+.SyncClockDivider
+	call	GetCommandData
+	mov	$016c, a
+	ret
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
