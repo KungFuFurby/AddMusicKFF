@@ -132,11 +132,14 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!runningArpGateOnJumpDistance = NormalNote_runRemoteCodeKON-NormalNote_runningArpGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
 !remoteCodeTimeValue = $01a0	; The value to set the timer to when necessary.
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
+!remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
 arch spc700-raw
@@ -412,8 +415,16 @@ endif
 .notType1RemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
-	beq	.noRemoteCode			
+	beq	.noRemoteCode
 
+.runningArpGate
+	bra	.runRemoteCodeKON
+
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$fe
+	beq	.noRemoteCode
+
+.runRemoteCodeKON
 	call	RunRemoteCode2
 	
 .noRemoteCode
@@ -1919,6 +1930,8 @@ L_0B5A:
 	mov	$06, a		; Song number goes into $06.
 	push	a
 	; MODIFIED CODE START
+	mov	a, #!runningArpGateOnJumpDistance
+	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
 	mov	a,#$00			; Clear various new addresses.
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
@@ -2260,10 +2273,11 @@ endif
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
-	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.
+	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.	
 	mov	a, #$01			; | But we do have to restart the timer so that it will work correctly (and start right now).
 	mov	!ArpTimeLeft+x, a	; /
 	dec	a
+	mov	NormalNote_runningArpGate+1, a	; Have this trigger remote code type -2.
 	dec	a
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
