@@ -390,6 +390,26 @@ void Music::init()
 		else
 			ignoreTuning[z] = false;
 	}
+
+	if (songTargetProgram == 1) {
+		//If any channel markers exist, set the channel number to the earliest channel found.
+		if (text.find("#0") != -1)
+			channel = 0, prevChannel = 0;
+		else if (text.find("#1") != -1)
+			channel = 1, prevChannel = 1;
+		else if (text.find("#2") != -1)
+			channel = 2, prevChannel = 2;
+		else if (text.find("#3") != -1)
+			channel = 3, prevChannel = 3;
+		else if (text.find("#4") != -1)
+			channel = 4, prevChannel = 4;
+		else if (text.find("#5") != -1)
+			channel = 5, prevChannel = 5;
+		else if (text.find("#6") != -1)
+			channel = 6, prevChannel = 6;
+		else if (text.find("#7") != -1)
+			channel = 7, prevChannel = 7;
+	}
 }
 
 void Music::compile()
