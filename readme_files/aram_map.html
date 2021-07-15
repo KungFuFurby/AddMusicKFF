@@ -949,7 +949,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 
 		</table>
 	<h2>AddmusicM (by homing)</h2>
-	Contains the majority of carol's MORE.bin except for global transposition ($E9 VCMD) due to sending staccato to its own VCMD slot and not checking for $20 as a song ID due to sending set sample to its own VCMD slot ($F3 VCMD) and overwriting tremolo off with repeat section ($E6 VCMD)
+	Contains the majority of carol's MORE.bin except for global transposition ($E4 VCMD) due to sending staccato to its own VCMD slot and not checking for $20 as a song ID due to sending set sample to its own VCMD slot ($F3 VCMD) and overwriting tremolo off with repeat section ($E6 VCMD).
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1043,7 +1043,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 		</table>
 
 	<h2>Addmusic405 (by HuFlungDu)</h2>
-	Contains the majority of carol's MORE.bin except for the repeat section ($E6) VCMD (which was previously limited to song IDs $20 and up) and ADSR, which is instead from Romi's Addmusic (Addmusic404).
+	Contains the majority of carol's MORE.bin except for the repeat section ($E6) VCMD (which was previously limited to song IDs $20 and up) and ADSR ($ED VCMD), which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
