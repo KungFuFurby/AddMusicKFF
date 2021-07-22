@@ -96,7 +96,7 @@
 		<li>The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards.</li>
 		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the percussion was outputting percussion note data on #6 and #7 instead of normal notes after the initial percussion note was defined.</li>
 		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the & command was not properly factoring in a preceding tie, causing the intended delay effect to get lost.</li>
-		<li>Fixed a fatal conversion bug from Addmusic405 songs when the lowest channel ID defined is non-zero and a hex command not filtered out beforehand is defined outside the scope of the song.</li>
+		<li>Fixed a fatal bug when the lowest channel ID defined is non-zero and a command not filtered out beforehand that outputs hex and/or note data is defined outside the scope of all of the channel markers.</li>
 		<li><b>WARNING: The following changes may affect playback of your songs:</b>
 		<ul>
 			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
