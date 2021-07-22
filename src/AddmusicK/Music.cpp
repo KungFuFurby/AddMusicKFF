@@ -356,28 +356,31 @@ void Music::init()
 
 	pos = 0;
 
+	//If any channel markers exist, set the channel number to the earliest channel found.
+	if (text.find("#0") != -1)
+		channel = 0, prevChannel = 0;
+	else if (text.find("#1") != -1)
+		channel = 1, prevChannel = 1;
+	else if (text.find("#2") != -1)
+		channel = 2, prevChannel = 2;
+	else if (text.find("#3") != -1)
+		channel = 3, prevChannel = 3;
+	else if (text.find("#4") != -1)
+		channel = 4, prevChannel = 4;
+	else if (text.find("#5") != -1)
+		channel = 5, prevChannel = 5;
+	else if (text.find("#6") != -1)
+		channel = 6, prevChannel = 6;
+	else if (text.find("#7") != -1)
+		channel = 7, prevChannel = 7;
+
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
 		int resizeSize = 3;
 		if (targetAMKVersion > 1)
 			resizeSize += 3;
-
-		if (text.find("#0") != -1)
-			data[0].resize(resizeSize), resizedChannel = 0;
-		else if (text.find("#1") != -1)
-			data[1].resize(resizeSize), resizedChannel = 1;
-		else if (text.find("#2") != -1)
-			data[2].resize(resizeSize), resizedChannel = 2;
-		else if (text.find("#3") != -1)
-			data[3].resize(resizeSize), resizedChannel = 3;
-		else if (text.find("#4") != -1)
-			data[4].resize(resizeSize), resizedChannel = 4;
-		else if (text.find("#5") != -1)
-			data[5].resize(resizeSize), resizedChannel = 5;
-		else if (text.find("#6") != -1)
-			data[6].resize(resizeSize), resizedChannel = 6;
-		else if (text.find("#7") != -1)
-			data[7].resize(resizeSize), resizedChannel = 7;
+		data[channel].resize(resizeSize);
+		resizedChannel = channel;
 	}
 	else
 		resizedChannel = -1;
@@ -389,26 +392,6 @@ void Music::init()
 			ignoreTuning[z] = true;
 		else
 			ignoreTuning[z] = false;
-	}
-
-	if (songTargetProgram == 1) {
-		//If any channel markers exist, set the channel number to the earliest channel found.
-		if (text.find("#0") != -1)
-			channel = 0, prevChannel = 0;
-		else if (text.find("#1") != -1)
-			channel = 1, prevChannel = 1;
-		else if (text.find("#2") != -1)
-			channel = 2, prevChannel = 2;
-		else if (text.find("#3") != -1)
-			channel = 3, prevChannel = 3;
-		else if (text.find("#4") != -1)
-			channel = 4, prevChannel = 4;
-		else if (text.find("#5") != -1)
-			channel = 5, prevChannel = 5;
-		else if (text.find("#6") != -1)
-			channel = 6, prevChannel = 6;
-		else if (text.find("#7") != -1)
-			channel = 7, prevChannel = 7;
 	}
 }
 
