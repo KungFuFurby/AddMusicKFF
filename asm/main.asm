@@ -1505,14 +1505,32 @@ endif
 	push	a
 	mov	a, !ChSFXPtrs+1+x
 	pop	a
-	beq	.sfxAllocAllowed
+	beq	.checkAPU1SFX
 
 	cmp	a, !ChSFXPriority+x
-	bcs	.sfxAllocAllowed
+	bcs	.checkAPU1SFX
 
 .noSFXOverwrite
 	pop	a
 	ret
+
+.checkAPU1SFX
+	;Check and see if APU1 SFX is playing there via detecting $1D.
+	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
+	;but $1D has a voice bit set.
+	push	a
+	mov	a, $1d
+	and	a, $10
+	pop	a
+	beq	.sfxAllocAllowed
+
+	;Stop all APU1 SFX on the same channel.
+	push	a
+	mov	a, #$00
+	mov	$05, a
+	mov	$1c, a
+	mov	$0383, a
+	pop	a
 
 .sfxAllocAllowed
 	mov	!ChSFXPriority+x, a
