@@ -226,7 +226,6 @@ SquareGate:
 		push	y
 		mul	ya
 		setp
-		clrc
 ;The same slowdown fix that the music got gets applied here.
 ;However, it has been upgraded.
 		addw	ya,$016a&$FF
