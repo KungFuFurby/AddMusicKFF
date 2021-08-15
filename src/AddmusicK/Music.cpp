@@ -113,6 +113,20 @@ static int lastFCDelayValue[9];
 
 
 
+void ConvertPitchToNoteTune(std::vector<uint8_t> &instrumentData)
+{
+	// NOTE!!!: This is a hack for backwards compatibility.
+	// PitchValue = 2^((C4Note + Note)/12)
+	// Therefore
+	// Note = Log2(PitchValue)*12 - C4Note
+	uint8_t *PitchData = &instrumentData[0] + instrumentData.size() - 2;
+	int PitchValue = PitchData[1] | PitchData[0] << 8;
+	double fNote = (log2(double(PitchValue)*(2143.0/2067.0))*12.0 + 5*12) * (1 << 8); // 2143.0 was the scale used in original AMK, and we use 2067.0
+	int NoteTune = lrint(fNote);
+	PitchData[0] = uint8_t(NoteTune >> 8);
+	PitchData[1] = uint8_t(NoteTune);
+}
+
 bool sortFunction(const std::pair<const std::string, std::string> *s1, const std::pair<const std::string, std::string> *s2)
 {
 	return (s1->first.length() > s2->first.length());
@@ -1303,6 +1317,7 @@ void Music::parseHFDInstrumentHack(int addr, int bytes)
 		if (byteNum == 5)
 		{
 			instrumentData.push_back(0);	// On the 5th uint8_t, we need to add a 0 as the new sub-multiplier.
+			ConvertPitchToNoteTune(instrumentData);
 			byteNum = 0;
 		}
 
@@ -2534,6 +2549,7 @@ void Music::parseInstrumentDefinitions()
 			instrumentData.push_back(i);
 		}
 		skipSpaces;
+		ConvertPitchToNoteTune(instrumentData);
 
 	}
 	pos++;
