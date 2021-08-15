@@ -262,7 +262,7 @@ cmdE5:					; Tremolo on
 	call  GetCommandDataFast
 	mov   $0361+x, a
 	call  GetCommandDataFast
-;cmdE6:					; Normally would be tremolo off
+cmdFD:					; Tremolo off
 	mov   $b1+x, a
 	ret
 	
@@ -409,6 +409,12 @@ L_0E55:
 	mov   $0321+x, a
 	ret
 }
+cmdFE:					; Pitch envelope off
+{
+	mov   $0300+x, a
+	ret
+}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEE:					; Set the tuning
 {
@@ -594,6 +600,9 @@ MSampleLoad:
 	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; |
+	inc	y			; | Zero out pitch sub-multiplier.
+	mov	a, #$00			; |
 	mov	($10)+y, a		; /
 	jmp	UpdateInstr
 }
@@ -1105,8 +1114,6 @@ ClearRemoteCodeAddresses:
 	ret
 }
 
-cmdFD:
-cmdFE:
 cmdFF:
 ;ret
 

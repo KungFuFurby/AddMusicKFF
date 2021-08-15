@@ -894,15 +894,13 @@ endif
 	beq	.instrumentCommand	; / $DA is the instrument command.
 	cmp	a, #$ff			; \ 
 	bne	.playNote		; / Play a note.
-	mov	y, #$03			; Move back three bytes.
-	;mov	x, $46			; \
--	mov	a, !ChSFXPtrs+x		; |
+	mov	a, !ChSFXPtrs+x		; \ Move back one byte.
 	bne	+			; |
-	dec	!ChSFXPtrs+1+x		; | #$FF is the loop the last note command.
+	dec	!ChSFXPtrs+1+x		; |
 +					; |
 	dec	!ChSFXPtrs+x		; |
-	dbnz	y, -
-	bra	.getMoreSFXData		; /
+	mov	a, $18			; | #$FF is the loop the last note command.
+	bra	.keyOnNote		; /
 ; other $80+
 .loopSFX
 	mov	a, !ChSFXPtrBackup+1+x	; \
@@ -917,10 +915,10 @@ endif
 	push	a
 	mov	a, !InRest+x
 	pop	a
-	beq	+
+	beq	.keyOnNote
 	call	KeyOffVoices
 	bra	.setNoteLength
-+
+.keyOnNote
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
@@ -1587,14 +1585,32 @@ endif
 	push	a
 	mov	a, !ChSFXPtrs+1+x
 	pop	a
-	beq	.sfxAllocAllowed
+	beq	.checkAPU1SFX
 
 	cmp	a, !ChSFXPriority+x
-	bcs	.sfxAllocAllowed
+	bcs	.checkAPU1SFX
 
 .noSFXOverwrite
 	pop	a
 	ret
+
+.checkAPU1SFX
+	;Check and see if APU1 SFX is playing there via detecting $1D.
+	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
+	;but $1D has a voice bit set.
+	push	a
+	mov	a, $1d
+	and	a, $10
+	pop	a
+	beq	.sfxAllocAllowed
+
+	;Stop all APU1 SFX on the same channel.
+	push	a
+	mov	a, #$00
+	mov	$05, a
+	mov	$1c, a
+	mov	$0383, a
+	pop	a
 
 .sfxAllocAllowed
 	mov	!ChSFXPriority+x, a
@@ -1693,8 +1709,9 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	mov $f2, #$6c			;\ Unset the mute flag.
-	and $f3, #$bf			;/
+	and !NCKValue, #$bf		; Unset the mute flag.
+	mov a, !NCKValue
+	call ModifyNoise
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -1841,8 +1858,9 @@ PauseMusic:
 	inc a
 	mov !PauseMusic, a
 	
-	mov $f2, #$6c			;\ Set the mute flag.
-	or  $f3, #$40			;/
+	or  !NCKValue, #$40	; Set the mute flag.
+	;ModifyNoise, called when restoring the noise frequency, will handle
+	;setting the FLG DSP register.
 	ret
 
 if !noSFX = !false	
@@ -2780,7 +2798,6 @@ L_10BF:
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
 	mov	y, #$00					; |
 +							; |
-	clrc						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
 	mov	y, #$00					; |

@@ -61,7 +61,7 @@ static const int instrToSample[30] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x07, 0x08,
 
 static const int hexLengths[] = { 2, 2, 3, 4, 4, 1,
 2, 3, 2, 3, 2, 4, 2, 2, 3, 4, 2, 4, 4, 3, 2, 4,
-1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5 };
+1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5, 1, 1 };
 static int transposeMap[256];
 //static bool htranspose[256];
 static int hTranspose;
@@ -356,28 +356,31 @@ void Music::init()
 
 	pos = 0;
 
+	//If any channel markers exist, set the channel number to the earliest channel found.
+	if (text.find("#0") != -1)
+		channel = 0, prevChannel = 0;
+	else if (text.find("#1") != -1)
+		channel = 1, prevChannel = 1;
+	else if (text.find("#2") != -1)
+		channel = 2, prevChannel = 2;
+	else if (text.find("#3") != -1)
+		channel = 3, prevChannel = 3;
+	else if (text.find("#4") != -1)
+		channel = 4, prevChannel = 4;
+	else if (text.find("#5") != -1)
+		channel = 5, prevChannel = 5;
+	else if (text.find("#6") != -1)
+		channel = 6, prevChannel = 6;
+	else if (text.find("#7") != -1)
+		channel = 7, prevChannel = 7;
+
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
 		int resizeSize = 3;
 		if (targetAMKVersion > 1)
 			resizeSize += 3;
-
-		if (text.find("#0") != -1)
-			data[0].resize(resizeSize), resizedChannel = 0;
-		else if (text.find("#1") != -1)
-			data[1].resize(resizeSize), resizedChannel = 1;
-		else if (text.find("#2") != -1)
-			data[2].resize(resizeSize), resizedChannel = 2;
-		else if (text.find("#3") != -1)
-			data[3].resize(resizeSize), resizedChannel = 3;
-		else if (text.find("#4") != -1)
-			data[4].resize(resizeSize), resizedChannel = 4;
-		else if (text.find("#5") != -1)
-			data[5].resize(resizeSize), resizedChannel = 5;
-		else if (text.find("#6") != -1)
-			data[6].resize(resizeSize), resizedChannel = 6;
-		else if (text.find("#7") != -1)
-			data[7].resize(resizeSize), resizedChannel = 7;
+		data[channel].resize(resizeSize);
+		resizedChannel = channel;
 	}
 	else
 		resizedChannel = -1;
@@ -408,10 +411,7 @@ void Music::compile()
 		{
 			if (currentHex == 0xE6 && songTargetProgram == 1)
 			{
-				data[channel][data[channel].size() - 1] = 0xE5;
-				append(0);
-				append(0);
-				append(0);
+				data[channel][data[channel].size() - 1] = 0xFD;
 				hexLeft = 0;
 			}
 			else
@@ -1545,7 +1545,7 @@ void Music::parseHexCommand()
 					}
 				}
 			}
-			else if (i > 0xFC)
+			else if (i > 0xFE)
 			{
 				error("Unknown hex command.");
 			}
@@ -2083,7 +2083,7 @@ void Music::parseNote()
 		{
 			i = 0xD0 + (instrument[channel] - 21);
 
-			if ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false)	// If this is not a SFX channel,
+			if (songTargetProgram != 0 || ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false))	// If this is not a SFX channel,
 				instrument[channel] = 0xFF;										// Then don't force the drum pitch on every note.
 		}
 	}
@@ -2125,7 +2125,7 @@ void Music::parseNote()
 		j += getNoteLength(getInt());
 		skipSpaces;
 
-		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0) && okayToRewind)
+		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0 || (songTargetProgram != 0 && strncmp(text.c_str() + pos, "&", 1) == 0)) && okayToRewind)
 		{
 			j = tempsize;		//
 			pos = temppos;		// "Rewind" so we forcibly place a tie before the bend.

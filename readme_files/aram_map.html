@@ -397,7 +397,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$C0, $C2, $C4, $C6, $C8, $CA, $CC, $CE</td>
-				<td>Subroutine ($E9 VCMD) loop counter.</td>
+				<td>Subroutine ($E9 VCMD) loop counter, one byte per voice.</td>
 				<td>Vanilla</td>
 			</tr>
 			<tr>
@@ -416,7 +416,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0100, $0102, $0104, $0106, $0108, $010A, $010C, $010E</td>
-				<td>Music note duration after quantization.</td>
+				<td>Music note duration after quantization, one byte per voice.</td>
 				<td>Vanilla</td>
 			</tr>
 			<tr>
@@ -434,7 +434,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0120, $0122, $0124, $0126, $0128, $012A, $012C, $012E</td>
-				<td>Transposition on a per-voice basis.</td>
+				<td>Transposition, one byte per voice.</td>
 				<td>AddmusicK<br>(Moved from $6727-$672E and being located in the middle of code in Addmusic405)</td>
 			</tr>
 			<tr>
@@ -522,12 +522,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0190-$019F</td>
-				<td>Remote code pointer for the -1 event (on note start).</td>
+				<td>Remote code pointer for the -1 event (on note start), one pointer per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$01A0, $01A2, $01A4, $01A6, $01A8, $01AA, $01AC, $01AE</td>
-				<td>Remote code timer, when used with timer event 3.</td>
+				<td>Remote code timer, when used with timer event 3. One byte per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -939,13 +939,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$01D1, $01D3, $01D5, $01D7, $01D9, $01DB, $01DD, $01DF</td>
-				<td>Number of SFX tempo ticks to wait before playing the next SFX ID on this voice.</td>
+				<td>Number of SFX tempo ticks to wait before playing the next SFX ID on this voice. One byte per voice.</td>
 				<td>N/A (New)</td>
-				<td>N/A (This memory location's purpose has been recycled by $01D0, $01D2, $01D4, $01D6, $01D8, $01DA, $01DC, $01DE)</td>
+				<td>N/A (This memory location's purpose has been recycled into $01D0, $01D2, $01D4, $01D6, $01D8, $01DA, $01DC, $01DE)</td>
 			</tr>
 			<tr>
 				<td>$0390, $0392, $0394, $0396, $0398, $039A, $039C, $039E</td>
-				<td>The gain value to use instead of keying off the note in a rest.</td>
+				<td>The gain value to use instead of keying off the note in a rest. One byte per voice.</td>
 				<td>N/A (New)</td>
 				<td>N/A (Replaced by remote code)</td>
 			</tr>
@@ -957,20 +957,20 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03A0, $03A2, $03A4, $03A6, $03A8, $03AA, $03AC, $03AE</td>
-				<td>The gain value to use when triggering remote gain.</td>
+				<td>The gain value to use when triggering remote gain. One byte per voice.</td>
 				<td>N/A (New)</td>
 				<td>N/A (Replaced by remote code)</td>
 			</tr>
 			<tr>
 				<td>$03A1, $03A3, $03A5, $03A7, $03A9, $03AB, $03AD, $03AF</td>
-				<td>Number of tempo ticks after the note has started to apply remote gain to.</td>
+				<td>Number of tempo ticks after the note has started to apply remote gain to. One byte per voice.</td>
 				<td>N/A (New)</td>
 				<td>N/A (Replaced by remote code)</td>
 			</tr>
 
 		</table>
 	<h2>AddmusicM (by homing)</h2>
-	Contains the majority of carol's MORE.bin except for global transposition ($E9 VCMD) due to sending staccato to its own VCMD slot and not checking for $20 as a song ID due to sending set sample to its own VCMD slot ($F3 VCMD) and overwriting tremolo off with repeat section ($E6 VCMD)
+	Contains the majority of carol's MORE.bin except for global transposition ($E4 VCMD) due to sending staccato to its own VCMD slot and not checking for $20 as a song ID due to sending set sample to its own VCMD slot ($F3 VCMD) and overwriting tremolo off with repeat section ($E6 VCMD).
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1052,7 +1052,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 		</table>
 
 	<h2>Addmusic405 (by HuFlungDu)</h2>
-	Contains the majority of carol's MORE.bin except for the repeat section ($E6) VCMD (which was previously limited to song IDs $20 and up) and ADSR, which is instead from Romi's Addmusic (Addmusic404).
+	Contains the majority of carol's MORE.bin except for the repeat section ($E6) VCMD (which was previously limited to song IDs $20 and up) and ADSR ($ED VCMD), which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1066,7 +1066,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$6727-$672E<br><i>(stored within code)</i></td>
-				<td>Transposition on a per-voice basis.</td>
+				<td>Transposition, one byte per voice.</td>
 				<td>N/A (New)</td>
 				<td>$0120, $0122, $0124, $0126, $0128, $012A, $012C, $012E</td>
 			</tr>
