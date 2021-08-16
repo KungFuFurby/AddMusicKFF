@@ -471,7 +471,9 @@ L_062B:
         
 ; set DSP pitch from $10/11
 ; Trashes $10,$14,$15
-; Input: $10 = Tune (8bit fraction of Note), $11 = Note
+; Input:
+;  X = Channel<<1
+;  $10 = Tune (8bit fraction of Note), $11 = Note
 SetPitch:			;
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
@@ -481,10 +483,13 @@ endif
 	mov	y, a
 	mov	a, $02f0+x
 	addw	ya, $10
-	bcs	SetPitchClipMax   ; Overflow in tuning adjustment?
-SetPitchClipMaxNoAdjust:
 	mov	$10, a            ; Stash Tune in $10; Note is used right away. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
-SetPitchClipMaxAdjusted:
+	bcs	SetPitchClipNote  ; Overflow in tuning adjustment?
+	cmp	a, #$D6           ; Early clipping when hardware rate would max out
+	mov	a, y              ;  NOTE: This constant (E3D6h) depends on the pitch table and base octave
+	sbc	a, #$E3
+	bcs     SetPitchUseMaxRate
+SetPitchClipNoteNoAdjust:
 	mov	a, #$02           ; Note<<1 -> YA
 	mul	ya                ;  NOTE: Shift up so we get (Note%12)<<1 in Y, for a 16bit offset
 	mov	x, #$18           ; Octave = Note/12 -> A, Semitone = (Note%12)<<1 -> Y
@@ -502,16 +507,17 @@ SetPitchClipMaxAdjusted:
 	mov	y, #$00
 	addw	ya, $14           ; Pitch = BasePitch + SubPitchDelta -> YA
 	mov	$15, y            ; Stash HI byte of Pitch into $15
-	cmp	x, #$12           ; High octaves need to shift up
+	cmp	x, #$10           ; High octaves need to shift up
+	beq	SetPitchHighOctaveReturn
 	bcs	SetPitchHighOctave
--	lsr	$15               ; Pitch >>= 18-Octave
-	ror	a
-	inc	x
-	cmp	x, #$12
+-	lsr	$15               ; Pitch >>= 16-Octave
+	ror	a                 ;  NOTE: This can take up to 16 iterations (!) at Octave=0
+	inc	x                 ;  At Octave=4 (12 iterations), we've already reached the limit at Rate=0001h,
+	cmp	x, #$10           ;  so it might be worthwhile to to clip this?
 	bne	-
 SetPitchHighOctaveReturn:
 	mov	y, a              ; y,$15 = Rate (adjusted for Note,Tune)
-SetPitchHighOctaveAdjusted:
+SetPitchStoreToDSP:
 	pop	x
 	mov	a, x              ; Dst = x2h (VxPITCH)
 	xcn	a
@@ -523,26 +529,23 @@ SetPitchHighOctaveAdjusted:
 	movw	$f2, ya
 	ret
 
-SetPitchClipMax:
-	mov1	$11.7     ; If MSB Note is set, assume underflow (ie. negative Note) and then assume sample pitch adjustment fixed it
-	bcs	SetPitchClipMaxNoAdjust
-	mov	$10, #$FF ; Save a bit of work and store Tune directly instead of saving to A and returning
-	mov	y, #$FF
-	jmp	SetPitchClipMaxAdjusted
+; Note clipping assumes that Note|Tune is in the range -4000h..+BFFFh.
+SetPitchClipNote:
+	cmp	$11, #$C0         ; If Note >= C0h, assume underflow (ie. negative Note) and then assume sample pitch adjustment fixed it
+	bcs	SetPitchClipNoteNoAdjust
+SetPitchUseMaxRate:
+	mov	y, #$FF           ; Note value would overflow, so set max hardware rate
+	mov	$15, #$3F
+	jmp	SetPitchStoreToDSP
 
 SetPitchHighOctave:
-	beq	SetPitchHighOctaveReturn ; Early exit on exact octave match
--	asl	a                        ; Pitch <<= Octave-18
-	rol	$15
-	dec	x
-	cmp	x, #$12
+-	asl	a                 ; Pitch <<= Octave-16
+	rol	$15               ; NOTE: Do NOT restore bits dropped from SubPitchDelta,
+	dec	x                 ; as this can cause inharmonicity with other octaves
+	cmp	x, #$10
 	bne	-
-+	cmp	$15, #$40                ; Maximum hardware rate is 3FFFh, so clip if needed
-	bcc	SetPitchHighOctaveReturn ;  NOTE: Lower octaves can never do this, so only need to check for high octaves
-	mov	y, #$FF                  ; As with SetPitchClipMax, store directly
-	mov	$15, #$3F
-	jmp	SetPitchHighOctaveAdjusted
-	
+	jmp	SetPitchHighOctaveReturn
+
 }
 
 DDEEFix:
