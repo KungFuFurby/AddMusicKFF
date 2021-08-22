@@ -485,11 +485,11 @@ endif
 	addw	ya, $10
 	mov	$10, a            ; Stash Tune in $10; Note is used right away. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
 	bcs	SetPitchClipNote  ; Overflow in tuning adjustment?
+SetPitchClipNoteNoAdjust:         ; <- Still need clipping. eg. Note|Tune=FF00 and sample tuning = FF00h gives FE00h
 	cmp	a, #$D6           ; Early clipping when hardware rate would max out
 	mov	a, y              ;  NOTE: This constant (E3D6h) depends on the pitch table and base octave
 	sbc	a, #$E3
 	bcs     SetPitchUseMaxRate
-SetPitchClipNoteNoAdjust:
 	mov	a, #$02           ; Note<<1 -> YA
 	mul	ya                ;  NOTE: Shift up so we get (Note%12)<<1 in Y, for a 16bit offset
 	mov	x, #$18           ; Octave = Note/12 -> A, Semitone = (Note%12)<<1 -> Y
