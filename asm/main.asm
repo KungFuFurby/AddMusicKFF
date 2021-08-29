@@ -470,26 +470,22 @@ L_062B:
 	call	DDEEFix	
         
 ; set DSP pitch from $10/11
-; Trashes $10,$14,$15
+; Trashes $10,$11,$14,$15
 ; Input:
-;  X = Channel<<1
+;  X = Channel<<1 (NOTE: Must not be trashed)
 ;  $10 = Tune (8bit fraction of Note), $11 = Note
 SetPitch:			;
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
 endif
-	push	x
 	mov	a, $0210+x        ; Adjust Note,Tune with sample tuning -> YA
 	mov	y, a
 	mov	a, $02f0+x
 	addw	ya, $10
-	mov	$10, a            ; Stash Tune in $10; Note is used right away. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
+	mov	$10, x            ; Stash Channel in $10. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
 	bcs	SetPitchClipNote  ; Overflow in tuning adjustment?
 SetPitchClipNoteNoAdjust:         ; <- Still need clipping. eg. Note|Tune=FF00 and sample tuning = FF00h gives FE00h
-	cmp	a, #$D6           ; Early clipping when hardware rate would max out
-	mov	a, y              ;  NOTE: This constant (E3D6h) depends on the pitch table and base octave
-	sbc	a, #$E3
-	bcs     SetPitchUseMaxRate
+	mov	$11, a            ; Stash Tune in $11; Note is used right away. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
 	mov	a, #$02           ; Note<<1 -> YA
 	mul	ya                ;  NOTE: Shift up so we get (Note%12)<<1 in Y, for a 16bit offset
 	mov	x, #$18           ; Octave = Note/12 -> A, Semitone = (Note%12)<<1 -> Y
@@ -501,7 +497,7 @@ SetPitchClipNoteNoAdjust:         ; <- Still need clipping. eg. Note|Tune=FF00 a
 	mov	$15, a
 	mov	a, PitchTable+2+y ; PitchTable[Semitone+1] -> YA. NOTE: Upper byte doesn't matter under modulo 256 arithmetic
 	subw	ya, $14           ; SubPitchDelta = (PitchTable[Semitone+1]-PitchTable[Semitone])*Tune -> YA (8.8 fixed point)
-	mov	y, $10            ;  NOTE: PitchTable[n+1]-PitchTable[n] must be <= FFh for MUL. This limits PitchTable's precision
+	mov	y, $11            ;  NOTE: PitchTable[n+1]-PitchTable[n] must be <= FFh for MUL. This limits PitchTable's precision
 	mul	ya                ;  NOTE: Can also use SETC,SBC instead of SUBW. Then removing SETC is faster but very slightly off
 	mov	a, y              ; Chop off fraction of SubPitchDelta, then expand back to 16bit for ADDW
 	mov	y, #$00
@@ -518,7 +514,7 @@ SetPitchClipNoteNoAdjust:         ; <- Still need clipping. eg. Note|Tune=FF00 a
 SetPitchHighOctaveReturn:
 	mov	y, a              ; y,$15 = Rate (adjusted for Note,Tune)
 SetPitchStoreToDSP:
-	pop	x
+	mov	x, $10            ; Restore Channel to X (caller functions are expecting this to be preserved)
 	mov	a, x              ; Dst = x2h (VxPITCH)
 	xcn	a
 	lsr	a
@@ -538,13 +534,18 @@ SetPitchUseMaxRate:
 	mov	$15, #$3F
 	jmp	SetPitchStoreToDSP
 
+; Rate overflow checking is performed here, as it's a very unlikely
+; code path, so it's better to move it to an also-unlikely section.
 SetPitchHighOctave:
 -	asl	a                 ; Pitch <<= Octave-16
 	rol	$15               ; NOTE: Do NOT restore bits dropped from SubPitchDelta,
+	bmi	SetPitchUseMaxRate    ; <- On overflow, use max rate. NOTE: This checks for Rate >= 8000h, but we need to check for >= 4000h
 	dec	x                 ; as this can cause inharmonicity with other octaves
 	cmp	x, #$10
 	bne	-
-	jmp	SetPitchHighOctaveReturn
+	cmp	$15, #$40         ; Final overflow check (Rate can be up to 7FFFh here in theory, but must be < 4000h for output)
+	bcc	SetPitchHighOctaveReturn
+	jmp	SetPitchUseMaxRate
 
 }
 
