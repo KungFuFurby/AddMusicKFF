@@ -20,6 +20,29 @@
 
 incsrc "UserDefines.asm"
 
+macro dwIfDefTrue(defCheck, dwOnTrue)
+if <defCheck> = !true
+	dw <dwOnTrue>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwIfDefFalse(defCheck, dwOnFalse)
+if <defCheck> = !false
+	dw <dwOnFalse>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwByDefCheck(defCheck, dwOnTrue, dwOnFalse)
+if <defCheck> = !true
+	dw <dwOnTrue>
+else
+	dw <dwOnFalse>
+endif
+endmacro
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
 ; $00: Current input from APU0 (only available for 1 "loop").
