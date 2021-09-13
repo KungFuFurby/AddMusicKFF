@@ -30,6 +30,16 @@ includeonce
 
 ;=======================================
 ;---------------
+!noVcmdFB = !false
+
+;Default setting: !false
+;---------------
+; Disables the arpeggio, trill and glissando VCMDs entirely, executed
+; though the $FB VCMD.
+;=======================================
+
+;=======================================
+;---------------
 !noiseFrequencySFXInstanceResolution = !false
 
 ;Default setting: !false
