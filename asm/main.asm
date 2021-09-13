@@ -20,6 +20,29 @@
 
 incsrc "UserDefines.asm"
 
+macro dwIfDefTrue(defCheck, dwOnTrue)
+if <defCheck> = !true
+	dw <dwOnTrue>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwIfDefFalse(defCheck, dwOnFalse)
+if <defCheck> = !false
+	dw <dwOnFalse>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwByDefCheck(defCheck, dwOnTrue, dwOnFalse)
+if <defCheck> = !true
+	dw <dwOnTrue>
+else
+	dw <dwOnFalse>
+endif
+endmacro
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
 ; $00: Current input from APU0 (only available for 1 "loop").
@@ -520,8 +543,10 @@ endif
 	adc	a, $43 			; /
 	clrc				; \
 	adc	a, !HTuneValues+x		; / Add the h tune...
+if !noVcmdFB = !false
 	clrc				; \
 	adc	a, !ArpCurrentDelta+x	; / Add the arpeggio delta...
+endif
 	
 	bra +
 NoPitchAdjust:
@@ -2157,10 +2182,13 @@ L_0B6D:
 	mov	$b1+x, a		; ?
 	mov	$0161+x, a	; Strong portamento
 	mov	!HTuneValues+x, a	
-	
+if !noVcmdFB = !false	
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
+else
+	mov	!VolumeMult+x, a
+endif
 	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
@@ -2209,11 +2237,13 @@ endif
 -	
 	; repeat ctr + Instrument[ch] = 0
 	mov	$c0-1+y, a
+if !noVcmdFB = !false
 	;(!ArpSpecial + !VolumeMult get zeroed out here...)
 	mov	!ArpSpecial-1+y, a
 	mov	!ArpNotePtrs-1+y, a
 	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
 	mov	!ArpLength-1+y, a
+endif
 	mov	$0300-1+y, a
 	dbnz	y, -
 	; MODIFIED CODE END
@@ -2412,6 +2442,7 @@ if !noSFX = !false
 endif
 	mov	$10, a		; Save this status.
 	
+if !noVcmdFB = !false
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
 	
 	pop	a				; \ Get the current note value back
@@ -2427,7 +2458,9 @@ endif
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
 	mov	a, $10
+endif
 	bne	L_0CB3
+if !noVcmdFB = !false
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
@@ -2453,6 +2486,7 @@ endif
 +
 .glissandoOver
 	mov	a, y			; / And actually play the next note.
+endif
 	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn
 .notGlissando
@@ -2471,7 +2505,9 @@ L_0CC1:
 L_0CC6:
 	call	L_10A1             ; do voice readahead
 L_0CC9:	
+if !noVcmdFB = !false
 	call	HandleArpeggio	; Handle all things related to arpeggio.
+endif
 	inc	x
 	inc	x
 	asl	$48

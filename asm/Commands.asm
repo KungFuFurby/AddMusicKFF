@@ -1029,6 +1029,7 @@ SubC_table2:
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
+if !noVcmdFB = !false
 {
 	bmi	.special		; \ Save the number of notes.
 	mov	!ArpNoteCount+x, a	; / (But if it's negative, then it's a special command).
@@ -1182,6 +1183,7 @@ endif
 .return2
 	ret
 }	
+endif
 	
 cmdFC:
 {
