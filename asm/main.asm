@@ -2203,15 +2203,6 @@ endif
 	mov	!MasterVolume, #$c0          ; MasterVolume = #$C0
 	mov	$51, #$36          ; Tempo = #$36
 
-	
-	
-
-	mov	y, #$20
-	
-L_0B9C:
-	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
-	mov	$0300-1+y, a
-	dbnz	y, L_0B9C		; Clear out 0300-031f (this is a useful opcode...)
 
 	; MODIFIED CODE START
 	mov	y, #$10
@@ -2221,6 +2212,9 @@ L_0B9C:
 	;(!ArpSpecial + !VolumeMult get zeroed out here...)
 	mov	!ArpSpecial-1+y, a
 	mov	!ArpNotePtrs-1+y, a
+	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
+	mov	!ArpLength-1+y, a
+	mov	$0300-1+y, a
 	dbnz	y, -
 	; MODIFIED CODE END
 	
