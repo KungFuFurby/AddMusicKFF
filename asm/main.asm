@@ -520,14 +520,14 @@ endif
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode
-
+if !noVcmdFB = !false
 .runningArpGate
 	bra	.runRemoteCodeKON
 
 	mov	a, !remoteCodeType2+x
 	cmp	a, #$fe
 	beq	.noRemoteCode
-
+endif
 .runRemoteCodeKON
 	call	RunRemoteCode2
 	
@@ -2120,8 +2120,10 @@ L_0B5A:
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
+if !noVcmdFB = !false
 	mov	a, #!runningArpGateOnJumpDistance
 	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
+endif
 	mov	a,#$00			; Clear various new addresses.
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
