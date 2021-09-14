@@ -2442,10 +2442,10 @@ if !noSFX = !false
 endif
 	mov	$10, a		; Save this status.
 	
-if !noVcmdFB = !false
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
 	
 	pop	a				; \ Get the current note value back
+if !noVcmdFB = !false
 	mov	y, a			; / Put it into y for  now.
 
 	
