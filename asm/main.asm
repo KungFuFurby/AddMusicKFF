@@ -483,8 +483,10 @@ endif
 	mov	a, $02f0+x
 	addw	ya, $10
 	mov	$10, x            ; Stash Channel in $10. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
+if !EnableNoteClipping = !true
 	bcs	SetPitchClipNote  ; Overflow in tuning adjustment?
 SetPitchClipNoteNoAdjust:         ; <- Still need clipping. eg. Note|Tune=FF00 and sample tuning = FF00h gives FE00h
+endif
 	mov	$11, a            ; Stash Tune in $11; Note is used right away. NOTE: 7c|4bytes, vs 8c|2bytes with PUSH/POP
 	mov	a, #$02           ; Note<<1 -> YA
 	mul	ya                ;  NOTE: Shift up so we get (Note%12)<<1 in Y, for a 16bit offset
@@ -526,6 +528,7 @@ SetPitchStoreToDSP:
 	ret
 
 ; Note clipping assumes that Note|Tune is in the range -4000h..+BFFFh.
+if !EnableNoteClipping = !true
 SetPitchClipNote:
 	cmp	$11, #$C0         ; If Note >= C0h, assume underflow (ie. negative Note) and then assume sample pitch adjustment fixed it
 	bcs	SetPitchClipNoteNoAdjust
@@ -533,19 +536,26 @@ SetPitchUseMaxRate:
 	mov	y, #$FF           ; Note value would overflow, so set max hardware rate
 	mov	$15, #$3F
 	jmp	SetPitchStoreToDSP
+endif
 
 ; Rate overflow checking is performed here, as it's a very unlikely
 ; code path, so it's better to move it to an also-unlikely section.
 SetPitchHighOctave:
 -	asl	a                 ; Pitch <<= Octave-16
 	rol	$15               ; NOTE: Do NOT restore bits dropped from SubPitchDelta,
+if !EnableNoteClipping = !true
 	bmi	SetPitchUseMaxRate    ; <- On overflow, use max rate. NOTE: This checks for Rate >= 8000h, but we need to check for >= 4000h
+endif
 	dec	x                 ; as this can cause inharmonicity with other octaves
 	cmp	x, #$10
 	bne	-
+if !EnableNoteClipping = !true
 	cmp	$15, #$40         ; Final overflow check (Rate can be up to 7FFFh here in theory, but must be < 4000h for output)
 	bcc	SetPitchHighOctaveReturn
 	jmp	SetPitchUseMaxRate
+else
+	jmp	SetPitchHighOctaveReturn
+endif
 
 }
 

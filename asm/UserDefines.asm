@@ -193,6 +193,19 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!EnableNoteClipping = !false
+
+;Default setting: !false
+;---------------
+; Setting this to !true causes hardware rate overflows to be limited at the
+; maximum hardware rate (3FFFh). This should really only be used if you
+; absolutely need it (eg. a vibrato that's just on the edge of the maximum
+; hardware rate), as it takes slightly more computation to handle and can
+; also break some tracks that use overflow for making interesting effects.
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,
