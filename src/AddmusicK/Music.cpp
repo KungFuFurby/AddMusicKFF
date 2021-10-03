@@ -573,7 +573,7 @@ void Music::parseLDirective()
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength);
+	defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -2814,10 +2814,10 @@ int Music::getNoteLength(int i)
 	else if (i < 1 || i > 192) i = defaultNoteLength;
 	else i = 192 / i;
 
-	return getNoteLengthModifier(i);
+	return getNoteLengthModifier(i, true);
 }
 
-int Music::getNoteLengthModifier(int i) {
+int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 	int frac = i;
 
 	int times = 0;
@@ -2830,7 +2830,7 @@ int Music::getNoteLengthModifier(int i) {
 		if (times == 2 && songTargetProgram == 1) break;	// AM4 only allows two dots for whatever reason.
 	}
 	//}
-	if (triplet)
+	if (triplet && allowTriplet)
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
 	return i;
 }
