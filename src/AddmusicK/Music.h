@@ -167,7 +167,7 @@ private:
 	int getHex(bool anyLength = false);
 	int getPitch(int j);
 	int getNoteLength(int);
-	int getNoteLengthModifier(int);
+	int getNoteLengthModifier(int, bool);
 
 	bool guessLength;
 	int resizedChannel;
