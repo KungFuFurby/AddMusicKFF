@@ -498,12 +498,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0168</td>
-				<td>CPUIO2 output from $F4 on the SPC side to $2142 on the SNES side.</td>
+				<td>CPUIO2 output from $F6 on the SPC side to $2142 on the SNES side.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0169</td>
-				<td>CPUIO3 output from $F4 on the SPC side to $2143 on the SNES side.</td>
+				<td>CPUIO3 output from $F7 on the SPC side to $2143 on the SNES side.</td>
 				<td>AddmusicK<br>(Moved from $0167 in AddmusicM, but only from where it outputs: the music tempo tick usage doesn't carry over here)</td>
 			</tr>
 			<tr>
@@ -1035,7 +1035,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0167</td>
-				<td>CPUIO3 output from $F4 on the SPC side to $2143 on the SNES side. Also used as part of a 16-bit music tempo tick counter if bit 1 of $0160 is set.</td>
+				<td>CPUIO3 output from $F7 on the SPC side to $2143 on the SNES side. Also used as part of a 16-bit music tempo tick counter if bit 1 of $0160 is set.</td>
 				<td>N/A (New)</td>
 				<td>$0169<br>(NOTE: This only applies to the actual output: the music tempo tick counter does not move from this location.)</td>
 			</tr>
