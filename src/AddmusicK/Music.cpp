@@ -802,11 +802,13 @@ void Music::parseInstrumentCommand()
 	if (optimizeSampleUsage)
 		usedSamples[instrToSample[i]] = true;
 
-	//hTranspose = 0;
-	//usingHTranspose = false;
 	instrument[channel] = i;
 	//if (htranspose[i] == true)
-	//transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	if (songTargetProgram == 2 && i < 19) {
+		hTranspose = 0;
+		usingHTranspose = false;
+		transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	}
 }
 
 void Music::parseOpenParenCommand()
