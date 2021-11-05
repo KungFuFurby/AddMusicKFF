@@ -361,6 +361,9 @@ endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
 	tclr	$0162, a
@@ -402,6 +405,10 @@ if !noSFX = !false
 endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	.remoteCodeRestoreInstrumentOnKON
+
 	mov	a, !remoteCodeType+x
 	cmp	a, #$05
 	bne	.checkRemoteCodeTypes
@@ -420,6 +427,9 @@ endif
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode			
+
+	mov	a, !remoteCodeType2+x
+	bpl	.noRemoteCode
 
 	call	RunRemoteCode2
 	
@@ -2729,26 +2739,37 @@ L_10D1:							;
 	bne	skip_keyoff				; |
 
 	mov	a, !InRest+x
-	bne	+
+	bne	keyoff
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	keyoff
+
+keyoffRemoteCodeCheck:
 	mov	a, $10
 	cmp	a, #$c7
-	beq	skipKeyOffAndRunCode
+	beq	keyoffRemoteCodeTypeCheck
 	mov	a, $70+x
 	cmp	a, !WaitTime
 	beq	keyoff
+keyoffRemoteCodeTypeCheck:
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	skipKeyOffAndRunCode2
 skipKeyOffAndRunCode:
 	call	RunRemoteCode
-	bra	skip_keyoff
+skip_keyoff:
+	clrc
+	ret
+
+skipKeyOffAndRunCode2:
+	call	RunRemoteCode2
+	clrc
+	ret
 +
 keyoff:
 	setc
 	ret
-skip_keyoff:
-	clrc
-	ret
+
 }
 
 
