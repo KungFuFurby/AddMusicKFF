@@ -1989,6 +1989,7 @@ L_0B6D:
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$00
 	mov	$02d1+x, a         ; Portamento[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
@@ -2001,7 +2002,6 @@ L_0B6D:
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
-	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.

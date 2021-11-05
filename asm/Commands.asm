@@ -1052,20 +1052,28 @@ cmdFC:
 ClearRemoteCodeAddressesPre:
 	pop	a
 	pop	a
-	call	GetCommandDataFast
+	call	L_1260
 	
-ClearRemoteCodeAddresses:
+ClearRemoteCodeAddressesAndOpenGate:
 	%OpenRunningRemoteCodeGate()
+ClearRemoteCodeAddresses:
+	call	ClearKONRemoteCodeAddresses
+	call	ClearNonKONRemoteCodeAddresses
+	ret
+
+ClearNonKONRemoteCodeAddresses:
 	mov	a, #$00
-	mov	!remoteCodeTargetAddr2+1+x, a
-	mov	!remoteCodeTargetAddr2+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTimeValue+x, a
 	mov	!remoteCodeTimeLeft+x, a
 	mov	!remoteCodeType+x, a
-	mov	!remoteCodeTargetAddr+x, a
-	mov	!remoteCodeTargetAddr+1+x, a
+	ret
+
+ClearKONRemoteCodeAddresses:
+	mov	a, #$00
+	mov	!remoteCodeTargetAddr2+1+x, a
+	mov	!remoteCodeTargetAddr2+x, a
 	ret
 }
 
