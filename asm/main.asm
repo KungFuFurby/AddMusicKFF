@@ -136,6 +136,7 @@ incsrc "UserDefines.asm"
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
 !remoteCodeTimeValue = $01a0	; The value to set the timer to when necessary.
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
+!remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
 arch spc700-raw

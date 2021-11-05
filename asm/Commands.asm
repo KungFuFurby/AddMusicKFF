@@ -1074,6 +1074,7 @@ ClearKONRemoteCodeAddresses:
 	mov	a, #$00
 	mov	!remoteCodeTargetAddr2+1+x, a
 	mov	!remoteCodeTargetAddr2+x, a
+	mov	!remoteCodeType2+x, a
 	ret
 }
 
