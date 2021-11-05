@@ -997,7 +997,11 @@ cmdFC:
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
 	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; /
+	beq	ClearRemoteCodeAddressesPre		; |
+	cmp	a, #$07					; |
+	beq	ClearNonKONRemoteCodeAddressesPre	; |
+	cmp	a, #$08					; |
+	beq	ClearKONRemoteCodeAddressesPre		; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -1059,6 +1063,17 @@ ClearRemoteCodeAddresses:
 	call	ClearNonKONRemoteCodeAddresses
 	ret
 
+ClearRemoteCodeAddressesXInit:
+	;mov	x, $46
+	;bra	ClearRemoteCodeAddresses
+
+ClearNonKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearNonKONRemoteCodeAddressesXInit:
+	;mov	x, $46
 ClearNonKONRemoteCodeAddresses:
 	mov	a, #$00
 	mov	!remoteCodeTargetAddr+1+x, a
@@ -1068,6 +1083,13 @@ ClearNonKONRemoteCodeAddresses:
 	mov	!remoteCodeType+x, a
 	ret
 
+ClearKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearKONRemoteCodeAddressesXInit:
+	;mov	x, $46
 ClearKONRemoteCodeAddresses:
 	mov	a, #$00
 	mov	!remoteCodeTargetAddr2+1+x, a

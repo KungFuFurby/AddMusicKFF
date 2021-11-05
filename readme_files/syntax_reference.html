@@ -191,6 +191,8 @@
 				4: Run once, right now. This is also compatible with all other events, and because it can be used within loops, it effectively allows you to have a third layer of nested loops (see [[ ]] for the second layer).<br>
 				5: Reserved.  Do not use this event type.<br>
 				6: Reserved.  Do not use this event type.<br>
+				7: Disable the remote commands for this channel, except for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
+				8: Disable the remote command for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
 				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>
