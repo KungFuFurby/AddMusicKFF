@@ -1003,10 +1003,6 @@ cmdFC:
 	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	mov	a, y					; \ Store the code type.
-	cmp	a, #$05
-	bne +
-	mov	a, #$03
-	+
 	mov	!remoteCodeType+x, a			; |
 	call	GetCommandDataFast			; \ Store the argument.
 	mov	!remoteCodeTimeValue+x, a		; /

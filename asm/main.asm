@@ -403,13 +403,20 @@ endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
 	mov	a, !remoteCodeType+x
+	cmp	a, #$05
+	bne	.checkRemoteCodeTypes
+.remoteCodeRestoreInstrumentOnKON
+	call	SubC_9
+
+.checkRemoteCodeTypes
+	mov	a, !remoteCodeType+x
 	cmp	a, #$01
-	bne	.notType1RemoteCode
+	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
 	mov	!remoteCodeTimeLeft+x, a
 	
-.notType1RemoteCode
+.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode			
@@ -2765,8 +2772,11 @@ L_10A1:
 	
 	mov	a, !remoteCodeType+x			; \ Branch away if we have no code to run before a note ends.
 	cmp	a, #$02					; |
+	beq	.checkRemoteCodeTimeValue
+	cmp	a, #$05
 	bne 	.noRemoteCode				; /
 
+.checkRemoteCodeTimeValue
 	mov	a, !remoteCodeTimeValue+x		; \
 	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
 	bne	.noRemoteCode				; /
