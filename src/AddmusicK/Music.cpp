@@ -1585,7 +1585,7 @@ void Music::parseHexCommand()
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 					// Add in a "restore instrument" remote call.
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
@@ -1712,7 +1712,7 @@ void Music::parseHexCommand()
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
@@ -1800,7 +1800,7 @@ void Music::parseHexCommand()
 				if (remoteGainConversion[remoteGainConversion.size() - 1].size() > 0)			// If the size was zero, then it has no data anyway.  Used for the 0 event type.
 				{											// Only saves two bytes, though.
 					int channelToCheck;
-					if (channel == 9)
+					if (channel == 8)
 						channelToCheck = prevChannel;
 					else
 						channelToCheck = channel;
@@ -1820,7 +1820,7 @@ void Music::parseHexCommand()
 				data[channel].pop_back();					// (i.e. the $FA $05)
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
