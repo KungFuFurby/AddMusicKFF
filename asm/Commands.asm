@@ -660,9 +660,7 @@ SubC_0:
 SubC_00:
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 	mov	a,#$01
-	push	a
-	mov	a,$6e
-	pop	a
+	cmp	$6e, #$00
 	beq	SubC_02
 
 SubC_01:

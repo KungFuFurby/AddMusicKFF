@@ -827,13 +827,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
-				<td>$0385</td>
+				<td>$0385-$0386</td>
 				<td colspan="2"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
-			</tr>
-			<tr>
-				<td>$0386</td>
-				<td>Yoshi Drum switch, set via CPUIO1 commands.</td>
-				<td>Vanilla</td>
 			</tr>
 			<tr>
 				<td>$0387</td>
@@ -1261,6 +1256,11 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0385</td>
 				<td>Saved note duration for CPUIO3 SFX.</td>
 				<td>Varies by voice ID (going by vanilla default (#6), it's $03DD, and going by AMK default (#7), it's $03DF)</td>
+			</tr>
+			<tr>
+				<td>$0386</td>
+				<td>Yoshi Drum switch, set via CPUIO1 commands.</td>
+				<td>N/A (Turned into an opcode switch after AddmusicK 1.0.8, and thus embedded into the code)</td>
 			</tr>
 			<tr>
 				<td>$0389</td>
