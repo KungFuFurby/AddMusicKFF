@@ -62,7 +62,6 @@ incsrc "UserDefines.asm"
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
 ; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
-; $0386: Set if Mario is on Yoshi.  
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
 ; $48: Bitwise indicator of the current channel being processed.
@@ -1607,23 +1606,23 @@ L_112A:
 
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
-	mov	a, $0386			;
-	push	p
-	mov	a, $6e				; 
-	pop	p
-	bne	.drumsOn			;
-					
-	tset	$5e, a				;
-	bra	+
-	
-.drumsOn					
-						; $5E = ($5E --/--> $6E)
-						; (Or $5E = $5E & ~$5C)
-	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
-+
+	mov	$5e, #$00
+	mov	a, $6e
+.drumSet
+	tset	$5e, a
+
+	;If you are using any extra code that also sets the mute flag, send
+	;all of them over to HandleYoshiDrums_externalChMuteFlags+1 (and
+	;uncomment the two lines below) so that they get preserved
+	;accordingly. The +1 is important, since it's embedded in code (and
+	;labels can't go in the middle of opcodes unless I were to input raw
+	;hex opcodes instead of letting the assembler do its job).
+HandleYoshiDrums_externalChMuteFlags:
+	;mov	a, #$00
+	;tset	$5e, a
+
 	mov	a, $5e
-	call	KeyOffVoices
-	ret
+	jmp	KeyOffVoices
 
 UnpauseMusic:
 	mov a, #$00
@@ -1652,14 +1651,14 @@ UnpauseMusic:
 	bra .unsetMute
 
 EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$01
+	mov	a, #$4E			;TCLR opcode
 	bra	+
 
 
 DisableYoshiDrums:				; And disable them.
-	mov	a, #$00
+	mov	a, #$0E			;TSET opcode
 +
-	mov	$0386, a
+	mov	HandleYoshiDrums_drumSet, a
 if !noSFX = !false
 	call	HandleYoshiDrums
 	bra	ProcessAPU1SFX
@@ -3136,7 +3135,6 @@ Start:
 	movw	$0168&$FF, ya	;
 	clrp		;
 	
-	;mov	$0386, a
 	;mov	$0387, a
 	mov	!PauseMusic, a
 if !noSFX = !false
