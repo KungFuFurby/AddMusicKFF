@@ -8,6 +8,7 @@ src/Release
 src/Debug
 src/**/Release
 src/**/Debug
+!**/addmusick/
 **/addmusick
 **/asar
 tempmain.asm
