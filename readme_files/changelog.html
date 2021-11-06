@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2021-10-17</h2>
+	<h2>Version 1.0.9 - 2021-11-05</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -64,7 +64,7 @@
 	<li>"This version now contains a more accurate ADSR envelope viewer." - HertzDevil</li>
 	<li>"The rest of this update log is a gigantic collection of fixes, optimizations and new material as following..." - KungFuFurby
 	<ul>
-		<li>Various code optimizations, some of them adapted from Akaginite's optimizations.</li>
+		<li>Various code optimizations, some of them adapted from Akaginite's optimizations. As a result of these optimizations, $0380 and $0386 are no longer used by default due to being only a zero or non-zero case: instead, they have been consolidated into simply modifying opcodes/gates embedded directly within the code.</li>
 		<li>Fixed a bug where using a long chain of loops or label loops (or anything that causes readahead to try to read more than 256 bytes) would crash the sound driver.</li>
 		<li>All user-redefinable variables now have a new home in asm/UserDefines.asm. This allows both SNES-side and SPC-side code to share defines put here.</li>
 		<li>Fixed various interferences between the SFX and instrument setup, arpeggio, pitch envelope, note, switching global songs, and fine tune (the last one dating all the way back to vanilla SMW). Note that one of the snippets of code, regarding noise frequency conflicts between SFX instances, has been made optional through asm/UserDefines.asm because it never actually happens in vanilla SMW since only one channel uses noise.</li>
@@ -98,6 +98,7 @@
 		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the & command was not properly factoring in a preceding tie, causing the intended delay effect to get lost.</li>
 		<li>Fixed a fatal bug when the lowest channel ID defined is non-zero and a command not filtered out beforehand that outputs hex and/or note data is defined outside the scope of all of the channel markers.</li>
 		<li>Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table.</li>
+		<li>Fixed a bug where turning off Yoshi Drums was not unmuting channels.</li>
 	</ul>
 	</li>
 	</ul>
