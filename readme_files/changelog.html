@@ -100,6 +100,7 @@
 		<li>Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table.</li>
 		<li>Fixed a bug where turning off Yoshi Drums was not unmuting channels.</li>
 		<li>Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized.</li>
+		<li>Revamped the anticipation gain/remote gain conversions due to the original design of the remote codes not being compatible with both of them running at the same time. Two reserved remote code events (5 and 6, of which 5 was originally reserved in the first place) are now used that can be used at the same time (and come with a feature to replicate the instrument restoration on key on without having to use a third remote code event), with two additional ones also created that can be used outside of these conversions.</li>
 		<li><b>WARNING: The following changes may affect playback of your songs:</b>
 		<ul>
 			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
