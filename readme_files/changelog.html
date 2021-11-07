@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2021-11-05</h2>
+	<h2>Version 1.0.9 - 2021-11-07</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -99,6 +99,7 @@
 		<li>Fixed a fatal bug when the lowest channel ID defined is non-zero and a command not filtered out beforehand that outputs hex and/or note data is defined outside the scope of all of the channel markers.</li>
 		<li>Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table.</li>
 		<li>Fixed a bug where turning off Yoshi Drums was not unmuting channels.</li>
+		<li>Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized.</li>
 		<li><b>WARNING: The following changes may affect playback of your songs:</b>
 		<ul>
 			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
