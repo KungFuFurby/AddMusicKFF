@@ -501,7 +501,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0190-$019F</td>
-				<td>Remote code pointer for the -1 event (on note start), one pointer per voice.</td>
+				<td>Remote code pointer for negative event IDs (on note start), one pointer per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -844,12 +844,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0390-$039F</td>
-				<td>Remote code pointer for all events except -1. One pointer per voice.</td>
+				<td>Remote code pointer for all events except negative event IDs. One pointer per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$03A0, $03A2, $03A4, $03A6, $03A8, $03AA, $03AC, $03AE</td>
-				<td>Remote code type ID, one byte per voice.</td>
+				<td>Remote code type ID for positive event IDs, one byte per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -869,7 +869,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03D0, $03D2, $03D4, $03D6, $03D8, $03DA, $03DC, $03DE</td>
-				<td colspan="2"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+				<td>Remote code type ID for negative event IDs (on note start), one byte per voice.</td>
+				<td>New</td>
 			</tr>
 			<tr>
 				<td>$03D1, $03D3, $03D5, $03D7, $03D9, $03DB, $03DD, $03DF</td>

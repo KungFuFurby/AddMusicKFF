@@ -999,12 +999,18 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
+	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
+	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
 	cmp	a, #$ff					; |
 	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
 	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; /
+	beq	ClearRemoteCodeAddressesPre		; |
+	cmp	a, #$07					; |
+	beq	ClearNonKONRemoteCodeAddressesPre	; |
+	cmp	a, #$08					; |
+	beq	ClearKONRemoteCodeAddressesPre		; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -1012,10 +1018,6 @@ cmdFC:
 	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	mov	a, y					; \ Store the code type.
-	cmp	a, #$05
-	bne +
-	mov	a, #$03
-	+
 	mov	!remoteCodeType+x, a			; |
 	call	GetCommandDataFast			; \ Store the argument.
 	mov	!remoteCodeTimeValue+x, a		; /
@@ -1023,6 +1025,7 @@ cmdFC:
 	
 	
 .noteStartCommand					;
+	mov	!remoteCodeType2+x, a			;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr2+1+x, a		; | Note start code; get the address back and store it where it belongs.
 	pop	a					; |
@@ -1061,20 +1064,47 @@ cmdFC:
 ClearRemoteCodeAddressesPre:
 	pop	a
 	pop	a
-	call	GetCommandDataFast
+	call	L_1260
 	
-ClearRemoteCodeAddresses:
+ClearRemoteCodeAddressesAndOpenGate:
 	%OpenRunningRemoteCodeGate()
+ClearRemoteCodeAddresses:
+	call	ClearKONRemoteCodeAddresses
+	call	ClearNonKONRemoteCodeAddresses
+	ret
+
+ClearRemoteCodeAddressesXInit:
+	;mov	x, $46
+	;bra	ClearRemoteCodeAddresses
+
+ClearNonKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearNonKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearNonKONRemoteCodeAddresses:
 	mov	a, #$00
-	mov	!remoteCodeTargetAddr2+1+x, a
-	mov	!remoteCodeTargetAddr2+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTimeValue+x, a
 	mov	!remoteCodeTimeLeft+x, a
 	mov	!remoteCodeType+x, a
-	mov	!remoteCodeTargetAddr+x, a
-	mov	!remoteCodeTargetAddr+1+x, a
+	ret
+
+ClearKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearKONRemoteCodeAddresses:
+	mov	a, #$00
+	mov	!remoteCodeTargetAddr2+1+x, a
+	mov	!remoteCodeTargetAddr2+x, a
+	mov	!remoteCodeType2+x, a
 	ret
 }
 
