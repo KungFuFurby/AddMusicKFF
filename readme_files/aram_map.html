@@ -532,7 +532,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$01A0, $01A2, $01A4, $01A6, $01A8, $01AA, $01AC, $01AE</td>
-				<td>Remote code timer, when used with timer event 3. One byte per voice.</td>
+				<td>Number of tempo ticks before the note has ended to execute remote code event type 2. One byte per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -945,6 +945,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>N/A (This memory location's purpose has been recycled into $01D0, $01D2, $01D4, $01D6, $01D8, $01DA, $01DC, $01DE)</td>
 			</tr>
 			<tr>
+				<td>$0221-$0230</td>
+				<td>Pointer to the list of arpeggio notes currently playing, one pointer per voice. Yes, they really are off a byte, and therefore overwrite the instrument data modification flag if used.</td>
+				<td>N/A (New)</td>
+				<td>$03B0-$03BF</td>
+			</tr>
+			<tr>
 				<td>$0390, $0392, $0394, $0396, $0398, $039A, $039C, $039E</td>
 				<td>The gain value to use instead of keying off the note in a rest. One byte per voice.</td>
 				<td>N/A (New)</td>
@@ -964,9 +970,9 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03A1, $03A3, $03A5, $03A7, $03A9, $03AB, $03AD, $03AF</td>
-				<td>Number of tempo ticks after the note has started to apply remote gain to. One byte per voice.</td>
+				<td>Number of tempo ticks before the note has ended to apply remote gain to. One byte per voice.</td>
 				<td>N/A (New)</td>
-				<td>N/A (Replaced by remote code)</td>
+				<td>$01A0, $01A2, $01A4, $01A6, $01A8, $01AA, $01AC, $01AE (Adapted for remote code event type 2)</td>
 			</tr>
 
 		</table>
