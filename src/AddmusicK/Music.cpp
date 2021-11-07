@@ -1583,70 +1583,16 @@ void Music::parseHexCommand()
 			else if (i == 0xFC && targetAMKVersion == 1)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
-					// Add in a "restore instrument" remote call.
 				int channelToCheck;
 				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
 
-
-
 				usingFC[channelToCheck] = true;
-
-				// If we're just using the FC command and not the FA command as well,
-				if (usingFA[channelToCheck] == false)
-				{
-
-					// Then add the "restore instrument command"
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xF4);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x09);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0xFF);
-					append(0x00);
-
-					// Then add in the first part of a "apply gain before a note ends" call.
-					currentHex = 0xFC;
-					hexLeft = 2;
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0x02);
-
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-
-					// We won't know the gain and delays until later.
-				}
-				else
-				{
-					// Then add in the first part of a "2 3 combination" call.
-					// Theoretically we could go back and change the previous type to 5.
-					// But that's annoying if the commands are separated, so maybe some other time.
-					// Shh.  Don't tell anyone.
-
-					currentHex = 0xFC;
-					hexLeft = 2;
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0x05);
-					//append(lastFAGainValue[channelToCheck]);
-
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-				}
-
-
+				currentHex = 0xFC;
+				hexLeft = 2;
+				// We won't know the gain and delays until later, so don't generate anything else for now.
 				return;
 			}
 			else if (targetAMKVersion > 1 && currentHex == 0xFC)
@@ -1718,77 +1664,29 @@ void Music::parseHexCommand()
 					channelToCheck = channel;
 
 
-				if (i == 0)							// If i is zero, we have to undo a bunch of stuff.
+				if (i == 0)
 				{
-					if (usingFA[channelToCheck] == false)			// But only if this is a "pure" FC command.
-					{
-
-						remoteGainConversion[channel].pop_back();
-						remoteGainConversion[channel].pop_back();
-						remoteGainPositions[channel].pop_back();
-						remoteGainPositions[channel].pop_back();
-
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-
-
-						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x00);
-						append(0x00);
-					}
-					else
-					{
-
-						// If we're using FA and FC, then we need to "restore" the FA data.
-
-						// Same as the other "get rid of stuff", but without the "restore instrument" call.
-						remoteGainConversion[channel].pop_back();
-						remoteGainPositions[channel].pop_back();
-
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x03);
-						append(0x00);
-					}
-
-					// Either way, FC gets turned off.
+					//Because remote gain works like a type 2 remote code event, a zero for the timer would mean that it would be impossible for the event to fire.
+					//We will create a type 7 remote code event to stop the type 5 remote code event (and all other non-"key on" events).
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
 					usingFC[channelToCheck] = false;
-
-					//remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-					//remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
 				}
 				else
 				{
 					i = divideByTempoRatio(i, false);
 					lastFCDelayValue[channelToCheck] = i;
+					//Create a type 5 remote code type event.
+					//This remote code event is specifically reserved to replicate the remote gain as a type 2-like remote code event, but it also comes with built-in instrument restoration.
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+					append(0xFC);
+					remoteGainPositions[channel].push_back(data[channel].size());
+					append(0x00);
+					append(0x00);
+					append(0x05);
 					append(i);
 				}
 
@@ -1797,17 +1695,33 @@ void Music::parseHexCommand()
 			else if (hexLeft == 0 && currentHex == 0xFC && targetAMKVersion == 1)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
-				if (remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].size() > 0)			// If the size was zero, then it has no data anyway.  Used for the 0 event type.
-				{											// Only saves two bytes, though.
-					int channelToCheck;
-					if (channel == 8)
-						channelToCheck = prevChannel;
-					else
-						channelToCheck = channel;
-
-					lastFCGainValue[channelToCheck] = i;
+				int channelToCheck;
+				if (channel == 8)
+					channelToCheck = prevChannel;
+				else
+					channelToCheck = channel;
+				lastFCGainValue[channelToCheck] = i;
+				if (i != 0) {
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
 					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
 					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
+				}
+				else if (lastFCDelayValue[channelToCheck] != 0) {
+					//Discard the gain conversion in progress and replace the remote code event.
+					//Because the gain value itself is zero even though the timer value is not zero, remote gain gets disabled.
+					remoteGainConversion[channel].pop_back();
+					remoteGainPositions[channel].pop_back();
+					data[channel].pop_back();
+					data[channel].pop_back();
+					data[channel].pop_back();
+					data[channel].pop_back();
+					//We will create a type 7 remote code event to stop the type 5 remote code event (and all other non-"key on" events).
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
 				}
 				return;
 			}
@@ -1827,75 +1741,32 @@ void Music::parseHexCommand()
 
 				if (i != 0)
 				{
+					// Add the "set gain" remote call.
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 
-
-					// Check if this channel is using FA and FC combined...
-					if (usingFC[channelToCheck] == false)
-					{
-
-						// Then add in a "restore instrument" remote call.
-						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xF4);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x09);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0xFF);
-						append(0x00);
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x03);
-						append(0x00);
-					}
-					else
-					{
-						// Otherwise, add in a "2 5 combination" command.
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
-						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x05);
-						append(lastFCDelayValue[channelToCheck]);
-						//append(0x00);
-					}
-
-					// Either way, we're using FA now.
+					// And then the remote call data.
+					// We will be using a type 6 remote code event: this is a special reserved type 3-like remote code event that works in conjunction with type 5 (normally only "key on" events get this honor), and also has built-in instrument restoration.
+					append(0xFC);
+					remoteGainPositions[channel].push_back(data[channel].size());
+					append(0x00);
+					append(0x00);
+					append(0x06);
+					append(0x00);
 					usingFA[channelToCheck] = true;
 
 				}
 				else
 				{
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+					//Create a type 8 remote code event.
+					//This remote code event will stop type 6 remote code events. It also stops "key on" remote code events, and only "key on" remote code events.
 					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
 					append(0x00);
-					append(0x00);
+					append(0x08);
 					append(0x00);
 
 					usingFA[channelToCheck] = false;

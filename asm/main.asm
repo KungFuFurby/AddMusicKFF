@@ -467,6 +467,9 @@ endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
 	tclr	$0162, a
@@ -508,17 +511,32 @@ if !noSFX = !false
 endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	.remoteCodeRestoreInstrumentOnKON
+
+	mov	a, !remoteCodeType+x
+	cmp	a, #$05
+	bne	.checkRemoteCodeTypes
+.remoteCodeRestoreInstrumentOnKON
+	call	SubC_9
+
+.checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
 	cmp	a, #$01
-	bne	.notType1RemoteCode
+	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
 	mov	!remoteCodeTimeLeft+x, a
 	
-.notType1RemoteCode
+.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode
+
+	mov	a, !remoteCodeType2+x
+	bpl	.noRemoteCode
+
 if !noVcmdFB = !false
 .runningArpGate
 	bra	.runRemoteCodeKON
@@ -2175,6 +2193,7 @@ L_0B6D:
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$00
 	mov	$02d1+x, a         ; Portamento[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
@@ -2190,7 +2209,6 @@ if !noVcmdFB = !false
 else
 	mov	!VolumeMult+x, a
 endif
-	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
@@ -3031,19 +3049,33 @@ L_10B4:							; |
 
 	mov	a, !InRest+x
 	bne	.keyoff
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	.keyoffRemoteCodeCheck
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	.keyoff
+
+.keyoffRemoteCodeCheck
 	mov	a, $10
 	cmp	a, #$c7
-	beq	.skipKeyOffAndRunCode
+	beq	.keyoffRemoteCodeTypeCheck
 	mov	a, $70+x
 	cmp	a, !WaitTime
 	beq	.keyoff
+.keyoffRemoteCodeTypeCheck
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	.skipKeyOffAndRunCode2
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
 ;.skip_keyoff duplicate stored here since it's cheaper memory-wise
 ;(and the distance is too great to go backwards)
+	clrc
+	ret
+
+.skipKeyOffAndRunCode2:
+	call	RunRemoteCode2
 	clrc
 	ret
 
@@ -3095,8 +3127,11 @@ L_10A1:
 	
 	mov	a, !remoteCodeType+x			; \ Branch away if we have no code to run before a note ends.
 	cmp	a, #$02					; |
+	beq	.checkRemoteCodeTimeValue
+	cmp	a, #$05
 	bne 	.noRemoteCode				; /
 
+.checkRemoteCodeTimeValue
 	mov	a, !remoteCodeTimeValue+x		; \
 	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
 	bne	.noRemoteCode				; /
