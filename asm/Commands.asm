@@ -1016,6 +1016,7 @@ cmdFC:
 	
 	
 .noteStartCommand					;
+	mov	!remoteCodeType2+x, a			;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr2+1+x, a		; | Note start code; get the address back and store it where it belongs.
 	pop	a					; |
