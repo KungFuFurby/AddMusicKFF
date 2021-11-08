@@ -1919,9 +1919,8 @@ Quick1DFAMonoVolDSPWritesWKON:
 	inc	a
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	jmp	KeyOnVoices
 endif
-	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
 

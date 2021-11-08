@@ -765,7 +765,7 @@ SubC_table2:
 	dw	.HFDTune		; 02
 	dw	.superVolume		; 03
 	dw	.reserveBuffer		; 04
-	dw	.gainRest		; 05
+	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
 
 .PitchMod
@@ -823,12 +823,12 @@ SubC_table2:
 	and	!NCKValue, #$20
 	jmp	ModifyNoise
 	
-	ret
-	
 .gainRest
+	;$F4 $05 has been replaced. This function can be replicated by a
+	;type 3 remote code command.
 	;call	GetCommandData
-	;mov	!RestGAINReplacement+x, a
-	ret
+	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
+	;ret
 	
 .manualVTable
 	call	GetCommandData		; \ Argument is which table we're using
@@ -1019,8 +1019,7 @@ cmdFC:
 	pop	a					; |
 	mov	!remoteCodeTargetAddr2+x, a		; /
 -							;
-	call	GetCommandDataFast			; \ Get the argument and discard it.
-	ret						; /
+	jmp	L_1260					; Get the argument and discard it.
 							
 .immediateCall						;
 	mov	a, !remoteCodeTargetAddr+x		; \
