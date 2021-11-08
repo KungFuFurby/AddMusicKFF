@@ -903,12 +903,8 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	ret				; Otherwise, do nothing.
 	
 .keyOffVoice
-	mov	a, $48			; \ 
-	push	a			; |
-	and	a,$0161			; | Key off the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return			; |
+	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
+	;mov	a, $48			; \ 
 	;mov	y, #$5c			; | Key off this voice (but only if there's no sound effect currently playing on it).
 	jmp	KeyOffVoiceWithCheck	; /
 	
@@ -967,15 +963,8 @@ endif
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
 	
-	mov	a, $48			; \
-	push	a			; |
-	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return2		; |
-+
-	or	a, $47			; / Set this voice to be keyed on.
-	mov	$47, a
+	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
+	or	($47), ($48)		; / Set this voice to be keyed on.
 .return2
 	ret
 }	
