@@ -454,9 +454,8 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	mov	a, !NCKValue
 	or	!NCKValue, #$20           ; disable echo write
-	jmp	ModifyNoise
+	jmp	SetFLGFromNCKValue
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -474,8 +473,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, !NCKValue
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	call	GetCommandData		; From here on is the normal code.
 	mov	a, #$0d			;
@@ -533,8 +531,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	push	y
 
 	mov	!NCKValue, #$60
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	pop	y			; \
 	mov	$f2, #$6d		; | Write the new buffer address.
@@ -548,8 +545,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 
 	
 	mov	!NCKValue, #$40
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	
 	

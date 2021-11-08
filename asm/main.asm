@@ -1629,8 +1629,7 @@ UnpauseMusic:
 	mov !PauseMusic, a
 .unsetMute:
 	and !NCKValue, #$bf		; Unset the mute flag.
-	mov a, !NCKValue
-	call ModifyNoise
+	call SetFLGFromNCKValue
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -3011,6 +3010,8 @@ L_124D:
 	mov	$0371+x, a         ; voice volume
 	ret
 	
+SetFLGFromNCKValue:
+	mov	a, !NCKValue
 ModifyNoise:				; A should contain the noise value.
 	and	a, #$1f
 	and	!NCKValue, #$e0		; Clear the current noise bits.
@@ -3148,8 +3149,7 @@ endif
 	mov	$01, x
 	
 	mov	!NCKValue, #$20
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	mov	y, #$10
 	mov	a, #$00
