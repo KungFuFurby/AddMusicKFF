@@ -1792,8 +1792,7 @@ UnpauseMusic:
 	mov !PauseMusic, a
 .unsetMute:
 	and !NCKValue, #$bf		; Unset the mute flag.
-	mov a, !NCKValue
-	call ModifyNoise
+	call SetFLGFromNCKValue
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -2116,8 +2115,7 @@ Quick1DFAMonoVolDSPWritesWKON:
 	inc	a
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
-	ret
+	jmp	KeyOnVoices
 endif
 				; Call this routine to play the song currently in A.
 PlaySong:
@@ -2612,21 +2610,17 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
-KeyOffVoicesWithCheck:
+KeyOffVoiceWithCheck:
 if !noSFX = !false
-	push	a
-	mov	a, $48
-	and	a, $1d
-	pop	a
-	bne	+
+	call	TerminateIfSFXPlaying
 endif
+	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
 DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
 	mov	$f3, a	
-+
 	ret
 	
 ; dispatch vcmd in A
@@ -3106,6 +3100,16 @@ L_10B4:							; |
 	jmp	L_10B4
 }
 
+TerminateOnLegatoEnable:
+	mov	a, $48
+	and	a,$0161
+	and	a,$0162
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
 
 L_10A1:
 
@@ -3148,8 +3152,7 @@ L_10A1:
 	call	ShouldSkipKeyOff
 	
 	bcc	+
-	mov	a,$48
-	call	KeyOffVoicesWithCheck 
+	call	KeyOffVoiceWithCheck 
 +
 	
 	clr1	$13.7					;
@@ -3380,6 +3383,8 @@ L_124D:
 	mov	$0371+x, a         ; voice volume
 	ret
 	
+SetFLGFromNCKValue:
+	mov	a, !NCKValue
 ModifyNoise:				; A should contain the noise value.
 	and	a, #$1f
 	and	!NCKValue, #$e0		; Clear the current noise bits.
@@ -3517,8 +3522,7 @@ endif
 	mov	$01, x
 	
 	mov	!NCKValue, #$20
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	mov	y, #$10
 	mov	a, #$00
