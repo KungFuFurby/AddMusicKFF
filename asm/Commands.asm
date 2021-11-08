@@ -910,7 +910,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	pop	a			; |
 	bne	.return			; |
 	;mov	y, #$5c			; | Key off this voice (but only if there's no sound effect currently playing on it).
-	jmp	KeyOffVoicesWithCheck	; /
+	jmp	KeyOffVoiceWithCheck	; /
 	
 
 .doStuff

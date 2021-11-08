@@ -2394,21 +2394,17 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
-KeyOffVoicesWithCheck:
+KeyOffVoiceWithCheck:
 if !noSFX = !false
-	push	a
-	mov	a, $48
-	and	a, $1d
-	pop	a
-	bne	+
+	call	TerminateIfSFXPlaying
 endif
+	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
 DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
 	mov	$f3, a	
-+
 	ret
 	
 ; dispatch vcmd in A
@@ -2780,8 +2776,7 @@ L_10A1:
 	call	ShouldSkipKeyOff
 	
 	bcc	+
-	mov	a,$48
-	call	KeyOffVoicesWithCheck 
+	call	KeyOffVoiceWithCheck 
 +
 	
 	clr1	$13.7					;
