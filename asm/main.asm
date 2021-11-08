@@ -2708,11 +2708,8 @@ L_10BF:
 	bra	L_10B4					; /
 L_10D1:							;
 	mov	$10, a
-	mov	a, $48					; \ 
-	;mov	y, #$5c					; |
-	and	a,$0161					; | Key off the current voice (with conditions).
-	and	a,$0162					; |
-	bne	skip_keyoff				; |
+	clrc
+	call	TerminateOnLegatoEnable			; Key off the current voice (with conditions).
 
 	mov	a, !InRest+x
 	bne	+
@@ -2736,6 +2733,17 @@ skip_keyoff:
 	clrc
 	ret
 }
+
+TerminateOnLegatoEnable:
+	mov	a, $48
+	and	a,$0161
+	and	a,$0162
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
 
 
 L_10A1:
