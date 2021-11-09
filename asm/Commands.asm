@@ -796,10 +796,6 @@ endif
 	mov	a, $48
 	jmp	KeyOnVoices
 
-SubC_1E:
-	mov	a, $48
-	jmp	KeyOffVoicesWithCheck
-
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
