@@ -140,6 +140,15 @@
 	}</code><br>
 	<br></li></ol>
 	
+	You will need to do some extra work if the song uses the special pulse wave (its presence is most commonly known if the $FA VCMD is used inside the .txt file or if $F3 $09 is present).<br>
+	This is because its internal sample ID in AddmusicM is $09, which is incompatible with AddmusicK's sample group configuration, and in particular, is incompatible with the Bonus End global song if you were to just simply overwrite the ID and use a unique sample group. Thus, the quickest way to fix this and retain all default AMK global song compatibility is as following...
+	<ol>
+	<li>Look inside the MML file for <tt>$F3 $09 $xx</tt> (<tt>xx</tt> being the pitch base value), with and without spaces.</li>
+	<li>Replace them with one of the following...
+		<ul>
+			<li><tt>$F3 $14 $xx</tt>. This works with the above #samples definition with #AMM (which includes "SPECIALWAVE.brr" by default, which is required for this to work).</li>
+			<li><tt>("SPECIALWAVE.brr", $xx)</tt>. This gives more flexibility for the sample ID to use, since the sample ID in question is no longer fixed and can be located wherever it is loaded in ARAM. Note that you may have to use <tt>("../SPECIALWAVE.brr", $xx)</tt> if you use the #path directive as well.</li>
+	</ol>
 	
 	<br><br><h2><a id="Hey64KilobytesOfARAMIsQuiteALotThankYouVeryMuch">Echo buffer exceeded total space in ARAM?</a></h2>
 	This is an error that may occur with some frequency with older songs (and some new ones under certain circumstances).  If you get this error, there are three possible solutions.  In order of effectiveness:
