@@ -62,7 +62,6 @@ incsrc "UserDefines.asm"
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
 ; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
-; $0386: Set if Mario is on Yoshi.  
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
 ; $48: Bitwise indicator of the current channel being processed.
@@ -586,19 +585,21 @@ endif
 	mov	$14, a
 	pop	x
 	mov	a, $02f0+x
+	push	a
 	mov	y, $15
 	mul	ya
 	movw	$16, ya
-	mov	a, $02f0+x
+	pop	a
 	mov	y, $14
 	mul	ya
 	push	y
 	mov	a, $0210+x
+	push	a
 	mov	y, $14
 	mul	ya
 	addw	ya, $16
 	movw	$16, ya
-	mov	a, $0210+x
+	pop	a
 	mov	y, $15
 	mul	ya
 	mov	y, a
@@ -1566,21 +1567,21 @@ endif
 .gottenPointer
 	pop	y
 	movw	$14, ya
-	pop	y
+
 ;Check SFX priority.
-	mov	$13, #$E5			;mov a, !a opcode
-	mov	$16, #$6F			;RET opcode
-	call	$0013
+	mov	y, #$00
+	mov	a, ($14)+y
 	cmp	a, #$E0
 	beq	.getSFXPriority
 	mov	a, #$00
 	bra	.sfxPriorityCheck
 .getSFXPriority
 	incw	$14
-	call	$0013
+	mov	a, ($14)+y
 	incw	$14
 
 .sfxPriorityCheck
+	pop	y
 	push	a
 	mov	a, !ChSFXPtrs+1+x
 	pop	a
@@ -1686,31 +1687,30 @@ L_112A:
 
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
-	mov	a, $0386			;
-	push	p
-	mov	a, $6e				; 
-	pop	p
-	bne	.drumsOn			;
-					
-	tset	$5e, a				;
-	bra	+
-	
-.drumsOn					
-						; $5E = ($5E --/--> $6E)
-						; (Or $5E = $5E & ~$5C)
-	tclr	$5e, a				; Basically, we're reverting whatever the Yoshi drums did to $5E.
-+
+	mov	$5e, #$00
+	mov	a, $6e
+.drumSet
+	tset	$5e, a
+
+	;If you are using any extra code that also sets the mute flag, send
+	;all of them over to HandleYoshiDrums_externalChMuteFlags+1 (and
+	;uncomment the two lines below) so that they get preserved
+	;accordingly. The +1 is important, since it's embedded in code (and
+	;labels can't go in the middle of opcodes unless I were to input raw
+	;hex opcodes instead of letting the assembler do its job).
+HandleYoshiDrums_externalChMuteFlags:
+	;mov	a, #$00
+	;tset	$5e, a
+
 	mov	a, $5e
-	call	KeyOffVoices
-	ret
+	jmp	KeyOffVoices
 
 UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
 	and !NCKValue, #$bf		; Unset the mute flag.
-	mov a, !NCKValue
-	call ModifyNoise
+	call SetFLGFromNCKValue
 
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
@@ -1731,14 +1731,14 @@ UnpauseMusic:
 	bra .unsetMute
 
 EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$01
+	mov	a, #$4E			;TCLR opcode
 	bra	+
 
 
 DisableYoshiDrums:				; And disable them.
-	mov	a, #$00
+	mov	a, #$0E			;TSET opcode
 +
-	mov	$0386, a
+	mov	HandleYoshiDrums_drumSet, a
 if !noSFX = !false
 	call	HandleYoshiDrums
 	bra	ProcessAPU1SFX
@@ -1999,9 +1999,8 @@ Quick1DFAMonoVolDSPWritesWKON:
 	inc	a
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
-	call	KeyOnVoices
+	jmp	KeyOnVoices
 endif
-	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -2122,15 +2121,6 @@ endif
 	mov	!MasterVolume, #$c0          ; MasterVolume = #$C0
 	mov	$51, #$36          ; Tempo = #$36
 
-	
-	
-
-	mov	y, #$20
-	
-L_0B9C:
-	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
-	mov	$0300-1+y, a
-	dbnz	y, L_0B9C		; Clear out 0300-031f (this is a useful opcode...)
 
 	; MODIFIED CODE START
 	mov	y, #$10
@@ -2140,6 +2130,9 @@ L_0B9C:
 	;(!ArpSpecial + !VolumeMult get zeroed out here...)
 	mov	!ArpSpecial-1+y, a
 	mov	!ArpNotePtrs-1+y, a
+	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
+	mov	!ArpLength-1+y, a
+	mov	$0300-1+y, a
 	dbnz	y, -
 	; MODIFIED CODE END
 	
@@ -2331,23 +2324,18 @@ L_0C9F:
 	call	L_0D40             ; dispatch vcmd
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
-	push	a                 ; vcmd 80-d9 (note)
-if !noSFX = !false	
-	mov	a, $48		; Current channel being processed.
-	and	a, $1d		; Check if there's a sound effect on the current channel.
-	mov	$10, a		; Save it. (Modified code up until the pop a).
-endif
-	mov	a, $48		; Current channel
-	and	a, $5e		; Check if this channel's music is muted.
+	                           ; vcmd 80-d9 (note)
 if !noSFX = !false
-	or	a, $10		; If it's muted or there's a sound effect playing...
+	mov	$10, $1d	; Check if there's a sound effect on the current channel.
+	or	($10),($5e)	; If it's muted or there's a sound effect playing...
+else
+	mov	$10, $5e	; Check if this channel's music is muted.
 endif
-	mov	$10, a		; Save this status.
+	and	($10), ($48)	; Only check the current channel.
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
-	
-	pop	a				; \ Get the current note value back
-	mov	y, a			; / Put it into y for  now.
+
+	mov	y, a			; / Put the current note into y for now.
 
 	
 	cmp	y, #$c6			; \ If the note is a rest or tie, then don't save the current note pitch.
@@ -2485,21 +2473,17 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
-KeyOffVoicesWithCheck:
+KeyOffVoiceWithCheck:
 if !noSFX = !false
-	push	a
-	mov	a, $48
-	and	a, $1d
-	pop	a
-	bne	+
+	call	TerminateIfSFXPlaying
 endif
+	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
 	mov	y, #$5c
 DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
 	mov	$f3, a	
-+
 	ret
 	
 ; dispatch vcmd in A
@@ -2803,11 +2787,8 @@ L_10BF:
 	bra	L_10B4					; /
 L_10D1:							;
 	mov	$10, a
-	mov	a, $48					; \ 
-	;mov	y, #$5c					; |
-	and	a,$0161					; | Key off the current voice (with conditions).
-	and	a,$0162					; |
-	bne	skip_keyoff				; |
+	clrc
+	call	TerminateOnLegatoEnable			; Key off the current voice (with conditions).
 
 	mov	a, !InRest+x
 	bne	+
@@ -2831,6 +2812,17 @@ skip_keyoff:
 	clrc
 	ret
 }
+
+TerminateOnLegatoEnable:
+	mov	a, $48
+	and	a,$0161
+	and	a,$0162
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
 
 
 L_10A1:
@@ -2871,8 +2863,7 @@ L_10A1:
 	call	ShouldSkipKeyOff
 	
 	bcc	+
-	mov	a,$48
-	call	KeyOffVoicesWithCheck 
+	call	KeyOffVoiceWithCheck 
 +
 	
 	clr1	$13.7					;
@@ -3101,6 +3092,8 @@ L_124D:
 	mov	$0371+x, a         ; voice volume
 	ret
 	
+SetFLGFromNCKValue:
+	mov	a, !NCKValue
 ModifyNoise:				; A should contain the noise value.
 	and	a, #$1f
 	and	!NCKValue, #$e0		; Clear the current noise bits.
@@ -3224,7 +3217,6 @@ Start:
 	movw	$0168&$FF, ya	;
 	clrp		;
 	
-	;mov	$0386, a
 	;mov	$0387, a
 	mov	!PauseMusic, a
 if !noSFX = !false
@@ -3239,8 +3231,7 @@ endif
 	mov	$01, x
 	
 	mov	!NCKValue, #$20
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	mov	y, #$10
 	mov	a, #$00
