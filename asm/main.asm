@@ -2242,23 +2242,18 @@ L_0C9F:
 	call	L_0D40             ; dispatch vcmd
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
-	push	a                 ; vcmd 80-d9 (note)
-if !noSFX = !false	
-	mov	a, $48		; Current channel being processed.
-	and	a, $1d		; Check if there's a sound effect on the current channel.
-	mov	$10, a		; Save it. (Modified code up until the pop a).
-endif
-	mov	a, $48		; Current channel
-	and	a, $5e		; Check if this channel's music is muted.
+	                           ; vcmd 80-d9 (note)
 if !noSFX = !false
-	or	a, $10		; If it's muted or there's a sound effect playing...
+	mov	$10, $1d	; Check if there's a sound effect on the current channel.
+	or	($10),($5e)	; If it's muted or there's a sound effect playing...
+else
+	mov	$10, $5e	; Check if this channel's music is muted.
 endif
-	mov	$10, a		; Save this status.
+	and	($10), ($48)	; Only check the current channel.
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
-	
-	pop	a				; \ Get the current note value back
-	mov	y, a			; / Put it into y for  now.
+
+	mov	y, a			; / Put the current note into y for now.
 
 	
 	cmp	y, #$c6			; \ If the note is a rest or tie, then don't save the current note pitch.
