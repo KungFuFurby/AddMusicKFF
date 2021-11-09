@@ -153,9 +153,8 @@ UpdateInstr:
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
 	mov	$11, #$01		; |
-	mov	y, #$06			; |
+	mov	y, #(6/2)			; |
 	mov	a, x			; | This short routine sets $10 to contain a pointer to the current channel's backup instrument data.
-	lsr	a			; | 
 	mul	ya			; |	
 	addw	ya, $10			; |
 	movw	$10, ya			; /
@@ -1219,10 +1218,9 @@ cmdFC:
 	pop	a					; | And pretend this is where it belongs.
 	mov	!remoteCodeTargetAddr+x, a		; /
 	
-	mov	a, $15					; \
+	movw	ya, $14					; \
 	push	a					; | Push onto the stack, since there's a very good chance
-	mov	a, $14					; | that whatever code we call modifies $14.w
-	push	a					; /
+	push	y					; / that whatever code we call modifies $14.w
 	
 	call	RunRemoteCode				; 
 							;

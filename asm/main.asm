@@ -663,19 +663,21 @@ endif
 +	mov	$14, a
 	pop	x
 	mov	a, $02f0+x
+	push	a
 	mov	y, $15
 	mul	ya
 	movw	$16, ya
-	mov	a, $02f0+x
+	pop	a
 	mov	y, $14
 	mul	ya
 	push	y
 	mov	a, $0210+x
+	push	a
 	mov	y, $14
 	mul	ya
 	addw	ya, $16
 	movw	$16, ya
-	mov	a, $0210+x
+	pop	a
 	mov	y, $15
 	mul	ya
 	mov	y, a
@@ -1649,21 +1651,21 @@ endif
 .gottenPointer
 	pop	y
 	movw	$14, ya
-	pop	y
+
 ;Check SFX priority.
-	mov	$13, #$E5			;mov a, !a opcode
-	mov	$16, #$6F			;RET opcode
-	call	$0013
+	mov	y, #$00
+	mov	a, ($14)+y
 	cmp	a, #$E0
 	beq	.getSFXPriority
 	mov	a, #$00
 	bra	.sfxPriorityCheck
 .getSFXPriority
 	incw	$14
-	call	$0013
+	mov	a, ($14)+y
 	incw	$14
 
 .sfxPriorityCheck
+	pop	y
 	push	a
 	mov	a, !ChSFXPtrs+1+x
 	pop	a
@@ -2446,24 +2448,18 @@ L_0C9F:
 	call	L_0D40             ; dispatch vcmd
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
-	push	a                 ; vcmd 80-d9 (note)
-if !noSFX = !false	
-	mov	a, $48		; Current channel being processed.
-	and	a, $1d		; Check if there's a sound effect on the current channel.
-	mov	$10, a		; Save it. (Modified code up until the pop a).
-endif
-	mov	a, $48		; Current channel
-	and	a, $5e		; Check if this channel's music is muted.
+	                           ; vcmd 80-d9 (note)
 if !noSFX = !false
-	or	a, $10		; If it's muted or there's a sound effect playing...
+	mov	$10, $1d	; Check if there's a sound effect on the current channel.
+	or	($10),($5e)	; If it's muted or there's a sound effect playing...
+else
+	mov	$10, $5e	; Check if this channel's music is muted.
 endif
-	mov	$10, a		; Save this status.
+	and	($10), ($48)	; Only check the current channel.
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
-	
-	pop	a				; \ Get the current note value back
 if !noVcmdFB = !false
-	mov	y, a			; / Put it into y for  now.
+	mov	y, a			; / Put the current note into y for now.
 
 	
 	cmp	y, #$c6			; \ If the note is a tie, then don't save the current note pitch.
@@ -3035,11 +3031,8 @@ L_10B4:							; |
 
 .L_10D1:
 	mov	$10, a
-	mov	a, $48					; \ 
-	;mov	y, #$5c					; |
-	and	a,$0161					; | Key off the current voice (with conditions).
-	and	a,$0162					; |
-	bne	.skip_keyoff				; |
+	clrc
+	call	TerminateOnLegatoEnable			; Key off the current voice (with conditions).
 
 	mov	a, !InRest+x
 	bne	.keyoff
