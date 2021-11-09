@@ -144,9 +144,8 @@ UpdateInstr:
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
 	mov	$11, #$01		; |
-	mov	y, #$06			; |
+	mov	y, #(6/2)			; |
 	mov	a, x			; | This short routine sets $10 to contain a pointer to the current channel's backup instrument data.
-	lsr	a			; | 
 	mul	ya			; |	
 	addw	ya, $10			; |
 	movw	$10, ya			; /
@@ -262,7 +261,7 @@ cmdE5:					; Tremolo on
 	call  GetCommandDataFast
 	mov   $0361+x, a
 	call  GetCommandDataFast
-;cmdE6:					; Normally would be tremolo off
+cmdFD:					; Tremolo off
 	mov   $b1+x, a
 	ret
 	
@@ -409,6 +408,12 @@ L_0E55:
 	mov   $0321+x, a
 	ret
 }
+cmdFE:					; Pitch envelope off
+{
+	mov   $0300+x, a
+	ret
+}
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEE:					; Set the tuning
 {
@@ -448,9 +453,8 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	mov	a, !NCKValue
 	or	!NCKValue, #$20           ; disable echo write
-	jmp	ModifyNoise
+	jmp	SetFLGFromNCKValue
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -468,8 +472,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, !NCKValue
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	call	GetCommandData		; From here on is the normal code.
 	mov	a, #$0d			;
@@ -527,8 +530,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	push	y
 
 	mov	!NCKValue, #$60
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	pop	y			; \
 	mov	$f2, #$6d		; | Write the new buffer address.
@@ -542,8 +544,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 
 	
 	mov	!NCKValue, #$40
-	mov	a, #$00
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	
 	
@@ -594,6 +595,9 @@ MSampleLoad:
 	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; |
+	inc	y			; | Zero out pitch sub-multiplier.
+	mov	a, #$00			; |
 	mov	($10)+y, a		; /
 	jmp	UpdateInstr
 }
@@ -621,9 +625,7 @@ SubC_0:
 SubC_00:
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 	mov	a,#$01
-	push	a
-	mov	a,$6e
-	pop	a
+	cmp	$6e, #$00
 	beq	SubC_02
 
 SubC_01:
@@ -758,7 +760,7 @@ SubC_table2:
 	dw	.HFDTune		; 02
 	dw	.superVolume		; 03
 	dw	.reserveBuffer		; 04
-	dw	.gainRest		; 05
+	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
 
 .PitchMod
@@ -816,12 +818,12 @@ SubC_table2:
 	and	!NCKValue, #$20
 	jmp	ModifyNoise
 	
-	ret
-	
 .gainRest
+	;$F4 $05 has been replaced. This function can be replicated by a
+	;type 3 remote code command.
 	;call	GetCommandData
-	;mov	!RestGAINReplacement+x, a
-	ret
+	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
+	;ret
 	
 .manualVTable
 	call	GetCommandData		; \ Argument is which table we're using
@@ -900,14 +902,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	ret				; Otherwise, do nothing.
 	
 .keyOffVoice
-	mov	a, $48			; \ 
-	push	a			; |
-	and	a,$0161			; | Key off the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return			; |
+	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
+	;mov	a, $48			; \ 
 	;mov	y, #$5c			; | Key off this voice (but only if there's no sound effect currently playing on it).
-	jmp	KeyOffVoicesWithCheck	; /
+	jmp	KeyOffVoiceWithCheck	; /
 	
 
 .doStuff
@@ -972,15 +970,8 @@ endif
 	mov	a, #!runningArpGateOnJumpDistance ;  |
 	mov	NormalNote_runningArpGate+1, a	; /
 	
-	mov	a, $48			; \
-	push	a			; |
-	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return2		; |
-+
-	or	a, $47			; / Set this voice to be keyed on.
-	mov	$47, a
+	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
+	or	($47), ($48)		; / Set this voice to be keyed on.
 .return2
 	ret
 }	
@@ -1021,8 +1012,7 @@ cmdFC:
 	pop	a					; |
 	mov	!remoteCodeTargetAddr2+x, a		; /
 -							;
-	call	GetCommandDataFast			; \ Get the argument and discard it.
-	ret						; /
+	jmp	L_1260					; Get the argument and discard it.
 							
 .immediateCall						;
 	mov	a, !remoteCodeTargetAddr+x		; \
@@ -1035,10 +1025,9 @@ cmdFC:
 	pop	a					; | And pretend this is where it belongs.
 	mov	!remoteCodeTargetAddr+x, a		; /
 	
-	mov	a, $15					; \
+	movw	ya, $14					; \
 	push	a					; | Push onto the stack, since there's a very good chance
-	mov	a, $14					; | that whatever code we call modifies $14.w
-	push	a					; /
+	push	y					; / that whatever code we call modifies $14.w
 	
 	call	RunRemoteCode				; 
 							;
@@ -1072,8 +1061,6 @@ ClearRemoteCodeAddresses:
 	ret
 }
 
-cmdFD:
-cmdFE:
 cmdFF:
 ;ret
 
