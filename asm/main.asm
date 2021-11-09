@@ -236,6 +236,7 @@ SquareGate:
 ;However, this isn't possible on AMK, so off we go to get the special wave's
 ;sample ID.
 		call    Square_getSpecialWavePtr
+		incw  $14 ;The first byte to write should not be a BRR block header
 
 		mov	a,$0164
 		push	a
@@ -351,7 +352,6 @@ Square_getSpecialWavePtr:
 	mov   $15, a
 	pop   a
 	mov   $14, a
-	incw  $14 ;The first byte to write should not be a BRR block header
 	ret
 	
 }	
