@@ -2606,6 +2606,7 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
+SubC_1E:
 KeyOffVoiceWithCheck:
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
