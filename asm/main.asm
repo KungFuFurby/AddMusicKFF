@@ -1488,21 +1488,21 @@ endif
 .gottenPointer
 	pop	y
 	movw	$14, ya
-	pop	y
+
 ;Check SFX priority.
-	mov	$13, #$E5			;mov a, !a opcode
-	mov	$16, #$6F			;RET opcode
-	call	$0013
+	mov	y, #$00
+	mov	a, ($14)+y
 	cmp	a, #$E0
 	beq	.getSFXPriority
 	mov	a, #$00
 	bra	.sfxPriorityCheck
 .getSFXPriority
 	incw	$14
-	call	$0013
+	mov	a, ($14)+y
 	incw	$14
 
 .sfxPriorityCheck
+	pop	y
 	push	a
 	mov	a, !ChSFXPtrs+1+x
 	pop	a
