@@ -737,19 +737,17 @@ SubC_4:
 SubC_4Gate:
 	ret ;Will be turned into a call opcode
 	dw	Square_getSpecialWavePtr
+	movw	ya, $14
+	movw	$16, ya
+	clrc
+	adc	$16,#$09
+	adc	$17,#$00
 	mov	a,#$00
-	mov	y,#$07
+	mov	y,#$08
 SubC_4l:
 	mov	($14)+y,a
-	clrc
-	adc	$14,#$09
-	adc	$15,#$00
-	mov	($14)+y,a
-	setc
-	sbc	$14,#$09
-	sbc	$15,#$00
-	dec	y
-	bpl	SubC_4l
+	mov	($16)+y,a
+	dbnz	y, SubC_4l
 	ret
 	
 SubC_7:

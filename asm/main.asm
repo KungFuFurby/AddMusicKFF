@@ -264,32 +264,28 @@ SquareGate:
 ;However, this isn't possible on AMK, so off we go to get the special wave's
 ;sample ID.
 		call    Square_getSpecialWavePtr
-
-		mov	a,$0164
-		push	a
+		incw  $14 ;The first byte to write should not be a BRR block header
+		setp
+		mov.b	a,$0164&$FF
 		and	a,#$1F
 		lsr	a
-		cmp	a,#$08
-		bcc	Sq_skip1
+		bbc4	$0164&$FF, Sq_skip1
 		inc	a
 ;Original stored using X as an index on a fixed memory location.
 ;However, memory locations are more variable, and thus we're using an
 ;indirect, so we need to use the Y register instead...
 Sq_skip1:	mov	y,a
-		mov	x,#$00
-		pop	a
-		and	a,#$3F
-		cmp	a,#$20
-		bcc	Sq_skip2
-		inc	x
-		inc	x
-Sq_skip2:	and	a,#$01
-		beq	Sq_skip3
-		inc	x
-Sq_skip3:	mov	a,Sq_data+x
+		mov	a, #$70
+		bbc5	$0164&$FF, Sq_skip2
+		xcn	a
+		;Bit 0 of $0164 is in the carry as a result of a previous
+		;lsr operation on the accumulator.
+Sq_skip2:	bcc	Sq_skip3
+		eor	a, #$07
+Sq_skip3:	inc.b	$0164&$FF
+		dec.b	$016b&$FF
+		clrp
 		mov	($14)+y,a
-		inc	$0164
-		dec	$016b
 Sq_ret:
 
 L_0573:
@@ -353,8 +349,6 @@ L_059D:
 
 }
 
-Sq_data:	db	$70,$77,$07,$00
-
 ;RETURN OF THE SPECIAL WAVE!
 ;Original from AMM
 ;Ported to AMK by KungFuFurby
@@ -379,7 +373,6 @@ Square_getSpecialWavePtr:
 	mov   $15, a
 	pop   a
 	mov   $14, a
-	incw  $14 ;The first byte to write should not be a BRR block header
 	ret
 	
 }	
