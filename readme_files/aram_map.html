@@ -487,12 +487,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0168</td>
-				<td>CPUIO2 output from $F4 on the SPC side to $2142 on the SNES side.</td>
+				<td>CPUIO2 output from $F6 on the SPC side to $2142 on the SNES side.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0169</td>
-				<td>CPUIO3 output from $F4 on the SPC side to $2143 on the SNES side.</td>
+				<td>CPUIO3 output from $F7 on the SPC side to $2143 on the SNES side.</td>
 				<td>AddmusicK<br>(Moved from $0167 in AddmusicM, but only from where it outputs: the music tempo tick usage doesn't carry over here)</td>
 			</tr>
 			<tr>
@@ -506,7 +506,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$01A0, $01A2, $01A4, $01A6, $01A8, $01AA, $01AC, $01AE</td>
-				<td>Remote code timer, when used with timer event 3. One byte per voice.</td>
+				<td>Number of tempo ticks before the note has ended to execute remote code event type 2. One byte per voice.</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -801,13 +801,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
-				<td>$0385</td>
+				<td>$0385-$0386</td>
 				<td colspan="2"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
-			</tr>
-			<tr>
-				<td>$0386</td>
-				<td>Yoshi Drum switch, set via CPUIO1 commands.</td>
-				<td>Vanilla</td>
 			</tr>
 			<tr>
 				<td>$0387</td>
@@ -923,6 +918,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>N/A (This memory location's purpose has been recycled into $01D0, $01D2, $01D4, $01D6, $01D8, $01DA, $01DC, $01DE)</td>
 			</tr>
 			<tr>
+				<td>$0221-$0230</td>
+				<td>Pointer to the list of arpeggio notes currently playing, one pointer per voice. Yes, they really are off a byte, and therefore overwrite the instrument data modification flag if used.</td>
+				<td>N/A (New)</td>
+				<td>$03B0-$03BF</td>
+			</tr>
+			<tr>
 				<td>$0390, $0392, $0394, $0396, $0398, $039A, $039C, $039E</td>
 				<td>The gain value to use instead of keying off the note in a rest. One byte per voice.</td>
 				<td>N/A (New)</td>
@@ -942,9 +943,9 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03A1, $03A3, $03A5, $03A7, $03A9, $03AB, $03AD, $03AF</td>
-				<td>Number of tempo ticks after the note has started to apply remote gain to. One byte per voice.</td>
+				<td>Number of tempo ticks before the note has ended to apply remote gain to. One byte per voice.</td>
 				<td>N/A (New)</td>
-				<td>N/A (Replaced by remote code)</td>
+				<td>$01A0, $01A2, $01A4, $01A6, $01A8, $01AA, $01AC, $01AE (Adapted for remote code event type 2)</td>
 			</tr>
 
 		</table>
@@ -1020,7 +1021,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0167</td>
-				<td>CPUIO3 output from $F4 on the SPC side to $2143 on the SNES side. Also used as part of a 16-bit music tempo tick counter if bit 1 of $0160 is set.</td>
+				<td>CPUIO3 output from $F7 on the SPC side to $2143 on the SNES side. Also used as part of a 16-bit music tempo tick counter if bit 1 of $0160 is set.</td>
 				<td>N/A (New)</td>
 				<td>$0169<br>(NOTE: This only applies to the actual output: the music tempo tick counter does not move from this location.)</td>
 			</tr>
@@ -1246,6 +1247,11 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0385</td>
 				<td>Saved note duration for CPUIO3 SFX.</td>
 				<td>Varies by voice ID (going by vanilla default (#6), it's $03DD, and going by AMK default (#7), it's $03DF)</td>
+			</tr>
+			<tr>
+				<td>$0386</td>
+				<td>Yoshi Drum switch, set via CPUIO1 commands.</td>
+				<td>N/A (Turned into an opcode switch after AddmusicK 1.0.8, and thus embedded into the code)</td>
 			</tr>
 			<tr>
 				<td>$0389</td>
