@@ -1663,6 +1663,16 @@ void Music::parseHexCommand()
 		else
 		{
 			hexLeft -= 1;
+			
+			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
+			{
+				//AddmusicM used $FA solely for the special pulse wave width command.
+				//This VCMD ID was overwritten by a collection of VCMDs, so we need to add a sub-VCMD ID.
+				hexLeft = 0;
+				append(0x07);
+				append(i);
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
