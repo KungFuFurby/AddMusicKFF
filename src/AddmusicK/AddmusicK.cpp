@@ -110,12 +110,13 @@ int main(int argc, char* argv[]) try		// // //
 			optimizeSampleUsage = false;
 		else if (arguments[i] == "-s")
 			allowSA1 = false;
-		else if (arguments[i] == "-dumpsfx")
+		else if ((arguments[i] == "-dumpsfx") || (arguments[i] == "-sfxdump"))
 			sfxDump = true;
 		else if (arguments[i] == "-visualize")
 			visualizeSongs = true;
-		else if (arguments[i] == "-g")
-			forceSPCGeneration = true;
+		//else if (arguments[i] == "-g")
+			//Removed because it was de-facto never functional due to the code this relied on being dummied out.
+			//forceSPCGeneration = true;
 		else if (arguments[i] == "-noblock")
 			forceNoContinuePrompt = true;
 		else if (arguments[i] == "-streamredirect")
@@ -210,16 +211,16 @@ int main(int argc, char* argv[]) try		// // //
 	loadMusicList();
 	loadSFXList();
 
-	checkMainTimeStamps();
+	//checkMainTimeStamps();
 
 	assembleSNESDriver();		// We need this for the upload position, where the SPC file's PC starts.  Luckily, this function is very short.
 
-	if (recompileMain || forceSPCGeneration)
-	{
-		assembleSPCDriver();
-		compileSFX();
-		compileGlobalData();
-	}
+	//if (recompileMain || forceSPCGeneration)
+	//{
+	assembleSPCDriver();
+	compileSFX();
+	compileGlobalData();
+	//}
 
 	if (justSPCsPlease)
 	{
@@ -455,6 +456,11 @@ void assembleSPCDriver()
 	mainLoopPos = scanInt(temptxt, "MainLoopPos: ");
 	reuploadPos = scanInt(temptxt, "ReuploadPos: ");
 	SRCNTableCodePos = scanInt(temptxt, "SRCNTableCodePos: ");
+	noSFX = (temptxt.find("NoSFX is enabled") != -1);
+	if (sfxDump && noSFX) {
+		printWarning("The sound driver build does not support sound effects due to the !noSFX flag\r\nbeing enabled in asm/UserDefines.asm, yet you requested to dump SFX. There will\r\nbe no new SPC dumps of the sound effects since the data is not included by\r\ndefault, nor is the playback code for the sound effects.");
+		sfxDump = false;
+	}
 
 	remove("temp.log");
 
@@ -1022,7 +1028,15 @@ void compileGlobalData()
 
 	programSize = getFileSize("asm/main.bin");
 
-	std::cout << "Total size of main program + all sound effects: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
+	std::string totalSizeStr;
+	if (noSFX) {
+		std::cout << "!noSFX is enabled in asm/UserDefines.asm, sound effects are not included" << std::endl;
+		totalSizeStr = "Total size of main program: 0x";
+	}
+	else {
+		totalSizeStr = "Total size of main program + all sound effects: 0x";
+	}
+	std::cout << totalSizeStr << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
 
 }
 
@@ -1033,16 +1047,23 @@ void compileMusic()
 
 	int totalSamplecount = 0;
 	int totalSize = 0;
+	int maxGlobalEchoBufferSize = 0;
 	for (int i = 0; i < 256; i++)
 	{
 		if (musics[i].exists)
 		{
-			if (!(i <= highestGlobalSong && !recompileMain))
-			{
-				musics[i].index = i;
-				musics[i].compile();
-				totalSamplecount += musics[i].mySamples.size();
+			//if (!(i <= highestGlobalSong && !recompileMain))
+			//{
+			musics[i].index = i;
+			if (i > highestGlobalSong) {
+				musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
 			}
+			musics[i].compile();
+			if (i <= highestGlobalSong) {
+				maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+			}
+			totalSamplecount += musics[i].mySamples.size();
+			//}
 		}
 	}
 
@@ -1321,26 +1342,26 @@ void fixMusicPointers()
 		}
 	}
 
-	if (recompileMain)
-	{
-		std::string patch;
-		openTextFile("asm/tempmain.asm", patch);
+	//if (recompileMain)
+	//{
+	std::string patch;
+	openTextFile("asm/tempmain.asm", patch);
 
-		patch += globalPointers.str() + "\n" + incbins.str();
+	patch += globalPointers.str() + "\n" + incbins.str();
 
-		writeTextFile("asm/tempmain.asm", patch);
+	writeTextFile("asm/tempmain.asm", patch);
 
-		if (verbose)
-			std::cout << "Compiling main SPC program, final pass." << std::endl;
+	if (verbose)
+		std::cout << "Compiling main SPC program, final pass." << std::endl;
 
-		//removeFile("asm/SNES/bin/main.bin");
+	//removeFile("asm/SNES/bin/main.bin");
 
-		//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
+	//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
 
-		//if (fileExists("temp.log"))
-		if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
-			printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
-	}
+	//if (fileExists("temp.log"))
+	if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
+		printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
+	//}
 
 	programSize = getFileSize("asm/SNES/bin/main.bin");
 
@@ -1428,7 +1449,7 @@ void generateSPCs()
 	int SPCsGenerated = 0;
 
 	bool forceAll = false;
-
+	/*
 	time_t recentMod = 0;			// If any main program modifications were made, we need to update all SPCs.
 	for (int i = 1; i <= highestGlobalSong; i++)
 		recentMod = std::max(recentMod, getTimeStamp((File)("music/" + musics[i].name)));
@@ -1452,7 +1473,7 @@ void generateSPCs()
 		if (soundEffects[1][i].exists)
 			recentMod = std::max(recentMod, getTimeStamp((File)((std::string)"1DFC/" + soundEffects[1][i].getEffectiveName())));
 	}
-
+	*/
 	int mode = 0;		// 0 = dump music, 1 = dump SFX1, 2 = dump SFX2
 	int maxMode = 0;
 	if (sfxDump == true) maxMode = 2;
@@ -1504,8 +1525,15 @@ void generateSPCs()
 
 
 				int backupIndex = i;
-				if (mode != 0)
-					i = highestGlobalSong + 1;		// While dumping SFX, pretend that the current song is the lowest local song
+				if (mode != 0) {
+					i = highestGlobalSong + 1;
+					for (int j = highestGlobalSong+1; j < 256; j++) {
+						if (musics[j].exists) {
+							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+							break;
+						}
+					}
+				}
 
 				if (mode == 0)
 				{
@@ -1557,8 +1585,8 @@ void generateSPCs()
 				SPC[0xAF] = '0';
 				SPC[0xB0] = '0';
 
-				SPC[0x25] = programUploadPos & 0xFF;	// Set the PC to the main loop.
-				SPC[0x26] = programUploadPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
+				SPC[0x25] = mainLoopPos & 0xFF;	// Set the PC to the main loop.
+				SPC[0x26] = mainLoopPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
 
 				i = backupIndex;
 
@@ -1974,7 +2002,7 @@ void checkMainTimeStamps()			// Disabled for now, as this only works if the ROM 
 	return;
 
 
-
+	/*
 	if (!fileExists("asm/SNES/bin/main.bin"))
 	{
 		goto recompile;				// Laziness!
@@ -2021,6 +2049,7 @@ recompile:
 	{
 		recompileMain = false;
 	}
+	*/
 }
 
 void generatePNGs()
@@ -2049,11 +2078,11 @@ void generatePNGs()
 			unsigned char b = 0;
 			unsigned char a = 255;
 
-			if (i >= 0 && i < programUploadPos)
+			if (i >= 0 && i < programPos)
 			{
 				r = 255;
 			}
-			else if (i >= programUploadPos && i < programPos + programSize)
+			else if (i >= programPos && i < programPos + programSize)
 			{
 				r = 255;
 				g = 255;

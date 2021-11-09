@@ -61,7 +61,7 @@ static const int instrToSample[30] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x07, 0x08,
 
 static const int hexLengths[] = { 2, 2, 3, 4, 4, 1,
 2, 3, 2, 3, 2, 4, 2, 2, 3, 4, 2, 4, 4, 3, 2, 4,
-1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5 };
+1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5, 1, 1 };
 static int transposeMap[256];
 //static bool htranspose[256];
 static int hTranspose;
@@ -356,28 +356,31 @@ void Music::init()
 
 	pos = 0;
 
+	//If any channel markers exist, set the channel number to the earliest channel found.
+	if (text.find("#0") != -1)
+		channel = 0, prevChannel = 0;
+	else if (text.find("#1") != -1)
+		channel = 1, prevChannel = 1;
+	else if (text.find("#2") != -1)
+		channel = 2, prevChannel = 2;
+	else if (text.find("#3") != -1)
+		channel = 3, prevChannel = 3;
+	else if (text.find("#4") != -1)
+		channel = 4, prevChannel = 4;
+	else if (text.find("#5") != -1)
+		channel = 5, prevChannel = 5;
+	else if (text.find("#6") != -1)
+		channel = 6, prevChannel = 6;
+	else if (text.find("#7") != -1)
+		channel = 7, prevChannel = 7;
+
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
 		int resizeSize = 3;
 		if (targetAMKVersion > 1)
 			resizeSize += 3;
-
-		if (text.find("#0") != -1)
-			data[0].resize(resizeSize), resizedChannel = 0;
-		else if (text.find("#1") != -1)
-			data[1].resize(resizeSize), resizedChannel = 1;
-		else if (text.find("#2") != -1)
-			data[2].resize(resizeSize), resizedChannel = 2;
-		else if (text.find("#3") != -1)
-			data[3].resize(resizeSize), resizedChannel = 3;
-		else if (text.find("#4") != -1)
-			data[4].resize(resizeSize), resizedChannel = 4;
-		else if (text.find("#5") != -1)
-			data[5].resize(resizeSize), resizedChannel = 5;
-		else if (text.find("#6") != -1)
-			data[6].resize(resizeSize), resizedChannel = 6;
-		else if (text.find("#7") != -1)
-			data[7].resize(resizeSize), resizedChannel = 7;
+		data[channel].resize(resizeSize);
+		resizedChannel = channel;
 	}
 	else
 		resizedChannel = -1;
@@ -408,10 +411,7 @@ void Music::compile()
 		{
 			if (currentHex == 0xE6 && songTargetProgram == 1)
 			{
-				data[channel][data[channel].size() - 1] = 0xE5;
-				append(0);
-				append(0);
-				append(0);
+				data[channel][data[channel].size() - 1] = 0xFD;
 				hexLeft = 0;
 			}
 			else
@@ -573,7 +573,7 @@ void Music::parseLDirective()
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength);
+	defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -802,11 +802,13 @@ void Music::parseInstrumentCommand()
 	if (optimizeSampleUsage)
 		usedSamples[instrToSample[i]] = true;
 
-	//hTranspose = 0;
-	//usingHTranspose = false;
 	instrument[channel] = i;
 	//if (htranspose[i] == true)
-	//transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	if (songTargetProgram == 2 && i < 19) {
+		hTranspose = 0;
+		usingHTranspose = false;
+		transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	}
 }
 
 void Music::parseOpenParenCommand()
@@ -1545,7 +1547,7 @@ void Music::parseHexCommand()
 					}
 				}
 			}
-			else if (i > 0xFC)
+			else if (i > 0xFE)
 			{
 				error("Unknown hex command.");
 			}
@@ -1583,7 +1585,7 @@ void Music::parseHexCommand()
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 					// Add in a "restore instrument" remote call.
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
@@ -1597,10 +1599,10 @@ void Music::parseHexCommand()
 				{
 
 					// Then add the "restore instrument command"
-					remoteGainConversion.push_back(std::vector<uint8_t>());
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xF4);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x09);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xF4);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x09);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 					append(0xFC);
 					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
@@ -1611,15 +1613,15 @@ void Music::parseHexCommand()
 					// Then add in the first part of a "apply gain before a note ends" call.
 					currentHex = 0xFC;
 					hexLeft = 2;
-					remoteGainConversion.push_back(std::vector<uint8_t>());
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
 					append(0xFC);
 					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
 					append(0x00);
 					append(0x02);
 
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
 
 					// We won't know the gain and delays until later.
 				}
@@ -1632,7 +1634,7 @@ void Music::parseHexCommand()
 
 					currentHex = 0xFC;
 					hexLeft = 2;
-					remoteGainConversion.push_back(std::vector<uint8_t>());
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
 					append(0xFC);
 					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
@@ -1640,8 +1642,8 @@ void Music::parseHexCommand()
 					append(0x05);
 					//append(lastFAGainValue[channelToCheck]);
 
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
 				}
 
 
@@ -1710,7 +1712,7 @@ void Music::parseHexCommand()
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
@@ -1721,8 +1723,8 @@ void Music::parseHexCommand()
 					if (usingFA[channelToCheck] == false)			// But only if this is a "pure" FC command.
 					{
 
-						remoteGainConversion.pop_back();
-						remoteGainConversion.pop_back();
+						remoteGainConversion[channel].pop_back();
+						remoteGainConversion[channel].pop_back();
 						remoteGainPositions[channel].pop_back();
 						remoteGainPositions[channel].pop_back();
 
@@ -1737,7 +1739,7 @@ void Music::parseHexCommand()
 						data[channel].pop_back();
 
 
-						remoteGainConversion.push_back(std::vector<uint8_t>());
+						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
 
 						append(0xFC);
 						remoteGainPositions[channel].push_back(data[channel].size());
@@ -1752,7 +1754,7 @@ void Music::parseHexCommand()
 						// If we're using FA and FC, then we need to "restore" the FA data.
 
 						// Same as the other "get rid of stuff", but without the "restore instrument" call.
-						remoteGainConversion.pop_back();
+						remoteGainConversion[channel].pop_back();
 						remoteGainPositions[channel].pop_back();
 
 						data[channel].pop_back();
@@ -1762,11 +1764,11 @@ void Music::parseHexCommand()
 
 
 						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 
 						// And finally the remote call data.
 						append(0xFC);
@@ -1780,8 +1782,8 @@ void Music::parseHexCommand()
 					// Either way, FC gets turned off.
 					usingFC[channelToCheck] = false;
 
-					//remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					//remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
+					//remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+					//remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
 				}
 				else
 				{
@@ -1795,17 +1797,17 @@ void Music::parseHexCommand()
 			else if (hexLeft == 0 && currentHex == 0xFC && targetAMKVersion == 1)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
-				if (remoteGainConversion[remoteGainConversion.size() - 1].size() > 0)			// If the size was zero, then it has no data anyway.  Used for the 0 event type.
+				if (remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].size() > 0)			// If the size was zero, then it has no data anyway.  Used for the 0 event type.
 				{											// Only saves two bytes, though.
 					int channelToCheck;
-					if (channel == 9)
+					if (channel == 8)
 						channelToCheck = prevChannel;
 					else
 						channelToCheck = channel;
 
 					lastFCGainValue[channelToCheck] = i;
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
+					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 				}
 				return;
 			}
@@ -1818,7 +1820,7 @@ void Music::parseHexCommand()
 				data[channel].pop_back();					// (i.e. the $FA $05)
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
@@ -1832,10 +1834,10 @@ void Music::parseHexCommand()
 					{
 
 						// Then add in a "restore instrument" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xF4);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x09);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xF4);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x09);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 
 						append(0xFC);
 						remoteGainPositions[channel].push_back(data[channel].size());
@@ -1846,11 +1848,11 @@ void Music::parseHexCommand()
 
 
 						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 
 						// And finally the remote call data.
 						append(0xFC);
@@ -1866,11 +1868,11 @@ void Music::parseHexCommand()
 
 
 						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+						remoteGainConversion[channel].push_back(std::vector<uint8_t>());
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
+						remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
 
 						// And finally the remote call data.
 						append(0xFC);
@@ -1888,7 +1890,7 @@ void Music::parseHexCommand()
 				}
 				else
 				{
-					remoteGainConversion.push_back(std::vector<uint8_t>());
+					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
 					append(0xFC);
 					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
@@ -2083,7 +2085,7 @@ void Music::parseNote()
 		{
 			i = 0xD0 + (instrument[channel] - 21);
 
-			if ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false)	// If this is not a SFX channel,
+			if (songTargetProgram != 0 || ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false))	// If this is not a SFX channel,
 				instrument[channel] = 0xFF;										// Then don't force the drum pitch on every note.
 		}
 	}
@@ -2125,7 +2127,7 @@ void Music::parseNote()
 		j += getNoteLength(getInt());
 		skipSpaces;
 
-		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0) && okayToRewind)
+		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0 || (songTargetProgram != 0 && strncmp(text.c_str() + pos, "&", 1) == 0)) && okayToRewind)
 		{
 			j = tempsize;		//
 			pos = temppos;		// "Rewind" so we forcibly place a tie before the bend.
@@ -2613,7 +2615,7 @@ void Music::parseSampleDefinitions()
 			if (extension == ".bnk")
 				addSampleBank(tempstr, this);
 			else if (extension == ".brr")
-				addSample(tempstr, this, false);
+				addSample(tempstr, this, true);
 			else
 				fatalError("The filename for the sample was invalid.  Only \".brr\" and \".bnk\" are allowed.")
 
@@ -2760,7 +2762,6 @@ int Music::getHex(bool anyLength)
 
 	while (pos < text.size())
 	{
-		if (d >= 2 && songTargetProgram == 1) break;
 		if (d >= 2 && anyLength == false)
 			break;
 
@@ -2815,10 +2816,10 @@ int Music::getNoteLength(int i)
 	else if (i < 1 || i > 192) i = defaultNoteLength;
 	else i = 192 / i;
 
-	return getNoteLengthModifier(i);
+	return getNoteLengthModifier(i, true);
 }
 
-int Music::getNoteLengthModifier(int i) {
+int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 	int frac = i;
 
 	int times = 0;
@@ -2831,7 +2832,7 @@ int Music::getNoteLengthModifier(int i) {
 		if (times == 2 && songTargetProgram == 1) break;	// AM4 only allows two dots for whatever reason.
 	}
 	//}
-	if (triplet)
+	if (triplet && allowTriplet)
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
 	return i;
 }
@@ -2865,9 +2866,9 @@ void Music::pointersFirstPass()
 				data[channel][dataIndex] = data[8].size() & 0xFF;
 				data[channel][dataIndex + 1] = data[8].size() >> 8;
 
-				for (unsigned int y = 0; y < remoteGainConversion[z].size(); y++)
+				for (unsigned int y = 0; y < remoteGainConversion[channel][z].size(); y++)
 				{
-					data[8].push_back(remoteGainConversion[z][y]);
+					data[8].push_back(remoteGainConversion[channel][z][y]);
 				}
 			}
 		}
