@@ -506,19 +506,21 @@ endif
 	mov	$14, a
 	pop	x
 	mov	a, $02f0+x
+	push	a
 	mov	y, $15
 	mul	ya
 	movw	$16, ya
-	mov	a, $02f0+x
+	pop	a
 	mov	y, $14
 	mul	ya
 	push	y
 	mov	a, $0210+x
+	push	a
 	mov	y, $14
 	mul	ya
 	addw	ya, $16
 	movw	$16, ya
-	mov	a, $0210+x
+	pop	a
 	mov	y, $15
 	mul	ya
 	mov	y, a
