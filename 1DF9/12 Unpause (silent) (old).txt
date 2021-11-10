@@ -12,8 +12,7 @@ $E0 $FF #jsr changePause
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 	
 	and !NCKValue, #$bf		; Unset the mute flag.
-	mov a, !NCKValue
-	call ModifyNoise
+	call SetFLGFromNCKValue
 
 	mov $f2, #$2c		;\
 	mov $f3, #$00		;| Mute echo.
