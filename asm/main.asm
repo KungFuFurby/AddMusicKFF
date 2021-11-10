@@ -2461,18 +2461,45 @@ L_1266:
 ; calculate portamento delta
 CalcPortamentoDelta:
 	and	a, #$7f
-	mov	$02d0+x, a         ; final portamento value
-	setc
-	sbc	a, $02b1+x         ; note number
+	mov	$16, #$02b0&$FF
+	;References $02B1, $02C0-$02C1, $02D0
+	mov	y, $90+x           ; portamento steps
+	push	y
+	bra	SlideToParamIndexedPostFetch
+
+cmdE8:					; Fade the volume
+	mov   $80+x, a
+	mov   $16, #$0240&$FF
+	;References $0241, $0250-$0251, $0260
+	bra   SlideToParamIndexed
+
+cmdDC:					; Fade the pan
+	mov   !PanFadeDuration+x, a
+	mov   $16, #$0280&$FF
+	;References $0281, $0290-$0291, $02A0
+
+SlideToParamIndexed:
+	;Calculate the delta value for an indexed value.
 	push	a
-	mov	a, $90+x           ; portamento steps
-	mov	x, a
-	pop	a
+	call	GetCommandDataFast
+SlideToParamIndexedPostFetch:
+	or	($16), ($46)
+	mov	$17, #$02
+	mov	y, #$20
+	mov	($16)+y, a
+	mov	y, #$01
+	setc
+	sbc	a, ($16)+y
+	pop	x
 	call	Divide16
-	mov	$02c0+x, a
-	mov	a, y
-	mov	$02c1+x, a         ; portamento delta
+	push	y
+	mov	y, #$10
+	mov	($16)+y, a
+	pop	a
+	inc	y
+	mov	($16)+y, a
 	ret
+
 ; signed 16 bit division
 Divide16:
 	bcs	L_0F85
