@@ -167,23 +167,12 @@ cmdDB:					; Change the pan
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDC:					; Fade the pan
+;cmdDC:					; Fade the pan
 {
-	mov   !PanFadeDuration+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   !PanFadeDestination+x, a
-	setc
-	sbc   a, !Pan+x         ; current pan value
-	pop   x
-	call  Divide16             ; delta = pan value / steps
-	mov   $0290+x, a
-	mov   a, y
-	mov   $0291+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDD:					; Pitch bend
+;cmdDD:					; Pitch bend
 {
 	; Handled elsewhere.
 }
@@ -339,20 +328,9 @@ cmdE7:					; Change the volume
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE8:					; Fade the volume
+;cmdE8:					; Fade the volume
 {
-	mov   $80+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   $0260+x, a
-	setc
-	sbc   a, !Volume+x
-	pop   x
-	call  Divide16
-	mov   $0250+x, a
-	mov   a, y
-	mov   $0251+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
