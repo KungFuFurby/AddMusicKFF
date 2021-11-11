@@ -2898,6 +2898,7 @@ L_10B4:							; |
 .skipKeyOffAndRunCode2:
 	call	RunRemoteCode2
 	clrc
+	ret
 
 .loopSectionNonZero:
 	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
