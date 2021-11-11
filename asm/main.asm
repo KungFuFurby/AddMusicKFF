@@ -1863,11 +1863,7 @@ L_0A68:
 	mov	y, #$38
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0A99:
-	mov	a, #$02
-	cbne	$1c, L_0AA5
-	mov	a, #(1<<!1DFASFXChannel)
-	;mov	y, #$5c
-	call	KeyOffVoices
+	call	SFX1DFAKOFFCheck
 L_0AA5:
 	clr1	$13.7
 	mov	x, #(!1DFASFXChannel*2)
@@ -1905,13 +1901,16 @@ L_0B1C:
 	mov	y, #$28
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
+	call	SFX1DFAKOFFCheck
+L_0B3F:
+	ret
+
+SFX1DFAKOFFCheck:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
 	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
-	call	KeyOffVoices
-L_0B3F:
-	ret
+	jmp	KeyOffVoices
 
 Quick1DFAMonoVolDSPWritesWKON:
 	mov	$10, y
