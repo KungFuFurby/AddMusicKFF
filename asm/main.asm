@@ -83,7 +83,6 @@ endmacro
 ; $0150: Don't use
 ; $0151: Don't use
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
-; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
@@ -826,10 +825,7 @@ EndSFX:
 	
 	mov	a, $18
 	bbc!1DFASFXChannel	$18, +
-	push	a
-	mov	a, $0383
-	or	a, $1c
-	pop	a
+	cmp	$1c, #$00
 	bne	++
 +					; \
 	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
@@ -847,8 +843,7 @@ endif
 .restoreMusicNoise:
 	mov	$1f, #$00
 	bbc!1DFASFXChannel	$18, +
-	mov	a, $0383
-	or	a, $1c
+	mov	a, $1c
 	bne	++
 +
 	mov	a, #$00
@@ -1686,7 +1681,6 @@ endif
 	mov	a, #$00
 	mov	$05, a
 	mov	$1c, a
-	mov	$0383, a
 	pop	a
 
 .sfxAllocAllowed
@@ -1995,8 +1989,15 @@ CheckAPU1SFXPriority:
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
 	mov	$05, a		;
-	mov	a, #$04		; \
-	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
+	;cmp	$05, #$01
+	;bne	+
+	mov	a, #$34
++
+	cmp	$05, #$04
+	bne	+
+	mov	a, #$1c
++
+	mov	$1c, a
 	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
 	
 	call	KeyOffVoices
@@ -2007,12 +2008,23 @@ endif
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
-L_0A2E:
-	dec	$0383
-	bne	L_0A0D
-	mov	$1c, #$30
-	bra	L_0A68
+L_0A51:						;;;;;;;;/ Code change
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
+
+L_0A56:
+	dbnz	$1c, L_0A38
+RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
+	clr1	$1d.!1DFASFXChannel
+	mov	a, #$00
+	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
+	mov	x, #(!1DFASFXChannel*2)
+	jmp	RestoreInstrumentInformation
+
 L_0A38:
+	cmp	$1c, #$30			; Process the jump SFX.
+	beq	L_0A68
+	bcs	L_0AB0			; I don't really know what's going on here, so I won't pretend to.
 	cmp	$1c, #$2a
 	bne	L_0A99
 	mov	x, #(!1DFASFXChannel*2)
@@ -2024,19 +2036,6 @@ L_0A38:
 	mov	a, #$b9
 	call	CalcPortamentoDelta
 	bra	L_0A99
-;
-L_0A51:						;;;;;;;;/ Code change
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-	mov	a, $0383			; Process the jump SFX.
-	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
-	dbnz	$1c, L_0A38
-RestoreInstrumentFromAPU1SFX:
-	mov	$05, #$00
-	clr1	$1d.!1DFASFXChannel
-	mov	a, #$00
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
-	mov	x, #(!1DFASFXChannel*2)
-	jmp	RestoreInstrumentInformation
 
 L_0A68:
 	mov	$46, #(!1DFASFXChannel*2)
@@ -2053,11 +2052,7 @@ L_0A68:
 	mov	y, #$38
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0A99:
-	mov	a, #$02
-	cbne	$1c, L_0AA5
-	mov	a, #(1<<!1DFASFXChannel)
-	;mov	y, #$5c
-	call	KeyOffVoices
+	call	SFX1DFAKOFFCheck
 L_0AA5:
 	clr1	$13.7
 	mov	x, #(!1DFASFXChannel*2)
@@ -2070,12 +2065,15 @@ L_0AB0:
 	ret
 
 ; $01 = 04 && $05 != 01
-L_0AE8:
-	dec	$0383
-	bne	L_0B3F
-	mov	$1c, #$18
-	bra	L_0AF7
+L_0B08:
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
+	dbnz	$1c, L_0AF2
+	bra	RestoreInstrumentFromAPU1SFX
+
 L_0AF2:
+	cmp	$1c, #$18
+	beq	L_0AF7
+	bcs	L_0B3F
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
@@ -2084,24 +2082,21 @@ L_0AF7:
 	call	SetSFXInstrument
 	mov	a, #$a4
 	call	NoteVCMD
-	bra	L_0B1C
-L_0B08:
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-	mov	a, $0383
-	bne	L_0AE8
-	dbnz	$1c, L_0AF2
-	jmp	RestoreInstrumentFromAPU1SFX
+
 L_0B1C:
 	mov	y, #$28
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
+	call	SFX1DFAKOFFCheck
+L_0B3F:
+	ret
+
+SFX1DFAKOFFCheck:
 	mov	a, #$02
 	cbne	$1c, L_0B3F
 	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
-	call	KeyOffVoices
-L_0B3F:
-	ret
+	jmp	KeyOffVoices
 
 Quick1DFAMonoVolDSPWritesWKON:
 	mov	$10, y
