@@ -3001,7 +3001,7 @@ L_10B4:							; |
 	mov	$14, a		;We limit loops to one iteration to prevent excessive readahead iterations.
 	mov	a, $03f1+x
 	mov	$15, a
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 
 .keyoff:
 	setc
@@ -3012,7 +3012,7 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $03e1+x
 	mov	$15, a
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 
 .loopSection:
 	incw	$14
@@ -3023,7 +3023,7 @@ L_10B4:							; |
 	incw	$14
 	mov	$16, $14
 	mov	$17, $15
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 
 .subroutine:
 	set1	$11.7		;Subroutine has been entered.
@@ -3048,6 +3048,7 @@ L_10B4:							; |
 	mov	$15, a
 	pop	a
 	mov	$14, a
+.jmpToL_10B4
 	jmp	L_10B4
 
 .L_10D1:
@@ -3100,18 +3101,18 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $01e1+x
 	mov	$15, a
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 
 .loopSectionJumpFromScratchRAM:
 	mov	$14, $16
 	mov	$15, $17
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
-	jmp	L_10B4
+	bra	.jmpToL_10B4
 }
 
 TerminateOnLegatoEnable:
