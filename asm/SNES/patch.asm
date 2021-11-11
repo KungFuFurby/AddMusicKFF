@@ -336,6 +336,13 @@ endif
 
 	LDA #$FF		; Send this as early as possible
 	STA $2141		;
+
+	LDA $0100|!SA1Addr2	;\     Check Gamemode.
+    	CMP #$0E		; | If on the Overworld,
+	BNE +			; |    
+	WAI			;/     then wait for an interrupt to prevent garbage during Submap transitions.
+    
++
 	
 	SEI
 	
