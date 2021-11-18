@@ -617,6 +617,27 @@ endif
 
 }
 if !noSFX = !false
+macro RestoreVolLevelsPostNoise()
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+endmacro
+
+macro NoiseBackupThenZeroVolLevels()
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
+endmacro
+
 ProcessSFX:				; Major code changes ahead.
 {					; Originally, the SMW SFX were handled within their port handling routines.
 					; This meant that there was a near duplicate copy of the 1DF9 code for 1DFC SFX.
@@ -711,19 +732,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	++
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+if !noiseFrequencySFXInstanceResolution = !true
+	call	RestoreVolLevelsPostNoise
+else
+	%RestoreVolLevelsPostNoise()
+endif
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -936,20 +951,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	+
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+if !noiseFrequencySFXInstanceResolution = !true
+	call	NoiseBackupThenZeroVolLevels
+else
+	%NoiseBackupThenZeroVolLevels()
+endif
 +
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -1046,14 +1054,7 @@ SetSFXNoise:
 	cmp	a, $01f1+x
 	beq	+
 	setc
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+	call	NoiseBackupThenZeroVolLevels
 	bra	++
 +
 	clrc
@@ -1061,26 +1062,33 @@ SetSFXNoise:
 	and	a, $1a
 	beq	++
 	setc
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+	call	RestoreVolLevelsPostNoise
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	a
 	pop	p
 	bne	-
 
 	pop	x
 	ret
+
+NoiseBackupThenZeroVolLevels:
+	%NoiseBackupThenZeroVolLevels()
+	ret
+
+RestoreVolLevelsPostNoise:
+	%RestoreVolLevelsPostNoise()
+	ret
+
 endif
+
+NoiseSetVolLevelsNextCh:
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	ret
 
 SetSFXInstrument:
 	mov	y, #$09			; \ 
