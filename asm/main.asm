@@ -1885,7 +1885,7 @@ L_0B08:
 L_0AF2:
 	cmp	$1c, #$18
 	beq	L_0AF7
-	bcs	L_0B3F
+	bcs	L_0AB0
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
@@ -1899,13 +1899,9 @@ L_0B1C:
 	mov	y, #$28
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
-	call	SFX1DFAKOFFCheck
-L_0B3F:
-	ret
-
 SFX1DFAKOFFCheck:
 	mov	a, #$02
-	cbne	$1c, L_0B3F
+	cbne	$1c, L_0AB0
 	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	jmp	KeyOffVoices
