@@ -482,11 +482,13 @@ endif
 	mov	$15, a
 	mov	a, PitchTable+0+y
 	mov	$14, a             ; set $14/5 from pitch table
-	mov	a, PitchTable+3+y
-	push	a
+	;mov	a, PitchTable+3+y
+	;push	a
 	mov	a, PitchTable+2+y
-	pop	y
-	subw	ya, $14
+	setc
+	sbc	a, $14
+	;pop	y
+	;subw	ya, $14
 	mov	y, $10
 	mul	ya
 	mov	a, y
