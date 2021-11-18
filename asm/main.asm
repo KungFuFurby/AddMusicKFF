@@ -622,11 +622,13 @@ endif
 	mov	$15, a
 	mov	a, PitchTable+0+y
 	mov	$14, a             ; set $14/5 from pitch table
-	mov	a, PitchTable+3+y
-	push	a
+	;mov	a, PitchTable+3+y
+	;push	a
 	mov	a, PitchTable+2+y
-	pop	y
-	subw	ya, $14
+	setc
+	sbc	a, $14
+	;pop	y
+	;subw	ya, $14
 	mov	y, $10
 	mul	ya
 	mov	a, y
@@ -771,6 +773,27 @@ endif
 
 }
 if !noSFX = !false
+macro RestoreVolLevelsPostNoise()
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+endmacro
+
+macro NoiseBackupThenZeroVolLevels()
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
+endmacro
+
 ProcessSFX:				; Major code changes ahead.
 {					; Originally, the SMW SFX were handled within their port handling routines.
 					; This meant that there was a near duplicate copy of the 1DF9 code for 1DFC SFX.
@@ -865,19 +888,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	++
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+if !noiseFrequencySFXInstanceResolution = !true
+	call	RestoreVolLevelsPostNoise
+else
+	%RestoreVolLevelsPostNoise()
+endif
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -1090,20 +1107,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	+
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+if !noiseFrequencySFXInstanceResolution = !true
+	call	NoiseBackupThenZeroVolLevels
+else
+	%NoiseBackupThenZeroVolLevels()
+endif
 +
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -1200,14 +1210,7 @@ SetSFXNoise:
 	cmp	a, $01f1+x
 	beq	+
 	setc
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+	call	NoiseBackupThenZeroVolLevels
 	bra	++
 +
 	clrc
@@ -1215,26 +1218,33 @@ SetSFXNoise:
 	and	a, $1a
 	beq	++
 	setc
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+	call	RestoreVolLevelsPostNoise
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	a
 	pop	p
 	bne	-
 
 	pop	x
 	ret
+
+NoiseBackupThenZeroVolLevels:
+	%NoiseBackupThenZeroVolLevels()
+	ret
+
+RestoreVolLevelsPostNoise:
+	%RestoreVolLevelsPostNoise()
+	ret
+
 endif
+
+NoiseSetVolLevelsNextCh:
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	ret
 
 SetSFXInstrument:
 	mov	y, #$09			; \ 
@@ -2073,7 +2083,7 @@ L_0B08:
 L_0AF2:
 	cmp	$1c, #$18
 	beq	L_0AF7
-	bcs	L_0B3F
+	bcs	L_0AB0
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
@@ -2087,13 +2097,9 @@ L_0B1C:
 	mov	y, #$28
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
-	call	SFX1DFAKOFFCheck
-L_0B3F:
-	ret
-
 SFX1DFAKOFFCheck:
 	mov	a, #$02
-	cbne	$1c, L_0B3F
+	cbne	$1c, L_0AB0
 	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
 	jmp	KeyOffVoices
