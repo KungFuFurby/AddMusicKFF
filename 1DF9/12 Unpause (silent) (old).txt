@@ -11,7 +11,7 @@ $E0 $FF #jsr changePause
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 	
-	and !NCKValue, #$bf		; Unset the mute flag.
+	clr1 !NCKValue.6		; Unset the mute flag.
 	call SetFLGFromNCKValue
 
 	mov $f2, #$2c		;\
