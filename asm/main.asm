@@ -1790,7 +1790,7 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	and !NCKValue, #$bf		; Unset the mute flag.
+	clr1 !NCKValue.6		; Unset the mute flag.
 	call SetFLGFromNCKValue
 
 	mov a, !SpeedUpBackUp	;\
@@ -1972,7 +1972,7 @@ PauseMusic:
 	inc a
 	mov !PauseMusic, a
 	
-	or  !NCKValue, #$40	; Set the mute flag.
+	set1  !NCKValue.6	; Set the mute flag.
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret

@@ -440,7 +440,7 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	or	!NCKValue, #$20           ; disable echo write
+	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -930,7 +930,7 @@ SubC_table2:
 	bcc	+
 .modifyEchoDelay
 	push	a
-	or	!NCKValue, #$20
+	set1	!NCKValue.5
 	call	ModifyEchoDelay		; /
 	pop	a			;
 	mov	!MaxEchoDelay, a	;
