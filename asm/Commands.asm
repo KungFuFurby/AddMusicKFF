@@ -486,7 +486,6 @@ WaitForDelay:				; This stalls the SPC for the correct amount of time depending 
 +	ret	
 	
 ModifyEchoDelay:			; a should contain the requested delay.
-	mov	$10, !NCKValue
 	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
@@ -497,7 +496,7 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	eor	a, #$FF
 	push	a
 
-	mov	!NCKValue, #$60
+	or	!NCKValue, #$60
 	call	SetFLGFromNCKValue
 	
 	pop	y			; \
@@ -508,19 +507,15 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
 	
-	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
+	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.	
 
-	
-	mov	!NCKValue, #$40
+	clr1	!NCKValue.5
 	call	SetFLGFromNCKValue
-	
-	
 	
 	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	
-	mov	!NCKValue, #$00
-	mov	a, $10
-	jmp	ModifyNoise
+	and	!NCKValue, #$1f
+	jmp	SetFLGFromNCKValue
 
 SetEDLVarDSP:
 	mov	!EchoDelay, a		; \
