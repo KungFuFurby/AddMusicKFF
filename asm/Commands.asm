@@ -469,7 +469,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
 		
-ModifyEchoDelay:			; a should contain the requested delay.
+ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
@@ -766,23 +766,22 @@ SubC_table2:
 ;	
 	
 	call	GetCommandData
+..zeroEDLGate
+	beq	..zeroEDL
 	cmp	a, !MaxEchoDelay
 	beq	+
-	bcc	+
-.modifyEchoDelay
-	push	a
-	set1	!NCKValue.5
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
-
+	bcs	..modifyEchoDelay
 +
 	call	SetEDLVarDSP		; Write the new delay.
 	
-	mov	a, !NCKValue
-	and	!NCKValue, #$20
-	jmp	ModifyNoise
+	and	!NCKValue, #$3f
+	jmp	SetFLGFromNCKValue
+
+..zeroEDL
+	;Don't skip again until !MaxEchoDelay is reset.
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+..modifyEchoDelay
+	jmp	ModifyEchoDelay
 	
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
