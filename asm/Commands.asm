@@ -498,6 +498,19 @@ ModifyEchoDelay:			; a should contain the requested delay.
 
 	or	!NCKValue, #$60
 	call	SetFLGFromNCKValue
+
+	mov	$f2, #$7d
+	mov	a, $f3
+	and	a, #$0f
+	beq	+
+	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
+	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
+	mov	$14, #$00
+	mov	$15, a
+-	dbnz	$14, -
+	dbnz	$15, -
++
 	
 	pop	y			; \
 	mov	$f2, #$6d		; | Write the new buffer address.
