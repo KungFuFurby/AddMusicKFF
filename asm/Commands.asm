@@ -483,29 +483,19 @@ WaitForDelay:				; This stalls the SPC for the correct amount of time depending 
 	inc	$15
 	bne	-
 	
-+	ret
-	
-GetBufferAddress:
-	xcn
-	beq	+
-	and	a, #$F0
-	lsr	a
-	mov	$14, #$00
-	mov	$15, a
-	movw	ya, $0e
-	subw	ya, $14		
-	ret				; 
-+
-	mov	a, #$fc			; \ A delay of 0 needs 4 bytes for no adequately explained reason.
-	mov	y, #$ff			; /
-	ret
-	
++	ret	
 	
 ModifyEchoDelay:			; a should contain the requested delay.
 	mov	$10, !NCKValue
+	and	a, #$0F
 	push	a			; Save the requested delay.
-	call	GetBufferAddress
-	push	y
+	beq	+
+	xcn	a			; Get the buffer address.
+	lsr	a
+	dec	a
++
+	eor	a, #$FF
+	push	a
 
 	mov	!NCKValue, #$60
 	call	SetFLGFromNCKValue
