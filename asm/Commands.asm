@@ -468,23 +468,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
-	
-WaitForDelay:				; This stalls the SPC for the correct amount of time depending on the value in !EchoDelay.
-	mov	a, !EchoDelay		; a delay of $00 doesn't need this
-	beq	+
-	mov	$14, #$00
-	mov	$f2, #$6D
-	mov	$15, $f3
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
-	
-+	ret	
-	
+		
 ModifyEchoDelay:			; a should contain the requested delay.
 	and	a, #$0F
 	push	a			; Save the requested delay.
@@ -520,12 +504,18 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
 	
-	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.	
-
-	clr1	!NCKValue.5
-	call	SetFLGFromNCKValue
+	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	beq	+
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	mov	y, a
 	
-	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
++	
 	
 	and	!NCKValue, #$1f
 	jmp	SetFLGFromNCKValue
