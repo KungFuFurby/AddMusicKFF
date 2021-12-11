@@ -926,7 +926,6 @@ SubC_table2:
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
 ..modifyEchoDelay
-	clr1	!NCKValue.5
 	jmp	ModifyEchoDelay
 	
 .gainRest
