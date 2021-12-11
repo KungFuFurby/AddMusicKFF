@@ -480,8 +480,8 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	eor	a, #$FF
 	push	a
 
-	or	!NCKValue, #$60
-	call	SetFLGFromNCKValue
+	mov	$f2, #$6c
+	or	$f3, #$60
 
 	mov	$f2, #$7d
 	mov	a, $f3
@@ -516,8 +516,6 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	inc	$15
 	bne	-
 +	
-	
-	and	!NCKValue, #$1f
 	jmp	SetFLGFromNCKValue
 
 SetEDLVarDSP:
@@ -781,6 +779,7 @@ SubC_table2:
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
 ..modifyEchoDelay
+	clr1	!NCKValue.5
 	jmp	ModifyEchoDelay
 	
 .gainRest
