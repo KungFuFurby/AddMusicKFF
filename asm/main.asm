@@ -125,7 +125,7 @@ incsrc "UserDefines.asm"
 !PlayingVoices = $0382		; Each bit is set to 1 if there's currently a voice playing on that channel (either by music or SFX).
 !SpeedUpBackUp = $0384		; Used to restore the speed after pausing the music.
 
-
+!reserveBufferZeroEDLGateDistance = SubC_table2_reserveBuffer_zeroEDL-SubC_table2_reserveBuffer_zeroEDLGate-2
 
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
@@ -1688,6 +1688,8 @@ if !noSFX = !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	mov	a, #!reserveBufferZeroEDLGateDistance
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
 	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
