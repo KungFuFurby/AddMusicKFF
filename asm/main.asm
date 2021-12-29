@@ -1917,7 +1917,6 @@ SFX1DFAKOFFCheck:
 	jmp	KeyOffVoices
 
 Quick1DFAMonoVolDSPWritesWKON:
-	mov	$10, y
 	mov	a, #(!1DFASFXChannel*$10)
 	movw	$f2, ya
 	inc	a
