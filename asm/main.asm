@@ -2537,8 +2537,7 @@ L_0FDB:
 	;Modifies $0240-$0241, $0250-$0251, $0260
 	call	L_1075
 L_0FEB:
-	mov	a, $b1+x
-	mov	y, a
+	mov	y, $b1+x
 	beq	L_1013
 	mov	a, $0370+x
 	cbne	$b0+x, L_1011
