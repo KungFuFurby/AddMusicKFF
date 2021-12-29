@@ -163,63 +163,57 @@ if read1($008176) == $5c
 	
 	org $00817C			; For LevelNMI.  Three fewer bytes placed three bytes later.
 		BRA Skip : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-	Skip:
-
 elseif read1($008179) == $5c
 	org $00817D			; For PowerTool.  Four fewer bytes placed four bytes later.
-		BRA Skip : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-	Skip:
+		BRA Skip
 else
 	org $008179			; Skip over the standard NMI audio port stuff.  We handle that ourselves now every loop.
 		BRA Skip : NOP
 		NOP : NOP
+		NOP
+endif
+YoshiDrumHijack:
+		;Identical to $02A763, except that Yoshi Drums are
+		;explicitly disabled if the conditions to turn them on are
+		;not met while transitioning into the room.
+		;This ensures that they are not running if Mario enters a
+		;room without Yoshi, but did not disembark prior to that.
+		LDA $0DC1|!SA1Addr2
+		BEQ NoYoshiDrum
+		LDA $1B9B|!SA1Addr2
+		BNE NoYoshiDrum
+		JSL $00FC7A
+		PLB
+		RTL
+NoYoshiDrum:
+		LDA #$03
+		STA $1DFA|!SA1Addr2
+		PLB
+		RTL
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
+		;This hijack overwrites 23 of the 43 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP
 	Skip:
-endif
+
+org $02A763
+		JML YoshiDrumHijack
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
