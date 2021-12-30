@@ -2107,7 +2107,6 @@ SFX1DFAKOFFCheck:
 	jmp	KeyOffVoices
 
 Quick1DFAMonoVolDSPWritesWKON:
-	mov	$10, y
 	mov	a, #(!1DFASFXChannel*$10)
 	movw	$f2, ya
 	inc	a
@@ -2747,8 +2746,7 @@ L_0FDB:
 	;Modifies $0240-$0241, $0250-$0251, $0260
 	call	L_1075
 L_0FEB:
-	mov	a, $b1+x
-	mov	y, a
+	mov	y, $b1+x
 	beq	L_1013
 	mov	a, $0370+x
 	cbne	$b0+x, L_1011
@@ -2866,9 +2864,9 @@ endif
 ; add fade delta to value (set final value at end)
 L_1075:
 	movw	$14, ya		;
+	clrc			;
 	bne	L_1088		; The zero flag isn't modified by movw d, ya, so I'm not sure what this is for...?
-	clrc			; \
-	adc	a, #$20		; | 16 gets the passed pointer plus #$20
+	adc	a, #$20		; \ 16 gets the passed pointer plus #$20
 	movw	$16, ya		; /
 	mov	a, x		; \ mov y, x 
 	mov	y, a		; / mov y, $48
@@ -2878,7 +2876,6 @@ L_1075:
 	inc	y			; 
 	bra	L_109A		;
 L_1088:				;
-	clrc			;
 	adc	a, #$10		;
 	movw	$16, ya		;
 	mov	a, x		;
