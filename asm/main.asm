@@ -2691,8 +2691,8 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
+L_10B2:							; |
 	mov	y, #$00					; |
-L_10B4:							; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
 	beq	L_10D1					; |
 	bmi	L_10BF					; |
@@ -2728,8 +2728,7 @@ L_10BF:
 +							; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
-	mov	y, #$00					; |
-	bra	L_10B4					; /
+	bra	L_10B2					; /
 L_10D1:							;
 	mov	$10, a
 	clrc
