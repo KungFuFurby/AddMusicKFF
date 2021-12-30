@@ -2769,9 +2769,8 @@ L_10B2:							; |
 	push	a
 	incw	$14
 	mov	a, ($14)+y
-	mov	$15, a
-	pop	a
-	mov	$14, a
+	pop	y
+	movw	$14, ya
 	bra	L_10B2
 
 .skip_keyoff:
@@ -2811,8 +2810,8 @@ L_10B2:							; |
 	;Save return point for loop.
 	set1	$11.5		;Loop section was entered.
 	incw	$14
-	mov	$16, $14
-	mov	$17, $15
+	movw	ya, $14
+	movw	$16, ya
 .jmpToL_10B2
 	jmp	L_10B2
 
@@ -2832,13 +2831,12 @@ L_10B2:							; |
 .subroutineNoLoop:
 	incw	$14
 	;Save return point for subroutine.
-	mov	$12, $14
-	mov	$13, $15
+	movw	ya, $14
+	movw	$12, ya
 	;Jump inside subroutine.
+	pop	y
 	pop	a
-	mov	$15, a
-	pop	a
-	mov	$14, a
+	movw	$14, ya
 	bra	.jmpToL_10B2
 
 .L_10D1:
@@ -2880,8 +2878,8 @@ L_10B2:							; |
 	bra	.jmpToL_10B2
 
 .loopSectionJumpFromScratchRAM:
-	mov	$14, $16
-	mov	$15, $17
+	movw	ya, $16
+	movw	$14, ya
 	bra	.jmpToL_10B2
 
 .loopSectionClearAndPassThrough:
