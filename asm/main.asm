@@ -2913,8 +2913,8 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
+L_10B2:							; |
 	mov	y, #$00					; |
-L_10B4:							; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
 	beq	.subroutineCheck			; |
 	bmi	.L_10BF					; |
@@ -2959,8 +2959,7 @@ L_10B4:							; |
 +							; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
-	mov	y, #$00					; |
-	bra	L_10B4					; /
+	bra	L_10B2					; /
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
@@ -2970,7 +2969,7 @@ L_10B4:							; |
 	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
 	mov	$14, $12	;Copy return address.
 	mov	$15, $13
-	bcs	L_10B4
+	bcs	L_10B2
 	clr1	$11.6		;Subroutine loop is no longer active.
 	setc			;We limit loops to one iteration to prevent excessive readahead iterations.
 	sbc	$14, #$03
@@ -2979,10 +2978,9 @@ L_10B4:							; |
 	push	a
 	incw	$14
 	mov	a, ($14)+y
-	mov	$15, a
-	pop	a
-	mov	$14, a
-	bra	L_10B4
+	pop	y
+	movw	$14, ya
+	bra	L_10B2
 
 .skip_keyoff:
 	clrc
@@ -3001,7 +2999,7 @@ L_10B4:							; |
 	mov	$14, a		;We limit loops to one iteration to prevent excessive readahead iterations.
 	mov	a, $03f1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .keyoff:
 	setc
@@ -3012,7 +3010,7 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $03e1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .loopSection:
 	incw	$14
@@ -3021,9 +3019,9 @@ L_10B4:							; |
 	;Save return point for loop.
 	set1	$11.5		;Loop section was entered.
 	incw	$14
-	mov	$16, $14
-	mov	$17, $15
-	bra	.jmpToL_10B4
+	movw	ya, $14
+	movw	$16, ya
+	bra	.jmpToL_10B2
 
 .subroutine:
 	set1	$11.7		;Subroutine has been entered.
@@ -3041,15 +3039,14 @@ L_10B4:							; |
 .subroutineNoLoop:
 	incw	$14
 	;Save return point for subroutine.
-	mov	$12, $14
-	mov	$13, $15
+	movw	ya, $14
+	movw	$12, ya
 	;Jump inside subroutine.
+	pop	y
 	pop	a
-	mov	$15, a
-	pop	a
-	mov	$14, a
-.jmpToL_10B4
-	jmp	L_10B4
+	movw	$14, ya
+.jmpToL_10B2
+	jmp	L_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -3101,18 +3098,18 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $01e1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .loopSectionJumpFromScratchRAM:
-	mov	$14, $16
-	mov	$15, $17
-	bra	.jmpToL_10B4
+	movw	ya, $16
+	movw	$14, ya
+	bra	.jmpToL_10B2
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 }
 
 TerminateOnLegatoEnable:
