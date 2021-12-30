@@ -60,7 +60,6 @@ incsrc "UserDefines.asm"
 ; $0150: Don't use
 ; $0151: Don't use
 ; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
-; $0383: Some sort of a timer for the jump and girder SFX.
 ; $0211+x: The volume part of the qXX command.
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
@@ -126,7 +125,7 @@ incsrc "UserDefines.asm"
 !PlayingVoices = $0382		; Each bit is set to 1 if there's currently a voice playing on that channel (either by music or SFX).
 !SpeedUpBackUp = $0384		; Used to restore the speed after pausing the music.
 
-
+!reserveBufferZeroEDLGateDistance = SubC_table2_reserveBuffer_zeroEDL-SubC_table2_reserveBuffer_zeroEDLGate-2
 
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
@@ -483,11 +482,13 @@ endif
 	mov	$15, a
 	mov	a, PitchTable+0+y
 	mov	$14, a             ; set $14/5 from pitch table
-	mov	a, PitchTable+3+y
-	push	a
+	;mov	a, PitchTable+3+y
+	;push	a
 	mov	a, PitchTable+2+y
-	pop	y
-	subw	ya, $14
+	setc
+	sbc	a, $14
+	;pop	y
+	;subw	ya, $14
 	mov	y, $10
 	mul	ya
 	mov	a, y
@@ -616,6 +617,27 @@ endif
 
 }
 if !noSFX = !false
+macro RestoreVolLevelsPostNoise()
+	mov	a, $d0+x
+	mov	$f3, a
+	inc	$f2
+	mov	a, $d1+x
+	mov	$f3, a
+	mov	a, $13
+	tclr	$1a, a
+endmacro
+
+macro NoiseBackupThenZeroVolLevels()
+	mov	a, $f3
+	mov	$d0+x, a
+	mov	$f3, #$00
+	inc	$f2
+	mov	a, $f3
+	mov	$d1+x, a
+	mov	$f3, #$00
+	or	($1a), ($13)
+endmacro
+
 ProcessSFX:				; Major code changes ahead.
 {					; Originally, the SMW SFX were handled within their port handling routines.
 					; This meant that there was a near duplicate copy of the 1DF9 code for 1DFC SFX.
@@ -670,10 +692,7 @@ EndSFX:
 	
 	mov	a, $18
 	bbc!1DFASFXChannel	$18, +
-	push	a
-	mov	a, $0383
-	or	a, $1c
-	pop	a
+	cmp	$1c, #$00
 	bne	++
 +					; \
 	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
@@ -691,8 +710,7 @@ endif
 .restoreMusicNoise:
 	mov	$1f, #$00
 	bbc!1DFASFXChannel	$18, +
-	mov	a, $0383
-	or	a, $1c
+	mov	a, $1c
 	bne	++
 +
 	mov	a, #$00
@@ -714,19 +732,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	++
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+if !noiseFrequencySFXInstanceResolution = !true
+	call	RestoreVolLevelsPostNoise
+else
+	%RestoreVolLevelsPostNoise()
+endif
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -939,20 +951,13 @@ endif
 	lsr	$12
 	push	p
 	bcc	+
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+if !noiseFrequencySFXInstanceResolution = !true
+	call	NoiseBackupThenZeroVolLevels
+else
+	%NoiseBackupThenZeroVolLevels()
+endif
 +
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	p
 	bne	-
 
@@ -1049,14 +1054,7 @@ SetSFXNoise:
 	cmp	a, $01f1+x
 	beq	+
 	setc
-	mov	a, $f3
-	mov	$d0+x, a
-	mov	$f3, #$00
-	inc	$f2
-	mov	a, $f3
-	mov	$d1+x, a
-	mov	$f3, #$00
-	or	($1a), ($13)
+	call	NoiseBackupThenZeroVolLevels
 	bra	++
 +
 	clrc
@@ -1064,26 +1062,33 @@ SetSFXNoise:
 	and	a, $1a
 	beq	++
 	setc
-	mov	a, $d0+x
-	mov	$f3, a
-	inc	$f2
-	mov	a, $d1+x
-	mov	$f3, a
-	mov	a, $13
-	tclr	$1a, a
+	call	RestoreVolLevelsPostNoise
 ++
-	notc
-	adc	$f2, #$0f
-	inc	x
-	inc	x
-	asl	$13
+	call	NoiseSetVolLevelsNextCh
 	pop	a
 	pop	p
 	bne	-
 
 	pop	x
 	ret
+
+NoiseBackupThenZeroVolLevels:
+	%NoiseBackupThenZeroVolLevels()
+	ret
+
+RestoreVolLevelsPostNoise:
+	%RestoreVolLevelsPostNoise()
+	ret
+
 endif
+
+NoiseSetVolLevelsNextCh:
+	notc
+	adc	$f2, #$0f
+	inc	x
+	inc	x
+	asl	$13
+	ret
 
 SetSFXInstrument:
 	mov	y, #$09			; \ 
@@ -1530,7 +1535,6 @@ endif
 	mov	a, #$00
 	mov	$05, a
 	mov	$1c, a
-	mov	$0383, a
 	pop	a
 
 .sfxAllocAllowed
@@ -1630,7 +1634,7 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	and !NCKValue, #$bf		; Unset the mute flag.
+	clr1 !NCKValue.6		; Unset the mute flag.
 	call SetFLGFromNCKValue
 
 	mov a, !SpeedUpBackUp	;\
@@ -1684,6 +1688,8 @@ if !noSFX = !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	mov	a, #!reserveBufferZeroEDLGateDistance
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
 	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
@@ -1778,7 +1784,7 @@ PauseMusic:
 	inc a
 	mov !PauseMusic, a
 	
-	or  !NCKValue, #$40	; Set the mute flag.
+	set1  !NCKValue.6	; Set the mute flag.
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret
@@ -1805,8 +1811,15 @@ CheckAPU1SFXPriority:
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
 	mov	$05, a		;
-	mov	a, #$04		; \
-	mov	$0383, a	; / $0383 is a timer for the jump and girder sound effects?
+	;cmp	$05, #$01
+	;bne	+
+	mov	a, #$34
++
+	cmp	$05, #$04
+	bne	+
+	mov	a, #$1c
++
+	mov	$1c, a
 	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
 	
 	call	KeyOffVoices
@@ -1817,12 +1830,23 @@ endif
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	SFXTerminateCh
 ; $01 = 01
-L_0A2E:
-	dec	$0383
-	bne	L_0A0D
-	mov	$1c, #$30
-	bra	L_0A68
+L_0A51:						;;;;;;;;/ Code change
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
+
+L_0A56:
+	dbnz	$1c, L_0A38
+RestoreInstrumentFromAPU1SFX:
+	mov	$05, #$00
+	clr1	$1d.!1DFASFXChannel
+	mov	a, #$00
+	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
+	mov	x, #(!1DFASFXChannel*2)
+	jmp	RestoreInstrumentInformation
+
 L_0A38:
+	cmp	$1c, #$30			; Process the jump SFX.
+	beq	L_0A68
+	bcs	L_0AB0			; I don't really know what's going on here, so I won't pretend to.
 	cmp	$1c, #$2a
 	bne	L_0A99
 	mov	x, #(!1DFASFXChannel*2)
@@ -1834,19 +1858,6 @@ L_0A38:
 	mov	a, #$b9
 	call	CalcPortamentoDelta
 	bra	L_0A99
-;
-L_0A51:						;;;;;;;;/ Code change
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-	mov	a, $0383			; Process the jump SFX.
-	bne	L_0A2E			; I don't really know what's going on here, so I won't pretend to.
-	dbnz	$1c, L_0A38
-RestoreInstrumentFromAPU1SFX:
-	mov	$05, #$00
-	clr1	$1d.!1DFASFXChannel
-	mov	a, #$00
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
-	mov	x, #(!1DFASFXChannel*2)
-	jmp	RestoreInstrumentInformation
 
 L_0A68:
 	mov	$46, #(!1DFASFXChannel*2)
@@ -1863,11 +1874,7 @@ L_0A68:
 	mov	y, #$38
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0A99:
-	mov	a, #$02
-	cbne	$1c, L_0AA5
-	mov	a, #(1<<!1DFASFXChannel)
-	;mov	y, #$5c
-	call	KeyOffVoices
+	call	SFX1DFAKOFFCheck
 L_0AA5:
 	clr1	$13.7
 	mov	x, #(!1DFASFXChannel*2)
@@ -1880,12 +1887,15 @@ L_0AB0:
 	ret
 
 ; $01 = 04 && $05 != 01
-L_0AE8:
-	dec	$0383
-	bne	L_0B3F
-	mov	$1c, #$18
-	bra	L_0AF7
+L_0B08:
+	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
+	dbnz	$1c, L_0AF2
+	bra	RestoreInstrumentFromAPU1SFX
+
 L_0AF2:
+	cmp	$1c, #$18
+	beq	L_0AF7
+	bcs	L_0AB0
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
@@ -1894,27 +1904,19 @@ L_0AF7:
 	call	SetSFXInstrument
 	mov	a, #$a4
 	call	NoteVCMD
-	bra	L_0B1C
-L_0B08:
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-	mov	a, $0383
-	bne	L_0AE8
-	dbnz	$1c, L_0AF2
-	jmp	RestoreInstrumentFromAPU1SFX
+
 L_0B1C:
 	mov	y, #$28
 	call	Quick1DFAMonoVolDSPWritesWKON
 L_0B33:
+SFX1DFAKOFFCheck:
 	mov	a, #$02
-	cbne	$1c, L_0B3F
+	cbne	$1c, L_0AB0
 	mov	a, #(1<<!1DFASFXChannel)
 	;mov	y, #$5c
-	call	KeyOffVoices
-L_0B3F:
-	ret
+	jmp	KeyOffVoices
 
 Quick1DFAMonoVolDSPWritesWKON:
-	mov	$10, y
 	mov	a, #(!1DFASFXChannel*$10)
 	movw	$f2, ya
 	inc	a
@@ -2461,18 +2463,45 @@ L_1266:
 ; calculate portamento delta
 CalcPortamentoDelta:
 	and	a, #$7f
-	mov	$02d0+x, a         ; final portamento value
-	setc
-	sbc	a, $02b1+x         ; note number
+	mov	$16, #$02b0&$FF
+	;References $02B1, $02C0-$02C1, $02D0
+	mov	y, $90+x           ; portamento steps
+	push	y
+	bra	SlideToParamIndexedPostFetch
+
+cmdE8:					; Fade the volume
+	mov   $80+x, a
+	mov   $16, #$0240&$FF
+	;References $0241, $0250-$0251, $0260
+	bra   SlideToParamIndexed
+
+cmdDC:					; Fade the pan
+	mov   !PanFadeDuration+x, a
+	mov   $16, #$0280&$FF
+	;References $0281, $0290-$0291, $02A0
+
+SlideToParamIndexed:
+	;Calculate the delta value for an indexed value.
 	push	a
-	mov	a, $90+x           ; portamento steps
-	mov	x, a
-	pop	a
+	call	GetCommandDataFast
+SlideToParamIndexedPostFetch:
+	or	($16), ($46)
+	mov	$17, #$02
+	mov	y, #$20
+	mov	($16)+y, a
+	mov	y, #$01
+	setc
+	sbc	a, ($16)+y
+	pop	x
 	call	Divide16
-	mov	$02c0+x, a
-	mov	a, y
-	mov	$02c1+x, a         ; portamento delta
+	push	y
+	mov	y, #$10
+	mov	($16)+y, a
+	pop	a
+	inc	y
+	mov	($16)+y, a
 	ret
+
 ; signed 16 bit division
 Divide16:
 	bcs	L_0F85
@@ -2508,8 +2537,7 @@ L_0FDB:
 	;Modifies $0240-$0241, $0250-$0251, $0260
 	call	L_1075
 L_0FEB:
-	mov	a, $b1+x
-	mov	y, a
+	mov	y, $b1+x
 	beq	L_1013
 	mov	a, $0370+x
 	cbne	$b0+x, L_1011
@@ -2627,9 +2655,9 @@ endif
 ; add fade delta to value (set final value at end)
 L_1075:
 	movw	$14, ya		;
+	clrc			;
 	bne	L_1088		; The zero flag isn't modified by movw d, ya, so I'm not sure what this is for...?
-	clrc			; \
-	adc	a, #$20		; | 16 gets the passed pointer plus #$20
+	adc	a, #$20		; \ 16 gets the passed pointer plus #$20
 	movw	$16, ya		; /
 	mov	a, x		; \ mov y, x 
 	mov	y, a		; / mov y, $48
@@ -2639,7 +2667,6 @@ L_1075:
 	inc	y			; 
 	bra	L_109A		;
 L_1088:				;
-	clrc			;
 	adc	a, #$10		;
 	movw	$16, ya		;
 	mov	a, x		;
@@ -2677,8 +2704,8 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
+L_10B2:							; |
 	mov	y, #$00					; |
-L_10B4:							; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
 	beq	.subroutineCheck			; |
 	bmi	.L_10BF					; |
@@ -2723,8 +2750,7 @@ L_10B4:							; |
 +							; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
-	mov	y, #$00					; |
-	bra	L_10B4					; /
+	bra	L_10B2					; /
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
@@ -2734,7 +2760,7 @@ L_10B4:							; |
 	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
 	mov	$14, $12	;Copy return address.
 	mov	$15, $13
-	bcs	L_10B4
+	bcs	L_10B2
 	clr1	$11.6		;Subroutine loop is no longer active.
 	setc			;We limit loops to one iteration to prevent excessive readahead iterations.
 	sbc	$14, #$03
@@ -2746,7 +2772,7 @@ L_10B4:							; |
 	mov	$15, a
 	pop	a
 	mov	$14, a
-	bra	L_10B4
+	bra	L_10B2
 
 .skip_keyoff:
 	clrc
@@ -2765,7 +2791,7 @@ L_10B4:							; |
 	mov	$14, a		;We limit loops to one iteration to prevent excessive readahead iterations.
 	mov	a, $03f1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .keyoff:
 	setc
@@ -2776,7 +2802,7 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $03e1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .loopSection:
 	incw	$14
@@ -2787,8 +2813,8 @@ L_10B4:							; |
 	incw	$14
 	mov	$16, $14
 	mov	$17, $15
-.jmpToL_10B4
-	jmp	L_10B4
+.jmpToL_10B2
+	jmp	L_10B2
 
 .subroutine:
 	set1	$11.7		;Subroutine has been entered.
@@ -2813,7 +2839,7 @@ L_10B4:							; |
 	mov	$15, a
 	pop	a
 	mov	$14, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -2851,18 +2877,18 @@ L_10B4:							; |
 	mov	$14, a
 	mov	a, $01e1+x
 	mov	$15, a
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .loopSectionJumpFromScratchRAM:
 	mov	$14, $16
 	mov	$15, $17
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
-	bra	.jmpToL_10B4
+	bra	.jmpToL_10B2
 }
 
 TerminateOnLegatoEnable:
