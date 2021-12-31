@@ -426,12 +426,12 @@
 		<td rowspan="2">ADSR<br></td>
 		<td rowspan="2">Enables a custom ADSR on the current channel. $DA must not be be &gt; $7F.  See <a href="#ADSRInfo">here</a> for more information.<br></td>
 		<td>$DA<br></td>
-		<td>Delay (3 bits), attack (7 bits); 0dddaaaa<br></td>
+		<td>Decay (3 bits), attack (7 bits); %0dddaaaa<br></td>
 	</tr>
 	<tr>
 		<td>$SR</td>
-		<td>Sustain (3 bits), Release (5 bits); sssrrrrr<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+		<td>Sustain (3 bits), Release (5 bits); %sssrrrrr<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
 		<td rowspan="2">GAIN</td>
