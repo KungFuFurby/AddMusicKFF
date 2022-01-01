@@ -1010,12 +1010,6 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>N/A (recombined into $2E, unless we only count the noise frequency portion: then it gets moved to $0389)</td>
 			</tr>
 			<tr>
-				<td>$E0-$E1</td>
-				<td>In addition to its previous usage in carol's MORE.bin, this now stores the ADSR parameters from the $ED VCMD. This de-facto gives it somewhat of a usage as scratch RAM.</td>
-				<td>N/A (gained a second usage from carol's MORE.bin)</td>
-				<td>N/A (the storage mechanism was removed)</td>
-			</tr>
-			<tr>
 				<td>$0160</td>
 				<td>Contains various flags for various purposes, stored as %??????xy<br>See below for a list of bits whose usages don't match the latest version.</td>
 				<td>N/A (New)</td>
@@ -1088,13 +1082,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$E0</td>
-				<td>Stores the SRCN ID last defined by what is now the $F3 VCMD.</td>
+				<td>Used as scratch RAM for two purposes: it either stores the SRCN ID last defined by what is now the $F3 VCMD, or it stores the first of two bytes of the $ED VCMD (GAIN/ADSR switch specifically).</td>
 				<td>N/A (New)</td>
 				<td>N/A (the storage mechanism was removed)</td>
 			</tr>
 			<tr>
 				<td>$E1</td>
-				<td>Stores the pitch base multiplier last defined by what is now the $F3 VCMD.</td>
+				<td>Used as scratch RAM for two purposes: it either stores the pitch base multiplier last defined by what is now the $F3 VCMD, or it stores the second of two bytes of the $ED VCMD (either VxADSR2 or VxGAIN, depending on what the first byte was).</td>
 				<td>N/A (New)</td>
 				<td>N/A (the storage mechanism was removed)</td>
 			</tr>
