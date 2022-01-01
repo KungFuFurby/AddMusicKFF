@@ -416,7 +416,7 @@ endif
 
 .checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
-	cmp	a, #$01
+	dec	a
 	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
@@ -2845,7 +2845,7 @@ L_10B2:							; |
 	push	a
 	incw	$14
 	mov	a, ($14)+y
-	cmp	a, #$01
+	dec	a
 	beq	.subroutineNoLoop
 	set1	$11.6		;Subroutine loop is active.
 .subroutineNoLoop:
@@ -2902,7 +2902,7 @@ L_10B2:							; |
 	set1	$11.4	;Loop section is now active.
 	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
 	mov	a, $01f0+x
-	cmp	a, #$01
+	dec	a
 	;$01 means that the loop section has been entered and terminated.
 	beq	.loopSectionPassThrough
 	;Grab pre-existing return address and jump.
@@ -2938,7 +2938,7 @@ TerminateOnLegatoEnable:
 L_10A1:
 
 	mov	a, !remoteCodeType+x
-	cmp	a, #$01
+	dec	a
 	bne	.noRemoteCode2
 	mov	a, !remoteCodeTimeLeft+x
 	dec	a
