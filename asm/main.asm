@@ -401,7 +401,7 @@ endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
 	mov	a, !remoteCodeType+x
-	cmp	a, #$01
+	dec	a
 	bne	.notType1RemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
@@ -2772,7 +2772,7 @@ TerminateOnLegatoEnable:
 L_10A1:
 
 	mov	a, !remoteCodeType+x
-	cmp	a, #$01
+	dec	a
 	bne	.noRemoteCode2
 	mov	a, !remoteCodeTimeLeft+x
 	dec	a
