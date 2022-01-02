@@ -111,7 +111,6 @@ endif
 	pop	y
 +
 	mov	a, x
-	and	a, #$f0
 	or	a, #$07
 	mov	x, a
 	mov	y, #$03
