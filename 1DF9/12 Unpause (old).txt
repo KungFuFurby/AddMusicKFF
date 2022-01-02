@@ -8,7 +8,6 @@ $E0 $FF #jsr changePause $DA $02 $0C $54 $B4 $B0 $B4 $18 $B0
 	mov a, #$00
 	mov !PauseMusic, a
 	
-	mov $f2, #$6c			;\ Unset the mute flag.
-	and $f3, #$bf			;/
-	ret
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 }

@@ -426,12 +426,12 @@
 		<td rowspan="2">ADSR<br></td>
 		<td rowspan="2">Enables a custom ADSR on the current channel. $DA must not be be &gt; $7F.  See <a href="#ADSRInfo">here</a> for more information.<br></td>
 		<td>$DA<br></td>
-		<td>Delay (3 bits), attack (7 bits); 0dddaaaa<br></td>
+		<td>Decay (3 bits), attack (7 bits); %0dddaaaa<br></td>
 	</tr>
 	<tr>
 		<td>$SR</td>
-		<td>Sustain (3 bits), Release (5 bits); sssrrrrr<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+		<td>Sustain (3 bits), Release (5 bits); %sssrrrrr<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
 		<td rowspan="2">GAIN</td>
@@ -759,7 +759,16 @@
 		<td>$ZZ</td>
 		<td><a href="#LengthInfo">How long to wait when using wait types 1 or 2.</a> Note that a value of $00 is treated as $0100<br></td>
 	</tr><tr><td colspan="5">&nbsp;</td></tr>
-	
+	<tr>
+		<td>$FD</td>
+		<td>Tremolo Off<br></td>
+		<td>Disables tremolo for the current channel<br></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$FE</td>
+		<td>Pitch Envelope Off<br></td>
+		<td>Turns off pitch envelope.<br></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
 </table>
 
 <br><br><h2>Parameter reference</h2>

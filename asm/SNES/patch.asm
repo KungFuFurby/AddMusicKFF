@@ -63,7 +63,7 @@ endif
 ; FREERAM+$0009: Used as a buffer for the sample pointer/loop table.  Could be up to 1024 bytes long, but this is unlikely (4 bytes per sample; do the math).
 
 ; 1DFB: Use this to request a song to play (more or less default behavior).
-; 1DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
+; 0DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
 
 ; Special status byte details:
 
@@ -336,6 +336,13 @@ endif
 
 	LDA #$FF		; Send this as early as possible
 	STA $2141		;
+
+	LDA $0100|!SA1Addr2	;\     Check Gamemode.
+    	CMP #$0E		; | If on the Overworld,
+	BNE +			; |    
+	WAI			;/     then wait for an interrupt to prevent garbage during Submap transitions.
+    
++
 	
 	SEI
 	
