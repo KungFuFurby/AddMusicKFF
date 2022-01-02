@@ -64,8 +64,10 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	bpl	+
+if !noSFX = !false
 	and	a, #$1f
 	mov	$0389, a
+endif
 	or	(!MusicNoiseChannels), ($48)
 	bra	++
 +
