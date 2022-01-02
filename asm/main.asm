@@ -284,8 +284,7 @@ ReadInputRegister:
 
 L_05AC:
 	mov   a, $f4+x		; \ Get the input byte
-	cmp   a, $f4+x		; | Keep getting it until it's "stable"
-	bne   L_05AC		; /
+	cbne  $f4+x, L_05AC	; / Keep getting it until it's "stable"
 	mov   y, a		; \ 
 	mov   a, $08+x		; |
 	mov   $08+x, y		; |
@@ -2116,12 +2115,9 @@ ProcessAPU2Input:
 
 	; MODIFIED CODE START
 	
-	mov	a,$0160		; Get the special AMM byte.
-	and	a,#$02		; If the second bit is set, then we've enabled sync.
-	beq	.nothing	; Otherwise, do nothing.
-	setp			; \ 
-	incw	$0166&$FF	; | Increase $166.
-	clrp			; / 
+	setp			    ; Get the special AMM byte.
+	bbc1	$0160&$FF, .nothing ; If the second bit is set, then we've enabled sync. Otherwise, do nothing.
+	incw	$0166&$FF	; Increase $166.
 				; Note that this is different from AMM's code.
 				; The old code never let the low byte go above #$C0.
 				; A good idea in theory, but it both assumes that all
@@ -2129,7 +2125,7 @@ ProcessAPU2Input:
 				; using the song's time as an index to a table more difficult.
 				; If the SNES needs 0 <= value < #$C0, it can limit the value itself.
 .nothing			; 
-
+	clrp			;
 	mov	a, $02
 	bmi	FadeOut		
 	beq	L_0BE7
