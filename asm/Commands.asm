@@ -105,7 +105,6 @@ endif
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
 +
-	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
