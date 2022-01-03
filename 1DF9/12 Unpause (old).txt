@@ -8,8 +8,6 @@ $E0 $FF #jsr changePause $DA $02 $0C $54 $B4 $B0 $B4 $18 $B0
 	mov a, #$00
 	mov !PauseMusic, a
 	
-	and !NCKValue, #$bf		; Unset the mute flag.
-	mov a, !NCKValue
-	call ModifyNoise
-	ret
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 }
