@@ -102,6 +102,7 @@
 		<li>Fixed a bug where turning off Yoshi Drums was not unmuting channels.</li>
 		<li>Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized.</li>
 		<li>Fixed a bug where the Yoshi Drums were not being disabled when Mario teleports into a room without Yoshi without disembarking first through a cutscene or otherwise. This does add a new hijack at $02A763 in order to do this, though, so be careful...</li>
+		<li>Fixed a big bug where uppercase notes would refer to undefined arrays, meaning they would output wildly inconsistent data.</li>
 	</ul>
 	</li>
 	</ul>
