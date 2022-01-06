@@ -215,26 +215,30 @@
 <table border="3" class="hex">
 	<tr>
 		<th>Command</th>
+		<th>Source</th>
 		<th>Purpose <br></th>
 		<th>Description <br></th>
 		<th colspan="2">Parameters</th>
 	</tr>
 	<tr>
 		<td>$DA<br></td>
+		<td>Vanilla<br></td>
 		<td>Instrument<br></td>
 		<td>Sets the instrument for the current channel.<br></td>
 		<td>$XX<br></td>
 		<td>Instrument to set to.  Default limit is $00 to $12.<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$DB<br></td>
+		<td>Vanilla<br></td>
 		<td>Pan<br></td>
 		<td>Sets the panning for the current channel.<br></td>
 		<td>$XX <br></td>
 		<td>Panning value.  Must be between $00 and $13.  $0A is centered. Note that setting the highest two bits will enable surround sound.<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$DC<br></td>
+		<td rowspan="2">Vanilla<br></td>
 		<td rowspan="2">Pan fade</td>
 		<td rowspan="2">Fades the pan over time </td>
 		<td>$XX<br></td>
@@ -243,9 +247,10 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Final panning value<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$DD</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Pitch bend<br></td>
 		<td rowspan="3">Slides from the currently playing note to the specified note smoothly. <br></td>
 		<td>$XX<br></td>
@@ -258,9 +263,10 @@
 	<tr>
 		<td>$ZZ</td>
 		<td><a href="#NoteInfo">Note</a></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$DE</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Vibrato<br></td>
 		<td rowspan="3">Turns on vibrato for the current channel<br></td>
 		<td>$XX<br></td>
@@ -273,21 +279,24 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Amplitude<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$DF<br></td>
+		<td>Vanilla<br></td>
 		<td>Vibrato off<br></td>
 		<td colspan="3">Turns off vibrato.<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E0</td>
+		<td>Vanilla<br></td>
 		<td>Global volume<br></td>
 		<td>Sets the song's global volume<br></td>
 		<td>$XX<br></td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$E1</td>
+		<td rowspan="2">Vanilla<br></td>
 		<td rowspan="2">Global volume fade<br></td>
 		<td rowspan="2">Fades the song's global volume<br></td>
 		<td>$XX<br></td>
@@ -296,16 +305,18 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E2<br></td>
+		<td>Vanilla<br></td>
 		<td>Tempo<br></td>
 		<td>Sets the tempo to the specified value<br></td>
 		<td>$XX<br></td>
 		<td>Tempo<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$E3</td>
+		<td rowspan="2">Vanilla<br></td>
 		<td rowspan="2">Tempo fade</td>
 		<td rowspan="2">Fades the tempo to the specified value</td>
 		<td>$XX<br></td>
@@ -314,16 +325,18 @@
 	<tr>
 		<td>$YY</td>
 		<td>Value<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E4</td>
+		<td>Vanilla<br></td>
 		<td>Global transpose<br></td>
 		<td>Transposes all instruments by the value<br></td>
 		<td>$XX<br></td>
 		<td>Transposition<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$E5</td>
+		<td rowspan="3">Vanilla<br>(was only functional in carol's MORE.bin, Addmusic405 and AddmusicK because of a memory location bug in the original)<br></td>
 		<td rowspan="3">Tremolo<br></td>
 		<td rowspan="3">Enables tremolo for the current channel<br></td>
 		<td>$XX<br></td>
@@ -336,30 +349,34 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Amplitude<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E6</td>
+		<td>carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
 		<td>Subloop start<br></td>
 		<td>Sets the starting point for a subloop<br></td>
 		<td>$00</td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E6</td>
+		<td>carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
 		<td>Subloop end<br></td>
 		<td>Sets the ending point for a subloop<br></td>
 		<td>$XX<br></td>
 		<td>Loop count<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$E7</td>
+		<td>Vanilla<br></td>
 		<td>Volume<br></td>
 		<td>Sets the volume for the current channel<br></td>
 		<td>$XX<br></td>
 		<td>Volume <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$E8</td>
+		<td rowspan="2">Vanilla<br></td>
 		<td rowspan="2">Volume fade</td>
 		<td rowspan="2">Fades the volume for the current channel<br></td>
 		<td>$XX<br></td>
@@ -368,9 +385,10 @@
 	<tr>
 		<td>$YY</td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$E9</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Loop</td>
 		<td rowspan="3">Normal loop. Do not use manually. </td>
 		<td>$XX<br></td>
@@ -383,16 +401,18 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Loop count <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$EA</td>
+		<td>Vanilla<br></td>
 		<td>Vibrato fade <br></td>
 		<td>Fades to the amplitude specified by $DE over the specified period of time.<br></td>
 		<td>$XX<br></td>
 		<td><a href="#LengthInfo">Duration</a><br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$EB</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Pitch envelope (release)</td>
 		<td rowspan="3">Bends all subsequent notes from the current note to the current note + the specified number of semitones (negative values--i.e. values above $80--are allowed).</td>
 		<td>$XX<br></td>
@@ -405,9 +425,10 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Semitone difference<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$EC</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Pitch envelope (attack)<br></td>
 		<td rowspan="3">Bends all subsequent notes from the current note + the specified number of semitones to the current note (negative values--i.e. values above $80--are allowed).<br></td>
 		<td>$XX<br></td>
@@ -420,9 +441,10 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Semitone difference<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
+		<td rowspan="2">carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
 		<td rowspan="2">ADSR<br></td>
 		<td rowspan="2">Enables a custom ADSR on the current channel. $DA must not be be &gt; $7F.  See <a href="#ADSRInfo">here</a> for more information.<br></td>
 		<td>$DA<br></td>
@@ -434,6 +456,7 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
+		<td rowspan="2">carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
 		<td rowspan="2">GAIN</td>
 		<td rowspan="2">Enables a custom GAIN on the current channel. </td>
 		<td>$80</td>
@@ -442,16 +465,18 @@
 	<tr>
 		<td>$YY</td>
 		<td>GAIN<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$EE</td>
+		<td>Vanilla<br></td>
 		<td>Tune channel <br></td>
 		<td>Sets the pitch modifier for this channel.<br></td>
 		<td>$XX<br></td>
 		<td>Tuning<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$EF</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Echo 1<br></td>
 		<td rowspan="3">Sets some of the echo parameters for this song.<br></td>
 		<td>$XX<br></td>
@@ -464,14 +489,16 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Echo volume, right<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F0</td>
+		<td>Vanilla<br></td>
 		<td>Echo off<br></td>
 		<td colspan="3">Turns off echo<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$F1</td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Echo 2<br></td>
 		<td rowspan="3">Sets some of the echo parameters for this song.<br></td>
 		<td>$XX<br></td>
@@ -484,9 +511,10 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>FIR filter to use. See the echofilter tables in main.asm for more details, but for 99% of the userbase, $01 is "on" and $00 is "off".<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$F2<br></td>
+		<td rowspan="3">Vanilla<br></td>
 		<td rowspan="3">Echo fade<br></td>
 		<td rowspan="3">Fades the echo volume<br></td>
 		<td>$XX<br></td>
@@ -499,9 +527,10 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Final echo volume for right speaker<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$F3</td>
+		<td rowspan="2">AddmusicM<br></td>
 		<td rowspan="2">Sample load <br></td>
 		<td rowspan="2">Starts playing the specified sample. Note that the ("", $) command is highly preferred over this.<br></td>
 		<td>$XX<br></td>
@@ -510,72 +539,82 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Multiplication pitch<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4<br></td>
+		<td>AddmusicM<br></td>
 		<td>Yoshi drums <br></td>
 		<td>Enables yoshi drums on channel #5 <br></td>
 		<td>$00<br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4</td>
+		<td>AddmusicM<br></td>
 		<td>Legato <br></td>
 		<td>Toggle legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning).  Note that when turning off legato, you must do so in the middle of the last note to use this effect, instead of in between notes.</td>
 		<td>$01</td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4</td>
+		<td>AddmusicM<br></td>
 		<td>Light staccato</td>
 		<td>Toggle light staccato (notes will be played with less of a delay between).  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.</td>
 		<td>$02</td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicM<br></td>
 		<td>Echo toggle<br></td>
 		<td>Toggles the echo for this channel <br></td>
 		<td>$03 <br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicM<br></td>
 		<td>SNES sync <br></td>
 		<td>Sends the current song's position to the output registers. <br></td>
 		<td>$05 <br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicK<br></td>
 		<td>Yoshi drums <br></td>
 		<td>Enables yoshi drums on the current channel <br></td>
 		<td>$06 <br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicK<br></td>
 		<td>Tempo hike off <br></td>
 		<td>Disables the tempo hike caused by the "time is running out!" sound effect. Use this on songs that should never be affected by this, such as the course clear music, game over music, etc. <br></td>
 		<td>$07 <br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicK<br></td>
 		<td>Velocity table <br></td>
 		<td>Switch the velocity table to use. By default, a song will use SMW's velocity table, which is rather quiet. Use this to use the standard n-spc velocity table instead, which is a bit louder. The alternative to this command is "#louder" when using older versions of AddmusicK (older than parser version 2). Otherwise it's enabled by default.<br></td>
 		<td>$08</td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicK<br></td>
 		<td>Restore instrument<br></td>
 		<td>Restores all the <b>instrument</b> settings for the current channel.  It's the same thing as just calling the currently playing instrument. It does work on custom instruments.<br></td>
 		<td>$09</td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	    <tr>
         <td rowspan="8">$F5 <br></td>
+	<td rowspan="8">AddmusicM<br></td>
         <td rowspan="8">FIR filter <br></td>
         <td rowspan="8">Sets the fir filter coefficients. <br></td>
         <td>$X0 <br></td>
@@ -608,9 +647,10 @@
 	<tr>
 		<td>$X7<br></td>
 		<td>Coefficient 8 <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$F6</td>
+		<td rowspan="2">AddmusicM<br></td>
 		<td rowspan="2">DSP write <br></td>
 		<td rowspan="2">Write a value directly to the DSP<br></td>
 		<td>$XX<br></td>
@@ -619,16 +659,18 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Value to write <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F8</td>
+		<td>AddmusicM<br></td>
 		<td>Enable noise <br></td>
 		<td>Enables noise for the current channel. Using an instrument that does not use noise will disable it. <br></td>
 		<td>$XX<br></td>
 		<td>"Pitch" of the noise. <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$F9</td>
+		<td rowspan="2">AddmusicM<br></td>
 		<td rowspan="2">Data send<br></td>
 		<td rowspan="2">Sends two bytes of data to the SNES.  See asm/SNES/patch.asm for more info.<br></td>
 		<td>$XX<br></td>
@@ -637,9 +679,10 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>The second byte to send.<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">Pitch modulation <br></td>
 		<td rowspan="2">Enables pitch modulation <br></td>
 		<td>$00 <br></td>
@@ -648,9 +691,10 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>Which channels to enable pitch modulation on, bitwise (7654321-). Channel 0 cannot have pitch modulation. <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">GAIN<br></td>
 		<td rowspan="2">Enables GAIN on the current channel<br></td>
 		<td>$01<br></td>
@@ -659,9 +703,10 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The GAIN value to use<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">AddmusicK<br>(relocated from $ED $81 in Addmusic405)<br></td>
 		<td rowspan="2">Semitone tune </td>
 		<td rowspan="2">Tunes the current channel by the specified number of semitones </td>
 		<td>$02<br></td>
@@ -670,9 +715,10 @@
 	<tr>
 		<td>$XX</td>
 		<td>Number of semitones to tune by<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">Amplify <br></td>
 		<td rowspan="2">Multiplies the volume of the current channel by this value + 1. 0 will not modify the volume, whereas FF will (just shy of) double it. Be warned of clipping, however, as SMW's engine was not built to assume high volumes.  In other words, don't use this to make your song louder; use it if a specific instrument or something is already playing at max volume and still isn't loud enough.<br></td>
 		<td>$03</td>
@@ -681,9 +727,10 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>Value to multiply the volume by<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">Echo buffer reserve<br></td>
 		<td rowspan="2">You do not need to use this command manually. In fact, you probably shouldn't.  This is inserted at the beginning of every song by the program, and doesn't have much use otherwise. Its sole purpose is to reserve an echo buffer large enough for the song's longest echo delay.  This is to prevent the normal echo command from having to do it itself, which is a time-consuming operation that would cause a pause in the middle of the song.  Note that if hex command validation is turned off, this command will not be inserted.<br></td>
 		<td>$04</td>
@@ -692,10 +739,11 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The largest echo buffer you plan to use<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
-<tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+<tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$FB<br></td>
+		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Arpeggio</td>
 		<td rowspan="3">Specifies an arpeggio. Each note after this will play with a specified pattern.  Note that this command and its subcommands <i>are</i> compatible with the $F4 $01 command, and in fact combining the two is recommended for certain circumstances.<br></td>
 		<td>$XX</td>
@@ -708,9 +756,10 @@
 	<tr>
 		<td>$...<br></td>
 		<td>The sequence of notes. Each byte is the change in pitch from the currently playing note. For example, $FF 00 would alternate between playing one semitone below the current note and the current note itself. A value of $80 at any point indicates a loop point; the sequence will restart there instead of the beginning if one is specified. <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$FB</td>
+		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Trill <br></td>
 		<td rowspan="3">A specialized version of the arpeggio command. It implies that you want to alternate between only two notes. <br></td>
 		<td>$80<br></td>
@@ -723,9 +772,10 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>The change of pitch between the currently playing note and the trilled note. <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="3">$FB</td>
+		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Glissando <br></td>
 		<td rowspan="3">If glissando is turned on, then the current note will be rekeyed at increasingly higher/lower pitches. Analogous to sliding your hand down a keyboard.  Unlike the other two subcommands, this one's effect is turned off after one note.<br></td>
 		<td>$81<br></td>
@@ -738,10 +788,11 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>The number of semitones to step up or down by for each new note <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	
 	<tr>
 		<td rowspan="4">$FC</td>
+		<td rowspan="4">AddmusicK<br></td>
 		<td rowspan="4">Remote commands</td>
 		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.<br><br>For the sake of reference, for songs labeled #amk 1, this command is anticipation gain.  It used to cause gain to occur some amount of time before a note ended. It has been replaced entirely with remote commands, and will be converted to that in current versions of AddmusicK.</td>
 		<td>$WW<br></td>
@@ -758,17 +809,307 @@
 	<tr>
 		<td>$ZZ</td>
 		<td><a href="#LengthInfo">How long to wait when using wait types 1 or 2.</a> Note that a value of $00 is treated as $0100<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$FD</td>
+		<td>New<br>(relocated from $E6 in Vanilla, carol's MORE.bin and Addmusic405, with carol's MORE.bin only using it for song IDs $01-$1F)<br>(was previously only functional in carol's MORE.bin and Addmusic405)<br></td>
 		<td>Tremolo Off<br></td>
-		<td>Disables tremolo for the current channel<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+		<td colspan="3">Disables tremolo for the current channel<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$FE</td>
+		<td>New<br>(relocated from $ED in Vanilla, which was never functional due to a missing pointer reference)<br></td>
 		<td>Pitch Envelope Off<br></td>
-		<td>Turns off pitch envelope.<br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+		<td colspan="3">Turns off pitch envelope.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+</table>
+
+	<h2>Historical commands:</h2>
+	These are hex commands from past Addmusic versions that have been relocated or removed from AddmusicK.
+
+	<h3>Vanilla SMW</h3>
+The highest command ID supported was $F2.
+<table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td rowspan="3">$E5</td>
+		<td rowspan="3">N/A<br>(Became functional in carol's MORE.bin, Addmusic405 and AddmusicK)</td>
+		<td rowspan="3">Tremolo<br></td>
+		<td rowspan="3">Enables tremolo for the current channel. Due to an incorrect memory location reference, this command was de-facto not functional.<br></td>
+		<td>$XX<br></td>
+		<td><a href="#LengthInfo">Delay</a><br></td>
+	</tr>
+	<tr>
+		<td>$YY<br></td>
+		<td><a href="#LengthInfo">Duration</a><br></td>
+	</tr>
+	<tr>
+		<td>$ZZ<br></td>
+		<td>Amplitude<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$E6</td>
+		<td>$FD</td>
+		<td>Tremolo Off<br></td>
+		<td colspan="3">Disables tremolo for the current channel. Due to an incorrect memory location reference, this command was de-facto not functional.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$ED</td>
+		<td>$FE</td>
+		<td>Pitch Envelope Off<br></td>
+		<td colspan="3">Turns off pitch envelope. The code did exist, but the pointer itself did not exist, therefore this command was never functional.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+</table>
+
+	<h3>Addmusic404 (by Romi)</h3>
+With the exception of the hex command below, this was nearly identical to Vanilla SMW, and thus Addmusic404 inherits the upper command ID limit of $F2.
+<table table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td rowspan="2">$ED</td>
+		<td rowspan="2">N/A<br>($F6 $x5 %1dddaaaa $F6 $x6 %1dddaaaa, where x is the channel ID, is the closest approximation: AMK's ADSR command has the same general functionality, but both writes to a backup table for restoration if interrupted by SFX and also supports GAIN)</td>
+		<td rowspan="2">ADSR<br></td>
+		<td rowspan="2">Enables a custom ADSR on the current channel. See <a href="#ADSRInfo">here</a> for more information. Note that unlike AddmusicK's ADSR, this writes directly to the DSP registers and forces on ADSR, meaning GAIN is not supported.<br></td>
+		<td>$DA<br></td>
+		<td>Decay (3 bits), attack (7 bits); %?dddaaaa<br></td>
+	</tr>
+	<tr>
+		<td>$SR</td>
+		<td>Sustain (3 bits), Release (5 bits); %sssrrrrr<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+</table>
+
+	<h3>carol's MORE.bin</h3>
+The highest command ID supported was $F2.
+Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6: if the song ID specified is below $20, then they execute their default command code instead of using custom ones.
+<table table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td>$E4</td>
+		<td>N/A<br>($F4 $02 is the closet approximation, but this toggles light staccato rather than enables it, and $E4 $01 added to this enables the side effect of doing this)</td>
+		<td>Light staccato<br></td>
+		<td>Enable light staccato (notes will be played with less of a delay between). As a side effect, also sets global transposition to 1 semitone.  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
+		<td>$AA</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$E5</td>
+		<td rowspan="2">$F3<br>(with an expanded sample ID range)</td>
+		<td rowspan="2">Sample load <br></td>
+		<td rowspan="2">Starts playing the specified sample. Note that the ("", $) command is highly preferred over this. $XX must be $80 or higher.<br></td>
+		<td>$XX<br></td>
+		<td>Sample to use (subtract $80 to get the internal ID used)<br></td>
+	</tr>
+	<tr>
+		<td>$YY<br></td>
+		<td>Multiplication pitch<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$E6</td>
+		<td>$FD</td>
+		<td>Tremolo Off<br></td>
+		<td colspan="3">Disables tremolo for the current channel. Only available on song IDs $00-$1F: for $20 and up, it becomes the Subloop command, which works just like AddmusicK's.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+</table>
+
+	<h3>Addmusic405 (by HuFlungDu)</h3>
+The highest command ID supported was $F2.
+Contains the majority of carol's MORE.bin except for the repeat section ($E6) command (which was previously limited to song IDs $20 and up) and ADSR ($ED command), which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
+
+<table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td rowspan="3">$ED</td>
+		<td rowspan="3">$F6<br>(except for the auto-detection of the current voice)<br></td>
+		<td rowspan="3">DSP write <br></td>
+		<td rowspan="3">Write a value directly to the DSP<br>Writes to the current voice's DSP register when the lower four bits of $XX are $9 or less.</td>
+		<td>$80<br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>Register to write to<br></td>
+	</tr>
+	<tr>
+		<td>$YY<br></td>
+		<td>Value to write <br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$ED</td>
+		<td rowspan="2">$FA $02</td>
+		<td rowspan="2">Semitone tune </td>
+		<td rowspan="2">Tunes the current channel by the specified number of semitones </td>
+		<td>$81<br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX</td>
+		<td>Number of semitones to tune by<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="6">$ED</td>
+		<td rowspan="6">N/A<br>(Technically the code, or at least of the $F7 command which writes one byte at at time, still exists. However, it is not compiled by default.)</td>
+		<td rowspan="6">Write Data</td>
+		<td rowspan="6">Writes data to a location in ARAM</td>
+		<td>$82<br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX</td>
+		<td>Address to write to, high byte<br></td>
+	</tr>
+	<tr>
+		<td>$YY</td>
+		<td>Address to write to, low byte<br></td>
+	</tr>
+	<tr>
+		<td>$ZZ</td>
+		<td>Number of bytes to write, high byte<br></td>
+	</tr>
+	<tr>
+		<td>$AA</td>
+		<td>Number of bytes to write, low byte<br></td>
+	</tr>
+	<tr>
+		<td>$BB</td>
+		<td>Data byte(s). The size of this parameter is $AAZZ bytes, unlike the others, which are only one byte.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="6">$ED</td>
+		<td rowspan="6">N/A<br>(Was not reimplemented into AddmusicK)</td>
+		<td rowspan="6">Write + Execute Code </td>
+		<td rowspan="6">Copies ASM to a location in ARAM, then executes it. </td>
+		<td>$83<br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX</td>
+		<td>Address to write to and execute from, high byte<br></td>
+	</tr>
+	<tr>
+		<td>$YY</td>
+		<td>Address to write to and execute from, low byte<br></td>
+	</tr>
+	<tr>
+		<td>$ZZ</td>
+		<td>Number of bytes to write, high byte<br></td>
+	</tr>
+	<tr>
+		<td>$AA</td>
+		<td>Number of bytes to write, low byte<br></td>
+	</tr>
+	<tr>
+		<td>$BB</td>
+		<td>Data byte(s). The size of this parameter is $AAZZ bytes, unlike the others, which are only one byte.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+</table>
+
+	<h3>AddmusicM</h3>
+The highest command ID supported was $FA.
+Contains the majority of carol's MORE.bin except for global transposition ($E4 command) due to sending staccato to its own command slot and not checking for $20 as a song ID due to sending set sample to its own command slot ($F3 command) and overwriting tremolo off with repeat section ($E6 command).
+
+<table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
+		<td>Reset Special Pulse Wave<br></td>
+		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
+		<td>$04 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="3">$F7 <br></td>
+		<td rowspan="3">N/A<br>(Technically it still exists, but it is not compiled by default)</td>
+		<td rowspan="3">Write Byte<br></td>
+		<td rowspan="3">Writes byte to a location in ARAM</td>
+		<td>$XX<br></td>
+		<td>Address to write to, high byte<br></td>
+	</tr>
+	<tr>
+		<td>$YY</td>
+		<td>Address to write to, low byte<br></td>
+	</tr>
+	<tr>
+		<td>$ZZ</td>
+		<td>Data byte to write.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$FA <br></td>
+		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
+		<td>Special Pulse Wave Oscillation Speed<br></td>
+		<td>Sets the oscillation speed of the special pulse wave. The speed is not relative to the music's tempo: instead, the oscillation is on its own tempo value independent of the music.</td>
+		<td>$XX<br></td>
+		<td>The oscillation speed of the pulse wave to use <br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+</table>
+
+	<h3>AddmusicK Beta</h3>
+The highest command ID supported was $FC.
+<table border="3" class="hex">
+	<tr>
+		<th>Command</th>
+		<th>Relocated to</th>
+		<th>Purpose <br></th>
+		<th>Description <br></th>
+		<th colspan="2">Parameters</th>
+	</tr>
+	<tr>
+		<td rowspan="2">$FA <br></td>
+		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 3 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command. However, this method is not compatible with running Remote Gain at the same time: songs automatically converted from AddmusicK Beta use a special reserved remote code type (in this command's case, 5, and it is designed to run in unison with 6, which takes up a slot normally used for -1 remote code events, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.)</td>
+		<td rowspan="2">Anticipation Gain<br></td>
+		<td rowspan="2">Sets the GAIN value of a voice whenever the note is keyed off.</td>
+		<td>$05 <br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX</td>
+		<td>GAIN<br></td>
+	</tr>
+	<tr>
+		<td rowspan="2">$FC <br></td>
+		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 2 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command. However, this method is not compatible with running Anticipation Gain at the same time: songs automatically converted from AddmusicK beta use a special reserved remote code type (in this command's case, 6, and yes, for those of you looking at the source, this does use the slot normally taken up by a -1 remote code in order to run in unison with the remote code type 5 event, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.)</td>
+		<td rowspan="2">Remote Gain<br></td>
+		<td rowspan="2">Sets the GAIN value of a voice some time before a note ends.</td>
+		<td>$XX <br></td>
+		<td>Number of ticks before the note ends to wait for.</td>
+	</tr>
+	<tr>
+		<td>$YY</td>
+		<td>GAIN<br></td>
+	</tr>
+<tr><td colspan="6">&nbsp;</td></tr>
 </table>
 
 <br><br><h2>Parameter reference</h2>
