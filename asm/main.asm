@@ -944,13 +944,20 @@ if !noiseFrequencySFXInstanceResolution = !true
 
 .noiseNoPrevSFXFrequency
 	mov	$1f, #$00
+if !noiseFrequencyMatchChecks = !true
 	mov	$1e, a
+else
+	;Store the channel number instead.
+	mov	$1e, x
+endif
 endif
 	;All music channels with noise need to have their VxVOL values
 	;zeroed out here if the frequency is not a match.
 .noiseCheckMusic
+if !noiseFrequencyMatchChecks = !true
 	cmp	a, $0389
 	beq	.noiseSetFreq
+endif
 	cmp	!MusicNoiseChannels, #$00
 	beq	.noiseSetFreq
 	push	x
@@ -990,9 +997,14 @@ if !noiseFrequencySFXInstanceResolution = !true
 	mov	a, $18
 	and	a, !SFXNoiseChannels
 	beq	.setNormalVol
+if !noiseFrequencyMatchChecks = !true
 	mov	a, $01f1+x
 	cmp	a, $1e
 	beq	.setNormalVol
+else
+	cmp	x, $1e
+	beq	.setNormalVol
+endif
 	mov	a, !ChSFXPriority+x
 	cmp	a, $1f
 	bcc	.storeVolFromNoiseSetting
@@ -1048,7 +1060,15 @@ SetSFXNoise:
 	bcc	+
 	mov	$1f, a
 	mov	a, $01f1+x
+if !noiseFrequencyMatchChecks = !true
 	mov	$1e, a
+else
+	mov	$11, a
+	;We'll just store the winning channel number instead, since we only
+	;have one channel to allocate for noise.
+	;The frequency to use is stored in scratch RAM.
+	mov	$1e, x
+endif
 +
 	inc	x
 	inc	x
@@ -1059,7 +1079,11 @@ SetSFXNoise:
 	mov	$12, !SFXNoiseChannels
 	mov	a, $13
 	tclr	$12, a
+if !noiseFrequencyMatchChecks = !true
 	mov	a, $1e
+else
+	mov	a, $11
+endif
 	mov	x, #$00
 	mov	$f2, x
 	mov	$13, #$01
@@ -1068,7 +1092,11 @@ SetSFXNoise:
 	push	p
 	push	a
 	bcc	++
+if !noiseFrequencyMatchChecks = !true
 	cmp	a, $01f1+x
+else
+	cmp	x, $1e
+endif
 	beq	+
 	setc
 	call	NoiseBackupThenZeroVolLevels
@@ -2641,6 +2669,7 @@ if !noSFX = !false
 	beq	++
 	and	a, $1d
 	bne	++
+if !noiseFrequencyMatchChecks = !true
 	;Hardware limitations prevent more than one noise frequency from
 	;playing at once. Thus, we zero out the voice volume of the music
 	;if SFX is using the noise and the frequencies don't match.
@@ -2648,6 +2677,10 @@ if !noSFX = !false
 	and	a, #$1f
 	cmp	a, $0389
 	beq	++
+else
+	mov	a, !SFXNoiseChannels
+	beq	++
+endif
 	push	x
 	bbc1	$12.0, +
 	inc	x
