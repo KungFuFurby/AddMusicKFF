@@ -1307,7 +1307,7 @@ The highest command ID supported was $FC.
 	</tr>
 	<tr>
 		<td rowspan="2">$FA <br></td>
-		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 3 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command.)</td>
+		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 3 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command. However, this method is not compatible with running Remote Gain at the same time: songs automatically converted from AddmusicK Beta use a special reserved remote code type (in this command's case, 5, and it is designed to run in unison with 6, which takes up a slot normally used for -1 remote code events, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.)</td>
 		<td rowspan="2">Anticipation Gain<br></td>
 		<td rowspan="2">Sets the GAIN value of a voice whenever the note is keyed off.</td>
 		<td>$05 <br></td>
@@ -1319,7 +1319,7 @@ The highest command ID supported was $FC.
 	</tr>
 	<tr>
 		<td rowspan="2">$FC <br></td>
-		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 2 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command.)</td>
+		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 2 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command. However, this method is not compatible with running Anticipation Gain at the same time: songs automatically converted from AddmusicK beta use a special reserved remote code type (in this command's case, 6, and yes, for those of you looking at the source, this does use the slot normally taken up by a -1 remote code in order to run in unison with the remote code type 5 event, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.)</td>
 		<td rowspan="2">Remote Gain<br></td>
 		<td rowspan="2">Sets the GAIN value of a voice some time before a note ends.</td>
 		<td>$XX <br></td>

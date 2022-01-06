@@ -515,7 +515,7 @@ endif
 .checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
 	dec	a
-	bne	.notType1RemoteCode
+	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
 	mov	!remoteCodeTimeLeft+x, a
@@ -3141,6 +3141,7 @@ L_10B2:							; |
 .loopSectionPassThrough:
 	incw	$14
 	bra	.jmpToL_10B2
+	ret
 }
 
 TerminateOnLegatoEnable:
