@@ -10,7 +10,7 @@ $E0 $FF $DA $02 $0C $54 $B4 $B0 $B4 $18 $B0 #jsr changePause1
 	inc a
 	mov !PauseMusic, a
 	
-	or  !NCKValue, #$40	; Set the mute flag.
+	set1  !NCKValue.6	; Set the mute flag.
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret

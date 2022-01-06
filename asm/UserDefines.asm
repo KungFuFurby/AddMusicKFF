@@ -30,6 +30,19 @@ includeonce
 
 ;=======================================
 ;---------------
+!noiseFrequencyMatchChecks = !false
+
+;Default setting: !false
+;---------------
+; Requires SFX code to actually be present (!noSFX is false).
+; Adds in code that allows noise frequencies that match to the current noise
+; frequency being used to continue to be audible, thus allowing the volume
+; of the noise to stack on top of each other. Without this, only one channel
+; will be audible at a time for noise, regardless of the circumstance.
+;=======================================
+
+;=======================================
+;---------------
 !noiseFrequencySFXInstanceResolution = !false
 
 ;Default setting: !false

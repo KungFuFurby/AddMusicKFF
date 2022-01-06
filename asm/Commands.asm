@@ -64,8 +64,10 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	bpl	+
+if !noSFX = !false
 	and	a, #$1f
 	mov	$0389, a
+endif
 	or	(!MusicNoiseChannels), ($48)
 	bra	++
 +
@@ -103,7 +105,6 @@ endif
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
 +
-	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
@@ -167,23 +168,12 @@ cmdDB:					; Change the pan
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDC:					; Fade the pan
+;cmdDC:					; Fade the pan
 {
-	mov   !PanFadeDuration+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   !PanFadeDestination+x, a
-	setc
-	sbc   a, !Pan+x         ; current pan value
-	pop   x
-	call  Divide16             ; delta = pan value / steps
-	mov   $0290+x, a
-	mov   a, y
-	mov   $0291+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDD:					; Pitch bend
+;cmdDD:					; Pitch bend
 {
 	; Handled elsewhere.
 }
@@ -339,20 +329,9 @@ cmdE7:					; Change the volume
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE8:					; Fade the volume
+;cmdE8:					; Fade the volume
 {
-	mov   $80+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   $0260+x, a
-	setc
-	sbc   a, !Volume+x
-	pop   x
-	call  Divide16
-	mov   $0250+x, a
-	mov   a, y
-	mov   $0251+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
@@ -453,7 +432,7 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	or	!NCKValue, #$20           ; disable echo write
+	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -490,47 +469,33 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
-	
-WaitForDelay:				; This stalls the SPC for the correct amount of time depending on the value in !EchoDelay.
-	mov	a, !EchoDelay		; a delay of $00 doesn't need this
+		
+ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
+	and	a, #$0F
+	push	a			; Save the requested delay.
 	beq	+
-	mov	$14, #$00
-	mov	$f2, #$6D
-	mov	$15, $f3
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
-	
-+	ret
-	
-GetBufferAddress:
-	xcn
-	beq	+
-	and	a, #$F0
+	xcn	a			; Get the buffer address.
 	lsr	a
+	dec	a
++
+	eor	a, #$FF
+	push	a
+
+	mov	$f2, #$6c
+	or	$f3, #$60
+
+	mov	$f2, #$7d
+	mov	a, $f3
+	and	a, #$0f
+	beq	+
+	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
+	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	mov	$14, #$00
 	mov	$15, a
-	movw	ya, $0e
-	subw	ya, $14		
-	ret				; 
+-	dbnz	$14, -
+	dbnz	$15, -
 +
-	mov	a, #$fc			; \ A delay of 0 needs 4 bytes for no adequately explained reason.
-	mov	y, #$ff			; /
-	ret
-	
-	
-ModifyEchoDelay:			; a should contain the requested delay.
-	mov	$10, !NCKValue
-	push	a			; Save the requested delay.
-	call	GetBufferAddress
-	push	y
-
-	mov	!NCKValue, #$60
-	call	SetFLGFromNCKValue
 	
 	pop	y			; \
 	mov	$f2, #$6d		; | Write the new buffer address.
@@ -540,19 +505,19 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
 	
-	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
-
+	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	beq	+
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	mov	y, a
 	
-	mov	!NCKValue, #$40
-	call	SetFLGFromNCKValue
-	
-	
-	
-	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	
-	mov	!NCKValue, #$00
-	mov	a, $10
-	jmp	ModifyNoise
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
++	
+	jmp	SetFLGFromNCKValue
 
 SetEDLVarDSP:
 	mov	!EchoDelay, a		; \
@@ -827,23 +792,23 @@ SubC_table2:
 ;	
 	
 	call	GetCommandData
+..zeroEDLGate
+	beq	..zeroEDL
 	cmp	a, !MaxEchoDelay
 	beq	+
-	bcc	+
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
-
+	bcs	..modifyEchoDelay
 +
 	call	SetEDLVarDSP		; Write the new delay.
 	
-	mov	a, !NCKValue
-	and	!NCKValue, #$20
-	jmp	ModifyNoise
+	and	!NCKValue, #$3f
+	jmp	SetFLGFromNCKValue
+
+..zeroEDL
+	;Don't skip again until !MaxEchoDelay is reset.
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+..modifyEchoDelay
+	clr1	!NCKValue.5
+	jmp	ModifyEchoDelay
 	
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
