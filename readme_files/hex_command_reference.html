@@ -574,11 +574,12 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
+		<td>AddmusicM<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
 		<td>Reset Special Pulse Wave<br></td>
 		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
 		<td>$04 <br></td>
 		<td></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
@@ -915,7 +916,9 @@
 		<td>$XX<br></td>
 		<td>The largest echo buffer you plan to use<br></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
 		<td rowspan="2">$FA <br></td>
+		<td rowspan="2">New<br>(relocated from $FA in AddmusicM)<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
 		<td rowspan="2">Special Pulse Wave Oscillation Speed<br></td>
 		<td rowspan="2">Sets the oscillation speed of the special pulse wave. The speed is not relative to the music's tempo: instead, the oscillation is on its own tempo value independent of the music.</td>
 		<td>$07 <br></td>
@@ -924,7 +927,7 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The oscillation speed of the pulse wave to use <br></td>
-</tr><tr><td colspan="5">&nbsp;</td></tr>
+</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">New<br></td>
@@ -939,6 +942,7 @@
 <tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
+		<td rowspan="2">New</td>
 		<td rowspan="2">Special Pulse Wave Format Clear + Set Sample ID<br></td>
 		<td rowspan="2">You do not need to use this command manually. In fact, you probably shouldn't.  This is inserted at the beginning of every song by the program whenever "SPECIALWAVE.brr" is included in the song as a sample (whether by sample group or in the MML file), and doesn't have much use otherwise. Its sole purpose is to initialize the special pulse wave and set the sample ID to use to modify the special pulse wave. Note that if hex command validation is turned off, this command will not be inserted.<br></td>
 		<td>$10</td>
@@ -947,7 +951,7 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The sample ID to use <br></td>
-	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">New<br></td>
@@ -1259,14 +1263,6 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 	</tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
-		<td>Reset Special Pulse Wave<br></td>
-		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
-		<td>$04 <br></td>
-		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
-	<tr>
-		<td>$F4 <br></td>
 		<td>$F4 $16<br>(Add $FA $12 $C0 to the beginning of the song to replicate AddmusicM's clock divider behavior)</td>
 		<td>SNES Sync Toggle <br>(No Reset)<br></td>
 		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first.<br>The upper 8 bits of the counter increment every 192 ticks instead of every 256 ticks.<br></td>
@@ -1291,7 +1287,7 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$FA <br></td>
-		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
+		<td>$FA $07<br></td>
 		<td>Special Pulse Wave Oscillation Speed<br></td>
 		<td>Sets the oscillation speed of the special pulse wave. The speed is not relative to the music's tempo: instead, the oscillation is on its own tempo value independent of the music.</td>
 		<td>$XX<br></td>
