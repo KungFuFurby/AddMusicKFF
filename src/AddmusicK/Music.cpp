@@ -2045,7 +2045,7 @@ void Music::parseHexCommand()
 }
 void Music::parseNote()
 {
-	j = text[pos];
+	j = tolower(text[pos]);
 	pos++;
 
 	if (inRemoteDefinition)
