@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-01-04</h2>
+	<h2>Version 1.0.9 - 2022-01-06</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -103,6 +103,7 @@
 		<li>Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized.</li>
 		<li>Fixed a bug where the Yoshi Drums were not being disabled when Mario teleports into a room without Yoshi without disembarking first through a cutscene or otherwise. This does add a new hijack at $02A763 in order to do this, though, so be careful...</li>
 		<li>Fixed a big bug where uppercase notes would refer to undefined arrays, meaning they would output wildly inconsistent data.</li>
+		<li>There is now a historical hex command reference in order to assist from adapting from past Addmusics, as well as documenting their former purposes. Not everything has an exact equivalent yet, though.</li>
 	</ul>
 	</li>
 	</ul>
