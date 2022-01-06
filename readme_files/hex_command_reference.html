@@ -1075,14 +1075,6 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 		<th colspan="2">Parameters</th>
 	</tr>
 	<tr>
-		<td>$F4 <br></td>
-		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
-		<td>Reset Special Pulse Wave<br></td>
-		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
-		<td>$04 <br></td>
-		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
-	<tr>
 		<td rowspan="3">$F7 <br></td>
 		<td rowspan="3">N/A<br>(Technically it still exists, but it is not compiled by default)</td>
 		<td rowspan="3">Write Byte<br></td>
@@ -1100,7 +1092,7 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$FA <br></td>
-		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
+		<td>$FA $07<br></td>
 		<td>Special Pulse Wave Oscillation Speed<br></td>
 		<td>Sets the oscillation speed of the special pulse wave. The speed is not relative to the music's tempo: instead, the oscillation is on its own tempo value independent of the music.</td>
 		<td>$XX<br></td>
