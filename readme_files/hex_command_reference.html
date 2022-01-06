@@ -574,7 +574,7 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>AddmusicM<br></td>
+		<td>AddmusicK<br></td>
 		<td>SNES Sync Toggle<br></td>
 		<td>Resets the 16-bit tick counter (representing the song's position) and toggles incrementing the counter per tick and sending it to the output registers. <br></td>
 		<td>$05 <br></td>
@@ -710,7 +710,7 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>New<br></td>
+		<td>New<br>(relocated from $F4 $05 in AddmusicM)<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
 		<td>SNES Sync Toggle <br>(No Reset)<br></td>
 		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first. <br></td>
 		<td>$16 <br></td>
@@ -1234,6 +1234,14 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 		<td>Reset Special Pulse Wave<br></td>
 		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
 		<td>$04 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>$F4 $16<br>(Add $FA $12 $C0 to the beginning of the song to replicate AddmusicM's clock divider behavior)</td>
+		<td>SNES Sync Toggle <br>(No Reset)<br></td>
+		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first.<br>The upper 8 bits of the counter increment every 192 ticks instead of every 256 ticks.<br></td>
+		<td>$05 <br></td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
