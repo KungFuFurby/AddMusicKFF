@@ -2153,7 +2153,15 @@ endif
 
 L_0B5A:
 	mov	$06, a		; Song number goes into $06.
-	push	a
+	mov	$0c,#$02		;
+	asl	a			; Turn A from a song number into a pointer
+	mov	y, a		
+	mov	a, SongPointers-$02+y	; Get the pointer for the current song
+	push	a				; MODIFIED
+	mov	$40, a
+	mov	a, SongPointers-$01+y
+	push	a				; MODIFIED
+	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
@@ -2174,19 +2182,6 @@ endif
 	mov	!WaitTime, #$02		;
 	;mov	WaitTimeByte-1,a	;
 					;
-	mov	$0c,#$02		;
-	pop	a
-	; MODIFIED CODE END
-	asl	a			; Turn A from a song number into a pointer
-	mov	y, a		
-	mov	a, SongPointers-$02+y	; Get the pointer for the current song
-	push	a				; MODIFIED
-	mov	$40, a
-	mov	a, SongPointers-$01+y
-	push	a				; MODIFIED
-	mov	$41, a		; $40.w now points to the current song.
-	
-	; MODIFIED CODE START
 -	call	L_0BF0		; Get the first measure address.
 	movw	$16, ya		; This is guaranteed to be valid, so save it and get the next one.
 	mov	a, y		;
@@ -2213,10 +2208,10 @@ endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
-	call	ClearRemoteCodeAddressesAndOpenGate
-	mov	a, #$00
+	inc	a
 	mov	$02d1+x, a         ; Portamento[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
