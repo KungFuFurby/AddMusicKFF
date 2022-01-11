@@ -822,12 +822,10 @@ SubC_table2:
 	ret				; /
 	
 .oldFA_com
-	call	GetCommandData
 	mov	$0165,a
 	ret
 
 .SquareFormatClearSRCN
-	call	GetCommandData
 	mov	$0163, a
 	mov	a, #$F0 ;BEQ opcode
 	mov	SquareGate, a ;Special wave will now be initialized
