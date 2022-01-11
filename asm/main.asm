@@ -2013,7 +2013,7 @@ L_0B6D:
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
-	mov	a, #$00
+	inc	a
 	mov	$02d1+x, a         ; Portamento[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
