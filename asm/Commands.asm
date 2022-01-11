@@ -1117,7 +1117,7 @@ endif
 	call	NoteVCMD			;  |
 	mov	a, #!runningArpGateOnJumpDistance ;  |
 	mov	NormalNote_runningArpGate+1, a	; /
-	
+
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
 	or	($47), ($48)		; / Set this voice to be keyed on.
 .return2
