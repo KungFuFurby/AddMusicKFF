@@ -2034,9 +2034,9 @@ endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
-	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$00
 	mov	$02d1+x, a         ; Portamento[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
