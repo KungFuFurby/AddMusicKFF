@@ -856,8 +856,12 @@ cmdFA:					; Misc. comamnd that takes a parameter.
 	push	a
 	mov	a, SubC_table2+y
 	push	a
-	jmp	GetCommandData
-	;A will contain the incoming data and X will contain the channel ID.
+	push	y
+	call	GetCommandData
+	pop	y
+	;Y will contain the command ID shifted left by one, A will contain
+	;the incoming data and X will contain the channel ID.
+	ret
 
 SubC_table2:
 	dw	.PitchMod		; 00
@@ -945,20 +949,21 @@ SubC_table2:
 	ret
 
 .VxDSPWrite
-	;X will contain our command ID shifted left once.
+	;Y will contain our command ID shifted left once.
 	;Adjust by command ID to get the lower three bits of our voice DSP
 	;register ID. (The fourth is zeroed out.)
-	mov	a, x
+	push	a
+	mov	a, y
++
 	setc
 	sbc	a, #$08<<1
 	xcn	a
 	or	a, $46
 	xcn	a
 	lsr	a
-	push	a
-	call	GetCommandData
 	pop	y
-	jmp	DSPWrite
+	movw	$f2, ya
+	ret
 
 .SquareFormatClearSRCN
 	mov	$0163, a
@@ -969,7 +974,6 @@ SubC_table2:
 	jmp	SubC_4
 
 .SyncClockDivider
-	call	GetCommandData
 	mov	$016c, a
 	ret
 
