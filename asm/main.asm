@@ -276,11 +276,9 @@ L_059D:
 	
 }	
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
+;L_05A5:
 ReadInputRegister:
 {
-	mov   a, x		
-	mov   y, a
-
 L_05AC:
 	mov   a, $f4+x		; \ Get the input byte
 	cbne  $f4+x, L_05AC	; / Keep getting it until it's "stable"
@@ -289,12 +287,8 @@ L_05AC:
 	mov   $08+x, y		; |
 	cbne  $08+x, L_05C1	; |
 	mov   y, #$00		; |
+L_05C1:				; |
 	mov   $00+x, y		; |
-L_05C0:				; |
-	ret			; /
-L_05C1:				; \
-	mov   $00+x, y		; |
-	mov   a, y		; |
 	ret			; / 
 }	
 
