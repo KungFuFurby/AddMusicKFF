@@ -276,11 +276,9 @@ L_059D:
 	
 }	
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
+;L_05A5:
 ReadInputRegister:
 {
-	mov   a, x		
-	mov   y, a
-
 L_05AC:
 	mov   a, $f4+x		; \ Get the input byte
 	cbne  $f4+x, L_05AC	; / Keep getting it until it's "stable"
@@ -289,12 +287,8 @@ L_05AC:
 	mov   $08+x, y		; |
 	cbne  $08+x, L_05C1	; |
 	mov   y, #$00		; |
+L_05C1:				; |
 	mov   $00+x, y		; |
-L_05C0:				; |
-	ret			; /
-L_05C1:				; \
-	mov   $00+x, y		; |
-	mov   a, y		; |
 	ret			; / 
 }	
 
@@ -1291,18 +1285,18 @@ endif
 PSwitchSetNoteLengthCh2:
 	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
-	mov	PSwitchCh2NoteLen1, a
-	mov	PSwitchCh2NoteLen2, a
-	mov	PSwitchCh2NoteLen3, a
-	mov	PSwitchCh2NoteLen4, a
-	mov	PSwitchCh2NoteLen5, a
-	mov	PSwitchCh2NoteLen6, a
-	mov	PSwitchCh2NoteLen7, a
-	mov	PSwitchCh2NoteLen8, a
-	mov	PSwitchCh2NoteLen9, a
-	mov	PSwitchCh2NoteLen10, a
-	clrc
-	adc	a, PSwitchNoteLengths+y
+	push	y
+	mov	y, #$0a
+-
+	push	a
+	mov	a, PSwitchCh2NoteLenOffsets-1+y
+	mov	x, a
+	pop	a
+	mov	PSwitchCh2NoteLen1+x, a
+	dbnz	y, -
+	pop	y
+
+	asl	a
 	mov	PSwitchCh2NoteLen2X1, a
 	mov	PSwitchCh2NoteLen2X2, a
 	mov	PSwitchCh2NoteLen2X3, a
@@ -1312,6 +1306,18 @@ PSwitchSetNoteLengthCh2:
 	mov	PSwitchCh2NoteLen3X1, a
 	mov	PSwitchCh2NoteLen3X2, a
 	ret
+
+PSwitchCh2NoteLenOffsets:
+	db	PSwitchCh2NoteLen1-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen2-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen3-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen4-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen5-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen6-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen7-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen8-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen9-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen10-PSwitchCh2NoteLen1
 
 PSwitchNextLoopCh1:
 if !PSwitchSFXCh1ID < 7
@@ -1328,8 +1334,7 @@ endif
 PSwitchSetNoteLengthCh1:
 	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
-	clrc
-	adc	a, PSwitchNoteLengths+y
+	asl	a
 	mov	PSwitchCh1NoteLen2X1, a
 	mov	PSwitchCh1NoteLen2X2, a
 	clrc
