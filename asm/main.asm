@@ -1368,15 +1368,14 @@ SFXTerminateVCMD:
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	bne	+
-	ret
-+
+	beq	+
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
++
 	ret
 endif
 SpeedUpMusic:
