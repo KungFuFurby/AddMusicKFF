@@ -861,9 +861,11 @@ EndSFX:
 				
 	
 	mov	a, $18
+if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
 	cmp	$1c, #$00
 	bne	++
+endif
 +					; \
 	tclr	$1d, a			; | Clear the bit of $1d that this SFX corresponds to.
 ++
@@ -879,9 +881,11 @@ if !noiseFrequencySFXInstanceResolution = !true
 endif
 .restoreMusicNoise:
 	mov	$1f, #$00
+if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
 	mov	a, $1c
 	bne	++
+endif
 +
 	mov	a, #$00
 	mov	!ChSFXPriority+x, a
@@ -1670,10 +1674,26 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	asl	a				; |
 	mov	y, a				; | Y = SFX * 2, index to a table.
 	pop	a				; | If a is 0, then the table we load from table 1.
-	cmp	a, #$00				; | Otherwise, we load from table 2.
-	push	a
-	beq	+				; /
+	push	a				;
+	cmp	a, #$01				; | Otherwise, we load from table 2.
+	bcc	.loadFromSFXTable0		; /
+if !useSFXSequenceFor1DFASFX = !true
+	bne	.loadFromSFXTable1
+	cmp	y, #$04*2
+	beq	.useAPU1GirderSFX
+	;cmp	y, #$01*2
+	;beq	.useAPU1JumpSFX
+.useAPU1JumpSFX
+	mov	a, #APU1JumpSFXSequence&$FF
+	mov	y, #APU1JumpSFXSequence>>8&$FF
+	bra	.gottenPointerNoPop
+.useAPU1GirderSFX
+	mov	a, #APU1GirderClickSFXSequence&$FF
+	mov	y, #APU1GirderClickSFXSequence>>8&$FF
+	bra	.gottenPointerNoPop
+endif
 						;
+.loadFromSFXTable1				;
 if !PSwitchIsSFX = !true
 	cmp	$03, #$81			;
 	bcs	.PSwitchSFX
@@ -1683,7 +1703,7 @@ endif
 	mov	a, SFXTable1-2+y		; |
 	bra	.gottenPointer			;
 						;
-+						;
+.loadFromSFXTable0				;
 	mov	a, SFXTable0-1+y		; \
 	push	a				; |
 	mov	a, SFXTable0-2+y		; /
@@ -1700,6 +1720,7 @@ if !PSwitchIsSFX = !true
 endif	
 .gottenPointer
 	pop	y
+.gottenPointerNoPop
 	movw	$14, ya
 
 ;Check SFX priority.
@@ -1729,6 +1750,7 @@ endif
 	ret
 
 .checkAPU1SFX
+if !useSFXSequenceFor1DFASFX = !false
 	;Check and see if APU1 SFX is playing there via detecting $1D.
 	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
 	;but $1D has a voice bit set.
@@ -1744,6 +1766,7 @@ endif
 	mov	$05, a
 	mov	$1c, a
 	pop	a
+endif
 
 .sfxAllocAllowed
 	mov	!ChSFXPriority+x, a
@@ -1870,7 +1893,7 @@ DisableYoshiDrums:				; And disable them.
 	mov	a, #$0E			;TSET opcode
 -
 	mov	HandleYoshiDrums_drumSet, a
-if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
 	call	HandleYoshiDrums
 	bra	ProcessAPU1SFX
 else
@@ -1893,7 +1916,11 @@ PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
 	mov	!ProtectSFX6, a
+if !useSFXSequenceFor1DFASFX = !false
 	bra	ProcessAPU1SFX
+else
+	ret
+endif
 
 PlayUnpauseSilentSFX:
 	mov	a, #$2C
@@ -1905,7 +1932,11 @@ PlayUnpauseSFX:
 	mov	a, #$00
 	mov	!ProtectSFX6, a
 	;mov	$08, #$00
-	bra ProcessAPU1SFX
+if !useSFXSequenceFor1DFASFX = !false
+	bra	ProcessAPU1SFX
+else
+	ret
+endif
 
 ForceSFXEchoOff:
 	mov	a, #$00
@@ -1916,8 +1947,12 @@ ForceSFXEchoOn:
 	;Turn off music echo channels being copied to SFX echo channels
 	mov	a, #!MusicToSFXEchoGateDistance
 	mov	MusicToSFXEchoGate+1, a
+if !useSFXSequenceFor1DFASFX = !false
 	call	EffectModifier
 	bra	ProcessAPU1SFX
+else
+	jmp	EffectModifier
+endif
 endif
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
@@ -1966,6 +2001,7 @@ if !noSFX = !false
 	beq	CheckAPU1SFXPriority
 ;
 ProcessAPU1SFX:
+if !useSFXSequenceFor1DFASFX = !false
 	mov	a, $05		; 
 	cmp	a, #$01		; \ If the currently playing SFX is the jump SFX
 	beq	L_0A51		; / Then process that.
@@ -1978,6 +2014,9 @@ L_0A11:
 else
 	ret
 endif
+else
+	ret
+endif
 
 MusicEchoCarryOn:
 	mov	a, #!MusicEchoChOnCarryGateDistance
@@ -1987,7 +2026,7 @@ MusicEchoCarryOff:
 	mov	a, #$00
 +
 	mov	MusicEchoChOnCarryGate+1, a
-if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
 	bra	ProcessAPU1SFX
 else
 	ret
@@ -2009,6 +2048,12 @@ PauseMusic:
 
 if !noSFX = !false	
 CheckAPU1SFXPriority:
+if !useSFXSequenceFor1DFASFX = !true
+	mov	x, #(!1DFASFXChannel*2)
+	mov	y, #$01
+	mov	$10, #(1<<!1DFASFXChannel)
+	jmp	ProcessSFXInput
+else
 	mov	y, a
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
@@ -2141,6 +2186,7 @@ Quick1DFAMonoVolDSPWritesWKON:
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
 	jmp	KeyOnVoices
+endif
 endif
 				; Call this routine to play the song currently in A.
 PlaySong:
@@ -3606,6 +3652,17 @@ GetSampleTableLocation:
 	
 
 if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !true
+APU1JumpSFXSequence:
+	db $E0
+	db !JumpSFX1DFAPriority
+	db $DA,$08,$05,$38,$DD,$B2,$00,$05,$B5,$2A,$EB,$01,$12,$B9,$00
+APU1GirderClickSFXSequence:
+	db $E0
+	db !GirderSFX1DFAPriority
+	db $DA,$07,$0C,$28,$A4,$A4,$00
+endif
+
 	SFXTable0:
 	SFXTable1:
 endif

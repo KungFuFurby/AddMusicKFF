@@ -164,6 +164,17 @@ includeonce
 
 ;=======================================
 ;---------------
+!useSFXSequenceFor1DFASFX = !true
+
+;Default setting: !true
+;Vanilla SMW setting: !false
+;---------------
+; Replaces the hard-coded 1DFA SFX with a standard sequence used for 1DF9
+; and 1DFB.
+;=======================================
+
+;=======================================
+;---------------
 !PSwitchSFXCh0ID = 5
 
 ;Default setting: 5
