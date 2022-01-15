@@ -2688,9 +2688,9 @@ L_0D40:
 	mov	x, a
 	asl	a
 	mov	y, a
-	mov	a, CommandDispatchTable-$B3+y        ; $DA minimum? (F90)
+	mov	a, CommandDispatchTable-($DA*2&$FF)+1+y        ; $DA minimum? (F90)
 	push	a
-	mov	a, CommandDispatchTable-$B4+y
+	mov	a, CommandDispatchTable-($DA*2&$FF)+y
 	push	a
 	mov	a, CommandLengthTable-$DA+x
 	mov	x, $46
