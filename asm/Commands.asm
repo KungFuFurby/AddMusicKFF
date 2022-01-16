@@ -928,7 +928,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
 endif
+	
 	mov	a, !PreviousNote+x	; \ Play this note.
+	cmp	a, #$c7			;  |(unless it's a rest)
+	beq	.return2		;  |
 	call	NoteVCMD		; /
 	
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
