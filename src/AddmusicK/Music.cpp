@@ -1681,6 +1681,12 @@ void Music::parseHexCommand()
 				nonNativeHexWarning = false;
 			}
 			
+			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
+			{
+				hexLeft = 0;
+				error("This histortical AddmusicM hex command has not yet been implemented into AddmusicK.");
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
