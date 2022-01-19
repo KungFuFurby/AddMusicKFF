@@ -12,6 +12,15 @@ TerminateIfSFXPlaying:
 	ret
 endif
 
+RestoreMusicSample:
+	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	!BackupSRCN+x, a	; /
+	call	GetBackupInstrTable	; \ 
+UpdateInstr:
+	mov	y, #$06
+	mov	a, #$00
+	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
 	mov	a, #$00			; \ It's not a raw sample playing on this channel.
@@ -99,7 +108,7 @@ endif
 
 	mov	$f2, x	
 	mov	$f3, a
-	bra	+
+	bra	.DSPWriteDirectionGate1
 
 .noiseInstrument
 if !noSFX = !false
@@ -109,7 +118,8 @@ endif
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
-+
+.DSPWriteDirectionGate1
+	bra	.incXY
 	mov	a, x
 	or	a, #$07
 	mov	x, a
@@ -117,12 +127,22 @@ endif
 
 -
 	mov	a, ($14)+y		; \ 
-	mov	$f2, x			; | 	
-	mov	$f3, a			; |
-	dec	x			; | This loop will write to the correct DSP registers for this instrument.
-	dbnz	y, -			; / And correctly set up the backup table.
+	mov	$f2, x			; | This loop will write to the correct DSP registers for this instrument.	
+	mov	$f3, a			; /
+.DSPWriteDirectionGate2
+	bra	.incXY
+	dec	x
+	dbnz	y, -
 	
 	mov	y, #$04
+	bra	+
+
+.incXY
+	inc	x
+	inc	y
+	cmp	y, #$04
+	bne	-
++
 	pop	x
 	mov	a, ($14)+y		; The next byte is the pitch multiplier.
 	mov	$0210+x, a		;
@@ -138,15 +158,6 @@ endif
 	pop	a
 
 	ret
-	
-RestoreMusicSample:
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
-	call	GetBackupInstrTable	; \ 
-UpdateInstr:
-	mov	y, #$06
-	mov	a, #$00
-	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
@@ -568,8 +579,11 @@ MSampleLoad:
 	mov	y, #$04			; | Get the pitch multiplier byte.
 	mov	($10)+y, a		; |
 	inc	y			; | Zero out pitch sub-multiplier.
+.clearSubmultiplierPatchGate		; |
+	bra	.clearSubmultiplierSkip	; |
 	mov	a, #$00			; |
 	mov	($10)+y, a		; /
+.clearSubmultiplierSkip
 	jmp	UpdateInstr
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -721,14 +735,198 @@ cmdF9:					; Send data to 5A22 command.
 cmdFA:					; Misc. comamnd that takes a parameter.
 ;HTuneValues
 {
+	cmp	a, #$7F
+	beq	HotPatchPresetVCMD
+	cmp	a, #$FE
+	beq	HotPatchVCMDByBit
+
+	mov	$14, #SubC_table2+1&$FF
+	mov	$15, #SubC_table2+1>>8&$FF
 	asl	a
 	mov	y, a
-	mov	a, SubC_table2+1+y
+	adc	$15, #$00
+	mov	a, ($14)+y
 	push	a
-	mov	a, SubC_table2+y
+	decw	$14
+	mov	a, ($14)+y
 	push	a
-	jmp	GetCommandData
-	;A will contain the incoming data and X will contain the channel ID.
+	push	y
+	call	GetCommandData
+	pop	y
+	;Y will contain the command ID shifted left by one, A will contain
+	;the incoming data and X will contain the channel ID.
+	ret
+
+HotPatchPresetVCMD:
+	call	GetCommandData
+	;bmi	HotPatchPresetVCMDUserPatch
+	mov	y, $30+x
+	push	y
+	mov	y, $31+x
+	push	y
+	clrc
+	adc	a, #HotPatchPresetTable&$FF
+	mov	$30+x, a
+	mov	a, #HotPatchPresetTable>>8&$FF
+	adc	a, #$00
+	mov	$31+x, a
+	call	GetCommandDataFast
+	call	HotPatchVCMDByBitByte0
+	jmp	RestoreTrackPtrFromStack
+
+HotPatchPresetVCMDUserPatch:
+	;Make sure you uncommented bmi HotPatchPresetVCMDUserPatch before
+	;using (and the ret opcode)!
+
+	;Hello there! You've found the user hot patch section! This is
+	;reserved for any code modifications you want to make on the fly
+	;without accidentally breaking something later on due to a preset ID
+	;being overwritten.
+
+	;ret
+
+HotPatchVCMDByBit:
+	call	GetCommandData
+HotPatchVCMDByBitByte0:
+	mov	$10, a
+
+	;Byte 0 Bit 0 Clear - Arpeggio plays during rests
+	;Byte 0 Bit 0 Set - Arpeggio doesn't play during rests
+HotPatchVCMDByBitByte0Bit0Test:
+	bbs0	$10, HotPatchVCMDByBitByte0Bit0Set
+	mov	a, #$B0 ;BCS opcode
+	mov	HandleArpeggioInterrupt_restOpcodeGate, a
+	mov	a, #$00
+	bra	HotPatchVCMDByBitByte0Bit0Patch
+HotPatchVCMDByBitByte0Bit0Set:
+	mov	a, #$F0 ;BEQ opcode
+	mov	HandleArpeggioInterrupt_restOpcodeGate, a
+	mov	a, #HandleArpeggio_return2-HandleArpeggio_restBranchGate-2
+HotPatchVCMDByBitByte0Bit0Patch:
+	mov	HandleArpeggio_restBranchGate+1, a
+
+	;Byte 0 Bit 1 Clear - Write ADSR to DSP registers first during instrument setup
+	;Byte 0 Bit 1 Clear - Write GAIN to DSP registers first during instrument setup
+HotPatchVCMDByBitByte0Bit1Test:
+	bbs1	$10, HotPatchVCMDByBitByte0Bit1Set
+	mov	a, #ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate1-2
+	mov	ApplyInstrument_DSPWriteDirectionGate1+1, a
+	mov	a, #ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate2-2
+	bra	HotPatchVCMDByBitByte0Bit1Patch
+HotPatchVCMDByBitByte0Bit1Set:
+	mov	a, #$00
+	mov	ApplyInstrument_DSPWriteDirectionGate1+1, a
+HotPatchVCMDByBitByte0Bit1Patch:
+	mov	ApplyInstrument_DSPWriteDirectionGate2+1, a
+
+	;Byte 0 Bit 2 Clear - Readahead does not look inside subroutines and loop sections
+	;Byte 0 Bit 2 Set - Readahead looks inside subroutines and loop sections
+HotPatchVCMDByBitByte0Bit2Test:
+	bbs2	$10, HotPatchVCMDByBitByte0Bit2Set
+	mov	a, #$00
+	mov	L_10B2_loopSectionBranchGate+1, a
+	mov	L_10B2_subroutineBranchGate+1, a
+	mov	a, #L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
+	bra	HotPatchVCMDByBitByte0Bit2Patch
+HotPatchVCMDByBitByte0Bit2Set:
+	mov	a, #L_10B2_loopSection-L_10B2_loopSectionBranchGate-2
+	mov	L_10B2_loopSectionBranchGate+1, a
+	mov	a, #L_10B2_subroutine-L_10B2_subroutineBranchGate-2
+	mov	L_10B2_subroutineBranchGate+1, a
+	mov	a, #L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
+HotPatchVCMDByBitByte0Bit2Patch:
+	mov	L_10B2_zeroVCMDCheckGate+1, a
+
+	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition
+	;Byte 0 Bit 3 Set - $DD VCMD accounts for per-channel transposition
+HotPatchVCMDByBitByte0Bit3Test:
+	bbs3	$10, HotPatchVCMDByBitByte0Bit3Set
+	mov	a, #cmdDDAddHTuneValuesSkip-cmdDDAddHTuneValuesGate-2
+	bra	HotPatchVCMDByBitByte0Bit3Patch
+HotPatchVCMDByBitByte0Bit3Set:
+	mov	a, #$00
+HotPatchVCMDByBitByte0Bit3Patch:
+	mov	cmdDDAddHTuneValuesGate+1, a
+
+	;Byte 0 Bit 4 Clear - $F3 VCMD does not zero out pitch base fractional multiplier
+	;Byte 0 Bit 4 Set - $F3 VCMD zeroes out pitch base fractional multiplier
+HotPatchVCMDByBitByte0Bit4Test:
+	bbs4	$10, HotPatchVCMDByBitByte0Bit4Set
+	mov	a, #MSampleLoad_clearSubmultiplierSkip-MSampleLoad_clearSubmultiplierPatchGate-2
+	bra	HotPatchVCMDByBitByte0Bit4Patch
+HotPatchVCMDByBitByte0Bit4Set:
+	mov	a, #$00
+HotPatchVCMDByBitByte0Bit4Patch:
+	mov	MSampleLoad_clearSubmultiplierPatchGate+1, a
+
+	;Byte 0 Bit 5 Clear - Echo writes are not disabled when EDL is zero on initial playback of local song
+	;Byte 0 Bit 5 Set - Echo writes are disabled when EDL is zero on initial playback of local song
+	;NOTE: This bit is sensitive to order of execution! The $FA $04 VCMD
+	;must be executed after the patch is set, not before!
+HotPatchVCMDByBitByte0Bit5Test:
+	bbs5	$10, HotPatchVCMDByBitByte0Bit5Set
+	mov	a, #!NCKValue
+	bra	HotPatchVCMDByBitByte0Bit5Patch
+HotPatchVCMDByBitByte0Bit5Set:
+	mov	a, #$10 ;Clear a bit from scratch RAM since it will be overwritten anyways.
+HotPatchVCMDByBitByte0Bit5Patch:
+	mov	SubC_table2_reserveBuffer_echoWriteBitClearLoc+1, a
+
+HotPatchVCMDByBitByte0Bit6Test:
+	;bbs6	$10, HotPatchVCMDByBitByte0Bit5Set
+	;TODO bit 6 clear
+	;bra	HotPatchVCMDByBitByte0Bit7Test
+HotPatchVCMDByBitByte0Bit6Set:
+	;TODO bit 6 set
+
+HotPatchVCMDByBitByte0Bit7Test:
+	bbs7	$10, HotPatchVCMDByBitByte1Fetch
+	ret
+
+	;NOTE: For those of you that want to use extra bits, please make
+	;sure to have a check in place for the highest bit on each byte read
+	;to read the next byte: the C++ side always accounts for this during
+	;hex validation. An example is shown below, commented out.
+	;$10 will contain all of the bits to process.
+
+HotPatchVCMDByBitByte1Fetch:
+	;call	GetCommandData
+HotPatchVCMDByBitByte1:
+	;mov	$10, a
+
+	;bbs7	$10, HotPatchVCMDByBitByteFetchLoop
+	;ret
+
+HotPatchVCMDByBitByteFetchLoop:
+	;There are still bytes to read, but the remaining bits do not yet have a function.
+	call	GetCommandData
+	bmi	HotPatchVCMDByBitByteFetchLoop
+	ret
+
+HotPatchPresetTable:
+	  ;%!xyzabcd
+	  ;%! - New byte specified (shouldn't be found in the presets for now)
+	   ;%x - Reserved for playback adjustment for other Addmusics
+	    ;%y - Echo writes are disabled when EDL is zero on initial playback of local song
+	     ;%z - $F3 VCMD zeroes out pitch base fractional multiplier
+	      ;%a - $DD VCMD accounts for per-channel transposition
+               ;%b - Readahead looks inside subroutines and loop sections
+	        ;%c - ADSR/GAIN write orders are flipped during instrument setup
+	         ;%d - Arpeggio doesn't play during rests
+	db %00000000 ; 00 - AddmusicK1.0.8 and earlier (not counting Beta)
+	             ; %??0?000? also replicate Vanilla SMW's behavior
+	db %00111111 ; 01 - AddmusicK1.0.9
+	db %00000000 ; 02 - AddmusicK Beta
+	db %00000000 ; 03 - Romi's Addmusic404
+	db %00000000 ; 04 - Addmusic405
+	             ; NOTE: Although it's not implemented yet, there are
+                     ; readahead-related differences due to the $ED VCMD
+	             ; having inconsistent parameter sizes for $80 and up
+	             ; and Addmusic405 failing to account for these.
+	db %00001000 ; 05 - AddmusicM
+	db %00000000 ; 06 - carol's MORE.bin
+	; 07-7F - Reserved for future Addmusics (or any extra past ones)
+	; 80-FF - See HotPatchPresetVCMDUserPatch (doesn't use the bit table)
 
 SubC_table2:
 	dw	.PitchMod		; 00
@@ -786,6 +984,8 @@ SubC_table2:
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
 ..modifyEchoDelay
+..echoWriteBitClearLoc
+	clr1	!NCKValue.5
 	jmp	ModifyEchoDelay
 	
 .gainRest
@@ -930,7 +1130,9 @@ endif
 	
 	mov	a, !PreviousNote+x	; \ Play this note.
 	cmp	a, #$c7			;  |(unless it's a rest)
-	beq	.return2		;  |
+.restBranchGate				;  |
+	beq	+			;  |
++					;  | Default state of this branch gate is open.
 	call	NoteVCMD		; /
 	
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
