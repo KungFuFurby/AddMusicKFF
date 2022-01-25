@@ -87,6 +87,8 @@ static bool tempoDefined;
 
 static bool sortReplacements;
 static bool manualNoteWarning;
+static bool nonNativeHexWarning;
+static bool nonNativeCmdWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -174,6 +176,8 @@ void Music::init()
 	prevChannel = 0;
 	openTextFile((std::string)"music/" + name, text);
 	manualNoteWarning = true;
+	nonNativeHexWarning = true;
+	nonNativeCmdWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -1532,6 +1536,14 @@ void Music::parseHexCommand()
 		{
 			//validateTremolo = true;
 			currentHex = i;
+			if (i > 0xF2 && songTargetProgram == 1 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+				nonNativeHexWarning = false;
+			}
+			if (i > 0xFA && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
 			if (i < 0xDA)
 			{
 				if (manualNoteWarning)
@@ -1663,6 +1675,11 @@ void Music::parseHexCommand()
 		else
 		{
 			hexLeft -= 1;
+			
+			if (hexLeft == 0 && currentHex == 0xF4 && i >= 0x07 && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
 			
 			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
 			{
@@ -2209,6 +2226,10 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
+	if (songTargetProgram == 1) {
+		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+		nonNativeCmdWarning = false;
+	}
 	pos++;
 	//bool negative = false;
 
