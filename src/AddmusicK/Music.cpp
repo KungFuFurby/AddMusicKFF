@@ -380,10 +380,6 @@ void Music::init()
 
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
-		int resizeSize = 3;
-		if (targetAMKVersion > 1)
-			resizeSize += 3;
-		data[channel].resize(resizeSize);
 		resizedChannel = channel;
 	}
 	else
@@ -2790,27 +2786,32 @@ void Music::pointersFirstPass()
 					data[resizedChannel].insert(data[resizedChannel].begin(), 0x10);
 					data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 					z += 3;
-					//All pointers that were previously output must be recalibrated for the channel.
-					//This specifically involves loop locations and remote gain positions.
-					//Why isn't this done sooner? Because we don't know if the special wave sample is even included.
-					for (int b = 0; b < loopLocations[resizedChannel].size(); b++) {				
-						loopLocations[resizedChannel][b] = loopLocations[resizedChannel][b]+3;
-					}
-					for (int b = 0; b < remoteGainPositions[resizedChannel].size(); b++) {				
-						remoteGainPositions[resizedChannel][b] = remoteGainPositions[resizedChannel][b]+3;
-					}
 					break;
 				}
 			}
 		}
-		data[resizedChannel][z] = 0xFA;
-		data[resizedChannel][z+1] = 0x04;
-		data[resizedChannel][z+2] = echoBufferSize;
 		if (targetAMKVersion > 1)
 		{
-			data[resizedChannel][z+3] = 0xFA;
-			data[resizedChannel][z+4] = 0x06;
-			data[resizedChannel][z+5] = 0x01;
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x01);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x06);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
+		data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+		data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+		z += 3;
+		//All pointers that were previously output must be recalibrated for the channel.
+		//This specifically involves phrase pointers, loop locations and remote gain positions.
+		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.
+		for (int a = 0; a < loopLocations[resizedChannel].size(); a++) {
+			loopLocations[resizedChannel][a] = loopLocations[resizedChannel][a]+z;
+		}
+		for (int a = 0; a < remoteGainPositions[resizedChannel].size(); a++) {
+			remoteGainPositions[resizedChannel][a] = remoteGainPositions[resizedChannel][a]+z;
+		}
+		for (int a = 0; a <= 1; a++) {
+			phrasePointers[resizedChannel][a] = phrasePointers[resizedChannel][a]+z;
 		}
 	}
 
