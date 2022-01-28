@@ -68,6 +68,7 @@ static int hTranspose;
 static bool usingHTranspose;
 static int hexLeft = 0;
 static int currentHex = 0;
+static int currentHexSub = -1;
 
 //static int tempLoopLength;		// How long the current [ ] loop is.
 //static int e6LoopLength;		// How long the current $E6 loop is.
@@ -1632,6 +1633,17 @@ void Music::parseHexCommand()
 				append(i);
 			}
 			
+			if (hexLeft == 1 && currentHex == 0xFA)
+			{
+				currentHexSub = i;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0xFE && i >= 0x80)
+			{
+				//Hot patch by bit VCMD has extra bytes if the highest bit is set.
+				hexLeft++;
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
@@ -1750,7 +1762,7 @@ void Music::parseHexCommand()
 			}
 
 			// More code conversion.
-			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && data[channel][data[channel].size() - 1] == 0x05)
+			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && currentHexSub == 0x05)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 				data[channel].pop_back();					// Remove the last two bytes
@@ -2794,6 +2806,27 @@ void Music::pointersFirstPass()
 		{
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0x01);
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0x06);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		if (targetAMKVersion == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x02);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 2)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x05);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}

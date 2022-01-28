@@ -412,6 +412,7 @@ RunRemoteCode_Exec:
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
 	%OpenRunningRemoteCodeGate()
+RestoreTrackPtrFromStack:
 	pop	a
 	mov	$31+x, a
 	pop	a
@@ -2225,7 +2226,11 @@ endif
 	mov	$0168+x,a		;
 	dec	x			;
 	bpl	-			;
-					;
+	mov	$46, a			;
+	mov	$30, #$31		; We want to reset our hot patches to the default state.
+	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	call	HotPatchVCMDByBit	; The code will handle the rest.
+
 	mov	!WaitTime, #$02		;
 	;mov	WaitTimeByte-1,a	;
 					;
@@ -2524,9 +2529,10 @@ endif
 if !noVcmdFB = !false
 	mov	y, a			; / Put the current note into y for now.
 
-	
+HandleArpeggioInterrupt:
 	cmp	y, #$c6			; \ If the note is a tie, then don't save the current note pitch.
-	beq	+				; /
+.restOpcodeGate
+	bcs	+				; /
 	cmp	y, #$c8
 	bcs	+
 
@@ -2989,7 +2995,8 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 L_10B2:							; |
 	mov	y, #$00					; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
-	beq	.subroutineCheck			; |
+.zeroVCMDCheckGate					; |
+	beq	.jmpToL_10D1				; |
 	bmi	.L_10BF					; |
 .L_10BA:						; |
 ;Bugfix by KungFuFurby 11/19/20:
@@ -3012,27 +3019,55 @@ L_10B2:							; |
 	mov	a, ($14)+y				; / Get the next byte
 	bpl	.normal					; \ 
 	mov	a, #$03
-	bra	+
+	bra	.addYAToPtr
 .normal
 	inc	a					; \ Add the number of bytes in the command.
 	inc	a					; / Plus the number of bytes the command itself takes up .	
-	bra	+					;
-	
+	bra	.addYAToPtr					;
+
+.FACommand
+	incw	$14
+	mov	a, ($14)+y
+	cmp	a, #$fe
+	beq	.FACommand_readUntilPositive
+.FACommand_skip2
+	incw	$14
+.FACommand_skip1
+	incw	$14
+	bra	L_10B2
+
+.FACommand_readUntilPositive
+	incw	$14
+	mov	a, ($14)+y
+	bmi	.FACommand_readUntilPositive
+	bra	.FACommand_skip1
+
 .normalCommand
+	cmp	a, #$fa
+	beq	.FACommand
 	;Update by KungFuFurby 12/5/20
 	;Account for loop sections and subroutines
 	cmp	a, #$e6
-	beq	.loopSection
+.loopSectionBranchGate
+	beq	+
++
+;Default state of this gate is open
 	cmp	a, #$e9
-	beq	.subroutine
+.subroutineBranchGate
+	beq	+
++
+;Default state of this gate is open
 -
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
 	mov	y, #$00					; |
-+							; |
+.addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
 	bra	L_10B2					; /
+
+.jmpToL_10D1
+	jmp	.L_10D1
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
@@ -3053,7 +3088,7 @@ L_10B2:							; |
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
-	bra	L_10B2
+	bra	.jmpToL_10B2
 
 .skip_keyoff:
 	clrc
@@ -3277,8 +3312,11 @@ L_10FB:
 	call	GetCommandDataFast			; /
 	clrc
 	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
 	clrc
 	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
 	call	CalcPortamentoDelta
 L_1111:
 	call	L_09CDWPreCheck
