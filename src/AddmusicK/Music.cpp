@@ -87,6 +87,8 @@ static bool tempoDefined;
 
 static bool sortReplacements;
 static bool manualNoteWarning;
+static bool nonNativeHexWarning;
+static bool nonNativeCmdWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -174,6 +176,8 @@ void Music::init()
 	prevChannel = 0;
 	openTextFile((std::string)"music/" + name, text);
 	manualNoteWarning = true;
+	nonNativeHexWarning = true;
+	nonNativeCmdWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -376,10 +380,6 @@ void Music::init()
 
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
-		int resizeSize = 3;
-		if (targetAMKVersion > 1)
-			resizeSize += 3;
-		data[channel].resize(resizeSize);
 		resizedChannel = channel;
 	}
 	else
@@ -1532,6 +1532,14 @@ void Music::parseHexCommand()
 		{
 			//validateTremolo = true;
 			currentHex = i;
+			if (i > 0xF2 && songTargetProgram == 1 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+				nonNativeHexWarning = false;
+			}
+			if (i > 0xFA && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
 			if (i < 0xDA)
 			{
 				if (manualNoteWarning)
@@ -1663,6 +1671,18 @@ void Music::parseHexCommand()
 		else
 		{
 			hexLeft -= 1;
+			
+			if (hexLeft == 0 && currentHex == 0xF4 && i >= 0x07 && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
+			
+			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
+			{
+				hexLeft = 0;
+				error("This histortical AddmusicM hex command has not yet been implemented into AddmusicK.");
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
@@ -2199,6 +2219,10 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
+	if (songTargetProgram == 1) {
+		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+		nonNativeCmdWarning = false;
+	}
 	pos++;
 	//bool negative = false;
 
@@ -2877,14 +2901,29 @@ void Music::pointersFirstPass()
 
 	if (resizedChannel != -1)
 	{
-		data[resizedChannel][0] = 0xFA;
-		data[resizedChannel][1] = 0x04;
-		data[resizedChannel][2] = echoBufferSize;
+		int z = 0;
 		if (targetAMKVersion > 1)
 		{
-			data[resizedChannel][3] = 0xFA;
-			data[resizedChannel][4] = 0x06;
-			data[resizedChannel][5] = 0x01;
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x01);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x06);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
+		data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+		data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+		z += 3;
+		//All pointers that were previously output must be recalibrated for the channel.
+		//This specifically involves phrase pointers, loop locations and remote gain positions.
+		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.
+		for (int a = 0; a < loopLocations[resizedChannel].size(); a++) {
+			loopLocations[resizedChannel][a] = loopLocations[resizedChannel][a]+z;
+		}
+		for (int a = 0; a < remoteGainPositions[resizedChannel].size(); a++) {
+			remoteGainPositions[resizedChannel][a] = remoteGainPositions[resizedChannel][a]+z;
+		}
+		for (int a = 0; a <= 1; a++) {
+			phrasePointers[resizedChannel][a] = phrasePointers[resizedChannel][a]+z;
 		}
 	}
 
