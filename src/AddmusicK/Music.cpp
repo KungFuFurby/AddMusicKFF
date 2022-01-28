@@ -1963,7 +1963,7 @@ void Music::parseNote()
 		}
 
 
-		if (i < 0)
+		if (i < 0x80)
 		{
 			error("Note's pitch was too low.")
 				i = 0xC7;
