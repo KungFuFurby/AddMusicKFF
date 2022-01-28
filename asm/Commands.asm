@@ -789,119 +789,220 @@ HotPatchVCMDByBit:
 	call	GetCommandData
 HotPatchVCMDByBitByte0:
 	mov	$10, a
+	push	p
+	mov	$11, #$07
+	mov	x, #$00
+	mov	a, HotPatchVCMDByte0StorageSet+x
+	mov	$14, a
+	inc	x
+	mov	a, HotPatchVCMDByte0StorageSet+x
+	mov	$15, a
+-
+	lsr	$10
+	inc	x
+	mov	a, HotPatchVCMDByte0StorageSet+x
+	mov	$12, a
+	beq	+
+	call	HotPatchVCMDByBitProcessStorages
++
+	dbnz	$11, -
+	pop	p
+
+	;NOTE: For those of you that want to use extra bits, a template is
+	;provided below, commented out. You will find the corresponding
+	;collection nearby, also commented out.
+	;- $10 will contain all of the bits to process.
+	;- $11 will contain the number of bits remaining plus one (the
+	;  highest bit means fetch another byte: if this is not set, all
+	;  subsequent bits will be zero).
+	;- $12 is the number of bytes remaining to modify. Each byte
+	;  modified takes up a four-byte storage entry: two for the pointer,
+	;  one to use when the bit is cleared, and one to use when the bit
+	;  is set. A template will be found nearby that matches the label
+	;  name shown.
+	;- $14-$15 store the pointer to the storage set.
+	;- $16-$17 store the pointer that we will be writing a byte to.
+
+HotPatchVCMDByBitByte1:
+	;call	HotPatchVCMDFetchNextByteIfMinus
+	;mov	$10, a
+	;push	p
+	;mov	$11, #$07
+	;mov	x, #$00
+	;mov	a, HotPatchVCMDByte1StorageSet+x
+	;mov	$14, a
+	;inc	x
+	;mov	a, HotPatchVCMDByte0StorageSet+x
+	;mov	$15, a
+-
+	;lsr	$10
+	;inc	x
+	;mov	a, HotPatchVCMDByte0StorageSet+x
+	;mov	$12, a
+	;beq	+
+	;call	HotPatchVCMDByBitProcessStorages
++
+	;dbnz	$11, -
+	;pop	p
+
+HotPatchVCMDByBitByteFetchLoop:
+	;There are still bytes to read, but the remaining bits do not yet have a function.
+	call	HotPatchVCMDFetchNextByteIfMinus
+	bmi	HotPatchVCMDByBitByteFetchLoop
+HotPatchVCMDByBitByteFetchLoopSkip:
+	ret
+
+HotPatchVCMDFetchNextByteIfMinus:
+	bpl	+
+	jmp	GetCommandData
++
+	mov	a, #$00
+	ret
+
+HotPatchVCMDByBitProcessStorages:
+-
+	push	p
+	mov	y, #$00
+	mov	a, ($14)+y
+	mov	$16, a
+	inc	y
+	mov	a, ($14)+y
+	mov	$17, a
+	inc	y
+	bcc	+
+	inc	y
++
+	mov	a, ($14)+y
+	mov	y, #$00
+	mov	($16)+y, a
+	mov	a, #$04
+	addw	ya, $14
+	movw	$14, ya
+	pop	p
+	dbnz	$12, -
+	ret
+
+HotPatchVCMDByte0StorageSet:
+	dw	HotPatchVCMDByte0Bit0Storages
+	db	(HotPatchVCMDByte0Bit0StoragesEOF-HotPatchVCMDByte0Bit0Storages)/4
+	db	(HotPatchVCMDByte0Bit1StoragesEOF-HotPatchVCMDByte0Bit1Storages)/4
+	db	(HotPatchVCMDByte0Bit2StoragesEOF-HotPatchVCMDByte0Bit2Storages)/4
+	db	(HotPatchVCMDByte0Bit3StoragesEOF-HotPatchVCMDByte0Bit3Storages)/4
+	db	(HotPatchVCMDByte0Bit4StoragesEOF-HotPatchVCMDByte0Bit4Storages)/4
+	db	(HotPatchVCMDByte0Bit5StoragesEOF-HotPatchVCMDByte0Bit5Storages)/4
+	db	(HotPatchVCMDByte0Bit6StoragesEOF-HotPatchVCMDByte0Bit6Storages)/4
+
+	;Storage set format:
+	;xx xx yy zz
+	;xx xx - Storage pointer
+	;yy - Byte to store when bit is clear
+	;zz - Byte to store when bit is set
 
 	;Byte 0 Bit 0 Clear - Arpeggio plays during rests
 	;Byte 0 Bit 0 Set - Arpeggio doesn't play during rests
-HotPatchVCMDByBitByte0Bit0Test:
-	bbs0	$10, HotPatchVCMDByBitByte0Bit0Set
-	mov	a, #$B0 ;BCS opcode
-	mov	HandleArpeggioInterrupt_restOpcodeGate, a
-	mov	a, #$00
-	bra	HotPatchVCMDByBitByte0Bit0Patch
-HotPatchVCMDByBitByte0Bit0Set:
-	mov	a, #$F0 ;BEQ opcode
-	mov	HandleArpeggioInterrupt_restOpcodeGate, a
-	mov	a, #HandleArpeggio_return2-HandleArpeggio_restBranchGate-2
-HotPatchVCMDByBitByte0Bit0Patch:
-	mov	HandleArpeggio_restBranchGate+1, a
+HotPatchVCMDByte0Bit0Storages:
+	dw	HandleArpeggioInterrupt_restOpcodeGate
+	db	$B0 ;BCS opcode
+	db	$F0 ;BEQ opcode
+
+	dw	HandleArpeggio_restBranchGate+1
+	db	$00
+	db	HandleArpeggio_return2-HandleArpeggio_restBranchGate-2
+HotPatchVCMDByte0Bit0StoragesEOF:
 
 	;Byte 0 Bit 1 Clear - Write ADSR to DSP registers first during instrument setup
 	;Byte 0 Bit 1 Clear - Write GAIN to DSP registers first during instrument setup
-HotPatchVCMDByBitByte0Bit1Test:
-	bbs1	$10, HotPatchVCMDByBitByte0Bit1Set
-	mov	a, #ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate1-2
-	mov	ApplyInstrument_DSPWriteDirectionGate1+1, a
-	mov	a, #ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate2-2
-	bra	HotPatchVCMDByBitByte0Bit1Patch
-HotPatchVCMDByBitByte0Bit1Set:
-	mov	a, #$00
-	mov	ApplyInstrument_DSPWriteDirectionGate1+1, a
-HotPatchVCMDByBitByte0Bit1Patch:
-	mov	ApplyInstrument_DSPWriteDirectionGate2+1, a
+HotPatchVCMDByte0Bit1Storages:
+	dw	ApplyInstrument_DSPWriteDirectionGate1+1
+	db	ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate1-2
+	db	$00
+
+	dw	ApplyInstrument_DSPWriteDirectionGate2+1
+	db	ApplyInstrument_incXY-ApplyInstrument_DSPWriteDirectionGate2-2
+	db	$00
+HotPatchVCMDByte0Bit1StoragesEOF:
 
 	;Byte 0 Bit 2 Clear - Readahead does not look inside subroutines and loop sections
 	;Byte 0 Bit 2 Set - Readahead looks inside subroutines and loop sections
-HotPatchVCMDByBitByte0Bit2Test:
-	bbs2	$10, HotPatchVCMDByBitByte0Bit2Set
-	mov	a, #$00
-	mov	L_10B2_loopSectionBranchGate+1, a
-	mov	L_10B2_subroutineBranchGate+1, a
-	mov	a, #L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
-	bra	HotPatchVCMDByBitByte0Bit2Patch
-HotPatchVCMDByBitByte0Bit2Set:
-	mov	a, #L_10B2_loopSection-L_10B2_loopSectionBranchGate-2
-	mov	L_10B2_loopSectionBranchGate+1, a
-	mov	a, #L_10B2_subroutine-L_10B2_subroutineBranchGate-2
-	mov	L_10B2_subroutineBranchGate+1, a
-	mov	a, #L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
-HotPatchVCMDByBitByte0Bit2Patch:
-	mov	L_10B2_zeroVCMDCheckGate+1, a
+HotPatchVCMDByte0Bit2Storages:
+	dw	L_10B2_loopSectionBranchGate+1
+	db	$00
+	db	L_10B2_loopSection-L_10B2_loopSectionBranchGate-2
+
+	dw	L_10B2_subroutineBranchGate+1
+	db	$00
+	db	L_10B2_subroutine-L_10B2_subroutineBranchGate-2
+
+	dw	L_10B2_zeroVCMDCheckGate+1
+	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
+	db	L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
+HotPatchVCMDByte0Bit2StoragesEOF:
 
 	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition
 	;Byte 0 Bit 3 Set - $DD VCMD accounts for per-channel transposition
-HotPatchVCMDByBitByte0Bit3Test:
-	bbs3	$10, HotPatchVCMDByBitByte0Bit3Set
-	mov	a, #cmdDDAddHTuneValuesSkip-cmdDDAddHTuneValuesGate-2
-	bra	HotPatchVCMDByBitByte0Bit3Patch
-HotPatchVCMDByBitByte0Bit3Set:
-	mov	a, #$00
-HotPatchVCMDByBitByte0Bit3Patch:
-	mov	cmdDDAddHTuneValuesGate+1, a
+HotPatchVCMDByte0Bit3Storages:
+	dw	cmdDDAddHTuneValuesGate+1
+	db	cmdDDAddHTuneValuesSkip-cmdDDAddHTuneValuesGate-2
+	db	$00
+HotPatchVCMDByte0Bit3StoragesEOF:
 
 	;Byte 0 Bit 4 Clear - $F3 VCMD does not zero out pitch base fractional multiplier
 	;Byte 0 Bit 4 Set - $F3 VCMD zeroes out pitch base fractional multiplier
-HotPatchVCMDByBitByte0Bit4Test:
-	bbs4	$10, HotPatchVCMDByBitByte0Bit4Set
-	mov	a, #MSampleLoad_clearSubmultiplierSkip-MSampleLoad_clearSubmultiplierPatchGate-2
-	bra	HotPatchVCMDByBitByte0Bit4Patch
-HotPatchVCMDByBitByte0Bit4Set:
-	mov	a, #$00
-HotPatchVCMDByBitByte0Bit4Patch:
-	mov	MSampleLoad_clearSubmultiplierPatchGate+1, a
+HotPatchVCMDByte0Bit4Storages:
+	dw	MSampleLoad_clearSubmultiplierPatchGate+1
+	db	MSampleLoad_clearSubmultiplierSkip-MSampleLoad_clearSubmultiplierPatchGate-2
+	db	$00
+HotPatchVCMDByte0Bit4StoragesEOF:
 
 	;Byte 0 Bit 5 Clear - Echo writes are not disabled when EDL is zero on initial playback of local song
 	;Byte 0 Bit 5 Set - Echo writes are disabled when EDL is zero on initial playback of local song
 	;NOTE: This bit is sensitive to order of execution! The $FA $04 VCMD
 	;must be executed after the patch is set, not before!
-HotPatchVCMDByBitByte0Bit5Test:
-	bbs5	$10, HotPatchVCMDByBitByte0Bit5Set
-	mov	a, #!NCKValue
-	bra	HotPatchVCMDByBitByte0Bit5Patch
-HotPatchVCMDByBitByte0Bit5Set:
-	mov	a, #$10 ;Clear a bit from scratch RAM since it will be overwritten anyways.
-HotPatchVCMDByBitByte0Bit5Patch:
-	mov	SubC_table2_reserveBuffer_echoWriteBitClearLoc+1, a
+HotPatchVCMDByte0Bit5Storages:
+	dw	SubC_table2_reserveBuffer_echoWriteBitClearLoc+1
+	db	!NCKValue
+	db	$10
+HotPatchVCMDByte0Bit5StoragesEOF:
 
-HotPatchVCMDByBitByte0Bit6Test:
-	;bbs6	$10, HotPatchVCMDByBitByte0Bit5Set
-	;TODO bit 6 clear
-	;bra	HotPatchVCMDByBitByte0Bit7Test
-HotPatchVCMDByBitByte0Bit6Set:
-	;TODO bit 6 set
+HotPatchVCMDByte0Bit6Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte0Bit6StoragesEOF:
 
-HotPatchVCMDByBitByte0Bit7Test:
-	bbs7	$10, HotPatchVCMDByBitByte1Fetch
-	ret
+HotPatchVCMDByte1StorageSet:
+	;dw	HotPatchVCMDByte1Bit0Storages
+	;db	(HotPatchVCMDByte1Bit0StoragesEOF-HotPatchVCMDByte1Bit0Storages)/4
+	;db	(HotPatchVCMDByte1Bit1StoragesEOF-HotPatchVCMDByte1Bit1Storages)/4
+	;db	(HotPatchVCMDByte1Bit2StoragesEOF-HotPatchVCMDByte1Bit2Storages)/4
+	;db	(HotPatchVCMDByte1Bit3StoragesEOF-HotPatchVCMDByte1Bit3Storages)/4
+	;db	(HotPatchVCMDByte1Bit4StoragesEOF-HotPatchVCMDByte1Bit4Storages)/4
+	;db	(HotPatchVCMDByte1Bit5StoragesEOF-HotPatchVCMDByte1Bit5Storages)/4
+	;db	(HotPatchVCMDByte1Bit6StoragesEOF-HotPatchVCMDByte1Bit6Storages)/4
 
-	;NOTE: For those of you that want to use extra bits, please make
-	;sure to have a check in place for the highest bit on each byte read
-	;to read the next byte: the C++ side always accounts for this during
-	;hex validation. An example is shown below, commented out.
-	;$10 will contain all of the bits to process.
+HotPatchVCMDByte1Bit0Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte1Bit0StoragesEOF:
 
-HotPatchVCMDByBitByte1Fetch:
-	;call	GetCommandData
-HotPatchVCMDByBitByte1:
-	;mov	$10, a
+HotPatchVCMDByte1Bit1Storages:
+HotPatchVCMDByte1Bit1StoragesEOF:
 
-	;bbs7	$10, HotPatchVCMDByBitByteFetchLoop
-	;ret
+HotPatchVCMDByte1Bit2Storages:
+HotPatchVCMDByte1Bit2StoragesEOF:
 
-HotPatchVCMDByBitByteFetchLoop:
-	;There are still bytes to read, but the remaining bits do not yet have a function.
-	call	GetCommandData
-	bmi	HotPatchVCMDByBitByteFetchLoop
-	ret
+HotPatchVCMDByte1Bit3Storages:
+HotPatchVCMDByte1Bit3StoragesEOF:
+
+HotPatchVCMDByte1Bit4Storages:
+HotPatchVCMDByte1Bit4StoragesEOF:
+
+HotPatchVCMDByte1Bit5Storages:
+HotPatchVCMDByte1Bit5StoragesEOF:
+
+HotPatchVCMDByte1Bit6Storages:
+HotPatchVCMDByte1Bit6StoragesEOF:
 
 HotPatchPresetTable:
 	  ;%!xyzabcd

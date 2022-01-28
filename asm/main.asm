@@ -1984,15 +1984,9 @@ L_0B5A:
 	dec	x			;
 	bpl	-			;
 	mov	$46, a			;
-	mov	$17, a			;
-	mov	a, #$80			; We want to reset our hot patches
-	mov	y, #$06			; to the default state.
--
-	mov	$11-1+y, a		;
-	dbnz	y, -			;
-	mov	$30, #$11		;
-	mov	$31, #$00		;
-	call	HotPatchVCMDByBit	;
+	mov	$30, #$31		; We want to reset our hot patches to the default state.
+	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	call	HotPatchVCMDByBit	; The code will handle the rest.
 
 	mov	!WaitTime, #$02		;
 	;mov	WaitTimeByte-1,a	;
