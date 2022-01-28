@@ -2921,6 +2921,27 @@ void Music::pointersFirstPass()
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}
+		if (targetAMKVersion == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x02);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 2)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x05);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
 		data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
 		data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
 		data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
