@@ -1132,9 +1132,9 @@ cmdFC:
 	call	RunRemoteCode				; 
 							;
 	pop	a					; \
-	mov	!remoteCodeTargetAddr+x, a		; | Restore the standard remote code.
+	mov	!remoteCodeTargetAddr+1+x, a		; | Restore the standard remote code.
 	pop	a					; |
-	mov	!remoteCodeTargetAddr+1+x, a		; /
+	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	;call	GetCommandDataFast			; \ Get the argument, discard it, and return.
 	bra	-					; /
