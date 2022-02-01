@@ -64,8 +64,10 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	bpl	+
+if !noSFX = !false
 	and	a, #$1f
 	mov	$0389, a
+endif
 	or	(!MusicNoiseChannels), ($48)
 	bra	++
 +
@@ -103,7 +105,6 @@ endif
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
 +
-	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
@@ -144,9 +145,8 @@ UpdateInstr:
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
 	mov	$11, #$01		; |
-	mov	y, #$06			; |
+	mov	y, #(6/2)			; |
 	mov	a, x			; | This short routine sets $10 to contain a pointer to the current channel's backup instrument data.
-	lsr	a			; | 
 	mul	ya			; |	
 	addw	ya, $10			; |
 	movw	$10, ya			; /
@@ -168,23 +168,12 @@ cmdDB:					; Change the pan
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDC:					; Fade the pan
+;cmdDC:					; Fade the pan
 {
-	mov   !PanFadeDuration+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   !PanFadeDestination+x, a
-	setc
-	sbc   a, !Pan+x         ; current pan value
-	pop   x
-	call  Divide16             ; delta = pan value / steps
-	mov   $0290+x, a
-	mov   a, y
-	mov   $0291+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdDD:					; Pitch bend
+;cmdDD:					; Pitch bend
 {
 	; Handled elsewhere.
 }
@@ -340,20 +329,9 @@ cmdE7:					; Change the volume
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE8:					; Fade the volume
+;cmdE8:					; Fade the volume
 {
-	mov   $80+x, a
-	push  a
-	call  GetCommandDataFast
-	mov   $0260+x, a
-	setc
-	sbc   a, !Volume+x
-	pop   x
-	call  Divide16
-	mov   $0250+x, a
-	mov   a, y
-	mov   $0251+x, a
-	ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
@@ -454,9 +432,8 @@ L_0F22:
 	movw	$63, ya            ; zero echo vol R shadow
 	call	L_0EEB             ; set echo vol DSP regs from shadows
 	;mov   $2e, a             ; zero 2E (but it's never used?)
-	mov	a, !NCKValue
-	or	!NCKValue, #$20           ; disable echo write
-	jmp	ModifyNoise
+	set1	!NCKValue.5        ; disable echo write
+	jmp	SetFLGFromNCKValue
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -474,8 +451,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	;mov	$f2, #$6c		; \ Enable echo and sound once again.
 	;mov	$f3, !NCKValue		; /
 	and	!NCKValue, #$1f
-	mov	a, !NCKValue
-	call	ModifyNoise
+	call	SetFLGFromNCKValue
 	
 	call	GetCommandData		; From here on is the normal code.
 	mov	a, #$0d			;
@@ -493,48 +469,33 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	jmp	L_0EEB			; Set the echo volume.
-	
-WaitForDelay:				; This stalls the SPC for the correct amount of time depending on the value in !EchoDelay.
-	mov	a, !EchoDelay		; a delay of $00 doesn't need this
+		
+ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
+	and	a, #$0F
+	push	a			; Save the requested delay.
 	beq	+
-	mov	$14, #$00
-	mov	$f2, #$6D
-	mov	$15, $f3
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
-	
-+	ret
-	
-GetBufferAddress:
-	xcn
-	beq	+
-	and	a, #$F0
+	xcn	a			; Get the buffer address.
 	lsr	a
+	dec	a
++
+	eor	a, #$FF
+	push	a
+
+	mov	$f2, #$6c
+	or	$f3, #$60
+
+	mov	$f2, #$7d
+	mov	a, $f3
+	and	a, #$0f
+	beq	+
+	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
+	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	mov	$14, #$00
 	mov	$15, a
-	movw	ya, $0e
-	subw	ya, $14		
-	ret				; 
+-	dbnz	$14, -
+	dbnz	$15, -
 +
-	mov	a, #$fc			; \ A delay of 0 needs 4 bytes for no adequately explained reason.
-	mov	y, #$ff			; /
-	ret
-	
-	
-ModifyEchoDelay:			; a should contain the requested delay.
-	mov	$10, !NCKValue
-	push	a			; Save the requested delay.
-	call	GetBufferAddress
-	push	y
-
-	mov	!NCKValue, #$60
-	mov	a, #$00
-	call	ModifyNoise
 	
 	pop	y			; \
 	mov	$f2, #$6d		; | Write the new buffer address.
@@ -544,20 +505,19 @@ ModifyEchoDelay:			; a should contain the requested delay.
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
 	
-	call	WaitForDelay		; > Wait until we can be sure that the echo buffer has been moved safely.
-
-	
-	mov	!NCKValue, #$40
+	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	beq	+
+	mov	$14, #$00
+	mov	$15, y
 	mov	a, #$00
-	call	ModifyNoise
+	mov	y, a
 	
-	
-	
-	call	WaitForDelay		; > Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	
-	mov	!NCKValue, #$00
-	mov	a, $10
-	jmp	ModifyNoise
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
++	
+	jmp	SetFLGFromNCKValue
 
 SetEDLVarDSP:
 	mov	!EchoDelay, a		; \
@@ -630,9 +590,7 @@ SubC_0:
 SubC_00:
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 	mov	a,#$01
-	push	a
-	mov	a,$6e
-	pop	a
+	cmp	$6e, #$00
 	beq	SubC_02
 
 SubC_01:
@@ -758,8 +716,13 @@ cmdFA:					; Misc. comamnd that takes a parameter.
 ;HTuneValues
 {
 	asl	a
-	mov	x,a
-	jmp	(SubC_table2+x)
+	mov	y, a
+	mov	a, SubC_table2+1+y
+	push	a
+	mov	a, SubC_table2+y
+	push	a
+	jmp	GetCommandData
+	;A will contain the incoming data and X will contain the channel ID.
 
 SubC_table2:
 	dw	.PitchMod		; 00
@@ -767,17 +730,15 @@ SubC_table2:
 	dw	.HFDTune		; 02
 	dw	.superVolume		; 03
 	dw	.reserveBuffer		; 04
-	dw	.gainRest		; 05
+	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
 
 .PitchMod
-	call    GetCommandData		; \ Get the next byte
-	mov     !MusicPModChannels, a	; | This is for music.
+	mov     !MusicPModChannels, a	; \ This is for music.
 	jmp	EffectModifier		; / Call the effect modifier routine.
 	
 .GAIN	
-	call    GetCommandData		; \ Get the next byte
-	push	a			; / And save it.
+	push	a
 	
 	mov	a, #$01
 	mov	!BackupSRCN+x, a
@@ -793,48 +754,43 @@ SubC_table2:
 	mov	($10)+y, a		;
 	jmp	UpdateInstr
 .HFDTune
-	call	GetCommandData
 	mov     !HTuneValues+x, a
 	ret
 
 .superVolume
-	call    GetCommandData		; \ Get the next byte
-	mov	!VolumeMult+x, a	; / Store it.
+	mov	!VolumeMult+x, a
 	or	($5c), ($48)		; Mark volume changed.
 	ret
 	
 .reserveBuffer
 ;	
 	
-	call	GetCommandData
+..zeroEDLGate
+	beq	..zeroEDL
 	cmp	a, !MaxEchoDelay
 	beq	+
-	bcc	+
-.modifyEchoDelay
-	push	a
-	or	!NCKValue, #$20
-	call	ModifyEchoDelay		; /
-	pop	a			;
-	mov	!MaxEchoDelay, a	;
-	ret				;
-
+	bcs	..modifyEchoDelay
 +
 	call	SetEDLVarDSP		; Write the new delay.
 	
-	mov	a, !NCKValue
-	and	!NCKValue, #$20
-	jmp	ModifyNoise
-	
-	ret
+	and	!NCKValue, #$3f
+	jmp	SetFLGFromNCKValue
+
+..zeroEDL
+	;Don't skip again until !MaxEchoDelay is reset.
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+..modifyEchoDelay
+	clr1	!NCKValue.5
+	jmp	ModifyEchoDelay
 	
 .gainRest
-	;call	GetCommandData
-	;mov	!RestGAINReplacement+x, a
-	ret
+	;$F4 $05 has been replaced. This function can be replicated by a
+	;type 3 remote code command.
+	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
+	;ret
 	
 .manualVTable
-	call	GetCommandData		; \ Argument is which table we're using
-	mov	!SecondVTable, a	; |
+	mov	!SecondVTable, a	; \ Argument is which table we're using
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
@@ -909,14 +865,10 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	ret				; Otherwise, do nothing.
 	
 .keyOffVoice
-	mov	a, $48			; \ 
-	push	a			; |
-	and	a,$0161			; | Key off the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return			; |
+	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
+	;mov	a, $48			; \ 
 	;mov	y, #$5c			; | Key off this voice (but only if there's no sound effect currently playing on it).
-	jmp	KeyOffVoicesWithCheck	; /
+	jmp	KeyOffVoiceWithCheck	; /
 	
 
 .doStuff
@@ -973,15 +925,8 @@ endif
 	mov	a, !PreviousNote+x	; \ Play this note.
 	call	NoteVCMD		; /
 	
-	mov	a, $48			; \
-	push	a			; |
-	and	a,$0161			; | Key on the current voice (with conditions).
-	and	a,$0162			; |
-	pop	a			; |
-	bne	.return2		; |
-+
-	or	a, $47			; / Set this voice to be keyed on.
-	mov	$47, a
+	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
+	or	($47), ($48)		; / Set this voice to be keyed on.
 .return2
 	ret
 }	
@@ -1021,8 +966,7 @@ cmdFC:
 	pop	a					; |
 	mov	!remoteCodeTargetAddr2+x, a		; /
 -							;
-	call	GetCommandDataFast			; \ Get the argument and discard it.
-	ret						; /
+	jmp	L_1260					; Get the argument and discard it.
 							
 .immediateCall						;
 	mov	a, !remoteCodeTargetAddr+x		; \
@@ -1035,17 +979,16 @@ cmdFC:
 	pop	a					; | And pretend this is where it belongs.
 	mov	!remoteCodeTargetAddr+x, a		; /
 	
-	mov	a, $15					; \
+	movw	ya, $14					; \
 	push	a					; | Push onto the stack, since there's a very good chance
-	mov	a, $14					; | that whatever code we call modifies $14.w
-	push	a					; /
+	push	y					; / that whatever code we call modifies $14.w
 	
 	call	RunRemoteCode				; 
 							;
 	pop	a					; \
-	mov	!remoteCodeTargetAddr+x, a		; | Restore the standard remote code.
+	mov	!remoteCodeTargetAddr+1+x, a		; | Restore the standard remote code.
 	pop	a					; |
-	mov	!remoteCodeTargetAddr+1+x, a		; /
+	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	;call	GetCommandDataFast			; \ Get the argument, discard it, and return.
 	bra	-					; /

@@ -28,7 +28,7 @@ dw cmdF3
 dw cmdF4
 dw cmdF5
 dw cmdF6
-dw cmdF7
+dw $0000 ;cmdF7
 dw cmdF8
 dw cmdF9
 dw cmdFA
