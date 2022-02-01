@@ -1779,6 +1779,7 @@ if !useSFXSequenceFor1DFASFX = !false
 else
 	jmp	EffectModifier
 endif
+endif
 
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
