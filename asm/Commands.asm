@@ -113,7 +113,7 @@ endif
 .noiseInstrument
 if !noSFX = !false
 	cmp	!SFXNoiseChannels, #$00
-	bne	+
+	bne	.DSPWriteDirectionGate1
 endif	
 	push	y
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
