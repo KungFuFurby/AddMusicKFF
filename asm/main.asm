@@ -279,11 +279,9 @@ L_059D:
 	
 }	
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
+;L_05A5:
 ReadInputRegister:
 {
-	mov   a, x		
-	mov   y, a
-
 L_05AC:
 	mov   a, $f4+x		; \ Get the input byte
 	cbne  $f4+x, L_05AC	; / Keep getting it until it's "stable"
@@ -292,12 +290,8 @@ L_05AC:
 	mov   $08+x, y		; |
 	cbne  $08+x, L_05C1	; |
 	mov   y, #$00		; |
+L_05C1:				; |
 	mov   $00+x, y		; |
-L_05C0:				; |
-	ret			; /
-L_05C1:				; \
-	mov   $00+x, y		; |
-	mov   a, y		; |
 	ret			; / 
 }	
 
@@ -551,6 +545,27 @@ endif
 	
 }
 
+L_09CDWPreCheck:
+	mov	a, $91+x
+	beq	L_1119
+	dec	$91+x
+	bra	L_112A
+L_1119:
+if !noSFX = !false
+	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
+	and	a, $48			; |
+	bne	L_112A			; /
+endif
+	set1	$13.7			;
+
+; add pitch slide delta and set DSP pitch
+L_09CD:
+	mov	a, #$02b0&$FF
+	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
+	dec	$90+x
+	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
+	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+L_112A:
 DDEEFix:
 {
 	mov	a, $02b1+x
@@ -1281,18 +1296,18 @@ endif
 PSwitchSetNoteLengthCh2:
 	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
-	mov	PSwitchCh2NoteLen1, a
-	mov	PSwitchCh2NoteLen2, a
-	mov	PSwitchCh2NoteLen3, a
-	mov	PSwitchCh2NoteLen4, a
-	mov	PSwitchCh2NoteLen5, a
-	mov	PSwitchCh2NoteLen6, a
-	mov	PSwitchCh2NoteLen7, a
-	mov	PSwitchCh2NoteLen8, a
-	mov	PSwitchCh2NoteLen9, a
-	mov	PSwitchCh2NoteLen10, a
-	clrc
-	adc	a, PSwitchNoteLengths+y
+	push	y
+	mov	y, #$0a
+-
+	push	a
+	mov	a, PSwitchCh2NoteLenOffsets-1+y
+	mov	x, a
+	pop	a
+	mov	PSwitchCh2NoteLen1+x, a
+	dbnz	y, -
+	pop	y
+
+	asl	a
 	mov	PSwitchCh2NoteLen2X1, a
 	mov	PSwitchCh2NoteLen2X2, a
 	mov	PSwitchCh2NoteLen2X3, a
@@ -1302,6 +1317,18 @@ PSwitchSetNoteLengthCh2:
 	mov	PSwitchCh2NoteLen3X1, a
 	mov	PSwitchCh2NoteLen3X2, a
 	ret
+
+PSwitchCh2NoteLenOffsets:
+	db	PSwitchCh2NoteLen1-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen2-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen3-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen4-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen5-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen6-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen7-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen8-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen9-PSwitchCh2NoteLen1
+	db	PSwitchCh2NoteLen10-PSwitchCh2NoteLen1
 
 PSwitchNextLoopCh1:
 if !PSwitchSFXCh1ID < 7
@@ -1318,8 +1345,7 @@ endif
 PSwitchSetNoteLengthCh1:
 	mov	y, PSwitchLoopCounter+1
 	mov	a, PSwitchNoteLengths+y
-	clrc
-	adc	a, PSwitchNoteLengths+y
+	asl	a
 	mov	PSwitchCh1NoteLen2X1, a
 	mov	PSwitchCh1NoteLen2X2, a
 	clrc
@@ -1379,15 +1405,14 @@ SFXTerminateVCMD:
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	bne	+
-	ret
-+
+	beq	+
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
++
 	ret
 endif
 SpeedUpMusic:
@@ -1621,30 +1646,6 @@ endif
 	ret
 
 }
-
-L_09CDWPreCheck:
-	mov	a, $91+x
-	beq	L_1119
-	dec	$91+x
-	bra	L_112A
-L_1119:
-if !noSFX = !false
-	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
-	and	a, $48			; |
-	bne	L_112A			; /
-endif
-	set1	$13.7			;
-
-; add pitch slide delta and set DSP pitch
-L_09CD:
-	mov	a, #$02b0&$FF
-	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
-	dec	$90+x
-	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
-	call	L_1075             ; add pitch slide delta to value                                ;ERROR
-L_112A:
-	call	DDEEFix	
-	ret
 
 ;
 
@@ -2444,9 +2445,9 @@ L_0D40:
 	mov	x, a
 	asl	a
 	mov	y, a
-	mov	a, CommandDispatchTable-$B3+y        ; $DA minimum? (F90)
+	mov	a, CommandDispatchTable-($DA*2&$FF)+1+y        ; $DA minimum? (F90)
 	push	a
-	mov	a, CommandDispatchTable-$B4+y
+	mov	a, CommandDispatchTable-($DA*2&$FF)+y
 	push	a
 	mov	a, CommandLengthTable-$DA+x
 	mov	x, $46

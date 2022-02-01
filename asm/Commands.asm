@@ -716,8 +716,13 @@ cmdFA:					; Misc. comamnd that takes a parameter.
 ;HTuneValues
 {
 	asl	a
-	mov	x,a
-	jmp	(SubC_table2+x)
+	mov	y, a
+	mov	a, SubC_table2+1+y
+	push	a
+	mov	a, SubC_table2+y
+	push	a
+	jmp	GetCommandData
+	;A will contain the incoming data and X will contain the channel ID.
 
 SubC_table2:
 	dw	.PitchMod		; 00
@@ -729,13 +734,11 @@ SubC_table2:
 	dw	.manualVTable		; 06
 
 .PitchMod
-	call    GetCommandData		; \ Get the next byte
-	mov     !MusicPModChannels, a	; | This is for music.
+	mov     !MusicPModChannels, a	; \ This is for music.
 	jmp	EffectModifier		; / Call the effect modifier routine.
 	
 .GAIN	
-	call    GetCommandData		; \ Get the next byte
-	push	a			; / And save it.
+	push	a
 	
 	mov	a, #$01
 	mov	!BackupSRCN+x, a
@@ -751,20 +754,17 @@ SubC_table2:
 	mov	($10)+y, a		;
 	jmp	UpdateInstr
 .HFDTune
-	call	GetCommandData
 	mov     !HTuneValues+x, a
 	ret
 
 .superVolume
-	call    GetCommandData		; \ Get the next byte
-	mov	!VolumeMult+x, a	; / Store it.
+	mov	!VolumeMult+x, a
 	or	($5c), ($48)		; Mark volume changed.
 	ret
 	
 .reserveBuffer
 ;	
 	
-	call	GetCommandData
 ..zeroEDLGate
 	beq	..zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -786,13 +786,11 @@ SubC_table2:
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
 	;type 3 remote code command.
-	;call	GetCommandData
 	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
 	;ret
 	
 .manualVTable
-	call	GetCommandData		; \ Argument is which table we're using
-	mov	!SecondVTable, a	; |
+	mov	!SecondVTable, a	; \ Argument is which table we're using
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
@@ -997,9 +995,9 @@ cmdFC:
 	call	RunRemoteCode				; 
 							;
 	pop	a					; \
-	mov	!remoteCodeTargetAddr+x, a		; | Restore the standard remote code.
+	mov	!remoteCodeTargetAddr+1+x, a		; | Restore the standard remote code.
 	pop	a					; |
-	mov	!remoteCodeTargetAddr+1+x, a		; /
+	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	;call	GetCommandDataFast			; \ Get the argument, discard it, and return.
 	bra	-					; /
