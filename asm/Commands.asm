@@ -164,9 +164,23 @@ cmdDB:					; Change the pan
 	mov   !SurroundSound+x, a         ; negate voice vol bits
 	mov   a, #$00
 	mov   $0280+x, a
+SetVolChangeFlag:
 	or    ($5c), ($48)       ; set vol chg flag
 	ret
 }
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdE7:					; Change the volume
+{
+	mov   !Volume+x, a
+	mov   a, #$00
+	mov   $0240+x, a
+	bra   SetVolChangeFlag       ; mark volume changed
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_table2_superVolume:
+	mov	!VolumeMult+x, a
+	bra	SetVolChangeFlag	; Mark volume changed.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdDC:					; Fade the pan
 {
@@ -318,15 +332,6 @@ cmdED:					; ADSR
 	mov	y, #$03			; | Write GAIN to the table.
 	bra	-
 		
-}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE7:					; Change the volume
-{
-	mov   !Volume+x, a
-	mov   a, #$00
-	mov   $0240+x, a
-	or    ($5c), ($48)       ; mark volume changed
-	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
@@ -755,11 +760,6 @@ SubC_table2:
 	jmp	UpdateInstr
 .HFDTune
 	mov     !HTuneValues+x, a
-	ret
-
-.superVolume
-	mov	!VolumeMult+x, a
-	or	($5c), ($48)		; Mark volume changed.
 	ret
 	
 .reserveBuffer
