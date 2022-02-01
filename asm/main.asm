@@ -1856,7 +1856,7 @@ MusicEchoCarryOff:
 	mov	a, #$00
 +
 	mov	MusicEchoChOnCarryGate+1, a
-if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
 	bra	ProcessAPU1SFX
 else
 	ret
