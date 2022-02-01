@@ -1909,7 +1909,11 @@ if !noSFX = !false
 MusicSFXEchoCarryOn:
 	mov	a, #$00
 	mov	MusicToSFXEchoGate+1, a
+if !useSFXSequenceFor1DFASFX = !false
 	bra	ProcessAPU1SFX
+else
+	ret
+endif
 endif
 
 if !noSFX = !false
