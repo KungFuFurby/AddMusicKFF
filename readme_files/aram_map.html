@@ -679,13 +679,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$0230, $0232, $0234, $0236, $0238, $023A, $023C, $023E</td>
 				<td>Arpeggio note index: specifically, the offset from the currently playing arpeggio. One byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0231, $0233, $0235, $0237, $0239, $023B, $023D, $023F</td>
 				<td>Arpeggio type, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -721,19 +721,19 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$0261, $0263, $0265, $0267, $0269, $026B, $026D, $026F</td>
 				<td>Number of notes in the current arpeggio, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0270, $0272, $0274, $0276, $0278, $027A, $027C, $027E</td>
 				<td>Current arpeggio pitch offset in semitones, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0271, $0273, $0275, $0277, $0279, $027B, $027D, $027F</td>
 				<td>The most recently played note to use to offset from for arpeggio, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -811,7 +811,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$02E0, $02E2, $02E4, $02E6, $02E8, $02EA, $02EC, $02EE</td>
 				<td>Two different purposes: either stores the pitch offset when using trill/glissando, or stores the loop point for a normal arpeggio. One byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -845,13 +845,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$0310, $0312, $0314, $0316, $0318, $031A, $031C, $031E</td>
 				<td>Number of music tempo ticks per arpeggio note, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$0311, $0313, $0315, $0317, $0319, $031B, $031D, $031F</td>
 				<td>Music tempo ticks remaining before the next arpeggio note is played, one byte per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
@@ -1015,7 +1015,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$03B0-$03BF</td>
 				<td>Pointer to the list of arpeggio notes currently playing, one pointer per voice.</td>
-				<td>N/A</td>
+				<td>!noVcmdFB = false</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
