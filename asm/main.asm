@@ -2526,6 +2526,7 @@ endif
 	and	($10), ($48)	; Only check the current channel.
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
+
 if !noVcmdFB = !false
 	mov	y, a			; / Put the current note into y for now.
 
