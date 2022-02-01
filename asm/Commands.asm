@@ -316,21 +316,17 @@ cmdED:					; ADSR
 	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
-	bpl	.GAIN
+	push	p
 	mov	y, #$01			; | 
 	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
+	call	GetCommandData		; \
 	mov	y, #$02			; | Write ADSR 2 to the table.
--	mov	($10)+y, a		; /
+	pop	p			; | 
+	bmi	+			; | 
+	inc	y			; | Write GAIN to the table.
++	mov	($10)+y, a		; /
 	
 	jmp	UpdateInstr
-	
-.GAIN
-	mov	y, #$01			; \ 
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$03			; | Write GAIN to the table.
-	bra	-
 		
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
