@@ -52,7 +52,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-01-31</h2>
+	<h2>Version 1.0.9 - 2022-02-01</h2>
 	<ul>
 	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
 	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
@@ -74,6 +74,7 @@
 		<li>All SFX can now have their channels redefined through asm/UserDefines.asm. Vanilla values are provided, since they're different than what the default values were from past AMK versions.</li>
 		<li>All SFX data has been optimized to remove redundant bytes across the board. In addition, $C7 is now fully functional and pitch envelope delays are now working, and 21 Valley of Bowser appears.txt in $1DF9 now properly restarts like vanilla SMW.</li>
 		<li>Both the jump and girder/grinder SFX from $1DFA now have exact replicas. For the jump SFX, the one from previous versions is still there as an alternative. <b>Please note that these new SFX take SFX $1DF9 slots $2D-$2E and SFX $1DFC slots $36-$37: please do not change these IDs.</b></li>
+		<li>$1DFA SFX now use replica SFX sequences by default instead of just hard-coded ASM. The hard-coded ASM is still in there as a user define switch both for historical reasons and in case of a malfunction.</li>
 		<li>Fixed a bug where specifying an o after a $DD command would freeze AddmusicK during hex validation.</li>
 		<li>Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music.</li>
 		<li>Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation.</li>
