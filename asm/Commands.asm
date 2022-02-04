@@ -50,6 +50,7 @@ L_0D4B:					; |		???
 	pop	a			; |
 	setc				; |
 	sbc	a, #30			; |
+ApplyInstrumentY6:
 	mov	y, #$06			; /
 +
 
@@ -138,9 +139,8 @@ RestoreMusicSample:
 	mov	!BackupSRCN+x, a	; /
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
-	mov	y, #$06
 	mov	a, #$00
-	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrumentY6	; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
