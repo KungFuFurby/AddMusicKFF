@@ -17,9 +17,8 @@ RestoreMusicSample:
 	mov	!BackupSRCN+x, a	; /
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
-	mov	y, #$06
 	mov	a, #$00
-	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrumentY6	; / Set up the current instrument using the backup table instead of the main table.
 
 cmdDA:					; Change the instrument (also contains code relevant to $E5 and $F3).
 {
@@ -59,6 +58,7 @@ L_0D4B:					; |		???
 	pop	a			; |
 	setc				; |
 	sbc	a, #30			; |
+ApplyInstrumentY6:
 	mov	y, #$06			; /
 +
 
