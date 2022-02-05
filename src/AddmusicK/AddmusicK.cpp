@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) try		// // //
 				printf("Unknown argument \"%s\".", arguments[i].c_str());
 			}
 
-			puts("Options:\n\t-e: Turn off echo buffer checking.\n\t-c: Force off conversion from Addmusic 4.05 and AddmusicM\n\t-b: Do not attempt to save music data in bank 0x40 and above.\n\t-v: Turn verbosity on.  More information will be displayed using this.\n\t-a: Make free space finding more aggressive.\n\t-d: Turn off duplicate sample checking.\n\t-h: Turn off hex command validation.\n\t-p: Create a patch, but do not patch it to the ROM.\n\n\t-norom: Only generate SPC files, no ROM required.\t-?: Display this message.\n\n");
+			puts("Options:\n\t-e: Turn off echo buffer checking.\n\t-c: Force off conversion from Addmusic 4.05 and AddmusicM\n\t-b: Do not attempt to save music data in bank 0x40 and above.\n\t-v: Turn verbosity on.  More information will be displayed using this.\n\t-a: Make free space finding more aggressive.\n\t-d: Turn off duplicate sample checking.\n\t-h: Turn off hex command validation.\n\t-p: Create a patch, but do not patch it to the ROM.\n\t-norom: Only generate SPC files, no ROM required.\n\t-?: Display this message.\n\n");
 
 			if (arguments[i] != "-?")
 			{
