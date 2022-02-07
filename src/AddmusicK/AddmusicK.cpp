@@ -230,7 +230,7 @@ int main(int argc, char* argv[]) try		// // //
 
 		for (int i = 0; i < textFilesToCompile.size(); i++)
 		{
-			if (highestGlobalSong + i >= 256)
+			if (highestGlobalSong + 1 + i >= 256)
 				printError("Error: The total number of requested music files to compile exceeded 255.", true);
 			musics[highestGlobalSong + 1 + i].exists = true;
 			musics[highestGlobalSong + 1 + i].name = textFilesToCompile[i];
