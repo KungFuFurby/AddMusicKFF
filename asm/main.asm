@@ -1839,6 +1839,8 @@ if !useSFXSequenceFor1DFASFX = !false
 else
 	ret
 endif
+else
+	ret
 endif
 
 PauseMusic:
