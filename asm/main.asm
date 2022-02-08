@@ -841,12 +841,11 @@ endif
 
 	cmp	a, #$fd			; \ 
 	beq	.executeCode		; / $FD is the code execution command.
-	cmp	a, #$fe			; \
-	beq	.loopSFX		; / $FE is the restart SFX command.
 	cmp	a, #$da			; \ 
 	beq	.instrumentCommand	; / $DA is the instrument command.
-	cmp	a, #$ff			; \ 
-	bne	.playNote		; / Play a note.
+	cmp	a, #$fe			; \
+	beq	.loopSFX		; / $FE is the restart SFX command.
+	bcc	.playNote		; / Play a note.
 	mov	a, !ChSFXPtrs+x		; \ Move back one byte.
 	bne	+			; |
 	dec	!ChSFXPtrs+1+x		; |
@@ -1844,6 +1843,9 @@ L_0A0D:
 	ret
 L_0A11:
 	jmp	L_0B08
+else
+	ret
+endif
 else
 	ret
 endif

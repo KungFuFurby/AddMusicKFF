@@ -7,6 +7,7 @@
 #include <cstring>
 #include <map>
 #include <stack>
+#include <algorithm>
 
 #include "fs.h"		// // //
 
