@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <map>
 #include <stack>
@@ -17,7 +18,6 @@
 std::vector<uint8_t> rom;
 
 Music musics[256];
-//Sample samples[256];
 std::vector<Sample> samples;
 SoundEffect soundEffectsDF9[256];
 SoundEffect soundEffectsDFC[256];
@@ -615,7 +615,7 @@ void addSampleBank(const File &fileName, Music *music)
 	}
 }
 
-int getSample(const File &name, Music *music)
+int getGlobalSample(const File &name, Music *music)
 {
 	std::string actualPath = "";
 
@@ -652,6 +652,23 @@ int getSample(const File &name, Music *music)
 	}
 
 
+	return -1;
+}
+
+// Returns an index into Music::mySamples, or -1 if not found.
+int getMySample(const File &name, Music *music)
+{
+	int gs = getGlobalSample(name, music);
+	if (gs == -1)
+		return -1;
+
+	for (size_t j = 0; j < music->mySamples.size(); j++)
+	{
+		if (music->mySamples[j] == gs)
+		{
+			return (int) j;
+		}
+	}
 	return -1;
 }
 

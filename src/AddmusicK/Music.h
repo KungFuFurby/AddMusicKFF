@@ -64,7 +64,7 @@ public:
 
 	int index;
 
-	//uint8_t mySamples[255];
+	/// vector[MySampleIndex] GlobalSampleIndex
 	std::vector<unsigned short> mySamples;
 	//int mySampleCount;
 	int echoBufferSize;
