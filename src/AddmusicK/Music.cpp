@@ -2934,7 +2934,8 @@ void Music::pointersFirstPass()
 		int emptySampleIndex = getGlobalSample("EMPTY.brr", this);
 		if (emptySampleIndex == -1)
 		{
-			addSample("EMPTY.brr", this, true);
+			// Add EMPTY.brr to global::samples and global::sampleToIndex, but not mySamples.
+			addSample("EMPTY.brr", nullptr, true);
 			emptySampleIndex = getGlobalSample("EMPTY.brr", this);
 		}
 
