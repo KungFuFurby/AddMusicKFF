@@ -3303,7 +3303,5 @@ endif
 	SFXTable0:
 	SFXTable1:
 endif
-	SongPointers:
 
-	
-	
+SongPointers:
