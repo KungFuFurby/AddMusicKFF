@@ -50,6 +50,7 @@ L_0D4B:					; |		???
 	pop	a			; |
 	setc				; |
 	sbc	a, #30			; |
+ApplyInstrumentY6:
 	mov	y, #$06			; /
 +
 
@@ -138,9 +139,8 @@ RestoreMusicSample:
 	mov	!BackupSRCN+x, a	; /
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
-	mov	y, #$06
 	mov	a, #$00
-	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrumentY6	; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
@@ -164,9 +164,23 @@ cmdDB:					; Change the pan
 	mov   !SurroundSound+x, a         ; negate voice vol bits
 	mov   a, #$00
 	mov   $0280+x, a
+SetVolChangeFlag:
 	or    ($5c), ($48)       ; set vol chg flag
 	ret
 }
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdE7:					; Change the volume
+{
+	mov   !Volume+x, a
+	mov   a, #$00
+	mov   $0240+x, a
+	bra   SetVolChangeFlag       ; mark volume changed
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_table2_superVolume:
+	mov	!VolumeMult+x, a
+	bra	SetVolChangeFlag	; Mark volume changed.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdDC:					; Fade the pan
 {
@@ -302,31 +316,18 @@ cmdED:					; ADSR
 	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
-	bpl	.GAIN
+	push	p
 	mov	y, #$01			; | 
 	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
+	call	GetCommandData		; \
 	mov	y, #$02			; | Write ADSR 2 to the table.
--	mov	($10)+y, a		; /
+	pop	p			; | 
+	bmi	+			; | 
+	inc	y			; | Write GAIN to the table.
++	mov	($10)+y, a		; /
 	
 	jmp	UpdateInstr
-	
-.GAIN
-	mov	y, #$01			; \ 
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$03			; | Write GAIN to the table.
-	bra	-
 		
-}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE7:					; Change the volume
-{
-	mov   !Volume+x, a
-	mov   a, #$00
-	mov   $0240+x, a
-	or    ($5c), ($48)       ; mark volume changed
-	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
@@ -782,11 +783,6 @@ SubC_table2:
 	jmp	UpdateInstr
 .HFDTune
 	mov     !HTuneValues+x, a
-	ret
-
-.superVolume
-	mov	!VolumeMult+x, a
-	or	($5c), ($48)		; Mark volume changed.
 	ret
 	
 .reserveBuffer
