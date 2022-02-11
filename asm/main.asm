@@ -875,7 +875,6 @@ endif
 					; \ Get the length of the note back
 	mov     !ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
-	clr1	$13.7			; I...still don't know what $13.7 does...
 	mov	a, $91+x		; If pitch slide is not being delayed...
 	beq	+
 	dec	$91+x
@@ -1953,7 +1952,6 @@ L_0A68:
 L_0A99:
 	call	SFX1DFAKOFFCheck
 L_0AA5:
-	clr1	$13.7
 	mov	x, #(!1DFASFXChannel*2)
 	mov	a, $90+x
 	beq	L_0AB0
