@@ -24,3 +24,7 @@ temp.log
 temp.txt
 SPCs/*
 Visualizations/*
+*.sfc
+*.msc
+*.sfc~
+*.srm
