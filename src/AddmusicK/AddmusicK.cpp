@@ -224,17 +224,24 @@ int main(int argc, char* argv[]) try		// // //
 
 	if (justSPCsPlease)
 	{
-		for (int i = highestGlobalSong+1; i < 256; i++)
+		// We start loading CLI songs from highestGlobalSong + 1. If no global songs are
+		// present, highestGlobalSong = 0 and we start loading songs from slot 1. We
+		// leave slot 0 empty, to match the SNES driver which treats song 0 as a NOP rather
+		// than a song number, with the song ID also being unsendable and unplayable on the
+		// SPC under its raw ID because that also acts as a NOP.
+		int firstLocalSong = highestGlobalSong + 1;
+
+		// Unset local songs loaded from Addmusic_list.txt.
+		for (int i = firstLocalSong; i < 256; i++)
 			musics[i].exists = false;
 
-
+		// Load local songs from command-line arguments.
 		for (int i = 0; i < textFilesToCompile.size(); i++)
 		{
-			if (highestGlobalSong + i >= 256)
+			if (firstLocalSong + i >= 256)
 				printError("Error: The total number of requested music files to compile exceeded 255.", true);
-			musics[highestGlobalSong + 1 + i].exists = true;
-			musics[highestGlobalSong + 1 + i].name = textFilesToCompile[i];
-			openTextFile((std::string("music/") + musics[i + highestGlobalSong].name), musics[i + highestGlobalSong].text);
+			musics[firstLocalSong + i].exists = true;
+			musics[firstLocalSong + i].name = textFilesToCompile[i];
 		}
 	}
 
