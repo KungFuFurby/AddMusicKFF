@@ -38,16 +38,16 @@ incsrc "UserDefines.asm"
 ; $45: Increases each "tick"
 ; $0281+x: Pan
 ; $0241+x: Volume
-; $02d1+x: Portamento...or tuning?  Seems to be tuning, but the original code calls it portamento.
+; $02d1+x: Fine tuning
 ; $02b1+x: Current note value (not pitch).
-; $02b0+x: Portamento...?
-; $81+x: Pan fade
-; $80+x: Volume fade
-; $a1+x: Vibrato
-; $b1+x: ?
+; $02b0+x: Current fractional note value, final calculation of portamento
+; $81+x: Pan fade tick counter
+; $80+x: Volume fade tick counter
+; $a1+x: Vibrato maximum offset
+; $b1+x: Tremolo maximum offset
 ; $c0+x: Repeat counter
 ; $c1+x: Instrument
-; $0161: Strong portamento
+; $0161: Strong portamento/legato
 ; $58: Global volume
 ; $60: Echo volume fade
 ; $52: Tempo fade
@@ -55,18 +55,18 @@ incsrc "UserDefines.asm"
 ; $57: Global volume (default #$C0)
 ; $51: Tempo (default #$36)
 ; $0130: Used as an instrument "backup" for the $E5 / $F3 commands.  It is $30 bytes long, not the normal 8 (6 bytes for each channel).
-; $0140: Don't use
-; $0141: Don't use
-; $0150: Don't use
-; $0151: Don't use
-; $0160: #$01 to enable Yoshi Drums. Has various purposes; originally used by AddmusicM.
+; $0140: Don't use (part of the instrument "backup")
+; $0141: Don't use (part of the instrument "backup")
+; $0150: Don't use (part of the instrument "backup")
+; $0151: Don't use (part of the instrument "backup")
+; $0160: #$01 to enable Yoshi Drums (now handled elsewhere). Has various purposes; originally used by AddmusicM.
 ; $0211+x: The volume part of the qXX command.
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
 ; $48: Bitwise indicator of the current channel being processed.
 ; $5C: Used to indicate that a volume needs to be updated (long routine, so it's only done when necessary).
 ; $0166: 4 bytes; used as the output byte to send to the 5A22.  Originally AMM only used 2 of these, we can use all 4 for whatever we like.
-; $13: ? Only the highest bit is ever modified or read.  Seems to do...something.
+; $13: Only the highest bit was ever modified or read. It forced the pitch or volume to be updated when tremolo/vibrato was either being delayed or was not active.
 
 ; $5E: Used to mute a channel (via Yoshi Drums, etc.).  One bit per channel, setting it stops a channel from playing.
 ; $6E: Which channels are affected by Yoshi drums.
@@ -411,7 +411,7 @@ endif
 	
 	
 	mov	a, $02d1+x	; \ 
-	mov	$02b0+x, a	; / Portamento (tuning?) into $02b0+x	
+	mov	$02b0+x, a	; / Tuning into $02b0+x	
 	
 	
 	pop	a
@@ -2065,12 +2065,12 @@ L_0B6D:
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
-	mov	$02d1+x, a         ; Portamento[ch] = 0
+	mov	$02d1+x, a         ; Tuning[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; ?
-	mov	$0161+x, a	; Strong portamento
+	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 	
 	mov	!ArpNoteIndex+x, a
