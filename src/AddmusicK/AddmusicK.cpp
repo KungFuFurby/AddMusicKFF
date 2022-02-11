@@ -226,8 +226,9 @@ int main(int argc, char* argv[]) try		// // //
 	{
 		// We start loading CLI songs from highestGlobalSong + 1. If no global songs are
 		// present, highestGlobalSong = 0 and we start loading songs from slot 1. We
-		// leave slot 0 empty, to match the SNES driver which treats song 0 as "repeat
-		// current song" rather than a song number, and can't send it to the SPC.
+		// leave slot 0 empty, to match the SNES driver which treats song 0 as a NOP rather
+		// than a song number, with the song ID also being unsendable and unplayable on the
+		// SPC under its raw ID because that also acts as a NOP.
 		int firstLocalSong = highestGlobalSong + 1;
 
 		// Unset local songs loaded from Addmusic_list.txt.
