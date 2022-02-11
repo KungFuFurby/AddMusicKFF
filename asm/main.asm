@@ -431,7 +431,7 @@ NoPitchAdjust:
 	mov	$02b1+x, a	; $02b1 gets the note to play.
 	mov	a, #$00		; \ 
 	mov	$0330+x, a	; | 
-	mov	$0360+x, a	; | Zero out some addresses..?
+	mov	$0360+x, a	; | Reset vibrato and tremolo counters.
 	mov	$a0+x, a	; |
 	mov	$0110+x, a	; |
 	mov	$b0+x, a	; /
@@ -441,12 +441,12 @@ if !noSFX = !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	L_062B		; Don't adjust the pitch.	
 endif
-	mov	a, $0300+x	; \ 
-	mov	$90+x, a	; / 
+	mov	a, $0300+x	; Get pitch envelope length.
+	mov	$90+x, a	; If zero, then we are not processing a pitch envelope.
 	beq	L_062B
-	mov	a, $0301+x	; Beyond here it gets a bit crazy.  No clue what's happening.
-	mov	$91+x, a	; A bit farther below it looks like it calculates the pitch for the current note.
-	mov	a, $0320+x	; At the end it returns.
+	mov	a, $0301+x	; Get pitch envelope delay.
+	mov	$91+x, a	; 
+	mov	a, $0320+x	; Check the pitch envelope sign.
 	bne	L_0621		;
 	mov	a, $02b1+x	;
 	setc			;
@@ -535,7 +535,7 @@ endif
 }
 
 L_09CDWPreCheck:
-	mov	a, $91+x
+	mov	a, $91+x		; If pitch slide delta is being delayed...
 	beq	L_1119
 	dec	$91+x
 	bra	L_112A
@@ -571,7 +571,7 @@ if !noSFX = !false
 	and	a, $1d
 	bne	-
 endif
-	mov	a, $02d1+x
+	mov	a, $02d1+x	; Make sure that the correct fine tune value is used for the music.
 	mov	$02b0+x, a
 ++
 	movw	$10, ya            ; notenum to $10/11
@@ -579,48 +579,48 @@ endif
 }
 
 
-EffectModifier:					; Call this whenever either $1d or the various echo, noise, or pitch modulaion addresses are modified.
+EffectModifier:				; Call this whenever either $1d or the various echo, noise, or pitch modulation addresses are modified.
 {	
 	push	x
 	push	y
 	mov	x, #$00
-	mov	y, #$d1				; The DSP register for pitch modulation reversed.
-						; $10 = the current music whatever
-						; $12 = the current SFX whatever
+	mov	y, #$d1			; The DSP register for pitch modulation reversed.
+					; $10 = the current music whatever
+					; $12 = the current SFX whatever
 -						
-						; Formula: The output for the DSP register is
-						; S'M + SE
-						; Where 
-						; M is !WhateverMusicChannels,
-						; E is !WhateverSFXChannels.
-						; and S is $1d (the current channels for which SFX are enabled)
-						; Yay logic!
+					; Formula: The output for the DSP register is
+					; S'M + SE
+					; Where 
+					; M is !WhateverMusicChannels,
+					; E is !WhateverSFXChannels.
+					; and S is $1d (the current channels for which SFX are enabled)
+					; Yay logic!
 
-	inc	y				; \
-	mov	a, y				; | Get the next DSP register into a.
-	xcn	a				; /
-	mov	$f2, a				;
+	inc	y			; \
+	mov	a, y			; | Get the next DSP register into a.
+	xcn	a			; /
+	mov	$f2, a			;
 						
 if !noSFX = !false
-	mov	a, $1d				; \ a = S
-	eor	a, #$ff				; | a = S'
-	and	a, !MusicPModChannels+x		; / a = S'M
+	mov	a, $1d			; \ a = S
+	eor	a, #$ff			; | a = S'
+	and	a, !MusicPModChannels+x	; / a = S'M
 	
 	mov	$15, a
 
-	mov	a, !SFXPModChannels+x		; \ a = S
-	and	a, $1d				; | a = SE
-	or	a, $15				; / a = S'M + SE
+	mov	a, !SFXPModChannels+x	; \ a = S
+	and	a, $1d			; | a = SE
+	or	a, $15			; / a = S'M + SE
 else
 	mov	a, !MusicPModChannels+x
 endif
 	
-						; \ Write to the relevant DSP register.
-	mov	$f3, a				; / (coincidentally, the order is the opposite of DSPWrite)
+					; \ Write to the relevant DSP register.
+	mov	$f3, a			; / (coincidentally, the order is the opposite of DSPWrite)
 	
-	inc	x				; \
-	cmp	x, #$03				; | Do this three times.
-	bne	-				; /
+	inc	x			; \
+	cmp	x, #$03			; | Do this three times.
+	bne	-			; /
 
 	pop	y
 	pop	x
@@ -774,7 +774,7 @@ RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore 
 	ret				;
 					;
 .restoreSample				; \ 
-	jmp   RestoreMusicSample	; | Fix sample.
+	jmp   RestoreMusicSample	; / Fix sample.
 }
 if !noSFX = !false
 HandleSFXVoice:
@@ -872,11 +872,11 @@ endif
 	call	KeyOnVoices		; Key on the voice.
 .setNoteLength
 	mov	a, !ChSFXNoteTimerBackup+x	
-						; \ Get the length of the note back
+					; \ Get the length of the note back
 	mov     !ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	clr1	$13.7			; I...still don't know what $13.7 does...
-	mov	a, $91+x
+	mov	a, $91+x		; If pitch slide is not being delayed...
 	beq	+
 	dec	$91+x
 	ret
@@ -884,8 +884,8 @@ endif
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
-	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
-	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
+	mov	$48, #$00               ; vbit flags = 0 (to force DSP set)
+	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
 	;setp				; |
@@ -893,7 +893,7 @@ endif
 	;clrp				; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
-	;mov	y, #$5c			; |
+	;mov	y, #$5c			; | This doesn't happen during pitch bends.
 	;call	DSPWrite		; /
 	call	KeyOffVoices
 .return1
@@ -907,12 +907,12 @@ endif
 ; EB
 .pitchBendCommand2
 	call	GetNextSFXByte		;
-	mov	$91+x, a		; Dunno what $91 does.
+	mov	$91+x, a		; Set pitch bend length. (This wasn't functional in vanilla SMW.)
 	call	GetNextSFXByte		;
-	mov	$90+x, a		; Dunno what $90 does.
+	mov	$90+x, a		; Set number of ticks to bend pitch for.
 	push	a			;
 	call	GetNextSFXByte		;
-	pop	y			; I DON'T KNOW WHAT ANY OF THIS DOES! *sobs*
+	pop	y			;
 	call	CalcPortamentoDelta	; \ Calculate the pitch difference.
 	bra	.setNoteLength		; /
 
@@ -1151,8 +1151,8 @@ SetSFXInstrument:
 	inc	y			; |
 	dbnz	$12, -    		; / 
 	mov	a, SFXInstrumentTable+x ; \
-	mov	x, $46			; |
-	mov	$0210+x, a		; / Something to do with pitch...?
+	mov	x, $46			; | Set pitch base multiplier.
+	mov	$0210+x, a		; /
 	mov	a, #$00			; \ Disable sub-tuning
 	mov	$02f0+x, a		; /
 	ret
@@ -1920,7 +1920,10 @@ RestoreInstrumentFromAPU1SFX:
 L_0A38:
 	cmp	$1c, #$30			; Process the jump SFX.
 	beq	L_0A68
-	bcs	L_0AB0			; I don't really know what's going on here, so I won't pretend to.
+	bcs	L_0AB0
+; Beyond this point is essentially the hard-coded way to key on a note and
+; manually set the pitch bend parameters, with the timer deciding what
+; executes when.
 	cmp	$1c, #$2a
 	bne	L_0A99
 	mov	x, #(!1DFASFXChannel*2)
@@ -1967,9 +1970,11 @@ L_0B08:
 	bra	RestoreInstrumentFromAPU1SFX
 
 L_0AF2:
-	cmp	$1c, #$18
+	cmp	$1c, #$18		; Process the girder SFX.
 	beq	L_0AF7
 	bcs	L_0AB0
+; Beyond this point is essentially the hard-coded way to key on a couple of
+; notes, with the timer deciding what executes when.
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
@@ -2025,9 +2030,9 @@ L_0B5A:
 	mov	x,#$07			; These weren't used before, so they weren't cleared before.
 -					;
 	mov	$0160+x,a		;
-	;mov	$245A+x,a		; These did something in AMM, but I don't know what.
+	;mov	$245A+x,a		; These were used in AMM for the special pulse wave BRR file.
 	;mov	$2463+x,a		; They can't be used now, since chances are music or something else is there now.
-	dec	x			;
+	dec	x			; Plus, the BRR file would be in an unstable location.
 	bpl	-			;
 					;
 	mov	!WaitTime, #$02		;
@@ -2437,7 +2442,7 @@ L_0D23:
 if !noSFX = !false
 	mov	a, $1d
 	eor	a, #$FF		;;;;;;;;;;;;;;;Code change
-	and	a, $47
+	and	a, $47		; Set legato to off for voice.
 	mov	$12, a
 else
 	mov	$12, $47
@@ -2727,9 +2732,9 @@ endif
 ; add fade delta to value (set final value at end)
 L_1075:
 	movw	$14, ya		;
-	clrc			;
-	bne	L_1088		; The zero flag isn't modified by movw d, ya, so I'm not sure what this is for...?
-	adc	a, #$20		; \ 16 gets the passed pointer plus #$20
+	clrc			; Fade delta counter decides which way this branch goes
+	bne	L_1088		; (ideally through the dec d+x opcode prior to calling L_1075)
+	adc	a, #$20		; \ $16 gets the passed pointer plus #$20
 	movw	$16, ya		; /
 	mov	a, x		; \ mov y, x 
 	mov	y, a		; / mov y, $48
@@ -2929,10 +2934,10 @@ L_1133:
 	beq	L_1144
 	inc	$a0+x
 L_1140:
-	bbs1	$13.7, L_1195
+	bbs1	$13.7, L_1195		; If $13.7 is set, recalibrate the pitch.
 -
 	ret
-L_1144:					; This seems to handle things related to vibrato and pitch slides?
+L_1144:					; Process vibrato.
 
 	mov	a, !PlayingVoices	; \ 
 	and	a, $48			; | If there's no voice playing on this channel,
@@ -2986,7 +2991,7 @@ L_1188:
 	movw	ya, $0e
 	subw	ya, $12
 L_1191:
-	addw	ya, $10
+	addw	ya, $10		;Add vibrato offset to resulting pitch.
 	movw	$10, ya
 L_1195:
 	jmp	SetPitch
@@ -3035,7 +3040,7 @@ L_11E7:
 	bbs1	$13.7, L_1195
 	ret
 L_11EB:
-	mov	a, $0340+x
+	mov	a, $0340+x	; Process vibrato.
 	cbne	$a0+x, L_11E7
 	mov	y, $49
 	mov	a, $0331+x
@@ -3056,7 +3061,7 @@ L_1201:
 	subw	ya, $16
 	movw	$16, ya
 L_120E:
-	mov	y, $49
+	mov	y, $49	;Account for fractions of a music tick in slides.
 	mov	a, $16
 	mul	ya
 	mov	$14, y
