@@ -2901,13 +2901,13 @@ void Music::pointersFirstPass()
 		//This specifically involves phrase pointers, loop locations and remote gain positions.
 		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.
 		for (int a = 0; a < loopLocations[resizedChannel].size(); a++) {
-			loopLocations[resizedChannel][a] = loopLocations[resizedChannel][a]+z;
+			loopLocations[resizedChannel][a] += z;
 		}
 		for (int a = 0; a < remoteGainPositions[resizedChannel].size(); a++) {
-			remoteGainPositions[resizedChannel][a] = remoteGainPositions[resizedChannel][a]+z;
+			remoteGainPositions[resizedChannel][a] += z;
 		}
 		for (int a = 0; a <= 1; a++) {
-			phrasePointers[resizedChannel][a] = phrasePointers[resizedChannel][a]+z;
+			phrasePointers[resizedChannel][a] += z;
 		}
 	}
 
