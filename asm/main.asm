@@ -89,7 +89,7 @@ endmacro
 ; $48: Bitwise indicator of the current channel being processed.
 ; $5C: Used to indicate that a volume needs to be updated (long routine, so it's only done when necessary).
 ; $0166: 4 bytes; used as the output byte to send to the 5A22.  Originally AMM only used 2 of these, we can use all 4 for whatever we like.
-; $13: Only the highest bit was ever modified or read. It forced the pitch or volume to be updated when tremolo/vibrato was either being delayed or was not active.
+; $13: Only the highest bit was ever modified or read. It forced the pitch or volume to be updated when a pitch slide, tremolo or vibrato was either being delayed or was not active.
 
 ; $5E: Used to mute a channel (via Yoshi Drums, etc.).  One bit per channel, setting it stops a channel from playing.
 ; $6E: Which channels are affected by Yoshi drums.
@@ -3415,7 +3415,7 @@ L_11A7:
 	movw	$10, ya            ; $10/11 = voice pan value
 	mov	a, !PanFadeDuration+x           ; voice pan fade counter
 	bne	L_11B9
-	bbs1	$13.7, L_11C3
+	bbs1	$13.7, L_11C3	; If $13.7 is set, recalibrate the volume.
 	bra	L_11C6
 L_11B9:
 	mov	a, $0291+x
@@ -3439,7 +3439,7 @@ L_11E3:
 	mov	a, $a1+x
 	bne	L_11EB
 L_11E7:
-	bbs1	$13.7, L_1195
+	bbs1	$13.7, L_1195      ; If $13.7 is set, recalibrate the pitch.
 	ret
 L_11EB:
 	mov	a, $0340+x	; Process vibrato.
