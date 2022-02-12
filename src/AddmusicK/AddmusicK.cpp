@@ -1233,16 +1233,31 @@ void fixMusicPointers()
 			untilJump--;
 		}
 
-		int normalChannelsSize = song.data[0].size() + song.data[1].size() + song.data[2].size() + song.data[3].size() + song.data[4].size() + song.data[5].size() + song.data[6].size() + song.data[7].size();
+		// Loop bodies are located in channel 8. Channels 0 through 7 (and loops in
+		// Channel 8?) contain loop pointers relative to channel 8's start address.
+		// Compute Channel 8's absolute start address.
+		int loopDataAddress =
+			song.posInARAM
+			+ song.spaceForPointersAndInstrs
+			+ song.data[0].size()
+			+ song.data[1].size()
+			+ song.data[2].size()
+			+ song.data[3].size()
+			+ song.data[4].size()
+			+ song.data[5].size()
+			+ song.data[6].size()
+			+ song.data[7].size();
 
+		// Add Channel 8's absolute start address to all relative loop pointers,
+		// converting them into absolute loop pointers.
 		for (int j = 0; j < 9; j++)
 		{
-			for (unsigned int k = 0; k < song.loopLocations[j].size(); k++)
+			for (auto loopPointerPos : song.loopLocations[j])
 			{
-				int temp = (song.data[j][song.loopLocations[j][k]] & 0xFF) | (song.data[j][song.loopLocations[j][k] + 1] << 8);
-				temp += song.posInARAM + normalChannelsSize + song.spaceForPointersAndInstrs;
-				song.data[j][song.loopLocations[j][k]] = temp & 0xFF;
-				song.data[j][song.loopLocations[j][k] + 1] = temp >> 8;
+				int loopPointer = (song.data[j][loopPointerPos] & 0xFF) | (song.data[j][loopPointerPos + 1] << 8);
+				loopPointer += loopDataAddress;
+				song.data[j][loopPointerPos] = loopPointer & 0xFF;
+				song.data[j][loopPointerPos + 1] = loopPointer >> 8;
 			}
 		}
 
