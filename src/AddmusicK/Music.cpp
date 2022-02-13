@@ -783,10 +783,13 @@ void Music::parseInstrumentCommand()
 		{
 			if (i < 30)
 				usedSamples[instrToSample[i]] = true;
-			else if ((i - 30) * 6 < instrumentData.size())
-				usedSamples[instrumentData[(i - 30) * 6]] = true;
-			else
-				error("This custom instrument has not been defined yet.")
+			else {
+				int customInstrIndex = i - 30;
+				if (customInstrIndex * 6 < instrumentData.size())
+					usedSamples[instrumentData[customInstrIndex * 6]] = true;
+				else
+					error("This custom instrument has not been defined yet.")
+			}
 		}
 
 		if (songTargetProgram == 1)
