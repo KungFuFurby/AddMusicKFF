@@ -986,6 +986,7 @@ HotPatchVCMDFetchNextByteIfMinus:
 	bpl	+
 	jmp	GetCommandData
 +
+	mov	x, $46
 	mov	a, #$00
 	ret
 
