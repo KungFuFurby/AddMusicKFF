@@ -1073,10 +1073,7 @@ endif
 	bra	.setNoteLength		; /
 
 ; DA
-.instrumentCommand
-	mov	a, #$00			; \ Disable sub-tuning
-	mov	$02f0+x, a		; /
-	
+.instrumentCommand	
 	mov	a, $18			; \ Disable noise for this channel.
 	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
 if !noiseFrequencySFXInstanceResolution = !true
