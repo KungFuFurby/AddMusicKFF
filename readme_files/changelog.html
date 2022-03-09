@@ -20,6 +20,7 @@
 	<ul>
 	<li>Fixed a bug in parser 1 emulation mode that could causes crashes in certain circumstances and unpredictable behavior in others.</li>
 	<li>Fixed a bug with the $F9 command that caused it to only take one byte of data instead of two.</li>
+	<li>Added the ability to visualize the memory consumption of a song.</li>
 	</ul>
 	<h2>Version 1.0.3 - 2015-04-28</h2>
 	<ul>
@@ -52,78 +53,119 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-02-21</h2>
+	<h2>Version 1.0.9 - 2022-03-09</h2>
+	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
-	<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
-	<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
-	<li>"Added #spc tags to every global song." - KevinM</li>
-	<li>"Global songs have better optimization, saving 0x44 (68) bytes total." - KevinM</li>
-	<li>"Upgraded to Visual Studio 2019." - Atari 2.0</li>
-	<li>"The asar version has been updated from 1.33b to 1.81. The code has also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - Atari 2.0 and KungFuFurby</li>
-	<li>"This version makes AddmusicK's core compiler cross-platform." - HertzDevil and nyanpasu64</li>
-	<li>"This version now contains a more accurate ADSR envelope viewer." - HertzDevil</li>
-	<li>"This version prevents garbage from randomly appearing during Submap transitions." - Barrels O' Fun</li>
-	<li>"This version fixes a formatting error in -? help output." - nyanpasu64</li>
-	<li>"This version fixes a crash when using too many songs on the command line while generating SPC files." - nyanpasu64</li>
-	<li>"This version removes unnecessary reading of files supplied from CLI, which caused a crash while generating SPC files when there were zero global songs." - nyanpasu64</li>
-	<li>"The rest of this update log is a gigantic collection of fixes, optimizations and new material as following..." - KungFuFurby
-	<ul>
-		<li>Various code optimizations, some of them adapted from Akaginite's optimizations. In addition, Aikku contributed an optimization in the pitch code. As a result of these optimizations, $0380 and $0386 are no longer used by default due to being only a zero or non-zero case: instead, they have been consolidated into simply modifying opcodes/gates embedded directly within the code. In addition, $0383 has been freed since its purpose is now recycled by a different memory location.</li>
-		<li>Fixed a bug where using a long chain of loops or label loops (or anything that causes readahead to try to read more than 256 bytes) would crash the sound driver.</li>
-		<li>All user-redefinable variables now have a new home in asm/UserDefines.asm. This allows both SNES-side and SPC-side code to share defines put here.</li>
-		<li>Fixed various interferences between the SFX and instrument setup, arpeggio, pitch envelope, note, switching global songs, and fine tune (the last one dating all the way back to vanilla SMW). Note that one of the snippets of code, regarding noise frequency conflicts between SFX instances, has been made optional through asm/UserDefines.asm because it never actually happens in vanilla SMW since only one channel uses noise, and a second one has been made optional regarding allowing matching noise frequencies to stack on each other in case the user doesn't want an unexpectedly loud noise.</li>
-		<li>The P-Switch SFX, which had existed earlier but had both not been programmed on the SNES-side and had some problems on the SPC-side, is now in full working condition, complete with updates to the SNES-side hijacks to account for whenever it is active.</li>
-		<li>The old hardcoded SFX priority system has been replaced with a more soft-coded one stored directly in sound effect files. All SFX, including $1DFA SFX, have been adapted accordingly to utilize the SFX priority system. Although most of these priorities are not used by default, vanilla values are provided.</li>
-		<li>All SFX can now have their channels redefined through asm/UserDefines.asm. Vanilla values are provided, since they're different than what the default values were from past AMK versions.</li>
-		<li>All SFX data has been optimized to remove redundant bytes across the board. In addition, $C7 is now fully functional and pitch envelope delays are now working, and 21 Valley of Bowser appears.txt in $1DF9 now properly restarts like vanilla SMW.</li>
-		<li>Both the jump and girder/grinder SFX from $1DFA now have exact replicas. For the jump SFX, the one from previous versions is still there as an alternative. <b>Please note that these new SFX take SFX $1DF9 slots $2D-$2E and SFX $1DFC slots $36-$37: please do not change these IDs.</b></li>
-		<li>$1DFA SFX now use replica SFX sequences by default instead of just hard-coded ASM. The hard-coded ASM is still in there as a user define switch both for historical reasons and in case of a malfunction.</li>
-		<li>Fixed a bug where specifying an o after a $DD command would freeze AddmusicK during hex validation.</li>
-		<li>Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music.</li>
-		<li>Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation.</li>
-		<li>Made sample filtering more consistent between SPCs and ROMs by factoring in the user individually picking samples from sample groups (and thus inheriting their important flags), as well as having all user-defined samples be important.</li>
-		<li>Fixed a serious bug where mixing .bnk and .brr files between songs was causing the entire ROM to fail to include the soundtrack due to an exception occurring.</li>
-		<li>Visualizations, which has been present since AMK 1.0.2, has now been documented and its folder is now included by default.</li>
-		<li>A leftover from AddmusicM's behavior of how it handled Yoshi Drums, which currently doesn't affect anything else, has been modified to have its flag, stored in $0160, turn itself on if any channel has Yoshi Drums active, and otherwise be off.</li>
-		<li>SPC files no longer have a one-byte stack underflow when being generated.</li>
-		<li>The relocation for jump and girder SFX to either $1DF9 or $1DFC is now optional, rather than being required between these two locations. Now, if neither of them are true, $1DFA is the default, and the fixes in question ensure that these don't wreck too much havoc.</li>
-		<li>-sfxdump and -dumpsfx can now be interchangeably used with each other: the former was in the documentation, and the latter was what was officially used in the C++ code.</li>
-		<li>Fixed a bug where using -sfxdump/-dumpsfx while the lowest numbered local song did not exist outputted SPC files with no samples included.</li>
-		<li>Fixed a critical bug where having a global song using echo and a local song setting up a buffer with an EDL size of 0 through the $FA $04 VCMD would cause a sound driver crash. The main cause is not waiting for the echo buffer to finish after shrinking the EDL, and probably a misinterpretation of what happens when the EDL is zero... because the echo buffer writes are still on, and thus anytime the buffer is to be shrinked and relocated, the previous buffer must have done one round of writes.</li>
-		<li>The SPC-side assembly files have been modified to make tracking of raw memory locations in the $0000-$03FF section easier when searching the text files, mainly in between setp/clrp sections, but also just prior to calls for L_1075.</li>
-		<li>Fixed a bug where the #pad command was only supporting two hex digits with #am4 songs.</li>
-		<li>Fixed a typo in the code where !MaxEchoDelay was not being zeroed out prior to loading new data.</li>
-		<li>Added the ability to filter out sound effects and the playback code through !noSFX in asm/UserDefines.asm.</li>
-		<li>Added an ARAM map page, complete with predecessor Addmusic memory usages.</li>
-		<li>Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten.</li>
-		<li>Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's.</li>
-		<li>The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards.</li>
-		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the percussion was outputting percussion note data on #6 and #7 instead of normal notes after the initial percussion note was defined.</li>
-		<li>Fixed a conversion bug from Addmusic405 and AddmusicM songs where the & command was not properly factoring in a preceding tie, causing the intended delay effect to get lost.</li>
-		<li>Fixed a fatal bug when the lowest channel ID defined is non-zero and a command not filtered out beforehand that outputs hex and/or note data is defined outside the scope of all of the channel markers.</li>
-		<li>Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table.</li>
-		<li>Fixed a bug where turning off Yoshi Drums was not unmuting channels.</li>
-		<li>Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized.</li>
-		<li>Revamped the anticipation gain/remote gain conversions due to the original design of the remote codes not being compatible with both of them running at the same time. Two reserved remote code events (5 and 6, of which 5 was originally reserved in the first place) are now used that can be used at the same time (and come with a feature to replicate the instrument restoration on key on without having to use a third remote code event), with two additional ones also created that can be used outside of these conversions.</li>
-		<li>Fixed a bug where the Yoshi Drums were not being disabled when Mario teleports into a room without Yoshi without disembarking first through a cutscene or otherwise. This does add a new hijack at $02A763 in order to do this, though, so be careful...</li>
-		<li>Fixed a big bug where uppercase notes would refer to undefined arrays, meaning they would output wildly inconsistent data.</li>
-		<li>There is now a historical hex command reference in order to assist from adapting from past Addmusics, as well as documenting their former purposes. Not everything has an exact equivalent yet, though.</li>
-		<li>Most non-native hex and MML commands from earlier Addmusics now output a warning. The exception to this rule is the $FA VCMD in AddmusicM, which now outputs an error because of a conflict with the special pulse wave oscillation speed command.</li>
-		<li>Fixed a bug on the detection of the lowest note possible.</li>
-		<li>Added a new hot patch system through two new VCMDs in the $FA section: $FA $7F (for presets) and $FA $FE (for individual patch bits). This is specifically designed to both replicate playback differences from past Addmusics as well as add fixes to music playback that won't break playback of past music that rely on these bugs.</li>
+	<li>Overall
+		<ul>
+		<li>"Upgraded to Visual Studio 2019." - Atari 2.0</li>
+		<li>"The asar version has been updated from 1.33b to 1.81. The code has also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - Atari 2.0 and KungFuFurby</li>
+		<li>"This version makes AddmusicK's core compiler cross-platform." - HertzDevil and nyanpasu64</li>
+		</ul>
+	</li>
+	<li>Command Line
+		<ul>
+		<li>"-sfxdump and -dumpsfx can now be interchangeably used with each other: the former was in the documentation, and the latter was what was officially used in the C++ code." - KungFuFurby</li>
+		<li>"Fixed a bug where using -sfxdump/-dumpsfx while the lowest numbered local song did not exist outputted SPC files with no samples included." - KungFuFurby</li>
+		<li>"This version fixes a formatting error in -? help output." - nyanpasu64</li>
+		<li>"This version fixes a crash when using too many songs on the command line while generating SPC files." - nyanpasu64</li>
+		<li>"This version removes unnecessary reading of files supplied from CLI, which caused a crash while generating SPC files when there were zero global songs." - nyanpasu64</li>
+		</ul>
+	</li>
+	<li>Gameplay
+		<ul>
+		<li>"Fixed a bug where the Yoshi Drums were not being disabled when Mario teleports into a room without Yoshi without disembarking first through a cutscene or otherwise. <b>This does add a new hijack at $02A763  in the ROM in order to do this, though, so be careful...</b>" - KungFuFurby</li>
+		<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
+		<li>"This version prevents garbage from randomly appearing during Submap transitions." - Barrels O' Fun</li>
+		</ul>
+	</li>
+	<li>Built-In Original Songs
+		<ul>
+		<li>"Added #spc tags to every global song." - KevinM</li>
+		<li>"Global songs have better optimization, saving 0x44 (68) bytes total." - KevinM</li>
+		<li>"Fixed wrong note that played in "Bonus End" after the song was supposed to be over" - KevinM</li>
+		</ul>
+	</li>
+	<li>Documentation
+		<ul>
+		<li>"Added an ARAM map page, complete with predecessor Addmusic memory usages." - KungFuFurby</li>
+		<li>"There is now a historical hex command reference in order to assist from adapting from past Addmusics, as well as documenting their former purposes. Not everything has an exact equivalent yet, though."  - KungFuFurby</li>
+		<li>"Visualizations, which has been present since AMK 1.0.2, has now been documented and its folder is now included by default."  - KungFuFurby</li>
+		<li>"This version now contains a more accurate ADSR envelope viewer." - HertzDevil</li>
+		</ul>
+	</li>
+	<li>Music Hex Commands
+		<ul>
+		<li>"Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten." - KungFuFurby</li>
+		<li>"Added a new hot patch system through two new VCMDs in the $FA section: $FA $7F (for presets) and $FA $FE (for individual patch bits). This is specifically designed to both replicate playback differences from past Addmusics as well as add fixes to music playback that won't break playback of past music that rely on these bugs." - KungFuFurby</li>
 		<li><b>WARNING: The following changes may affect playback of your songs (and require $FA $7F $01 at the beginning of your song to take effect, though you can also individual patches by bit with $FA $FE xx...):</b>
 		<ul>
-			<li>The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition.</li>
-			<li>GAIN is now the first thing written to the voice DSP registers when setting up an instrument. This prevents a problem with unexpectedly using a previous gain value (which can be a direct gain volume, and thus suddenly changes the volume value) while switching from ADSR mode to GAIN mode.</li>
-			<li>Arpeggios now pause their sound output when going through rests. They resume upon another note playing.</li>
-			<li>Readahead now looks inside subroutines ($E9 VCMD) and superloops ($E6 VCMD), rather than jumping over each one. There is a limit of one loop iteration each before exiting to avoid excessive reading of bytes.</li>
-			<li>Echo writes are no longer enabled by default when initially setting up the echo buffer through the $FA $04 VCMD (instead they are merely not modified). This most notably would affect the zero EDL case: if echo writes are not explicitly enabled beforehand, most commonly via the $F1 VCMD, then there will no longer be an effect on the sound when using any echo-related DSP registers, because $FF00-$FF03 are no longer written to, which in turn allows extremely large songs to use that area without a fear of losing data.</li>
-			<li>Fixed a bug where the $F3 VCMD was failing to zero out the pitch base fractional multiplier. <em>This is enabled by default when using #amm due to AddmusicM not supporting fractional pitch base multipliers at the time.</em></li>
+			<li>"The $DD VCMD now accounts for per-channel transposition, whereas it previously only accounted for global transposition." - KungFuFurby</li>
+			<li>"GAIN is now the first thing written to the voice DSP registers when setting up an instrument. This prevents a problem with unexpectedly using a previous gain value (which can be a direct gain volume, and thus suddenly changes the volume value) while switching from ADSR mode to GAIN mode." - KungFuFurby</li>
+			<li>"Arpeggios now pause their sound output when going through rests. They resume upon another note playing." - KungFuFurby</li>
+			<li>"Readahead now looks inside subroutines ($E9 VCMD) and superloops ($E6 VCMD), rather than jumping over each one. There is a limit of one loop iteration each before exiting to avoid excessive reading of bytes." - KungFuFurby</li>
+			<li>"Echo writes are no longer enabled by default when initially setting up the echo buffer through the $FA $04 VCMD (instead they are merely not modified). This most notably would affect the zero EDL case: if echo writes are not explicitly enabled beforehand, most commonly via the $F1 VCMD, then there will no longer be an effect on the sound when using any echo-related DSP registers, because $FF00-$FF03 are no longer written to, which in turn allows extremely large songs to use that area without a fear of losing data." - KungFuFurby</li>
+			<li>"Fixed a bug where the $F3 VCMD was failing to zero out the pitch base fractional multiplier. <em>This is enabled by default when using #amm due to AddmusicM not supporting fractional pitch base multipliers at the time.</em>" - KungFuFurby</li>
 		</ul>
 		</li>
-	</ul>
+		</ul>
+	</li>
+	<li>Music MML Parser
+		<ul>
+		<li>"Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music." - KungFuFurby</li>
+		<li>"Fixed a fatal bug when the lowest channel ID defined is non-zero and a command not filtered out beforehand that outputs hex and/or note data is defined outside the scope of all of the channel markers." - KungFuFurby</li>
+		<li>"Fixed a bug where specifying an o after a $DD command would freeze AddmusicK during hex validation." - KungFuFurby</li>
+		<li>"Fixed a bug on the detection of the lowest note possible." - KungFuFurby</li>
+		<li>"Fixed a big bug where uppercase notes would refer to undefined arrays, meaning they would output wildly inconsistent data." - KungFuFurby</li>
+		</ul>
+	<li>SFX
+		<ul>
+		<li>"Both the jump and girder/grinder SFX from $1DFA now have exact replicas. For the jump SFX, the one from previous versions is still there as an alternative. <b>Please note that these new SFX take SFX $1DF9 slots $2D-$2E and SFX $1DFC slots $36-$37: please do not change these IDs.</b>" - KungFuFurby</li>
+		<li>"The old hardcoded SFX priority system has been replaced with a more soft-coded one stored directly in sound effect files. All SFX, including $1DFA SFX, have been adapted accordingly to utilize the SFX priority system. Although most of these priorities are not used by default, vanilla values are provided." - KungFuFurby</li>
+		<li>"The P-Switch SFX, which had existed earlier but had both not been programmed on the SNES-side and had some problems on the SPC-side, is now in full working condition, complete with updates to the SNES-side hijacks to account for whenever it is active." - KungFuFurby</li>
+		<li>"All SFX data has been optimized to remove redundant bytes across the board. In addition, $C7 is now fully functional and pitch envelope delays are now working, and 21 Valley of Bowser appears.txt in $1DF9 now properly restarts like vanilla SMW." - KungFuFurby</li>
+		<li>"The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards." - KungFuFurby</li>
+		<li>"Fixed various interferences between the SFX and instrument setup, arpeggio, pitch envelope, note, switching global songs, and fine tune (the last one dating all the way back to vanilla SMW). Note that one of the snippets of code, regarding noise frequency conflicts between SFX instances, has been made optional through asm/UserDefines.asm because it never actually happens in vanilla SMW since only one channel uses noise, and a second one has been made optional regarding allowing matching noise frequencies to stack on each other in case the user doesn't want an unexpectedly loud noise." - KungFuFurby</li>
+		<li>"All SFX can now have their channels redefined through asm/UserDefines.asm. Vanilla values are provided, since they're different than what the default values were from past AMK versions." - KungFuFurby</li>
+		<li>"$1DFA SFX now use replica SFX sequences by default instead of just hard-coded ASM. The hard-coded ASM is still in there as a user define switch both for historical reasons and in case of a malfunction." - KungFuFurby</li>
+		<li>"The relocation for jump and girder SFX to either $1DF9 or $1DFC is now optional, rather than being required between these two locations. Now, if neither of them are true, $1DFA is the default, and the fixes in question ensure that these don't wreck too much havoc." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"All user-redefinable variables now have a new home in asm/UserDefines.asm. This allows both SNES-side and SPC-side code to share defines put here." - KungFuFurby</li>
+		<li>"Added the ability to filter out sound effects and the playback code through !noSFX in asm/UserDefines.asm." - KungFuFurby</li>
+		<li>"Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's." - KungFuFurby</li>
+		<li>"Made sample filtering more consistent between SPCs and ROMs by factoring in the user individually picking samples from sample groups (and thus inheriting their important flags), as well as having all user-defined samples be important." - KungFuFurby</li>
+		<li>"Fixed a serious bug where mixing .bnk and .brr files between songs was causing the entire ROM to fail to include the soundtrack due to an exception occurring." - KungFuFurby</li>
+		<li>"Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation." - KungFuFurby</li>
+		<li>"SPC files no longer have a one-byte stack underflow when being generated." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"The SPC-side assembly files have been modified to make tracking of raw memory locations in the $0000-$03FF section easier when searching the text files, mainly in between setp/clrp sections, but also just prior to calls for L_1075 due to the use of indirects inside this routine." - KungFuFurby</li>
+		<li>"Various code optimizations, some of them adapted from Akaginite's optimizations. In addition, Aikku contributed an optimization in the pitch code. As a result of these optimizations, $0380 and $0386 are no longer used by default due to being only a zero or non-zero case: instead, they have been consolidated into simply modifying opcodes/gates embedded directly within the code. In addition, $0383 has been freed since its purpose is now recycled by a different memory location." - KungFuFurby</li>
+		<li>"Fixed a critical bug where having a global song using echo and a local song setting up a buffer with an EDL size of 0 through the $FA $04 VCMD would cause a sound driver crash. The main cause is not waiting for the echo buffer to finish after shrinking the EDL, and probably a misinterpretation of what happens when the EDL is zero... because the echo buffer writes are still on, and thus anytime the buffer is to be shrunk and relocated, the previous buffer must have done one round of writes." - KungFuFurby</li>
+		<li>"Fixed a bug where using a long chain of loops or label loops (or anything that causes readahead to try to read more than 256 bytes) would crash the sound driver." - KungFuFurby</li>
+		<li>"Fixed a typo in the code where !MaxEchoDelay was not being zeroed out prior to loading new data." - KungFuFurby</li>
+		<li>"Fixed a bug where turning off Yoshi Drums was not unmuting channels." - KungFuFurby</li>
+		<li>"A leftover from AddmusicM's behavior of how it handled Yoshi Drums, which currently doesn't affect anything else, has been modified to have its flag, stored in $0160, turn itself on if any channel has Yoshi Drums active, and otherwise be off." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Historical Addmusic Adaptations
+		<ul>
+		<li>"Most non-native hex and MML commands from earlier Addmusics now output a warning. The exception to this rule is the $FA VCMD in AddmusicM, which now outputs an error because of a conflict with the special pulse wave oscillation speed command." - KungFuFurby</li>
+		<li>"Fixed a bug where anticipation gain/remote gain conversions from the beta AMK version were not being fetched in the correct order due to the way they were initially organized." - KungFuFurby</li>
+		<li>"Fixed a conversion bug from Addmusic405 and AddmusicM songs where the percussion was outputting percussion note data on #6 and #7 instead of normal notes after the initial percussion note was defined.</li>
+		<li>"Fixed a conversion bug from Addmusic405 and AddmusicM songs where the & command was not properly factoring in a preceding tie, causing the intended delay effect to get lost." - KungFuFurby</li>
+		<li>"Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table." - KungFuFurby</li>
+		<li>"Fixed a bug where the #pad command was only supporting two hex digits with #am4 songs." - KungFuFurby</li>
+		<li>"Revamped the anticipation gain/remote gain conversions due to the original design of the remote codes not being compatible with both of them running at the same time. Two reserved remote code events (5 and 6, of which 5 was originally reserved in the first place) are now used that can be used at the same time (and come with a feature to replicate the instrument restoration on key on without having to use a third remote code event), with two additional ones also created that can be used outside of these conversions." - KungFuFurby</li>
+		</ul>
 	</li>
 	</ul>
+
 	<br><br>
 	
 
