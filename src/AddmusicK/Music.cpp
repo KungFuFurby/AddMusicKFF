@@ -2075,7 +2075,7 @@ void Music::parseHexCommand()
 }
 void Music::parseNote()
 {
-	if (isupper(text[pos]) && targetAMKVersion < 4){
+	if (isupper(text[pos]) && targetAMKVersion < 4 && caseNoteWarning){
 		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
 		caseNoteWarning = false;
 	}
