@@ -89,6 +89,8 @@ static bool sortReplacements;
 static bool manualNoteWarning;
 static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
+static bool caseNoteWarning;
+static bool octaveForDDWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -178,6 +180,8 @@ void Music::init()
 	manualNoteWarning = true;
 	nonNativeHexWarning = true;
 	nonNativeCmdWarning = true;
+	octaveForDDWarning = true;
+	caseNoteWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -342,7 +346,7 @@ void Music::init()
 			return;
 		}
 
-#if PARSER_VERSION != 2
+#if PARSER_VERSION != 4
 #error You forgot to update the #amk syntax.  Aren't you glad you at least remembered to put in this warning?
 #endif
 		/*			targetAMKVersion = 0;
@@ -1979,6 +1983,10 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						if (targetAMKVersion < 4 && octaveForDDWarning) {
+							printWarning("WARNING: Using o after reading $DD will freeze on hex validation for AddmusicK 1.0.8 and lower!", name, line);
+							octaveForDDWarning = false;
+						}
 						pos++;
 						getInt();
 					}
@@ -2065,6 +2073,10 @@ void Music::parseHexCommand()
 }
 void Music::parseNote()
 {
+	if (isupper(text[pos]) && targetAMKVersion < 4){
+		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
+		caseNoteWarning = false;
+	}
 	j = tolower(text[pos]);
 	pos++;
 
