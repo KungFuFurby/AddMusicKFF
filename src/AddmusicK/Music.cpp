@@ -563,7 +563,7 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
-	if (i == -1 && text[pos] == '=')
+	if (i == -1 && text[pos] == '=' && targetAMKVersion >= 4)
 	{
 		pos++;
 		i = getInt();
@@ -577,7 +577,9 @@ void Music::parseLDirective()
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	if (targetAMKVersion >= 4) {
+		defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	}
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -2843,7 +2845,10 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		//return i;
+		if (targetAMKVersion < 4)
+		{
+			return i;
+		}
 		//if (i < 1) still = false; else return i;
 	}
 
