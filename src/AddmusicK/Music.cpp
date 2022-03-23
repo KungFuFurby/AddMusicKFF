@@ -91,6 +91,8 @@ static bool sortReplacements;
 static bool manualNoteWarning;
 static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
+static bool caseNoteWarning;
+static bool octaveForDDWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -182,6 +184,8 @@ void Music::init()
 	manualNoteWarning = true;
 	nonNativeHexWarning = true;
 	nonNativeCmdWarning = true;
+	octaveForDDWarning = true;
+	caseNoteWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -347,7 +351,7 @@ void Music::init()
 			return;
 		}
 
-#if PARSER_VERSION != 2
+#if PARSER_VERSION != 4
 #error You forgot to update the #amk syntax.  Aren't you glad you at least remembered to put in this warning?
 #endif
 		/*			targetAMKVersion = 0;
@@ -564,7 +568,7 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
-	if (i == -1 && text[pos] == '=')
+	if (i == -1 && text[pos] == '=' && targetAMKVersion >= 4)
 	{
 		pos++;
 		i = getInt();
@@ -578,7 +582,9 @@ void Music::parseLDirective()
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	if (targetAMKVersion >= 4) {
+		defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	}
 }
 void Music::parseGlobalVolumeCommand()
 {
@@ -1882,6 +1888,10 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						if (targetAMKVersion < 4 && octaveForDDWarning) {
+							printWarning("WARNING: Using o after reading $DD will freeze on hex validation for AddmusicK 1.0.8 and lower!", name, line);
+							octaveForDDWarning = false;
+						}
 						pos++;
 						getInt();
 					}
@@ -1982,6 +1992,10 @@ void Music::markEchoBufferAllocVCMD()
 void Music::parseNote()
 {
 	passedNote[channel] = true;
+	if (isupper(text[pos]) && targetAMKVersion < 4 && caseNoteWarning){
+		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
+		caseNoteWarning = false;
+	}
 	j = tolower(text[pos]);
 	pos++;
 
@@ -2748,7 +2762,10 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		//return i;
+		if (targetAMKVersion < 4)
+		{
+			return i;
+		}
 		//if (i < 1) still = false; else return i;
 	}
 

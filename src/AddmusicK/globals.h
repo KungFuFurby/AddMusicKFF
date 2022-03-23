@@ -24,7 +24,7 @@
 #define AMKMINOR 0
 #define AMKREVISION 8		// // //
 
-#define PARSER_VERSION 2			// Used to keep track of incompatible changes to the parser
+#define PARSER_VERSION 4			// Used to keep track of incompatible changes to the parser
 
 #define DATA_VERSION 0				// Used to keep track of incompatible changes to any and all compiled data, either to the SNES or to the PC
 
