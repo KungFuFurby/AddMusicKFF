@@ -612,14 +612,38 @@ void Music::parseGlobalVolumeCommand()
 }
 void Music::parseVolumeCommand()
 {
+	int duration = -1;
+	int volume = -1;
+
 	pos++;
-	i = getInt();
+	volume = getInt();
+	if (volume == -1) error("Error parsing volume (\"v\") command.");
 
-	if (i == -1) error("Error parsing volume (\"v\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"v\") command.")
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing volume (\"v\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
+	if (duration == -1) {
+		append(0xE8);
+		append(i);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
 		append(0xE7);
-	append(i);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseQuantizationCommand()
 {
