@@ -457,16 +457,14 @@ void Music::compile()
 			parseComment();			break;		// Needed for comments in quotes		
 		default:
 			if (targetAMKVersion == 3) {
-				switch (tolower(text[pos])) {
-				case '%':
+				if (tolower(text[pos]) == '%') {
 					error("Percussion note support from Codec's AMK Beta has not been implemented yet.");
 					break;
-				case ':':
+				}
+				else if (tolower(text[pos]) == ':') {
 					error("Loop break from Codec's AMK Beta has not been implemented yet.");
 					break;
 				}
-				default:
-					break;
 			}
 			if (isspace(text[pos]))
 			{
