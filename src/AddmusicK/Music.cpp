@@ -985,6 +985,46 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
+			if (targetAMKVersion == 3 && '!' == text[pos])			//if it was actually !! instead of just !
+			{
+				pos++;
+				//--------------------------------------
+				// Reset RemoteCommand
+				//--------------------------------------
+				try
+				{
+					i = getIntWithNegative();
+				}
+				catch (...)
+				{
+					error("Error parsing remote code reset. Remember that remote code cannot be defined within a channel.");
+				}
+				skipSpaces;
+
+				if (text[pos] != ')')
+					error("Error parsing remote reset.")
+					pos++;
+
+				switch (i)
+				{
+				case 0:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					break;
+				case -1:
+					error("Remote code reset for key on events has not been implemented yet from Codec's AMK Beta.");
+					break;
+				default:
+					error("Remote code reset for non-key on events has not been implemented yet from Codec's AMK Beta.");
+					break;
+				}
+				return;
+			}
+			//--------------------------------------
+			// Call RemoteCommand
+			//--------------------------------------
 			//bool negative = false;
 			i = getInt();
 			if (i == -1) error("Error parsing remote code setup.")
