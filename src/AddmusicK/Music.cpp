@@ -731,32 +731,57 @@ void Music::parseT()
 }
 void Music::parseTempoCommand()
 {
-	i = getInt();
+	int duration = -1;
+	int ltempo = -1;
 
-	if (i == -1) error("Error parsing tempo (\"t\") command.")
-	if (i <= 0 || i > 255) error("Illegal value for tempo (\"t\") command.")
+	pos++;
+	ltempo = getInt();
+	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
-	i = divideByTempoRatio(i, false);
-
-	if (i == 0)
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = ltempo;
+		
+				ltempo = getInt();
+				if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
+			}
+	}
+	
+	if (ltempo < 0 || ltempo > 255) error("Illegal value for tempo (\"t\") command.");
+	
+	tempo = divideByTempoRatio(ltempo, false);
+	
+	if (ltempo == 0)
 		error("Tempo has been zeroed out by #halvetempo")
 
-		tempo = i;
-	tempoDefined = true;
+	tempo = ltempo;
 
-	if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
-	{
-		guessLength = false;
+	if (duration == -1) {
+		tempoDefined = true;
+
+		if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
+		{
+			guessLength = false;
+		}
+		else
+		{
+			tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+		}
+
+		append(0xE2);
+		append(tempo);
 	}
-	else
-	{
-		tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		append(0xE3);
+		append(duration);
+		append(tempo);
 	}
-
-
-	append(0xE2);
-	append(tempo);
-
 }
 void Music::parseTransposeDirective()
 {
