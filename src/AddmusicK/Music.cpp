@@ -454,8 +454,20 @@ void Music::compile()
 		case 'c': case 'd': case 'e': case 'f': case 'g': case 'a': case 'b': case 'r': case '^':
 			parseNote();			break;
 		case ';':
-			parseComment();			break;		// Needed for comments in quotes
+			parseComment();			break;		// Needed for comments in quotes		
 		default:
+			if (targetAMKVersion == 3) {
+				switch (tolower(text[pos])) {
+				case '%':
+					error("Percussion note support from Codec's AMK Beta has not been implemented yet.");
+					break;
+				case ':':
+					error("Loop break from Codec's AMK Beta has not been implemented yet.");
+					break;
+				}
+				default:
+					break;
+			}
 			if (isspace(text[pos]))
 			{
 				pos++; break;
@@ -2433,6 +2445,12 @@ void Music::parseOptionDirective()
 		if (tempoRatio < 0)
 			error("#halvetempo has been used too many times...what are you even doing?")
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "allsamplesimportant", 19) == 0 && isspace(text[pos + 19]))
+	{
+		pos += 19;
+		skipSpaces;
+		error("#option allsamplesimportant has not yet been implemented from Codec's AMK beta.");
+	}
 	else
 	{
 		error("#option directive missing its first argument")
@@ -2447,6 +2465,11 @@ void Music::parseSpecialDirective()
 		pos += 11;
 		parseInstrumentDefinitions();
 
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "percussion", 10) == 0 && isspace(text[pos + 10]))
+	{
+		pos += 10;
+		error("Custom percussion has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "samples", 7) == 0 && isspace(text[pos + 7]))
 	{
@@ -2489,12 +2512,27 @@ void Music::parseSpecialDirective()
 		pos += 3;
 		parseSPCInfo();
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "efficient", 9) == 0 && isspace(text[pos + 9]))
+	{
+		pos += 9;
+		error("#efficient (decreasing pitch accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "semiefficient", 13) == 0 && isspace(text[pos + 13]))
+	{
+		pos += 13;
+		error("#semiefficient (decreasing vibrato accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
 	else if (strnicmp(text.c_str() + pos, "louder", 6) == 0 && isspace(text[pos + 6]))
 	{
 		if (targetAMKVersion > 1)
 			printWarning("#louder is redundant in #amk 2 and above.");
 		pos += 6;
 		parseLouderCommand();
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "notranspose", 11) == 0 && isspace(text[pos + 11]))
+	{  //ADDED
+		pos += 11;
+		error("#notranspose has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "tempoimmunity", 13) == 0 && isspace(text[pos + 13]))
 	{
