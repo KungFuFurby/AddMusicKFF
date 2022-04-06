@@ -577,13 +577,38 @@ void Music::parseLDirective()
 }
 void Music::parseGlobalVolumeCommand()
 {
-	pos++;
-	i = getInt();
-	if (i == -1) error("Error parsing global volume (\"w\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"w\") command.")
+	int duration = -1;
+	int volume = -1;
 
+	pos++;
+	volume = getInt();
+	if (volume == -1) error("Error parsing global volume (\"w\") command.");
+
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing global volume (\"w\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for global volume (\"w\") command.");
+
+	if (duration == -1) {
 		append(0xE0);
-	append(i);
+		append(i);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		append(0xE1);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseVolumeCommand()
 {
