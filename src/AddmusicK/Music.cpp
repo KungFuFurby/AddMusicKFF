@@ -788,6 +788,7 @@ void Music::parseTempoCommand()
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
 		append(0xE3);
 		append(duration);
 		append(tempo);
