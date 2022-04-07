@@ -1030,10 +1030,18 @@ void Music::parseLabelLoopCommand()
 					append(0x00);
 					break;
 				case -1:
-					error("Remote code reset for key on events has not been implemented yet from Codec's AMK Beta.");
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
 					break;
 				default:
-					error("Remote code reset for non-key on events has not been implemented yet from Codec's AMK Beta.");
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
 					break;
 				}
 				return;
