@@ -463,8 +463,18 @@ void Music::compile()
 		case 'c': case 'd': case 'e': case 'f': case 'g': case 'a': case 'b': case 'r': case '^':
 			parseNote();			break;
 		case ';':
-			parseComment();			break;		// Needed for comments in quotes
+			parseComment();			break;		// Needed for comments in quotes		
 		default:
+			if (targetAMKVersion == 3) {
+				if (tolower(text[pos]) == '%') {
+					error("Percussion note support from Codec's AMK Beta has not been implemented yet.");
+					break;
+				}
+				else if (tolower(text[pos]) == ':') {
+					error("Loop break from Codec's AMK Beta has not been implemented yet.");
+					break;
+				}
+			}
 			if (isspace(text[pos]))
 			{
 				pos++; break;
@@ -588,24 +598,73 @@ void Music::parseLDirective()
 }
 void Music::parseGlobalVolumeCommand()
 {
-	pos++;
-	i = getInt();
-	if (i == -1) error("Error parsing global volume (\"w\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"w\") command.")
+	int duration = -1;
+	int volume = -1;
 
+	pos++;
+	volume = getInt();
+	if (volume == -1) error("Error parsing global volume (\"w\") command.");
+
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing global volume (\"w\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for global volume (\"w\") command.");
+
+	if (duration == -1) {
 		append(0xE0);
-	append(i);
+		append(i);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		append(0xE1);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseVolumeCommand()
 {
+	int duration = -1;
+	int volume = -1;
+
 	pos++;
-	i = getInt();
+	volume = getInt();
+	if (volume == -1) error("Error parsing volume (\"v\") command.");
 
-	if (i == -1) error("Error parsing volume (\"v\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"v\") command.")
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing volume (\"v\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
+	if (duration == -1) {
+		append(0xE8);
+		append(i);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
 		append(0xE7);
-	append(i);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseQuantizationCommand()
 {
@@ -693,32 +752,58 @@ void Music::parseT()
 }
 void Music::parseTempoCommand()
 {
-	i = getInt();
+	int duration = -1;
+	int ltempo = -1;
 
-	if (i == -1) error("Error parsing tempo (\"t\") command.")
-	if (i <= 0 || i > 255) error("Illegal value for tempo (\"t\") command.")
+	pos++;
+	ltempo = getInt();
+	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
-	i = divideByTempoRatio(i, false);
-
-	if (i == 0)
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = ltempo;
+		
+				ltempo = getInt();
+				if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
+			}
+	}
+	
+	if (ltempo < 0 || ltempo > 255) error("Illegal value for tempo (\"t\") command.");
+	
+	tempo = divideByTempoRatio(ltempo, false);
+	
+	if (ltempo == 0)
 		error("Tempo has been zeroed out by #halvetempo")
 
-		tempo = i;
-	tempoDefined = true;
+	tempo = ltempo;
 
-	if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
-	{
-		guessLength = false;
+	if (duration == -1) {
+		tempoDefined = true;
+
+		if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
+		{
+			guessLength = false;
+		}
+		else
+		{
+			tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+		}
+
+		append(0xE2);
+		append(tempo);
 	}
-	else
-	{
-		tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		append(0xE3);
+		append(duration);
+		append(tempo);
 	}
-
-
-	append(0xE2);
-	append(tempo);
-
 }
 void Music::parseTransposeDirective()
 {
@@ -922,6 +1007,47 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
+			if (targetAMKVersion == 3 && '!' == text[pos])			//if it was actually !! instead of just !
+			{
+				pos++;
+				//--------------------------------------
+				// Reset RemoteCommand
+				//--------------------------------------
+				try
+				{
+					i = getIntWithNegative();
+				}
+				catch (...)
+				{
+					error("Error parsing remote code reset. Remember that remote code cannot be defined within a channel.");
+				}
+				skipSpaces;
+
+				if (text[pos] != ')')
+					error("Error parsing remote reset.")
+					pos++;
+
+				switch (i)
+				{
+				case 0:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					break;
+				case -1:
+					error("Remote code reset for key on events has not been implemented yet from Codec's AMK Beta.");
+					break;
+				default:
+					error("Remote code reset for non-key on events has not been implemented yet from Codec's AMK Beta.");
+					break;
+				}
+				return;
+			}
+			//--------------------------------------
+			// Call RemoteCommand
+			//--------------------------------------
 			//bool negative = false;
 			i = getInt();
 			if (i == -1) error("Error parsing remote code setup.")
@@ -2250,6 +2376,12 @@ void Music::parseOptionDirective()
 		if (tempoRatio < 0)
 			error("#halvetempo has been used too many times...what are you even doing?")
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "allsamplesimportant", 19) == 0 && isspace(text[pos + 19]))
+	{
+		pos += 19;
+		skipSpaces;
+		error("#option allsamplesimportant has not yet been implemented from Codec's AMK beta.");
+	}
 	else
 	{
 		error("#option directive missing its first argument")
@@ -2264,6 +2396,11 @@ void Music::parseSpecialDirective()
 		pos += 11;
 		parseInstrumentDefinitions();
 
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "percussion", 10) == 0 && isspace(text[pos + 10]))
+	{
+		pos += 10;
+		error("Custom percussion has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "samples", 7) == 0 && isspace(text[pos + 7]))
 	{
@@ -2306,12 +2443,27 @@ void Music::parseSpecialDirective()
 		pos += 3;
 		parseSPCInfo();
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "efficient", 9) == 0 && isspace(text[pos + 9]))
+	{
+		pos += 9;
+		error("#efficient (decreasing pitch accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "semiefficient", 13) == 0 && isspace(text[pos + 13]))
+	{
+		pos += 13;
+		error("#semiefficient (decreasing vibrato accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
 	else if (strnicmp(text.c_str() + pos, "louder", 6) == 0 && isspace(text[pos + 6]))
 	{
 		if (targetAMKVersion > 1)
 			printWarning("#louder is redundant in #amk 2 and above.");
 		pos += 6;
 		parseLouderCommand();
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "notranspose", 11) == 0 && isspace(text[pos + 11]))
+	{  //ADDED
+		pos += 11;
+		error("#notranspose has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "tempoimmunity", 13) == 0 && isspace(text[pos + 13]))
 	{
