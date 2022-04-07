@@ -53,7 +53,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-03-09</h2>
+	<h2>Version 1.0.9 - 2022-04-07</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -97,6 +97,7 @@
 	<li>Music Hex Commands
 		<ul>
 		<li>"Restored the Tremolo Off and Pitch Envelope Off VCMDs, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten." - KungFuFurby</li>
+		<li>"$FB VCMD is now fully functional across all channels. Previously it wasn't working because of a failure to use indexing in the assembly code. In addition, a double key on bug was corrected." - KungFuFurby</li>
 		<li>"Added a new hot patch system through two new VCMDs in the $FA section: $FA $7F (for presets) and $FA $FE (for individual patch bits). This is specifically designed to both replicate playback differences from past Addmusics as well as add fixes to music playback that won't break playback of past music that rely on these bugs." - KungFuFurby</li>
 		<li><b>WARNING: The following changes may affect playback of your songs (and require $FA $7F $01 at the beginning of your song to take effect, though you can also individual patches by bit with $FA $FE xx...):</b>
 		<ul>
@@ -126,6 +127,7 @@
 		<li>"All SFX data has been optimized to remove redundant bytes across the board. In addition, $C7 is now fully functional and pitch envelope delays are now working, and 21 Valley of Bowser appears.txt in $1DF9 now properly restarts like vanilla SMW." - KungFuFurby</li>
 		<li>"The $FF SFX VCMD has been updated to actually play the last note endlessly using the last saved note data, rather than just simply go back a few bytes and try and fetch the note again. This avoids any ambiguities caused by trying to scan backwards." - KungFuFurby</li>
 		<li>"Fixed various interferences between the SFX and instrument setup, arpeggio, pitch envelope, note, switching global songs, and fine tune (the last one dating all the way back to vanilla SMW). Note that one of the snippets of code, regarding noise frequency conflicts between SFX instances, has been made optional through asm/UserDefines.asm because it never actually happens in vanilla SMW since only one channel uses noise, and a second one has been made optional regarding allowing matching noise frequencies to stack on each other in case the user doesn't want an unexpectedly loud noise." - KungFuFurby</li>
+		<li>"Fixed a regression from 1.0.7 where playing noise in the same channel as the pause SFX was causing note sticking problems due to the FLG register getting overwritten." - KungFuFurby</li>
 		<li>"All SFX can now have their channels redefined through asm/UserDefines.asm. Vanilla values are provided, since they're different than what the default values were from past AMK versions." - KungFuFurby</li>
 		<li>"$1DFA SFX now use replica SFX sequences by default instead of just hard-coded ASM. The hard-coded ASM is still in there as a user define switch both for historical reasons and in case of a malfunction." - KungFuFurby</li>
 		<li>"The relocation for jump and girder SFX to either $1DF9 or $1DFC is now optional, rather than being required between these two locations. Now, if neither of them are true, $1DFA is the default, and the fixes in question ensure that these don't wreck too much havoc." - KungFuFurby</li>
