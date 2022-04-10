@@ -744,7 +744,6 @@ void Music::parseTempoCommand()
 	int duration = -1;
 	int ltempo = -1;
 
-	pos++;
 	ltempo = getInt();
 	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
@@ -766,8 +765,9 @@ void Music::parseTempoCommand()
 	
 	tempo = divideByTempoRatio(ltempo, false);
 	
-	if (ltempo == 0)
-		error("Tempo has been zeroed out by #halvetempo")
+	if (ltempo == 0) {
+		error("Tempo has been zeroed out by #halvetempo");
+	}
 
 	tempo = ltempo;
 
