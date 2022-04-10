@@ -2890,12 +2890,11 @@ L_10B2:							; |
 	mov	$15, $13
 	bcs	L_10B2
 	clr1	$11.6		;Subroutine loop is no longer active.
-	setc			;We limit loops to one iteration to prevent excessive readahead iterations.
-	sbc	$14, #$03
-	sbc	$15, #$00
+	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
+	decw	$14
 	mov	a, ($14)+y	;Go back to the beginning of the subroutine pointer.
 	push	a
-	incw	$14
+	decw	$14
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
@@ -2961,8 +2960,8 @@ L_10B2:							; |
 	movw	ya, $14
 	movw	$12, ya
 	;Jump inside subroutine.
-	pop	y
 	pop	a
+	pop	y
 	movw	$14, ya
 .jmpToL_10B2
 	jmp	L_10B2
