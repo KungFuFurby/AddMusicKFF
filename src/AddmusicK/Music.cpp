@@ -765,11 +765,10 @@ void Music::parseTempoCommand()
 	
 	tempo = divideByTempoRatio(ltempo, false);
 	
-	if (ltempo == 0) {
+	if (tempo == 0) {
 		error("Tempo has been zeroed out by #halvetempo");
+		tempo = ltempo;
 	}
-
-	tempo = ltempo;
 
 	if (duration == -1) {
 		tempoDefined = true;
