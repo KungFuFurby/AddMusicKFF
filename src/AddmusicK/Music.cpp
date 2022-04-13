@@ -622,7 +622,7 @@ void Music::parseGlobalVolumeCommand()
 
 	if (duration == -1) {
 		append(0xE0);
-		append(i);
+		append(volume);
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
@@ -656,12 +656,12 @@ void Music::parseVolumeCommand()
 	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
 	if (duration == -1) {
-		append(0xE8);
-		append(i);
+		append(0xE7);
+		append(volume);
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
-		append(0xE7);
+		append(0xE8);
 		append(duration);
 		append(volume);
 	}
