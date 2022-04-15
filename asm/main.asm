@@ -2876,10 +2876,11 @@ L_10B2:							; |
 	bcs	L_10B2
 	clr1	$11.6		;Subroutine loop is no longer active.
 	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
-	decw	$14
-	mov	a, ($14)+y	;Go back to the beginning of the subroutine pointer.
-	push	a
-	decw	$14
+	decw	$14		;Go back to the beginning of the subroutine pointer.
+.jumpToIndirect
+	mov	a, ($14)+y	;Jump to pointer stored in this location.
+	push	a		;Reading is done backwards for better
+	decw	$14		;utilization of the word storage opcode.
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
@@ -2898,22 +2899,12 @@ L_10B2:							; |
 	beq	.subroutineExit	;Branch if this was the last subroutine loop.
 	bcc	.subroutineExit	;Branch if subroutine was not exited...
 	clr1	$11.6		;Subroutine loop is no longer active.
-	mov	a, $03f0+x	;Restart subroutine just this once.
-	mov	$14, a		;We limit loops to one iteration to prevent excessive readahead iterations.
-	mov	a, $03f1+x
-	mov	$15, a
-	bra	.jmpToL_10B2
+	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
+	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
 
 .keyoff:
 	setc
 	ret
-
-.subroutineExit:
-	mov	a, $03e0+x
-	mov	$14, a
-	mov	a, $03e1+x
-	mov	$15, a
-	bra	.jmpToL_10B2
 
 .loopSection:
 	incw	$14
@@ -2926,6 +2917,14 @@ L_10B2:							; |
 	movw	$16, ya
 .jmpToL_10B2
 	jmp	L_10B2
+
+.subroutineExit:
+	mov	$14, #$03e1&$FF
+.setupJumpToIndirect03:
+	mov	$15, #$03e1>>8
+.setupJumpToIndirectFromIndex:
+	or	($15), ($46)
+	bra	.jumpToIndirect
 
 .subroutine:
 	set1	$11.7		;Subroutine has been entered.
@@ -2982,12 +2981,10 @@ L_10B2:							; |
 	dec	a
 	;$01 means that the loop section has been entered and terminated.
 	beq	.loopSectionPassThrough
-	;Grab pre-existing return address and jump.
-	mov	a, $01e0+x
-	mov	$14, a
-	mov	a, $01e1+x
-	mov	$15, a
-	bra	.jmpToL_10B2
+	mov	$14, #$01e1&$FF	;Grab pre-existing return address and jump.
+.setupJumpToIndirect01:
+	mov	$15, #$01e1>>8
+	bra	.setupJumpToIndirectFromIndex
 
 .loopSectionJumpFromScratchRAM:
 	movw	ya, $16
