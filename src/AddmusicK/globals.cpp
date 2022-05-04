@@ -944,10 +944,6 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 							error("Could not parse integer for #amk.");
 						}
 						version = j;
-						if (version == 3)
-						{
-							error("Codec's AddmusicK Beta has not been implemented yet.");
-						}
 					}
 				}
 			}
