@@ -333,6 +333,20 @@ cmdE7:					; Change the volume
 {
 	; Handled elsewhere.
 }
+
+SubC_20:
+cmdE9RecallSingle:
+	mov   x, $46
+	mov   a, #$01
+
+cmdE9Recall:
+	mov   y, a
+	mov   a, $03f0+x
+	push  a
+	mov   a, $03f1+x
+	push  a
+	bra   cmdE9SetCounter
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
 {
@@ -340,7 +354,8 @@ cmdE9:					; Loop
 	call  GetCommandDataFast
 	push  a
 	call  GetCommandDataFast
-	mov   $c0+x, a           ; repeat counter = op3
+cmdE9SetCounter:
+	mov   $c0+x, y           ; repeat counter = op3
 	mov   a, $30+x
 	mov   $03e0+x, a
 	mov   a, $31+x
@@ -605,6 +620,8 @@ SubC_table:
 	dw	SubC_1C
 	dw	SubC_1D
 	dw	SubC_1E
+	dw	$0000
+	dw	SubC_20
 
 SubC_0:
 	eor     $6e, #$20			; 
@@ -857,6 +874,7 @@ SubC_table2:
 	dw	$0000			; 10
 	dw	$0000			; 11
 	dw	.SyncClockDivider	; 12
+	dw	cmdE9Recall		; 13
 
 .PitchMod
 	mov     !MusicPModChannels, a	; \ This is for music.
