@@ -1111,6 +1111,15 @@ HotPatchVCMDByte0Bit2Storages:
 	dw	L_10B2_zeroVCMDCheckGate+1
 	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
 	db	L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
+
+	dw	L_10B2_skipLoopChecksF4Gate+1
+	db	L_10B2_skipLoopChecksF4-L_10B2_skipLoopChecksF4Gate-2
+	db	$00
+
+	dw	L_10B2_FACommandSubroutineGate
+	db	$2F ;BRA opcode
+	db	$D0 ;BNE opcode
+
 HotPatchVCMDByte0Bit2StoragesEOF:
 
 	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition

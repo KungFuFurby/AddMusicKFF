@@ -2815,7 +2815,8 @@ L_10B2:							; |
 	incw	$14
 	mov	a, ($14)+y
 	cmp	a, #$13
-	bne	+
+.FACommandSubroutineGate:
+	bra	+
 	set1	$11.7		;Subroutine has been entered.
 	mov	a, $03f0+x
 	push	a
@@ -3029,6 +3030,8 @@ L_10B2:							; |
 .F4Command
 	incw	$14
 	mov	a, ($14)+y
+.skipLoopChecksF4Gate:
+	bra	.skipLoopChecksF4
 	cmp	a, #$20
 	bne	+
 	set1	$11.7		;Subroutine has been entered.
@@ -3053,6 +3056,7 @@ L_10B2:							; |
 	clr1	$11.6		;Subroutine loop is no longer active.
 	bra	.loopSectionBreak
 +
+.skipLoopChecksF4:
 .F4Command_skip
 	incw	$14
 	bra	.jmpToL_10B2_2
