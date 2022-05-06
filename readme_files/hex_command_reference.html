@@ -789,6 +789,38 @@
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Single Loop Recall<br></td>
+		<td>Calls the last $E9 loop called for one more loop.<br></td>
+		<td>$20 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Loop Break<br></td>
+		<td>Breaks out of an $E9 loop when it is on its last loop.<br></td>
+		<td>$21 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop.<br></td>
+		<td>$22 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break + Terminate Loop<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop. Additionally, terminates an $E9 loop by zeroing out its counter to avoid problems when looping the entire song. This is a special edge case handler for when you use a loop within a superloop and put the break inside the loop.<br></td>
+		<td>$23 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
         <td rowspan="8">$F5 <br></td>
 	<td rowspan="8">AddmusicM<br></td>
         <td rowspan="8">FIR filter <br></td>
@@ -958,7 +990,23 @@
 		<td rowspan="2">SNES Sync Clock Divider<br></td>
 		<td rowspan="2">Increments the high byte of the sync counter after a certain number of ticks. Zero is the default, making the counter act like a 16-bit word.<br></td>
 		<td>$12</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
 		<td>The number of ticks before incrementing the high byte. $00 = 256 ticks.</td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">Multi-Loop Recall<br></td>
+		<td rowspan="2">Calls the last $E9 loop called for another series of loops.<br></td>
+		<td>$13</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>Loop count</td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 <tr><td colspan="6">&nbsp;</td></tr>
 	<tr>

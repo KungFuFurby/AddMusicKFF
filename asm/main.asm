@@ -2482,6 +2482,7 @@ L_0C57:
 runningRemoteCodeGate:
 	mov	a, $c0+x           ; vcmd 00: end repeat/return
 	beq	L_0C01             ;  goto next $40 section if rpt count 0
+L_0C60:
 	dec	$c0+x             ;  dec repeat count
 	bne	L_0C6E             ;  if zero then
 	mov	a, $03e0+x

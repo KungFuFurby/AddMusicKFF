@@ -309,6 +309,10 @@ cmdE6:					; Second loop
 	ret				;
 
 label2:
+	mov   a,$30+x			; \
+	mov   $0180+x,a			; | Save the current song position into $0180
+	mov   a,$31+x			; |
+	mov   $0181+x,a			; /
 	mov   a, $01f0+x
 	dec   a
 	beq   label4
@@ -354,6 +358,20 @@ cmdED:					; ADSR
 {
 	; Handled elsewhere.
 }
+
+SubC_20:
+cmdE9RecallSingle:
+	mov   x, $46
+	mov   a, #$01
+
+cmdE9Recall:
+	mov   y, a
+	mov   a, $03f0+x
+	push  a
+	mov   a, $03f1+x
+	push  a
+	bra   cmdE9SetCounter
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
 {
@@ -361,7 +379,8 @@ cmdE9:					; Loop
 	call  GetCommandDataFast
 	push  a
 	call  GetCommandDataFast
-	mov   $c0+x, a           ; repeat counter = op3
+cmdE9SetCounter:
+	mov   $c0+x, y           ; repeat counter = op3
 	mov   a, $30+x
 	mov   $03e0+x, a
 	mov   a, $31+x
@@ -629,6 +648,11 @@ SubC_table:
 	dw	SubC_1C
 	dw	SubC_1D
 	dw	SubC_1E
+	dw	$0000
+	dw	SubC_20
+	dw	SubC_21
+	dw	SubC_22
+	dw	SubC_23
 
 SubC_0:
 	eor     $6e, #$20			; 
@@ -801,6 +825,49 @@ if !noSFX = !false
 endif
 	mov	a, $48
 	jmp	KeyOnVoices
+
+SubC_21:
+	;WARNING: This loop break is only compatible with the E9 VCMD!
+	mov	x, $46
+	mov	y, $c0+x
+	dbnz	y, +
+	ret
++
+	;No RET needed, thus we get rid of the return pointer.
+	pop	a
+	pop	y
+	jmp	L_0C60
+
+TerminateIfE6LoopCountNot1:
+	mov	x, $46
+	mov	a, $01f0+x
+	dec	a
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
+SubC_23:
+	;WARNING: This loop break is only compatible with the E6 VCMD!
+	call	TerminateIfE6LoopCountNot1
+	;Terminate the loop counter for the E9 VCMD.
+	mov	a, #$00
+	mov	$c0+x, a
+	bra	SubC_22_23_E6JumpToEnd
+
+SubC_22:
+	;WARNING: This loop break is only compatible with the E6 VCMD!
+	call	TerminateIfE6LoopCountNot1
+SubC_22_23_E6JumpToEnd:
+	mov	a, $0180+x
+	mov	$30+x, a
+	mov	a, $0181+x
+	mov	$31+x, a
+	ret
+
+
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1180,6 +1247,7 @@ SubC_table2:
 	dw	.SquareFormatClearSRCN	; 10
 	dw	$0000			; 11
 	dw	.SyncClockDivider	; 12
+	dw	cmdE9Recall		; 13
 
 .PitchMod
 	mov     !MusicPModChannels, a	; \ This is for music.
