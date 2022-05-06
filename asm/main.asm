@@ -3019,7 +3019,12 @@ L_10B2:							; |
 	bpl	.L_10BA					; /
 .L_10BF:
 	cmp	a, #$c6					; \ C6 is a tie.
-	beq	.skip_keyoff				; / So we shouldn't key off the voice.
+	bne	+					; / So we shouldn't key off the voice.
+;.skip_keyoff duplicate stored here since it's cheaper memory-wise
+;(and the distance is too great to go forwards)
+	clrc
+	ret
++
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
 	bcs	+					; / So we have to key off in preparation
 	jmp	.L_10D1
@@ -3039,6 +3044,15 @@ L_10B2:							; |
 .FACommand
 	incw	$14
 	mov	a, ($14)+y
+	cmp	a, #$13
+	bne	+
+	set1	$11.7		;Subroutine has been entered.
+	mov	a, $03f0+x
+	push	a
+	mov	a, $03f1+x
+	push	a
+	jmp	.subroutineIncReadLoopCounter
++
 	cmp	a, #$fe
 	beq	.FACommand_readUntilPositive
 .FACommand_skip2
@@ -3054,6 +3068,10 @@ L_10B2:							; |
 	bra	.FACommand_skip1
 
 .normalCommand
+	cmp	a, #$f4
+	bne	+
+	jmp	.F4Command
++
 	cmp	a, #$fa
 	beq	.FACommand
 	;Update by KungFuFurby 12/5/20
@@ -3088,7 +3106,7 @@ L_10B2:							; |
 	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
 	mov	$14, $12	;Copy return address.
 	mov	$15, $13
-	bcs	L_10B2
+	bcs	.jmpToL_10B2_1
 	clr1	$11.6		;Subroutine loop is no longer active.
 	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
 	decw	$14		;Go back to the beginning of the subroutine pointer.
@@ -3099,7 +3117,7 @@ L_10B2:							; |
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_1
 
 .skip_keyoff:
 	clrc
@@ -3130,7 +3148,7 @@ L_10B2:							; |
 	incw	$14
 	movw	ya, $14
 	movw	$16, ya
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_1
 
 .subroutineExit:
 	mov	$14, #$03e1&$FF
@@ -3148,6 +3166,7 @@ L_10B2:							; |
 	incw	$14
 	mov	a, ($14)+y
 	push	a
+.subroutineIncReadLoopCounter:
 	incw	$14
 	mov	a, ($14)+y
 	dec	a
@@ -3162,7 +3181,7 @@ L_10B2:							; |
 	pop	a
 	pop	y
 	movw	$14, ya
-.jmpToL_10B2
+.jmpToL_10B2_1:
 	jmp	L_10B2
 
 .L_10D1:
@@ -3205,6 +3224,12 @@ L_10B2:							; |
 .loopSectionNonZero:
 	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
 	set1	$11.4	;Loop section is now active.
+	;Unfortunately, we're out of scratch RAM, so the pointer to the end
+	;of the loop section is embedded in code.
+	mov	a, $14
+	mov	.loopSectionEndPtrLo+1, a
+	mov	a, $15
+	mov	.loopSectionEndPtrHi+1, a
 	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
 	mov	a, $01f0+x
 	dec	a
@@ -3218,14 +3243,66 @@ L_10B2:							; |
 .loopSectionJumpFromScratchRAM:
 	movw	ya, $16
 	movw	$14, ya
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_1
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
-	bra	.jmpToL_10B2
-	ret
+.loopSectionNoPassThrough:
+	bra	.jmpToL_10B2_1
+
+.loopSectionBreak:
+	mov	a, $01f0+x
+	dec	a
+	;$01 means that the loop section has been entered and terminated.
+	bne	.jmpToL_10B2_1
+	bbs5	$11, .loopSectionBreakEnteredFromReadahead
+	mov	$14, #$0181&$FF
+	bra	.setupJumpToIndirect01
+
+.loopSectionBreakEnteredFromReadahead:
+	;Unfortunately, we're out of scratch RAM, so the return pointer is
+	;embedded in here.
+.loopSectionEndPtrLo:
+	mov	$14, #$ff
+.loopSectionEndPtrHi:
+	mov	$15, #$ff
+.jmpToL_10B2_2:
+	jmp	L_10B2
+
+.F4Command
+	incw	$14
+	mov	a, ($14)+y
+	cmp	a, #$20
+	bne	+
+	set1	$11.7		;Subroutine has been entered.
+	mov	a, $03f0+x
+	push	a
+	mov	a, $03f1+x
+	push	a
+	jmp	.subroutineNoLoop
++
+	cmp	a, #$21
+	bne	+
+	mov	a, $c0+x
+	dec	a
+	bne	.F4Command_skip
+	jmp	.subroutineCheck
++
+	cmp	a, #$22
+	beq	.loopSectionBreak
++
+	cmp	a, #$23
+	bne	+
+	clr1	$11.6		;Subroutine loop is no longer active.
+	bra	.loopSectionBreak
++
+.F4Command_skip
+	incw	$14
+	bra	.jmpToL_10B2_2
+
+
 }
 
 TerminateOnLegatoEnable:
