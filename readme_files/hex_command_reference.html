@@ -789,6 +789,30 @@
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Loop Break<br></td>
+		<td>Breaks out of an $E9 loop when it is on its last loop.<br></td>
+		<td>$21 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop.<br></td>
+		<td>$22 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break + Terminate Loop<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop. Additionally, terminates an $E9 loop by zeroing out its counter to avoid problems when looping the entire song. This is a special edge case handler for when you use a loop within a superloop and put the break inside the loop.<br></td>
+		<td>$23 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
         <td rowspan="8">$F5 <br></td>
 	<td rowspan="8">AddmusicM<br></td>
         <td rowspan="8">FIR filter <br></td>
