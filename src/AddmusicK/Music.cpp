@@ -471,7 +471,7 @@ void Music::compile()
 					break;
 				}
 				else if (tolower(text[pos]) == ':') {
-					error("Loop break from Codec's AMK Beta has not been implemented yet.");
+					parseLoopBreakCommand();
 					break;
 				}
 			}
@@ -1305,6 +1305,22 @@ void Music::parseLoopEndCommand()
 	inRemoteDefinition = false;
 	loopLabel = 0;
 }
+
+void Music::parseLoopBreakCommand()
+{
+	if (inE6Loop) {
+		error("Cannot use loop break command ':' within Superloops!!!");
+	}
+	else if (channel != 8) {
+		error("Cannot use loop break command ':' without being in a loop!!!");
+	}
+	else
+	{
+		append(0xF4);
+		append(0x21); //cmd $F4 $21 is responsible for breaking out of a loop
+	}
+}
+
 void Music::parseStarLoopCommand()
 {
 
