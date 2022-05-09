@@ -739,7 +739,7 @@ void Music::parseIntroDirective()
 	pos++;
 	phrasePointers[channel][1] = data[channel].size();
 	prevNoteLength = -1;
-	hasIntro = true;
+	passedIntro[channel] = true;
 	introLength = channelLengths[channel];
 }
 void Music::parseT()
@@ -2128,10 +2128,12 @@ void Music::parseHexCommand()
 
 void Music::markEchoBufferAllocVCMD()
 {
-	if (!echoBufferAllocVCMDIsSet && resizedChannel != -1 && channel != 8 && channel <= resizedChannel && !passedNote[channel] && !hasEchoBufferCommand)
+	if (!echoBufferAllocVCMDIsSet && resizedChannel != -1 && channel != 8 && channel == resizedChannel && !passedNote[channel] && !hasEchoBufferCommand && !passedIntro[channel])
 		{
 			//Mark the location to generate the echo buffer allocation VCMD.
-			//TODO don't mark it after a loop either to avoid retriggering the VCMD: if that happens, we need to do more
+			//This won't be performed if this is located past a note or a loop marker, since being
+			//past a note means a note will key on prior to the song initializing properly and being
+			//past a loop marker will mean the VCMD will retrigger, which may or may not end well.
 			echoBufferAllocVCMDIsSet = true;
 			echoBufferAllocVCMDLoc = data[channel].size()+1;
 			echoBufferAllocVCMDChannel = channel;
