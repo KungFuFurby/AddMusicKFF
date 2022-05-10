@@ -47,6 +47,9 @@ endif
 !SampleCount		= !FreeRAM+$09
 !SRCNTableBuffer	= !FreeRAM+$0A
 
+!Trick   = !FreeRAM+$08
+!Tricker = !BonusEnd
+
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
 ; Normally you shouldn't need to change this.
 ;
@@ -128,6 +131,15 @@ MainLabel:
 	PHB
 	PHK
 	PLB
+if !PSwitchStarRestart == !true
+	lda !Trick
+	beq +
+	lda !CurrentSong
+	sta !MusicReg
+	lda #$00
+	sta !Trick
++
+endif
 	JSR HandleSpecialSongs
 	REP #$20
 	LDA !SFX1DF9Reg
@@ -149,8 +161,15 @@ MainLabel:
 	BEQ NoMusic
 	CMP !CurrentSong
 	BNE ChangeMusic
+if !PSwitchStarRestart == !true
+	cmp !GlobalMusicCount+1
+	bcc ChangeMusic
+endif
 
 End:	
+if !PSwitchStarRestart == !true	
+	stz !MusicMir
+endif
 	CLI
 	PLB
 	PLP
@@ -188,9 +207,22 @@ PlayDirect:
 ;	STA !CurrentSong
 ;	BRA End
 
+if !PSwitchStarRestart == !true
+	cmp !CurrentSong
+	beq +
+endif
+
 	STA !MusicReg
 	STA !CurrentSong
 	BRA End
+
+if !PSwitchStarRestart == !true
++	lda #$01
+	sta !Trick
+	lda !Tricker
+	sta !MusicReg
+	bra End
+endif
 
 	
 ChangeMusic:
@@ -245,7 +277,9 @@ LevelEndMusicChange:
 	;;; CMP !IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
+if !PSwitchStarRestart == !false
 	STZ !MusicMir
+endif
 	BRA End
 	
 Okay:
@@ -620,27 +654,83 @@ HandleSpecialSongs:
 	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
 	ora $1434|!SA1Addr2		;| (keyhole)
 	ora $14AB|!SA1Addr2		;| (bonus game)
-	bne +					;/ This prevents an issue with non-standard goal songs.
+	bne ++					;/ This prevents an issue with non-standard goal songs.
+
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+	lda $1490|!SA1Addr2		; If both P-switch and starman music should be playing
+	cmp #$1E
+	bcs .starMusic			;;; just play the star music
+if !PSwitchIsSFX = !false
+	lda !MusicMir
+	cmp !PSwitch
+	beq ++
+	lda !CurrentSong
+	cmp !PSwitch
+	bne +
+endif
+
+	stz !MusicMir
+	rts
+
+if !PSwitchIsSFX = !false
++	LDA !PSwitch
+	STA !MusicMir
+++	RTS
+endif
+
+else
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	BNE .starMusic			;;; just play the star music
-if !PSwitchIsSFX = !false
+endif
+
+if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
 	LDA !PSwitch
 	STA !MusicMir
 endif
-+
+++
 	RTS
 	
 .starMusic
-	LDA !Starman
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+	lda !MusicMir
+	cmp !Starman
+	beq ++
+	lda !CurrentSong
+	cmp !Starman
+	bne +
+	stz !MusicMir
+	rts
+endif
+
++	LDA !Starman
 	STA !MusicMir
-+
-	RTS
+++	RTS
+
 	
 .restoreFromStarMusic
 	LDA !MusicBackup
 	STA !MusicMir
 +
 	RTS
+
+if !PSwitchStarRestart == !true
+SkipPowStar:
+	lda !CurrentSong
+	cmp !StageClear
+	beq +
+	cmp !IrisOut
+	beq +
+	cmp !BossClear
+	beq +
+	cmp !Keyhole
+	beq +
+	clc
++	rts
+endif
 	
 pushpc
 
