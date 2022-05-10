@@ -218,7 +218,7 @@ includeonce
 
 ;=======================================
 ;---------------
-!PSwitchStarRestart = !true
+!PSwitchStarRestart = !false
 
 ;Default setting: !false
 ;Vanilla setting: !true
