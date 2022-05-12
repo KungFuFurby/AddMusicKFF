@@ -424,15 +424,12 @@ L_0EEB:
 cmdF0:					; Echo off
 {
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
-	push	a
-	call	EffectModifier
-	pop	a
 L_0F22: 
 	mov	y, a
 	movw	$61, ya            ; zero echo vol L shadow
 	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
 	call	L_0EEB             ; set echo vol DSP regs from shadows
-	;mov   $2e, a             ; zero 2E (but it's never used?)
 	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
