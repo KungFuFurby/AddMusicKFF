@@ -682,7 +682,8 @@ endif
 
 else
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
-	BNE .starMusic			;;; just play the star music
+	CMP #$1E
+	BCS .starMusic			;;; just play the star music
 endif
 
 if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
