@@ -1719,9 +1719,10 @@ else
 endif
 
 L_099C:
-	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	mov	!NCKValue, #$60
+	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
+	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
+	movw	$f2, ya
+	mov	!NCKValue, y
 	
 	mov	a, #$ff
 	call	KeyOffVoices
