@@ -891,9 +891,7 @@ endif
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
-	;setp				; |
 	cmp	a, !ChSFXNoteTimer+x	; |
-	;clrp				; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
