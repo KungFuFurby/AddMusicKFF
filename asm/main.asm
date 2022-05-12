@@ -724,14 +724,14 @@ if !noiseFrequencySFXInstanceResolution = !true
 	bra	RestoreInstrumentInformation
 endif
 .restoreMusicNoise:
-	mov	$1f, #$00
+	mov	a, #$00
+	mov	$1f, a
 if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
 	mov	a, $1c
 	bne	++
 endif
 +
-	mov	a, #$00
 	mov	!ChSFXPriority+x, a
 ++
 	mov	a, $0389
