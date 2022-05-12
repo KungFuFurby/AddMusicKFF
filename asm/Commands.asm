@@ -441,15 +441,12 @@ L_0EEB:
 cmdF0:					; Echo off
 {
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
-	push	a
-	call	EffectModifier
-	pop	a
 L_0F22: 
 	mov	y, a
 	movw	$61, ya            ; zero echo vol L shadow
 	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
 	call	L_0EEB             ; set echo vol DSP regs from shadows
-	;mov   $2e, a             ; zero 2E (but it's never used?)
 	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
@@ -1245,14 +1242,15 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
-	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
-	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
 	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
 	cmp	a, #$00					; |
 	beq	ClearRemoteCodeAddressesPre		; |
+	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
+	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
 	cmp	a, #$07					; |
 	beq	ClearNonKONRemoteCodeAddressesPre	; |
 	cmp	a, #$08					; |
