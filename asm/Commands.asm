@@ -930,12 +930,11 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
 	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
-	beq	.immediateCall				; |
-	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; /
+	beq	.immediateCall				; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -990,7 +989,7 @@ cmdFC:
 ClearRemoteCodeAddressesPre:
 	pop	a
 	pop	a
-	call	GetCommandDataFast
+	call	L_1260
 	
 ClearRemoteCodeAddresses:
 	%OpenRunningRemoteCodeGate()
