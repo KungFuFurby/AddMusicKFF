@@ -306,8 +306,8 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr+1+x
-	mov	$31+x, a
 RunRemoteCode_Exec:
+	mov	$31+x, a
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -328,7 +328,6 @@ RunRemoteCode2:
 	mov	a, !remoteCodeTargetAddr2+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr2+1+x
-	mov	$31+x, a
 	bra	RunRemoteCode_Exec
 }
 	
