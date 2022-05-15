@@ -483,7 +483,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	clrc				;
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
-	jmp	L_0EEB			; Set the echo volume.
+	bra	L_0EEB			; Set the echo volume.
 		
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	and	a, #$0F
