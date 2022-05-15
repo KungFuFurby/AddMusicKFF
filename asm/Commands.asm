@@ -1501,7 +1501,7 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
-	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$fe-#$ff, #$04, and #$00. #$04 and #$00 take effect now; #$fe-#$ff has special properties.
 	cmp	a, #$fe					; |
 	bcs	.noteStartCommand			; |
 	cmp	a, #$04					; |
