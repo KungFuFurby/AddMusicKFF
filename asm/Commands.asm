@@ -1247,8 +1247,6 @@ cmdFC:
 	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
-	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; |
 	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
 	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
 	cmp	a, #$07					; |
