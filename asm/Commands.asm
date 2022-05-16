@@ -424,15 +424,12 @@ L_0EEB:
 cmdF0:					; Echo off
 {
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
-	push	a
-	call	EffectModifier
-	pop	a
 L_0F22: 
 	mov	y, a
 	movw	$61, ya            ; zero echo vol L shadow
 	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
 	call	L_0EEB             ; set echo vol DSP regs from shadows
-	;mov   $2e, a             ; zero 2E (but it's never used?)
 	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
@@ -469,7 +466,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	clrc				;
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
-	jmp	L_0EEB			; Set the echo volume.
+	bra	L_0EEB			; Set the echo volume.
 		
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	and	a, #$0F
@@ -972,12 +969,11 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
 	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
-	beq	.immediateCall				; |
-	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; /
+	beq	.immediateCall				; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -1032,7 +1028,7 @@ cmdFC:
 ClearRemoteCodeAddressesPre:
 	pop	a
 	pop	a
-	call	GetCommandDataFast
+	call	L_1260
 	
 ClearRemoteCodeAddresses:
 	%OpenRunningRemoteCodeGate()
