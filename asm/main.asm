@@ -306,8 +306,8 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr+1+x
-	mov	$31+x, a
 RunRemoteCode_Exec:
+	mov	$31+x, a
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -329,7 +329,6 @@ RunRemoteCode2:
 	mov	a, !remoteCodeTargetAddr2+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr2+1+x
-	mov	$31+x, a
 	bra	RunRemoteCode_Exec
 }
 	
@@ -673,7 +672,7 @@ ProcessSFX:				; Major code changes ahead.
 	dec	x			;
 	dec	x			;
 	bpl	.loop			;
-	jmp	EffectModifier		;
+	bra	EffectModifier		;
 }
 
 GetNextSFXByte:
@@ -725,14 +724,14 @@ if !noiseFrequencySFXInstanceResolution = !true
 	bra	RestoreInstrumentInformation
 endif
 .restoreMusicNoise:
-	mov	$1f, #$00
+	mov	a, #$00
+	mov	$1f, a
 if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
 	mov	a, $1c
 	bne	++
 endif
 +
-	mov	a, #$00
 	mov	!ChSFXPriority+x, a
 ++
 	mov	a, $0389
@@ -787,9 +786,8 @@ HandleSFXVoice:
 	jmp	.processSFXPitch
 +
 .getMoreSFXData
-	call	GetNextSFXByte
-	bne	+			; If the current byte is zero, then end it.
-	jmp	EndSFX
+	call	GetNextSFXByte		
+	beq	EndSFX			; If the current byte is zero, then end it.
 +
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
@@ -798,23 +796,28 @@ HandleSFXVoice:
 	call	GetNextSFXByte		; Get the next byte.  It's either a volume or a command/note.
 	bmi	.noteOrCommand		; If it's negative, then it's a command or a note.
 	push	a			; \ This is a volume command.  Remember it for a moment.
-	mov	a, $46			; | 
+	mov	a, x			; | 
 	lsr	a			; |
 	xcn	a			; | Put the left volume DSP register for this channel into y.
+if !noiseFrequencySFXInstanceResolution = !true
 	mov	y, a			; |
 	pop	a			; |
-if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ; |
-endif
 	call	DSPWrite		; / Set the volume for the left speaker.
 	inc	y			; \
 	call	DSPWrite		; / Set the volume for the right speaker.  We might change it later, but this saves space.
+else
+	pop	y
+	movw	$f2, ya			; Set the volume for the left speaker.
+	inc	a
+	movw	$f2, ya			; Set the volume for the right speaker.  We might change it later, but this saves space.
+endif
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
 if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ;
 endif
-	call	DSPWrite		; > Set the volume for the right speaker.
+	mov	$f3, a			; > Set the volume for the right speaker.
 	call	GetNextSFXByte		;
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
@@ -884,13 +887,10 @@ endif
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
-	mov	$48, #$00               ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
-	;setp				; |
 	cmp	a, !ChSFXNoteTimer+x	; |
-	;clrp				; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
@@ -917,10 +917,7 @@ endif
 	bra	.setNoteLength		; /
 
 ; DA
-.instrumentCommand
-	mov	a, #$00			; \ Disable sub-tuning
-	mov	$02f0+x, a		; /
-	
+.instrumentCommand	
 	mov	a, $18			; \ Disable noise for this channel.
 	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
 if !noiseFrequencySFXInstanceResolution = !true
@@ -1014,8 +1011,7 @@ endif
 ;Now we scan the priorities of all channels higher than this one.
 	mov	$12, x
 -
-	inc	$12
-	inc	$12
+	adc	$12, #$02
 	push	x
 	mov	a, !ChSFXPriority+x
 	mov	x, $12
@@ -1604,11 +1600,8 @@ if !useSFXSequenceFor1DFASFX = !false
 	beq	.sfxAllocAllowed
 
 	;Stop all APU1 SFX on the same channel.
-	push	a
-	mov	a, #$00
-	mov	$05, a
-	mov	$1c, a
-	pop	a
+	mov	$05, #$00
+	mov	$1c, #$00
 endif
 
 .sfxAllocAllowed
@@ -1618,9 +1611,7 @@ endif
 	;mov	a, #$01				; \ We need to wait 2 ticks before processing SFX.
 	;mov	!ChSFXTimeToStart+x, a		; /
 	mov	a, $10				; \
-	push	y
 	call	KeyOffVoices
-	pop	y
 	or	($1d), ($10)			;
 if !PSwitchIsSFX = !true
 	cmp	$03, #$81			;
@@ -1722,9 +1713,10 @@ else
 endif
 
 L_099C:
-	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	mov	!NCKValue, #$60
+	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
+	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
+	movw	$f2, ya
+	mov	!NCKValue, y
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -1910,9 +1902,9 @@ L_0A51:						;;;;;;;;/ Code change
 L_0A56:
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
-	mov	$05, #$00
 	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
+	mov	$05, a
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	RestoreInstrumentInformation
@@ -1957,7 +1949,6 @@ L_0AA5:
 	mov	a, $90+x
 	beq	L_0AB0
 	call	L_09CD
-	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
@@ -2054,10 +2045,9 @@ L_0B5A:
 	movw	ya, $40
 	movw	!CustomInstrumentPos, ya
 	
+	pop	y
 	pop	a
-	mov	$41, a
-	pop	a
-	mov	$40, a
+	movw	$40, ya
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
@@ -2960,8 +2950,7 @@ L_10B2:							; |
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	.keyoff
-	mov	a, $10
-	cmp	a, #$c7
+	cmp	$10, #$c7
 	beq	.skipKeyOffAndRunCode
 	mov	a, $70+x
 	cmp	a, !WaitTime

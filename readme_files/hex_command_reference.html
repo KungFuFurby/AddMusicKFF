@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html>
 <head>
-	<title>AddmusicK Readme</title>
+	<title>Hex Command Reference - AddmusicK Readme</title>
 	<link href="readme.css" type="text/css" rel="stylesheet">
 	<script>
 	var attack = 4, decay = 2, sustain = 5, release = 9;
@@ -208,7 +208,7 @@
 
 </head>
 <body text="#FFFFFF" onload="init();">
-	<h1>Command Reference</h1><br><br>
+	<h1>Hex Command Reference</h1><br><br>
 	<h2>Standard commands:</h2>
 	The following is a list of all available hex commands that may be used in a song.  In all cases, the parameters are listed in the order in which they are to be used after the initial command.  If a parameter is a number, then that parameter must be the specified constant instead of being variable.
 	
@@ -879,7 +879,7 @@ With the exception of the hex command below, this was nearly identical to Vanill
 	</tr>
 	<tr>
 		<td rowspan="2">$ED</td>
-		<td rowspan="2">N/A<br>($F6 $x5 %1dddaaaa $F6 $x6 %1dddaaaa, where x is the channel ID, is the closest approximation: AMK's ADSR command has the same general functionality, but both writes to a backup table for restoration if interrupted by SFX and also supports GAIN)</td>
+		<td rowspan="2">N/A<br>($F6 $x5 %1dddaaaa $F6 $x6 %sssrrrrr, where x is the channel ID, is the closest approximation: AMK's ADSR command has the same general functionality, but both writes to a backup table for restoration if interrupted by SFX and also supports GAIN)</td>
 		<td rowspan="2">ADSR<br></td>
 		<td rowspan="2">Enables a custom ADSR on the current channel. See <a href="#ADSRInfo">here</a> for more information. Note that unlike AddmusicK's ADSR, this writes directly to the DSP registers and forces on ADSR, meaning GAIN is not supported.<br></td>
 		<td>$DA<br></td>
