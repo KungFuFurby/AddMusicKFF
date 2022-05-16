@@ -328,15 +328,19 @@ L_059D:
 Square_getSpecialWavePtr:
 	;A contains the SRCN ID
 	;This reserves $14-$15 for the pointer to the special wave
+	mov   $15, #$00
 	mov   a, $0163
 	asl   a
+	rol   $15
 	asl   a
+	rol   $15
 	inc   a
 	inc   a
 	mov   y, a
 	mov   $14, #$00
 	mov   $f2, #$5d ;Read from the sample directory
-	mov   $15, $f3  ;(specifically the loop point).
+	clrc            ;(specifically the loop point).
+	adc   $15, $f3
 	mov   a, ($14)+y
 	push  a
 	inc   y
