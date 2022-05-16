@@ -1,11 +1,11 @@
 <html>
 <head>
-	<title>AddmusicK Readme</title>
+	<title>Syntax Reference - AddmusicK Readme</title>
 	<link href="readme.css" type="text/css" rel="stylesheet">
 
 </head>
 <body text="#FFFFFF">
-	<h1>Command Reference</h1><br><br>
+	<h1>Syntax Reference</h1><br><br>
 	<h2>Standard commands:</h2>
 	The following is a list of commands that are available in music.  With only a few noted exceptions, they may all be used <i>anywhere</i> within a song.  Also, unless otherwise noted, valid values for all commands are from 0 to 255.
 	
@@ -176,7 +176,7 @@
 	<tr>
 		<td>(!)[]</td>
 		<td>Remote code definition</td>
-		<td>Defines a set of hex commands or other non-note non-loop commands that you can set to be called automatically at certain "events", such as whenever a note starts or some number of ticks before a note ends. These function very similarly to label loops (in fact, you can call their data from a normal label loop), but they have two major differences: They cannot contain note data in any shape or form (they also cannot be repeated, but that's only useful for notes anyway), and they must be defined before any channel data.  This means they won't actually take effect until you call them with the next command.<br><br>I recommend you combine this with the replacement command ("=", see below) to keep your code readable if you have multiple remote codes. This way you can give each remote code a name.</td>
+		<td>Defines a set of hex commands or other non-note non-loop commands that you can set to be called automatically at certain "events", such as whenever a note starts or some number of ticks before a note ends. These function very similarly to label loops (in fact, you can call their data from a normal label loop), but they have two major differences: They cannot contain note data in any shape or form which makes them essentially zero tick label loops (they also cannot be repeated, but that's only useful for notes anyway), and they must be defined before any channel data.  This means they won't actually take effect until you call them with the next command.<br><br>I recommend you combine this with the replacement command ("=", see below) to keep your code readable if you have multiple remote codes. This way you can give each remote code a name.</td>
 		<td>(!6)[$FA $01 $55]<br>(!7)[$FA $01 $00 v250]</td>
 	</tr>
 	<tr>
@@ -188,8 +188,8 @@
 				1: Run code some amount of time after a note begins.  Ties and rests won't trigger this event.  If you want to run code <i>as</i> a note begins, use -1. This requires a third argument: the amount of time to wait. If the time to wait is longer than the current note, the code will never be triggered.<br>
 				2: Run code until some amount of time before a note ends.  Relative to the qXX command.  This will only work on notes shorter than 80 ticks (a little more than a half note) due to the internal method in which the NSPC engine handles ties and such, so anything beyond that you'll have to use events 3 or 4.  This requires a third argument: the amount of time to wait. If the time to wait is longer than the current note, the code will never be triggered.<br>
 				3: Run code whenever a note is keyed off. This is also relative to the qXX command.  Unlike 2, this cancels the note cut event, so the note keeps playing.  The note is absolutely keyed off, however, before the next note begins (this does not trigger this event).<br>
-				4: Run once, right now. This is also compatible with all other events, and because it can be used within loops, it effectively allows you to have a third layer of nested loops (see [[ ]] for the second layer).<br>
-				5: Reserved.  Do not use this event type.
+				4: Run once, right now. This is also compatible with all other events, and because it can be used within loops, it effectively allows you to have a third layer of nested loops (see [[ ]] for the second layer), though with the same limitation as before on not being able to use notes.<br>
+				5: Reserved.  Do not use this event type.<br>
 				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>

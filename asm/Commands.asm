@@ -50,6 +50,7 @@ L_0D4B:					; |		???
 	pop	a			; |
 	setc				; |
 	sbc	a, #30			; |
+ApplyInstrumentY6:
 	mov	y, #$06			; /
 +
 
@@ -64,8 +65,10 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	bpl	+
+if !noSFX = !false
 	and	a, #$1f
 	mov	$0389, a
+endif
 	or	(!MusicNoiseChannels), ($48)
 	bra	++
 +
@@ -103,7 +106,6 @@ endif
 	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
 	pop	y
 +
-	or	(!MusicNoiseChannels), ($48)
 	inc	x
 	inc	y
 
@@ -137,9 +139,8 @@ RestoreMusicSample:
 	mov	!BackupSRCN+x, a	; /
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
-	mov	y, #$06
 	mov	a, #$00
-	bra	ApplyInstrument		; / Set up the current instrument using the backup table instead of the main table.
+	bra	ApplyInstrumentY6	; / Set up the current instrument using the backup table instead of the main table.
 
 GetBackupInstrTable:
 	mov	$10, #$30		; \ 
@@ -163,9 +164,23 @@ cmdDB:					; Change the pan
 	mov   !SurroundSound+x, a         ; negate voice vol bits
 	mov   a, #$00
 	mov   $0280+x, a
+SetVolChangeFlag:
 	or    ($5c), ($48)       ; set vol chg flag
 	ret
 }
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdE7:					; Change the volume
+{
+	mov   !Volume+x, a
+	mov   a, #$00
+	mov   $0240+x, a
+	bra   SetVolChangeFlag       ; mark volume changed
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_table2_superVolume:
+	mov	!VolumeMult+x, a
+	bra	SetVolChangeFlag	; Mark volume changed.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdDC:					; Fade the pan
 {
@@ -301,31 +316,18 @@ cmdED:					; ADSR
 	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
-	bpl	.GAIN
+	push	p
 	mov	y, #$01			; | 
 	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
+	call	GetCommandData		; \
 	mov	y, #$02			; | Write ADSR 2 to the table.
--	mov	($10)+y, a		; /
+	pop	p			; | 
+	bmi	+			; | 
+	inc	y			; | Write GAIN to the table.
++	mov	($10)+y, a		; /
 	
 	jmp	UpdateInstr
-	
-.GAIN
-	mov	y, #$01			; \ 
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$03			; | Write GAIN to the table.
-	bra	-
 		
-}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdE7:					; Change the volume
-{
-	mov   !Volume+x, a
-	mov   a, #$00
-	mov   $0240+x, a
-	or    ($5c), ($48)       ; mark volume changed
-	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
@@ -422,15 +424,12 @@ L_0EEB:
 cmdF0:					; Echo off
 {
 	mov	!MusicEchoChannels, a           ; clear all echo vbits
-	push	a
-	call	EffectModifier
-	pop	a
 L_0F22: 
 	mov	y, a
 	movw	$61, ya            ; zero echo vol L shadow
 	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
 	call	L_0EEB             ; set echo vol DSP regs from shadows
-	;mov   $2e, a             ; zero 2E (but it's never used?)
 	set1	!NCKValue.5        ; disable echo write
 	jmp	SetFLGFromNCKValue
 }
@@ -467,7 +466,7 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	clrc				;
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
-	jmp	L_0EEB			; Set the echo volume.
+	bra	L_0EEB			; Set the echo volume.
 		
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	and	a, #$0F
@@ -715,8 +714,13 @@ cmdFA:					; Misc. comamnd that takes a parameter.
 ;HTuneValues
 {
 	asl	a
-	mov	x,a
-	jmp	(SubC_table2+x)
+	mov	y, a
+	mov	a, SubC_table2+1+y
+	push	a
+	mov	a, SubC_table2+y
+	push	a
+	jmp	GetCommandData
+	;A will contain the incoming data and X will contain the channel ID.
 
 SubC_table2:
 	dw	.PitchMod		; 00
@@ -728,13 +732,11 @@ SubC_table2:
 	dw	.manualVTable		; 06
 
 .PitchMod
-	call    GetCommandData		; \ Get the next byte
-	mov     !MusicPModChannels, a	; | This is for music.
+	mov     !MusicPModChannels, a	; \ This is for music.
 	jmp	EffectModifier		; / Call the effect modifier routine.
 	
 .GAIN	
-	call    GetCommandData		; \ Get the next byte
-	push	a			; / And save it.
+	push	a
 	
 	mov	a, #$01
 	mov	!BackupSRCN+x, a
@@ -750,20 +752,12 @@ SubC_table2:
 	mov	($10)+y, a		;
 	jmp	UpdateInstr
 .HFDTune
-	call	GetCommandData
 	mov     !HTuneValues+x, a
-	ret
-
-.superVolume
-	call    GetCommandData		; \ Get the next byte
-	mov	!VolumeMult+x, a	; / Store it.
-	or	($5c), ($48)		; Mark volume changed.
 	ret
 	
 .reserveBuffer
 ;	
 	
-	call	GetCommandData
 ..zeroEDLGate
 	beq	..zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -785,13 +779,11 @@ SubC_table2:
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
 	;type 3 remote code command.
-	;call	GetCommandData
 	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
 	;ret
 	
 .manualVTable
-	call	GetCommandData		; \ Argument is which table we're using
-	mov	!SecondVTable, a	; |
+	mov	!SecondVTable, a	; \ Argument is which table we're using
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
@@ -938,12 +930,11 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
 	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
+	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
-	beq	.immediateCall				; |
-	cmp	a, #$00					; |
-	beq	ClearRemoteCodeAddressesPre		; /
+	beq	.immediateCall				; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -987,9 +978,9 @@ cmdFC:
 	call	RunRemoteCode				; 
 							;
 	pop	a					; \
-	mov	!remoteCodeTargetAddr+x, a		; | Restore the standard remote code.
+	mov	!remoteCodeTargetAddr+1+x, a		; | Restore the standard remote code.
 	pop	a					; |
-	mov	!remoteCodeTargetAddr+1+x, a		; /
+	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	;call	GetCommandDataFast			; \ Get the argument, discard it, and return.
 	bra	-					; /
@@ -998,7 +989,7 @@ cmdFC:
 ClearRemoteCodeAddressesPre:
 	pop	a
 	pop	a
-	call	GetCommandDataFast
+	call	L_1260
 	
 ClearRemoteCodeAddresses:
 	%OpenRunningRemoteCodeGate()
