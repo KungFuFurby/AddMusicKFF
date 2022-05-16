@@ -1010,8 +1010,7 @@ endif
 ;Now we scan the priorities of all channels higher than this one.
 	mov	$12, x
 -
-	inc	$12
-	inc	$12
+	adc	$12, #$02
 	push	x
 	mov	a, !ChSFXPriority+x
 	mov	x, $12
