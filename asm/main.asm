@@ -356,15 +356,19 @@ L_059D:
 Square_getSpecialWavePtr:
 	;A contains the SRCN ID
 	;This reserves $14-$15 for the pointer to the special wave
+	mov   $15, #$00
 	mov   a, $0163
 	asl   a
+	rol   $15
 	asl   a
+	rol   $15
 	inc   a
 	inc   a
 	mov   y, a
 	mov   $14, #$00
 	mov   $f2, #$5d ;Read from the sample directory
-	mov   $15, $f3  ;(specifically the loop point).
+	clrc            ;(specifically the loop point).
+	adc   $15, $f3
 	mov   a, ($14)+y
 	push  a
 	inc   y
@@ -2218,12 +2222,11 @@ if !noVcmdFB = !false
 	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
 endif
 	mov	a,#$00			; Clear various new addresses.
-	mov	x,#$07			; These weren't used before, so they weren't cleared before.
+	mov	y,#$08			; These weren't used before, so they weren't cleared before.
 -					;
-	mov	$0160+x,a		;
-	mov	$0168+x,a		;
-	dec	x			;
-	bpl	-			;
+	mov	$0160-1+y,a		;
+	mov	$0168-1+y,a		;
+	dbnz	y, -			;
 	mov	$46, a			;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
