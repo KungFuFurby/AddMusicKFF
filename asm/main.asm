@@ -2805,8 +2805,7 @@ L_10D1:							;
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	keyoff
-	mov	a, $10
-	cmp	a, #$c7
+	cmp	$10, #$c7
 	beq	skipKeyOffAndRunCode
 	mov	a, $70+x
 	cmp	a, !WaitTime
