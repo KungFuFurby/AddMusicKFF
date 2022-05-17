@@ -830,12 +830,12 @@ HotPatchVCMDByBitByte1:
 	;mov	a, HotPatchVCMDByte1StorageSet+x
 	;mov	$14, a
 	;inc	x
-	;mov	a, HotPatchVCMDByte0StorageSet+x
+	;mov	a, HotPatchVCMDByte1StorageSet+x
 	;mov	$15, a
 -
 	;lsr	$10
 	;inc	x
-	;mov	a, HotPatchVCMDByte0StorageSet+x
+	;mov	a, HotPatchVCMDByte1StorageSet+x
 	;mov	$12, a
 	;beq	+
 	;call	HotPatchVCMDByBitProcessStorages
