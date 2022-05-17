@@ -45,6 +45,7 @@ static bool doesntLoop;
 static bool triplet;
 static bool inPitchSlide;
 static bool passedIntro[8];
+static bool passedNote[8];
 
 static bool ignoreTuning[9];	// Used for AM4 compatibility.  Until an instrument is explicitly declared on a channel, it must not use tuning.
 
@@ -68,6 +69,7 @@ static int hTranspose;
 static bool usingHTranspose;
 static int hexLeft = 0;
 static int currentHex = 0;
+static int currentHexSub = -1;
 
 //static int tempLoopLength;		// How long the current [ ] loop is.
 //static int e6LoopLength;		// How long the current $E6 loop is.
@@ -164,6 +166,8 @@ Music::Music()
 	spaceForPointersAndInstrs = 0;
 	exists = false;
 	echoBufferSize = 0;
+	echoBufferAllocVCMDIsSet = false;
+	hasEchoBufferCommand = false;
 	noteParamaterByteCount = 0;
 
 	//if (validateHex)		// Allow space for the buffer reservation header.
@@ -228,6 +232,7 @@ void Music::init()
 		noMusic[z][0] = false;
 		noMusic[z][1] = false;
 		passedIntro[z] = false;
+		passedNote[z] = false;
 		phrasePointers[z][0] = 0;
 		phrasePointers[z][1] = 0;
 	}
@@ -669,7 +674,7 @@ void Music::parseIntroDirective()
 	pos++;
 	phrasePointers[channel][1] = data[channel].size();
 	prevNoteLength = -1;
-	hasIntro = true;
+	passedIntro[channel] = true;
 	introLength = channelLengths[channel];
 }
 void Music::parseT()
@@ -1686,6 +1691,29 @@ void Music::parseHexCommand()
 				append(i);
 			}
 			
+			if (hexLeft == 1 && currentHex == 0xFA)
+			{
+				currentHexSub = i;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x7F)
+			{
+				//Hot patches require that the $FA $04 VCMD be generated afterwards, not prior.
+				//This is because of a bit that handles a special case when the buffer size is set to zero.
+				markEchoBufferAllocVCMD();
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0xFE)
+			{
+				if (i >= 0x80) {
+					//Hot patch by bit VCMD has extra bytes if the highest bit is set.
+					hexLeft++;
+				}
+				else {
+					markEchoBufferAllocVCMD();
+				}	
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
@@ -1836,7 +1864,7 @@ void Music::parseHexCommand()
 			}
 
 			// More code conversion.
-			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && data[channel][data[channel].size() - 1] == 0x05)
+			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && currentHexSub == 0x05)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 				data[channel].pop_back();					// Remove the last two bytes
@@ -1936,6 +1964,7 @@ void Music::parseHexCommand()
 			if (hexLeft == 2 && currentHex == 0xF1)
 			{
 				echoBufferSize = std::max(echoBufferSize, i);
+				hasEchoBufferCommand = true;
 			}
 
 			if (currentHex == 0xDA && songTargetProgram == 1)			// If this was the instrument command
@@ -2066,8 +2095,24 @@ void Music::parseHexCommand()
 	}
 	append(i);
 }
+
+void Music::markEchoBufferAllocVCMD()
+{
+	if (!echoBufferAllocVCMDIsSet && resizedChannel != -1 && channel != 8 && channel == resizedChannel && !passedNote[channel] && !hasEchoBufferCommand && !passedIntro[channel])
+		{
+			//Mark the location to generate the echo buffer allocation VCMD.
+			//This won't be performed if this is located past a note or a loop marker, since being
+			//past a note means a note will key on prior to the song initializing properly and being
+			//past a loop marker will mean the VCMD will retrigger, which may or may not end well.
+			echoBufferAllocVCMDIsSet = true;
+			echoBufferAllocVCMDLoc = data[channel].size()+1;
+			echoBufferAllocVCMDChannel = channel;
+		}
+}
+
 void Music::parseNote()
 {
+	passedNote[channel] = true;
 	j = tolower(text[pos]);
 	pos++;
 
@@ -2926,10 +2971,52 @@ void Music::pointersFirstPass()
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}
-		data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
-		data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
-		data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
-		z += 3;
+		if (targetAMKVersion == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x02);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 2)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x05);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
+			//Just put the VCMD in its default place: no need to move it around.
+			//In particular, the $F1 command means that echo writes have been enabled, meaning the special case is irrelevant.
+			data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else
+		{
+			//Generate the echo buffer allocation command after the hot patch VCMD, but before all echo VCMDs and notes.
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, echoBufferSize);
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, 0x04);
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, 0xFA);
+			//The channel this command is inserted into gets its pointers recalibrated.
+			for (int a = 0; a < loopLocations[echoBufferAllocVCMDChannel].size(); a++) {
+				loopLocations[echoBufferAllocVCMDChannel][a] += 3;
+			}
+			for (int a = 0; a < remoteGainPositions[echoBufferAllocVCMDChannel].size(); a++) {
+				remoteGainPositions[echoBufferAllocVCMDChannel][a] += 3;
+			}
+			for (int a = 0; a <= 1; a++) {
+				phrasePointers[echoBufferAllocVCMDChannel][a] += 3;
+			}
+		}
 		//All pointers that were previously output must be recalibrated for the channel.
 		//This specifically involves phrase pointers, loop locations and remote gain positions.
 		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.

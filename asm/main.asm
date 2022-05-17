@@ -388,6 +388,7 @@ RunRemoteCode_Exec:
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
 	%OpenRunningRemoteCodeGate()
+RestoreTrackPtrFromStack:
 	pop	a
 	mov	$31+x, a
 	pop	a
@@ -2102,6 +2103,11 @@ L_0B5A:
 	mov	$0168-1+y,a		;
 	dbnz	y, -			;
 					;
+	mov	$46, a			;
+	mov	$30, #$31		; We want to reset our hot patches to the default state.
+	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	call	HotPatchVCMDByBit	; The code will handle the rest.
+
 	mov	!WaitTime, #$02		;
 	;mov	WaitTimeByte-1,a	;
 					;
@@ -2395,9 +2401,13 @@ endif
 
 	mov	y, a			; / Put the current note into y for now.
 
-	
-	cmp	y, #$c6			; \ If the note is a rest or tie, then don't save the current note pitch.
+HandleArpeggioInterrupt:
+	cmp	y, #$c6			; \ If the note is a tie, then don't save the current note pitch.
+.restOpcodeGate
 	bcs	+				; /
+	cmp	y, #$c8
+	bcs	+
+
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
@@ -2831,72 +2841,229 @@ L_109A:				;
 ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  Otherwise, the key off should be performed.	
 {
 ;L_10AC:							;
+	;Scratch RAM usages ($14/$15 is in original, all others are new):
+	;$10 - Current note
+	;$11.7 - Subroutine entered
+	;        (and return address not initialized outside of readahead)
+	;$11.6 - Subroutine loop active
+	;$11.5 - Loop section entered
+	;        (and return address not initialized outside of readahead)
+	;$11.4 - Loop section active
+	;$11.3 - Subroutine exited
+	;$12/$13 - Return address (if subroutine)
+	;$14/$15 - Current track pointer
+	;$16/$17 - Return address (if loop section)
+	mov	$11, #$00
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
 L_10B2:							; |
 	mov	y, #$00					; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
-	beq	L_10D1					; |
-	bmi	L_10BF					; |
-L_10BA:							; |
+.zeroVCMDCheckGate					; |
+	beq	.jmpToL_10D1				; |
+	bmi	.L_10BF					; |
+.L_10BA:						; |
 ;Bugfix by KungFuFurby 11/19/20:
 ;All additions are being directly sent to the pointer instead of using y.
 ;This is to avoid a softlock via a 256-byte wraparound due to the Y
 ;register overflowing back to zero.
 	incw	$14					; |
 	mov	a, ($14)+y				; |
-	bpl	L_10BA					; /
-L_10BF:
+	bpl	.L_10BA					; /
+.L_10BF:
 	cmp	a, #$c6					; \ C6 is a tie.
-	beq	skip_keyoff				; / So we shouldn't key off the voice.
+	beq	.skip_keyoff				; / So we shouldn't key off the voice.
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
-	bcc	L_10D1					; / So we have to key off in preparation
+	bcs	+					; / So we have to key off in preparation
+	jmp	.L_10D1
++
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
 	incw	$14					; \
 	mov	a, ($14)+y				; / Get the next byte
 	bpl	.normal					; \ 
 	mov	a, #$03
-	bra	+
+	bra	.addYAToPtr
 .normal
 	inc	a					; \ Add the number of bytes in the command.
 	inc	a					; / Plus the number of bytes the command itself takes up .	
-	bra	+					;
-	
+	bra	.addYAToPtr					;
+
+.FACommand
+	incw	$14
+	mov	a, ($14)+y
+	cmp	a, #$fe
+	beq	.FACommand_readUntilPositive
+.FACommand_skip2
+	incw	$14
+.FACommand_skip1
+	incw	$14
+	bra	L_10B2
+
+.FACommand_readUntilPositive
+	incw	$14
+	mov	a, ($14)+y
+	bmi	.FACommand_readUntilPositive
+	bra	.FACommand_skip1
+
 .normalCommand
+	cmp	a, #$fa
+	beq	.FACommand
+	;Update by KungFuFurby 12/5/20
+	;Account for loop sections and subroutines
+	cmp	a, #$e6
+.loopSectionBranchGate
+	beq	+
++
+;Default state of this gate is open
+	cmp	a, #$e9
+.subroutineBranchGate
+	beq	+
++
+;Default state of this gate is open
+-
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
 	mov	y, #$00					; |
-+							; |
+.addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
 	bra	L_10B2					; /
-L_10D1:							;
+
+.jmpToL_10D1
+	jmp	.L_10D1
+
+.subroutineCheck:							;
+	;Check for subroutine first before automatically setting a key off.
+	mov1	c, $11.6	;Grab subroutine loop active flag...
+	notc
+	bbc7	$11, .subroutineNoPreviousEntry
+	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
+	mov	$14, $12	;Copy return address.
+	mov	$15, $13
+	bcs	L_10B2
+	clr1	$11.6		;Subroutine loop is no longer active.
+	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
+	decw	$14		;Go back to the beginning of the subroutine pointer.
+.jumpToIndirect
+	mov	a, ($14)+y	;Jump to pointer stored in this location.
+	push	a		;Reading is done backwards for better
+	decw	$14		;utilization of the word storage opcode.
+	mov	a, ($14)+y
+	pop	y
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.skip_keyoff:
+	clrc
+	ret
+
+.subroutineNoPreviousEntry:
+	bbs3	$11, .L_10D1
+	mov	a, $c0+x
+	beq	.L_10D1
+	dec	a
+	mov1	$11.3, c
+	beq	.subroutineExit	;Branch if this was the last subroutine loop.
+	bcc	.subroutineExit	;Branch if subroutine was not exited...
+	clr1	$11.6		;Subroutine loop is no longer active.
+	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
+	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
+
+.keyoff:
+	setc
+	ret
+
+.loopSection:
+	incw	$14
+	mov	a, ($14)+y
+	bne	.loopSectionNonZero
+	;Save return point for loop.
+	set1	$11.5		;Loop section was entered.
+	incw	$14
+	movw	ya, $14
+	movw	$16, ya
+.jmpToL_10B2
+	jmp	L_10B2
+
+.subroutineExit:
+	mov	$14, #$03e1&$FF
+.setupJumpToIndirect03:
+	mov	$15, #$03e1>>8
+.setupJumpToIndirectFromIndex:
+	or	($15), ($46)
+	bra	.jumpToIndirect
+
+.subroutine:
+	set1	$11.7		;Subroutine has been entered.
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	dec	a
+	beq	.subroutineNoLoop
+	set1	$11.6		;Subroutine loop is active.
+.subroutineNoLoop:
+	incw	$14
+	;Save return point for subroutine.
+	movw	ya, $14
+	movw	$12, ya
+	;Jump inside subroutine.
+	pop	a
+	pop	y
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.L_10D1:
 	mov	$10, a
 	clrc
 	call	TerminateOnLegatoEnable			; Key off the current voice (with conditions).
 
 	mov	a, !InRest+x
-	bne	+
+	bne	.keyoff
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
-	bne	keyoff
+	bne	.keyoff
 	cmp	$10, #$c7
-	beq	skipKeyOffAndRunCode
+	beq	.skipKeyOffAndRunCode
 	mov	a, $70+x
 	cmp	a, !WaitTime
-	beq	keyoff
-skipKeyOffAndRunCode:
+	beq	.keyoff
+.skipKeyOffAndRunCode:
 	call	RunRemoteCode
-	bra	skip_keyoff
-+
-keyoff:
-	setc
-	ret
-skip_keyoff:
+;.skip_keyoff duplicate stored here since it's cheaper memory-wise
+;(and the distance is too great to go backwards)
 	clrc
 	ret
+
+.loopSectionNonZero:
+	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
+	set1	$11.4	;Loop section is now active.
+	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
+	mov	a, $01f0+x
+	dec	a
+	;$01 means that the loop section has been entered and terminated.
+	beq	.loopSectionPassThrough
+	mov	$14, #$01e1&$FF	;Grab pre-existing return address and jump.
+.setupJumpToIndirect01:
+	mov	$15, #$01e1>>8
+	bra	.setupJumpToIndirectFromIndex
+
+.loopSectionJumpFromScratchRAM:
+	movw	ya, $16
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.loopSectionClearAndPassThrough:
+	clr1	$11.4		;Loop section is no longer active.
+.loopSectionPassThrough:
+	incw	$14
+	bra	.jmpToL_10B2
 }
 
 TerminateOnLegatoEnable:
@@ -2909,7 +3076,6 @@ TerminateOnLegatoEnable:
 	pop	a	;terminate the entire preceding routine.
 +
 	ret
-
 
 L_10A1:
 
@@ -2988,6 +3154,11 @@ L_10FB:
 	call	GetCommandDataFast			; /
 	clrc
 	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
+	clrc
+	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
 	call	CalcPortamentoDelta
 L_1111:
 	call	L_09CDWPreCheck
