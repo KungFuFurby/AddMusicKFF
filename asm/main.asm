@@ -306,12 +306,13 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr+1+x
-	mov	$31+x, a
 RunRemoteCode_Exec:
+	mov	$31+x, a
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
 	%OpenRunningRemoteCodeGate()
+RestoreTrackPtrFromStack:
 	pop	a
 	mov	$31+x, a
 	pop	a
@@ -328,7 +329,6 @@ RunRemoteCode2:
 	mov	a, !remoteCodeTargetAddr2+x
 	mov	$30+x, a
 	mov	a, !remoteCodeTargetAddr2+1+x
-	mov	$31+x, a
 	bra	RunRemoteCode_Exec
 }
 	
@@ -672,7 +672,7 @@ ProcessSFX:				; Major code changes ahead.
 	dec	x			;
 	dec	x			;
 	bpl	.loop			;
-	jmp	EffectModifier		;
+	bra	EffectModifier		;
 }
 
 GetNextSFXByte:
@@ -724,14 +724,14 @@ if !noiseFrequencySFXInstanceResolution = !true
 	bra	RestoreInstrumentInformation
 endif
 .restoreMusicNoise:
-	mov	$1f, #$00
+	mov	a, #$00
+	mov	$1f, a
 if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
 	mov	a, $1c
 	bne	++
 endif
 +
-	mov	a, #$00
 	mov	!ChSFXPriority+x, a
 ++
 	mov	a, $0389
@@ -786,9 +786,8 @@ HandleSFXVoice:
 	jmp	.processSFXPitch
 +
 .getMoreSFXData
-	call	GetNextSFXByte
-	bne	+			; If the current byte is zero, then end it.
-	jmp	EndSFX
+	call	GetNextSFXByte		
+	beq	EndSFX			; If the current byte is zero, then end it.
 +
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
@@ -797,23 +796,28 @@ HandleSFXVoice:
 	call	GetNextSFXByte		; Get the next byte.  It's either a volume or a command/note.
 	bmi	.noteOrCommand		; If it's negative, then it's a command or a note.
 	push	a			; \ This is a volume command.  Remember it for a moment.
-	mov	a, $46			; | 
+	mov	a, x			; | 
 	lsr	a			; |
 	xcn	a			; | Put the left volume DSP register for this channel into y.
+if !noiseFrequencySFXInstanceResolution = !true
 	mov	y, a			; |
 	pop	a			; |
-if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ; |
-endif
 	call	DSPWrite		; / Set the volume for the left speaker.
 	inc	y			; \
 	call	DSPWrite		; / Set the volume for the right speaker.  We might change it later, but this saves space.
+else
+	pop	y
+	movw	$f2, ya			; Set the volume for the left speaker.
+	inc	a
+	movw	$f2, ya			; Set the volume for the right speaker.  We might change it later, but this saves space.
+endif
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
 if !noiseFrequencySFXInstanceResolution = !true
 	call	.setVolFromNoiseSetting ;
 endif
-	call	DSPWrite		; > Set the volume for the right speaker.
+	mov	$f3, a			; > Set the volume for the right speaker.
 	call	GetNextSFXByte		;
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
@@ -883,13 +887,10 @@ endif
 	mov	a, $90+x		; pitch slide counter
 	beq	+
 	call	L_09CD			; add pitch slide delta and set DSP pitch
-	mov	$48, #$00               ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 +
 	mov	a, #$02			; \
-	;setp				; |
 	cmp	a, !ChSFXNoteTimer+x	; |
-	;clrp				; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
@@ -1010,8 +1011,7 @@ endif
 ;Now we scan the priorities of all channels higher than this one.
 	mov	$12, x
 -
-	inc	$12
-	inc	$12
+	adc	$12, #$02
 	push	x
 	mov	a, !ChSFXPriority+x
 	mov	x, $12
@@ -1600,11 +1600,8 @@ if !useSFXSequenceFor1DFASFX = !false
 	beq	.sfxAllocAllowed
 
 	;Stop all APU1 SFX on the same channel.
-	push	a
-	mov	a, #$00
-	mov	$05, a
-	mov	$1c, a
-	pop	a
+	mov	$05, #$00
+	mov	$1c, #$00
 endif
 
 .sfxAllocAllowed
@@ -1614,9 +1611,7 @@ endif
 	;mov	a, #$01				; \ We need to wait 2 ticks before processing SFX.
 	;mov	!ChSFXTimeToStart+x, a		; /
 	mov	a, $10				; \
-	push	y
 	call	KeyOffVoices
-	pop	y
 	or	($1d), ($10)			;
 if !PSwitchIsSFX = !true
 	cmp	$03, #$81			;
@@ -1718,9 +1713,10 @@ else
 endif
 
 L_099C:
-	mov	$f2, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	$f3, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	mov	!NCKValue, #$60
+	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
+	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
+	movw	$f2, ya
+	mov	!NCKValue, y
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -1906,9 +1902,9 @@ L_0A51:						;;;;;;;;/ Code change
 L_0A56:
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
-	mov	$05, #$00
 	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
+	mov	$05, a
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
 	mov	x, #(!1DFASFXChannel*2)
 	jmp	RestoreInstrumentInformation
@@ -1953,7 +1949,6 @@ L_0AA5:
 	mov	a, $90+x
 	beq	L_0AB0
 	call	L_09CD
-	mov	$48, #$00          ; vbit flags = 0 (to force DSP set)
 	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
@@ -2022,14 +2017,17 @@ L_0B5A:
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
 	mov	a,#$00			; Clear various new addresses.
-	mov	x,#$07			; These weren't used before, so they weren't cleared before.
+	mov	y,#$08			; These weren't used before, so they weren't cleared before.
 -					;
-	mov	$0160+x,a		;
-	;mov	$245A+x,a		; These were used in AMM for the special pulse wave BRR file.
-	;mov	$2463+x,a		; They can't be used now, since chances are music or something else is there now.
-	dec	x			; Plus, the BRR file would be in an unstable location.
-	bpl	-			;
-					;
+	mov	$0160-1+y,a		;
+	;mov	$245A-1+y,a		; These were used in AMM for the special pulse wave BRR file.
+	;mov	$2463-1+y,a		; They can't be used now, since chances are music or something else is there now.
+	dbnz	y, -			; Plus, the BRR file would be in an unstable location.
+	mov	$46, a			;
+	mov	$30, #$31		; We want to reset our hot patches to the default state.
+	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	call	HotPatchVCMDByBit	; The code will handle the rest.
+
 	mov	!WaitTime, #$02		;
 	;mov	WaitTimeByte-1,a	;
 					;
@@ -2046,10 +2044,9 @@ L_0B5A:
 	movw	ya, $40
 	movw	!CustomInstrumentPos, ya
 	
+	pop	y
 	pop	a
-	mov	$41, a
-	pop	a
-	mov	$40, a
+	movw	$40, ya
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
@@ -2324,9 +2321,13 @@ endif
 
 	mov	y, a			; / Put the current note into y for now.
 
-	
-	cmp	y, #$c6			; \ If the note is a rest or tie, then don't save the current note pitch.
+HandleArpeggioInterrupt:
+	cmp	y, #$c6			; \ If the note is a tie, then don't save the current note pitch.
+.restOpcodeGate
 	bcs	+				; /
+	cmp	y, #$c8
+	bcs	+
+
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
@@ -2760,73 +2761,229 @@ L_109A:				;
 ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  Otherwise, the key off should be performed.	
 {
 ;L_10AC:							;
+	;Scratch RAM usages ($14/$15 is in original, all others are new):
+	;$10 - Current note
+	;$11.7 - Subroutine entered
+	;        (and return address not initialized outside of readahead)
+	;$11.6 - Subroutine loop active
+	;$11.5 - Loop section entered
+	;        (and return address not initialized outside of readahead)
+	;$11.4 - Loop section active
+	;$11.3 - Subroutine exited
+	;$12/$13 - Return address (if subroutine)
+	;$14/$15 - Current track pointer
+	;$16/$17 - Return address (if loop section)
+	mov	$11, #$00
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
 L_10B2:							; |
 	mov	y, #$00					; |
 	mov	a, ($14)+y				; | Loop until the next byte is a note/command.
-	beq	L_10D1					; |
-	bmi	L_10BF					; |
-L_10BA:							; |
+.zeroVCMDCheckGate					; |
+	beq	.jmpToL_10D1				; |
+	bmi	.L_10BF					; |
+.L_10BA:						; |
 ;Bugfix by KungFuFurby 11/19/20:
 ;All additions are being directly sent to the pointer instead of using y.
 ;This is to avoid a softlock via a 256-byte wraparound due to the Y
 ;register overflowing back to zero.
 	incw	$14					; |
 	mov	a, ($14)+y				; |
-	bpl	L_10BA					; /
-L_10BF:
+	bpl	.L_10BA					; /
+.L_10BF:
 	cmp	a, #$c6					; \ C6 is a tie.
-	beq	skip_keyoff				; / So we shouldn't key off the voice.
+	beq	.skip_keyoff				; / So we shouldn't key off the voice.
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
-	bcc	L_10D1					; / So we have to key off in preparation
+	bcs	+					; / So we have to key off in preparation
+	jmp	.L_10D1
++
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
 	incw	$14					; \
 	mov	a, ($14)+y				; / Get the next byte
 	bpl	.normal					; \ 
 	mov	a, #$03
-	bra	+
+	bra	.addYAToPtr
 .normal
 	inc	a					; \ Add the number of bytes in the command.
 	inc	a					; / Plus the number of bytes the command itself takes up .	
-	bra	+					;
-	
+	bra	.addYAToPtr					;
+
+.FACommand
+	incw	$14
+	mov	a, ($14)+y
+	cmp	a, #$fe
+	beq	.FACommand_readUntilPositive
+.FACommand_skip2
+	incw	$14
+.FACommand_skip1
+	incw	$14
+	bra	L_10B2
+
+.FACommand_readUntilPositive
+	incw	$14
+	mov	a, ($14)+y
+	bmi	.FACommand_readUntilPositive
+	bra	.FACommand_skip1
+
 .normalCommand
+	cmp	a, #$fa
+	beq	.FACommand
+	;Update by KungFuFurby 12/5/20
+	;Account for loop sections and subroutines
+	cmp	a, #$e6
+.loopSectionBranchGate
+	beq	+
++
+;Default state of this gate is open
+	cmp	a, #$e9
+.subroutineBranchGate
+	beq	+
++
+;Default state of this gate is open
+-
 	mov	y, a					; \ 
 	mov	a, CommandLengthTable-$DA+y		; | Add the length of the current command (so we get the next note/command/whatever).
 	mov	y, #$00					; |
-+							; |
+.addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
 	bra	L_10B2					; /
-L_10D1:							;
+
+.jmpToL_10D1
+	jmp	.L_10D1
+
+.subroutineCheck:							;
+	;Check for subroutine first before automatically setting a key off.
+	mov1	c, $11.6	;Grab subroutine loop active flag...
+	notc
+	bbc7	$11, .subroutineNoPreviousEntry
+	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
+	mov	$14, $12	;Copy return address.
+	mov	$15, $13
+	bcs	L_10B2
+	clr1	$11.6		;Subroutine loop is no longer active.
+	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
+	decw	$14		;Go back to the beginning of the subroutine pointer.
+.jumpToIndirect
+	mov	a, ($14)+y	;Jump to pointer stored in this location.
+	push	a		;Reading is done backwards for better
+	decw	$14		;utilization of the word storage opcode.
+	mov	a, ($14)+y
+	pop	y
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.skip_keyoff:
+	clrc
+	ret
+
+.subroutineNoPreviousEntry:
+	bbs3	$11, .L_10D1
+	mov	a, $c0+x
+	beq	.L_10D1
+	dec	a
+	mov1	$11.3, c
+	beq	.subroutineExit	;Branch if this was the last subroutine loop.
+	bcc	.subroutineExit	;Branch if subroutine was not exited...
+	clr1	$11.6		;Subroutine loop is no longer active.
+	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
+	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
+
+.keyoff:
+	setc
+	ret
+
+.loopSection:
+	incw	$14
+	mov	a, ($14)+y
+	bne	.loopSectionNonZero
+	;Save return point for loop.
+	set1	$11.5		;Loop section was entered.
+	incw	$14
+	movw	ya, $14
+	movw	$16, ya
+.jmpToL_10B2
+	jmp	L_10B2
+
+.subroutineExit:
+	mov	$14, #$03e1&$FF
+.setupJumpToIndirect03:
+	mov	$15, #$03e1>>8
+.setupJumpToIndirectFromIndex:
+	or	($15), ($46)
+	bra	.jumpToIndirect
+
+.subroutine:
+	set1	$11.7		;Subroutine has been entered.
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	push	a
+	incw	$14
+	mov	a, ($14)+y
+	dec	a
+	beq	.subroutineNoLoop
+	set1	$11.6		;Subroutine loop is active.
+.subroutineNoLoop:
+	incw	$14
+	;Save return point for subroutine.
+	movw	ya, $14
+	movw	$12, ya
+	;Jump inside subroutine.
+	pop	a
+	pop	y
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.L_10D1:
 	mov	$10, a
 	clrc
 	call	TerminateOnLegatoEnable			; Key off the current voice (with conditions).
 
 	mov	a, !InRest+x
-	bne	+
+	bne	.keyoff
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
-	bne	keyoff
-	mov	a, $10
-	cmp	a, #$c7
-	beq	skipKeyOffAndRunCode
+	bne	.keyoff
+	cmp	$10, #$c7
+	beq	.skipKeyOffAndRunCode
 	mov	a, $70+x
 	cmp	a, !WaitTime
-	beq	keyoff
-skipKeyOffAndRunCode:
+	beq	.keyoff
+.skipKeyOffAndRunCode:
 	call	RunRemoteCode
-	bra	skip_keyoff
-+
-keyoff:
-	setc
-	ret
-skip_keyoff:
+;.skip_keyoff duplicate stored here since it's cheaper memory-wise
+;(and the distance is too great to go backwards)
 	clrc
 	ret
+
+.loopSectionNonZero:
+	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
+	set1	$11.4	;Loop section is now active.
+	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
+	mov	a, $01f0+x
+	dec	a
+	;$01 means that the loop section has been entered and terminated.
+	beq	.loopSectionPassThrough
+	mov	$14, #$01e1&$FF	;Grab pre-existing return address and jump.
+.setupJumpToIndirect01:
+	mov	$15, #$01e1>>8
+	bra	.setupJumpToIndirectFromIndex
+
+.loopSectionJumpFromScratchRAM:
+	movw	ya, $16
+	movw	$14, ya
+	bra	.jmpToL_10B2
+
+.loopSectionClearAndPassThrough:
+	clr1	$11.4		;Loop section is no longer active.
+.loopSectionPassThrough:
+	incw	$14
+	bra	.jmpToL_10B2
 }
 
 TerminateOnLegatoEnable:
@@ -2839,7 +2996,6 @@ TerminateOnLegatoEnable:
 	pop	a	;terminate the entire preceding routine.
 +
 	ret
-
 
 L_10A1:
 
@@ -2918,6 +3074,11 @@ L_10FB:
 	call	GetCommandDataFast			; /
 	clrc
 	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
+	clrc
+	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
 	call	CalcPortamentoDelta
 L_1111:
 	call	L_09CDWPreCheck
