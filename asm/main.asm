@@ -2227,6 +2227,7 @@ endif
 	mov	$0160-1+y,a		;
 	mov	$0168-1+y,a		;
 	dbnz	y, -			;
+					;
 	mov	$46, a			;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
