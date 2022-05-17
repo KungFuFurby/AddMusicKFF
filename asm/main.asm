@@ -2819,6 +2819,9 @@ L_10D1:							;
 
 	mov	a, !InRest+x
 	bne	keyoff
+	mov	a, !remoteCodeType2+x
+	cmp	a, #$06
+	beq	.keyoffRemoteCodeCheck
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	keyoff
