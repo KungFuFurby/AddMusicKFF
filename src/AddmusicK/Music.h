@@ -68,6 +68,10 @@ public:
 	std::vector<unsigned short> mySamples;
 	//int mySampleCount;
 	int echoBufferSize;
+	bool hasEchoBufferCommand;
+	bool echoBufferAllocVCMDIsSet;
+	unsigned short echoBufferAllocVCMDLoc;
+	int echoBufferAllocVCMDChannel;
 
 	std::string statStr;
 
@@ -193,6 +197,8 @@ private:
 	void handleSuperLoopExit(int loopCount);			// Call any time a definition of a super loop is exited.
 
 	void addNoteLength(double ticks);				// Call this every note.  The correct channel/loop will be automatically updated.
+	
+	void markEchoBufferAllocVCMD();		// Called when the Hot Patch VCMD is manually defined. Required because of a bit that handles a special case when the echo buffer size is zero.
 };
 
 #endif
