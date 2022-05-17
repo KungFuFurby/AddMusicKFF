@@ -22,7 +22,6 @@ std::vector<Sample> samples;
 SoundEffect soundEffectsDF9[256];
 SoundEffect soundEffectsDFC[256];
 SoundEffect *soundEffects[2] = {soundEffectsDF9, soundEffectsDFC};
-//std::vector<SampleGroup> sampleGroups;
 std::vector<BankDefine *> bankDefines;
 std::map<File, int> sampleToIndex;
 

@@ -34,13 +34,11 @@ class Music;
 class SoundEffect;
 class Sample;
 class File;
-class SampleGroup;
 
 //#include "ROM.h"
 #include "Music.h"
 #include "Sample.h"
 #include "SoundEffect.h"
-#include "SampleGroup.h"
 #include "Directory.h"
 #include "BankDefine.h"
 #include <string>
