@@ -2951,8 +2951,8 @@ L_10B2:							; |
 	movw	ya, $14
 	movw	$12, ya
 	;Jump inside subroutine.
-	pop	a
 	pop	y
+	pop	a
 	movw	$14, ya
 .jmpToL_10B2
 	jmp	L_10B2
