@@ -2929,7 +2929,7 @@ L_10B2:							; |
 .setupJumpToIndirect03:
 	mov	$15, #$03e1>>8
 .setupJumpToIndirectFromIndex:
-	or	($15), ($46)
+	or	($14), ($46)
 	bra	.jumpToIndirect
 
 .subroutine:
