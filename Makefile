@@ -1,15 +1,33 @@
 #AddmusicK Makefile
-#For use with Mac OS X and Linux
+#For Mac and Linux, should work with a standard issue G++
+#For Windows, you need MinGW to compile.
 #NOTE: C++17 support is recommended to ensure your program compiles
 #successfully!
-#(for Windows, use Visual Studio 2019 instead to compile)
+#Use Visual Studio 2019 instead to compile AMKGUI
 
-CXX = g++
+UNAME := $(shell uname -s)
+
+ifneq (,$(findstring MINGW,$(UNAME)))
+#Windows setting (made for MinGW, though in hindsight this may be a bad call)...
+	CXX = x86_64-w64-mingw32-g++
+else
+#Mac/Linux setting...
+	CXX = g++
+endif
+
 CXXFLAGS = -Wall -pedantic -std=c++17 -O3
 #Commented out for now
 #with libboost (this specifically targets MacPorts inclusions)
 #CXXFLAGS += -I/opt/local/include
-LDFLAGS = -ldl
+
+ifneq (,$(findstring MINGW,$(UNAME)))
+#Windows setting...
+	LDFLAGS = -static -static-libgcc -static-libstdc++ -s
+else
+#Mac/Linux setting...
+	#LDFLAGS = -ldl
+endif
+
 #Commented out for now
 #with libboost (this specifically targets MacPorts inclusions)
 #LDFLAGS += -L /opt/local/lib/ -lboost_system -lboost_filesystem
