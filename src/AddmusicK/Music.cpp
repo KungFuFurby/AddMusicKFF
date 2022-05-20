@@ -2264,7 +2264,7 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
-	if (songTargetProgram == 1) {
+	if (songTargetProgram == 1 && nonNativeCmdWarning) {
 		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
 		nonNativeCmdWarning = false;
 	}
