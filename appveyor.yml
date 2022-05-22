@@ -6,6 +6,7 @@ for:
       only:
         - master
     build_script:
+      - set PATH=C:\MinGW\bin\
       - mingw32-make
       - ps: .\build_script.ps1
     artifacts:
@@ -15,6 +16,7 @@ for:
       only:
         - bleeding-edge
     build_script:
+      - set PATH=C:\MinGW\bin\
       - mingw32-make
       - ps: .\build_script.ps1
     artifacts:
@@ -29,6 +31,7 @@ for:
         - src/
         - .appveyor.yml
     build_script:
+      - set PATH=C:\MinGW\bin\
       - mingw32-make
       - ps: .\build_script.ps1
     artifacts:
