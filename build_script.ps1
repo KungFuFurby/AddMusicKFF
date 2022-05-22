@@ -1,4 +1,3 @@
-$ErrorActionPreference = "Stop"
 Write-Output $Env:PATH
 $Env:PATH += ";C:\MinGW\bin\"
 # msbuild "C:\projects\addmusickff\src\AddmusicK.sln" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
