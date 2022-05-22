@@ -25,7 +25,7 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	LDFLAGS = -static -static-libgcc -static-libstdc++ -s
 else
 #Mac/Linux setting...
-	#LDFLAGS = -ldl
+	LDFLAGS = -ldl
 endif
 
 #Commented out for now
