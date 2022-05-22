@@ -7,6 +7,8 @@
 
 UNAME := $(shell uname -s)
 
+$(info $UNAME is $(UNAME))
+
 ifneq (,$(findstring MINGW,$(UNAME)))
 #Windows setting (made for MinGW, though in hindsight this may be a bad call)...
 	CXX = x86_64-w64-mingw32-g++
