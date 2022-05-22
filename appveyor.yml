@@ -31,6 +31,9 @@ for:
     artifacts:
       - path: AMKFF_testbuild.zip
 
+build_script:
+  - ps: .\build_script.ps1
+
 configuration: Release
 
 after_build:
