@@ -22,7 +22,7 @@ CXXFLAGS = -Wall -pedantic -std=c++17 -O3
 #with libboost (this specifically targets MacPorts inclusions)
 #CXXFLAGS += -I/opt/local/include
 
-ifneq (,$(findstring MINGW,$(UNAME)))
+ifneq (,$(findstring MSYS,$(UNAME)))
 #Windows setting...
 	LDFLAGS = -static -static-libgcc -static-libstdc++ -s
 else
