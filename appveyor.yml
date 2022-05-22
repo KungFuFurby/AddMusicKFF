@@ -5,16 +5,16 @@ for:
     branches:
       only:
         - master
-    build:
-      verbosity: minimal
+    build_script:
+      - ps: .\build_script.ps1
     artifacts:
       - path: AMKFF_latest.zip
   -
     branches:
       only:
         - bleeding-edge
-    build:
-      verbosity: minimal
+    build_script:
+      - ps: .\build_script.ps1
     artifacts:
       - path: AMKFF_latestbeta.zip
   -
@@ -26,13 +26,10 @@ for:
       files:
         - src/
         - .appveyor.yml
-    build:
-      verbosity: minimal
+    build_script:
+      - ps: .\build_script.ps1
     artifacts:
       - path: AMKFF_testbuild.zip
-
-build_script:
-  - ps: .\build_script.ps1
 
 configuration: Release
 
