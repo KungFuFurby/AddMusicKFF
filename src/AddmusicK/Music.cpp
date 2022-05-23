@@ -2142,10 +2142,15 @@ void Music::markEchoBufferAllocVCMD()
 
 void Music::parseNote()
 {
-	passedNote[channel] = true;
 	if (isupper(text[pos]) && targetAMKVersion < 4 && caseNoteWarning){
 		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
 		caseNoteWarning = false;
+	}
+	if (channel != 8) {
+		passedNote[channel] = true;
+	}
+	else {
+		passedNote[prevChannel] = true;
 	}
 	j = tolower(text[pos]);
 	pos++;
