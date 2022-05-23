@@ -40,7 +40,7 @@ all: addmusick
 addmusick: $(SRCS) src/AddmusicK/*.h
 	cd src/AddmusicK; \
 	$(CXX) $(CXXFLAGS) -c $(patsubst %,../../%,$(SRCS))
-	$(CXX) -o addmusick src/AddmusicK/*.o $(LDFLAGS)
+	$(CXX) -o AddmusicK src/AddmusicK/*.o $(LDFLAGS)
 
 
 clean:
