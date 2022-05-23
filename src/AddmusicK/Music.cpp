@@ -1980,7 +1980,12 @@ void Music::markEchoBufferAllocVCMD()
 
 void Music::parseNote()
 {
-	passedNote[channel] = true;
+	if (channel != 8) {
+		passedNote[channel] = true;
+	}
+	else {
+		passedNote[prevChannel] = true;
+	}
 	j = tolower(text[pos]);
 	pos++;
 
