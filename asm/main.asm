@@ -2912,7 +2912,7 @@ L_10B2:							; |
 .setupJumpToIndirect03:
 	mov	$15, #$03e1>>8
 .setupJumpToIndirectFromIndex:
-	or	($15), ($46)
+	or	($14), ($46)
 	bra	.jumpToIndirect
 
 .subroutine:
@@ -2934,8 +2934,8 @@ L_10B2:							; |
 	movw	ya, $14
 	movw	$12, ya
 	;Jump inside subroutine.
-	pop	a
 	pop	y
+	pop	a
 	movw	$14, ya
 	bra	.jmpToL_10B2
 

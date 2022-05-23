@@ -2123,7 +2123,12 @@ void Music::parseNote()
 		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
 		caseNoteWarning = false;
 	}
-	passedNote[channel] = true;
+	if (channel != 8) {
+		passedNote[channel] = true;
+	}
+	else {
+		passedNote[prevChannel] = true;
+	}
 	j = tolower(text[pos]);
 	pos++;
 
@@ -2278,7 +2283,7 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
-	if (songTargetProgram == 1) {
+	if (songTargetProgram == 1 && nonNativeCmdWarning) {
 		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
 		nonNativeCmdWarning = false;
 	}
