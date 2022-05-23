@@ -9,7 +9,12 @@ UNAME := $(shell uname -s)
 
 $(info $UNAME is $(UNAME))
 
-CXX = g++
+ifneq (,$(findstring MSYS,$(UNAME)))
+#Windows setting (made for MinGW, though in hindsight this may be a bad call)...
+	CXX = x86_64-w64-mingw32-g++
+else
+	CXX = g++
+endif
 
 CXXFLAGS = -Wall -pedantic -std=c++17 -O3
 #Commented out for now
