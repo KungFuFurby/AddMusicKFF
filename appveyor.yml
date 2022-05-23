@@ -29,8 +29,8 @@ for:
     branches:
       only:
         - AddmusicK1.0.9bleeding-edge
-    build:
-      verbosity: minimal
+    build_script:
+      - ps: .\build_script.ps1
     artifacts:
       - path: AddmusicK1.0.9_latestRCbeta.zip
   -
