@@ -634,9 +634,9 @@ void loadSampleList()
 		{
 			if (isspace(str[i]))
 			{
-				BankDefine *sg = new BankDefine;
+				std::unique_ptr<BankDefine> sg = std::make_unique<BankDefine>();
 				sg->name = groupName;
-				bankDefines.push_back(sg);
+				bankDefines.push_back(std::move(sg));
 				i++;
 				gettingGroupName = false;
 				continue;
@@ -655,7 +655,7 @@ void loadSampleList()
 				if (str[i] == '\"')
 				{
 					tempName.erase(tempName.begin(), tempName.begin() + 1);
-					bankDefines[bankDefines.size() - 1]->samples.push_back(new std::string(tempName));
+					bankDefines[bankDefines.size() - 1]->samples.push_back(std::make_unique<std::string>(tempName));
 					bankDefines[bankDefines.size() - 1]->importants.push_back(false);
 					tempName.clear();
 					i++;
