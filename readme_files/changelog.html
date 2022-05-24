@@ -53,7 +53,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-05-17</h2>
+	<h2>Version 1.0.9 - 2022-05-23</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -70,6 +70,7 @@
 		<li>"This version fixes a formatting error in -? help output." - nyanpasu64</li>
 		<li>"This version fixes a crash when using too many songs on the command line while generating SPC files." - nyanpasu64</li>
 		<li>"This version removes unnecessary reading of files supplied from CLI, which caused a crash while generating SPC files when there were zero global songs." - nyanpasu64</li>
+		<li>"Fixed a memory leak that was occurring while handling sample groups." - Atari 2.0</li>
 		</ul>
 	</li>
 	<li>Gameplay
