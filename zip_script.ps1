@@ -1,4 +1,4 @@
-# move src\Release\AddmusicK.exe	AddmusicKVB2019.exe
+move src\Release\AddmusicK.exe	AddmusicKVS2019.exe
 move src\Release\AM4Batch.exe	AM4Batch.exe
 move src\Release\AMKGUI.exe		AMKGUI.exe
 move src\Release\AMMBatch.exe	AMMBatch.exe
