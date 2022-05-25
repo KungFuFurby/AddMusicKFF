@@ -332,6 +332,11 @@ RunRemoteCode2:
 	mov	a, !remoteCodeTargetAddr2+1+x
 	bra	RunRemoteCode_Exec
 }
+
+CheckForRemoteCodeType6:
+	mov	a, #$06
+	cmp	a, !remoteCodeType2+x
+	ret
 	
 ; handle a note vcmd
 NoteVCMD:			
@@ -353,8 +358,7 @@ endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
-	mov	a, !remoteCodeType2+x
-	cmp	a, #$06
+	call	CheckForRemoteCodeType6
 	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
@@ -397,12 +401,11 @@ if !noSFX = !false
 endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
-	mov	a, !remoteCodeType2+x
-	cmp	a, #$06
+	call	CheckForRemoteCodeType6
 	beq	.remoteCodeRestoreInstrumentOnKON
 
-	mov	a, !remoteCodeType+x
-	cmp	a, #$05
+	dec	a
+	cmp	a, !remoteCodeType+x
 	bne	.checkRemoteCodeTypes
 .remoteCodeRestoreInstrumentOnKON
 	call	SubC_9
@@ -2964,8 +2967,7 @@ L_10B2:							; |
 
 	mov	a, !InRest+x
 	bne	.keyoff
-	mov	a, !remoteCodeType2+x
-	cmp	a, #$06
+	call	CheckForRemoteCodeType6
 	beq	.keyoffRemoteCodeCheck
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
@@ -2978,8 +2980,7 @@ L_10B2:							; |
 	cmp	a, !WaitTime
 	beq	.keyoff
 .keyoffRemoteCodeTypeCheck
-	mov	a, !remoteCodeType2+x
-	cmp	a, #$06
+	call	CheckForRemoteCodeType6
 	beq	.skipKeyOffAndRunCode2
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
