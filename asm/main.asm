@@ -2922,8 +2922,7 @@ L_10B2:							; |
 	incw	$14
 	movw	ya, $14
 	movw	$16, ya
-.jmpToL_10B2
-	jmp	L_10B2
+	bra	.jmpToL_10B2
 
 .subroutineExit:
 	mov	$14, #$03e1&$FF
@@ -2955,7 +2954,8 @@ L_10B2:							; |
 	pop	a
 	pop	y
 	movw	$14, ya
-	bra	.jmpToL_10B2
+.jmpToL_10B2
+	jmp	L_10B2
 
 .L_10D1:
 	mov	$10, a
