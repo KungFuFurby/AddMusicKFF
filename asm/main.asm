@@ -745,11 +745,8 @@ MusicToSFXEchoGate:
 MusicToSFXEchoNoCopy:
 endif
 	push	x
-	push	y
-	mov	x, #$00
-	mov	y, #$d1			; The DSP register for pitch modulation reversed.
-					; $10 = the current music whatever
-					; $12 = the current SFX whatever
+	mov	x, #!MusicPModChannels
+	mov	$f2, #$1d		; The DSP register for pitch modulation minus #$10.
 -						
 					; Formula: The output for the DSP register is
 					; S'M + SE
@@ -759,33 +756,31 @@ endif
 					; and S is $1d (the current channels for which SFX are enabled)
 					; Yay logic!
 
-	inc	y			; \
-	mov	a, y			; | Get the next DSP register into a.
-	xcn	a			; /
-	mov	$f2, a			;
+	clrc				; \
+	adc	$f2, #$10		; / Get the next DSP register.
 						
 if !noSFX = !false
 	mov	a, $1d			; \ a = S
 	eor	a, #$ff			; | a = S'
-	and	a, !MusicPModChannels+x	; / a = S'M
+	and	a, (X)			; / a = S'M
 	
-	mov	$15, a
+	mov	$10, a
 
-	mov	a, !SFXPModChannels+x	; \ a = S
+	;Go grab !SFXPModChannels+x.
+	mov	a, $03+x		; \ a = S
 	and	a, $1d			; | a = SE
-	or	a, $15			; / a = S'M + SE
+	or	a, $10			; / a = S'M + SE
+	inc	x
 else
-	mov	a, !MusicPModChannels+x
+	mov	a, (X+)
 endif
 	
 					; \ Write to the relevant DSP register.
 	mov	$f3, a			; / (coincidentally, the order is the opposite of DSPWrite)
 	
-	inc	x			; \
-	cmp	x, #$03			; | Do this three times.
-	bne	-			; /
+	cmp	x, #!MusicPModChannels+3 ; \ Do this three times.
+	bcc	-			 ; /
 
-	pop	y
 	pop	x
 	ret
 }

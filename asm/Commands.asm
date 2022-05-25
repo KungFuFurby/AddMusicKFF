@@ -119,7 +119,7 @@ if !noSFX = !false
 	bne	.DSPWriteDirectionGate1
 endif	
 	push	y
-	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
+	call	ModifyNoise
 	pop	y
 .DSPWriteDirectionGate1
 	bra	.incXY
@@ -152,13 +152,10 @@ endif
 	inc	y			;
 	mov	a, ($14)+y		; The final byte is the sub multiplier.
 	mov	$02f0+x, a		;
+	call	EffectModifier
 	
 	inc	y			; If this was a percussion instrument,
 	mov	a, ($14)+y		; Then it had one extra pitch byte.  Get it just in case.
-	
-	push	a	
-	call	EffectModifier
-	pop	a
 
 	ret
 
