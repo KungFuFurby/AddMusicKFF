@@ -3016,7 +3016,6 @@ L_10B2:							; |
 .loopSectionPassThrough:
 	incw	$14
 	bra	.jmpToL_10B2
->>>>>>> master
 }
 
 TerminateOnLegatoEnable:
