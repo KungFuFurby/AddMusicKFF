@@ -199,7 +199,7 @@ if !noSFX = !false
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
-	mov   x, #$01
+	inc   x
 	call  ReadInputRegister             ; read/send APU1
 	mov   x, #$03
 	call  ReadInputRegister             ; read/send APU3
@@ -2886,10 +2886,6 @@ L_10B2:							; |
 	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
 	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
 
-.keyoff:
-	setc
-	ret
-
 .loopSection:
 	incw	$14
 	mov	a, ($14)+y
@@ -2947,8 +2943,11 @@ L_10B2:							; |
 	cmp	$10, #$c7
 	beq	.skipKeyOffAndRunCode
 	mov	a, $70+x
-	cmp	a, !WaitTime
-	beq	.keyoff
+	cbne	!WaitTime, .skipKeyOffAndRunCode
+.keyoff:
+	setc
+	ret
+
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
 ;.skip_keyoff duplicate stored here since it's cheaper memory-wise
@@ -3081,18 +3080,13 @@ L_1133:
 	mov	a, $a1+x
 	beq	L_1140
 	mov	a, $0340+x
-	cmp	a, $a0+x
-	beq	L_1144
-	inc	$a0+x
-L_1140:
-	bbs1	$13.7, L_1195		; If $13.7 is set, recalibrate the pitch.
--
-	ret
+	cbne	$a0+x, L_113E
+
 L_1144:					; Process vibrato.
 
 	mov	a, !PlayingVoices	; \ 
 	and	a, $48			; | If there's no voice playing on this channel,
-	beq	-			; / then don't do all these time-consuming calculations.
+	beq	+			; / then don't do all these time-consuming calculations.
 	
 	mov	a, $0341+x
 	beq	L_1166
@@ -3146,9 +3140,15 @@ L_1191:
 	movw	$10, ya
 L_1195:
 	jmp	SetPitch
+
+L_113E:
+	inc	$a0+x
+L_1140:
+	bbs1	$13.7, L_1195		; If $13.7 is set, recalibrate the pitch.
++
+	ret
+
 ; per-voice fades/dsps?
-
-
 HandleVoice:
 	clr1	$13.7
 	
