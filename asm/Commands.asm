@@ -960,8 +960,12 @@ HotPatchVCMDByte0Bit5Storages:
 	db	$10
 HotPatchVCMDByte0Bit5StoragesEOF:
 
+	;Byte 0 Bit 6 Clear - When using arpeggio, glissando disables itself after two base notes
+	;Byte 0 Bit 6 Set - When using arpeggio, glissando disables itself after one base note
 HotPatchVCMDByte0Bit6Storages:
-	;This bit is not yet defined.
+	dw	cmdFB_glissNoteCounter+1
+	db	$02
+	db	$01
 HotPatchVCMDByte0Bit6StoragesEOF:
 
 HotPatchVCMDByte1StorageSet:
@@ -1130,7 +1134,8 @@ cmdFB:					; Arpeggio command.
 	and	a, #$7f			; \
 	inc	a			; | Put this value into the type.
 	mov	!ArpType+x, a		; /
-	
+
+.glissNoteCounter
 	mov	a, #$02			; \ Force the note count to be non-zero, so it's treated as a valid command.
 	mov	!ArpNoteCount+x, a	; / 
 	
@@ -1153,7 +1158,14 @@ cmdFB_fetchLength:
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, !ArpNoteCount+x	; \ If the note count is 0, then this channel is not using arpeggio.
 	beq	.return			; /
-	
+.nextNoteCheck
+	beq	.skipWaitTimeCheck
+	mov	a, !WaitTime		; \
+	cmp	a, !ArpLength+x		; | Don't prepare another note when the next base note is to be keyed on.
+	bcs	.skipWaitTimeCheck	; | An exception is made if the requested length is less than or equal
+	cmp	a, $70+x		; | to !WaitTime, since they bypass keying off anyways that way.
+	bcs	.return			; /
+.skipWaitTimeCheck
 	mov	a, !ArpTimeLeft+x	; \
 	dec	a			; | Decrement the timer.
 	mov	!ArpTimeLeft+x, a	; /
