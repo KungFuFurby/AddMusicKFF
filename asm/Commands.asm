@@ -1397,7 +1397,7 @@ if !noVcmdFB = !false
 	
 	mov	a, #$00			; \
 	mov	!ArpCurrentDelta+x, a	; / The current pitch change is 0.
-	
+HandleArpeggio_return:
 	ret
 	
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
@@ -1408,10 +1408,8 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	dec	a			; | Decrement the timer.
 	mov	!ArpTimeLeft+x, a	; /
 	beq	.doStuff		; If the time left is 0, then we have work to do.
-	cmp	a, !WaitTime		; \ If the time left is 2 (or 1), then key off this voice in preparation. 
-	beq	.keyOffVoice		; /
-.return
-	ret				; Otherwise, do nothing.
+	cbne	!WaitTime, .return	; If the time left is 2 (or 1), then key off this voice in preparation. 
+					; Otherwise, do nothing.
 	
 .keyOffVoice
 	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
