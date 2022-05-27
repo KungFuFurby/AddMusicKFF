@@ -1351,9 +1351,7 @@ if !noVcmdFB = !false
 	mov	!ArpNoteCount+x, a	; / (But if it's negative, then it's a special command).
 	push	a			; Remember it.
 	
-	call	GetCommandDataFast	; \ Save the length between each change.
-	mov	!ArpLength+x, a		; |
-	mov	!ArpTimeLeft+x, a	; /
+	call	.fetchLength
 	
 	mov	a, $30+x		; \
 	mov	!ArpNotePtrs+x, a	; | The current channel pointer points to the sequence of notes,
@@ -1388,9 +1386,7 @@ if !noVcmdFB = !false
 	mov	a, #$02			; \ Force the note count to be non-zero, so it's treated as a valid command.
 	mov	!ArpNoteCount+x, a	; / 
 	
-	call	GetCommandDataFast	; \ Save the length between each change.
-	mov	!ArpLength+x, a		; |
-	mov	!ArpTimeLeft+x, a	; /
+	call	.fetchLength
 	
 	call	GetCommandDataFast	; \ The note difference goes into the note index.
 	mov	!ArpSpecial+x, a	; / Yes, its purpose changes here.
@@ -1398,6 +1394,12 @@ if !noVcmdFB = !false
 	mov	a, #$00			; \
 	mov	!ArpCurrentDelta+x, a	; / The current pitch change is 0.
 HandleArpeggio_return:
+	ret
+
+cmdFB_fetchLength:
+	call	GetCommandDataFast	; \ Save the length between each change.
+	mov	!ArpLength+x, a		; |
+	mov	!ArpTimeLeft+x, a	; /
 	ret
 	
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
