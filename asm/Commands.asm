@@ -1153,7 +1153,14 @@ cmdFB_fetchLength:
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, !ArpNoteCount+x	; \ If the note count is 0, then this channel is not using arpeggio.
 	beq	.return			; /
-	
+.nextNoteCheck
+	beq	.skipWaitTimeCheck
+	mov	a, !WaitTime		; \
+	cmp	a, !ArpLength+x		; | Don't prepare another note when the next base note is to be keyed on.
+	bcs	.skipWaitTimeCheck	; | An exception is made if the requested length is less than or equal
+	cmp	a, $70+x		; | to !WaitTime, since they bypass keying off anyways that way.
+	bcs	.return			; /
+.skipWaitTimeCheck
 	mov	a, !ArpTimeLeft+x	; \
 	dec	a			; | Decrement the timer.
 	mov	!ArpTimeLeft+x, a	; /
