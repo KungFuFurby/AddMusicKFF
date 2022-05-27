@@ -199,7 +199,7 @@ if !noSFX = !false
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
-	mov   x, #$01
+	inc   x
 	call  ReadInputRegister             ; read/send APU1
 	mov   x, #$03
 	call  ReadInputRegister             ; read/send APU3
