@@ -3331,6 +3331,7 @@ L_10A1:
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3340,7 +3341,7 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
-	
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +
