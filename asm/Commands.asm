@@ -116,7 +116,7 @@ if !noSFX = !false
 	bne	.DSPWriteDirectionGate1
 endif	
 	push	y
-	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
+	call	ModifyNoise
 	pop	y
 .DSPWriteDirectionGate1
 	bra	.incXY
@@ -149,13 +149,10 @@ endif
 	inc	y			;
 	mov	a, ($14)+y		; The final byte is the sub multiplier.
 	mov	$02f0+x, a		;
+	call	EffectModifier
 	
 	inc	y			; If this was a percussion instrument,
 	mov	a, ($14)+y		; Then it had one extra pitch byte.  Get it just in case.
-	
-	push	a	
-	call	EffectModifier
-	pop	a
 
 	ret
 
@@ -933,8 +930,8 @@ HotPatchVCMDByte0Bit2Storages:
 	db	L_10B2_subroutine-L_10B2_subroutineBranchGate-2
 
 	dw	L_10B2_zeroVCMDCheckGate+1
-	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
 	db	L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
+	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
 HotPatchVCMDByte0Bit2StoragesEOF:
 
 	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition
@@ -1148,7 +1145,7 @@ cmdFB:					; Arpeggio command.
 	
 	mov	a, #$00			; \
 	mov	!ArpCurrentDelta+x, a	; / The current pitch change is 0.
-	
+HandleArpeggio_return:
 	ret
 	
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
@@ -1159,10 +1156,8 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	dec	a			; | Decrement the timer.
 	mov	!ArpTimeLeft+x, a	; /
 	beq	.doStuff		; If the time left is 0, then we have work to do.
-	cmp	a, !WaitTime		; \ If the time left is 2 (or 1), then key off this voice in preparation. 
-	beq	.keyOffVoice		; /
-.return
-	ret				; Otherwise, do nothing.
+	cbne	!WaitTime, .return	; If the time left is 2 (or 1), then key off this voice in preparation. 
+					; Otherwise, do nothing.
 	
 .keyOffVoice
 	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
