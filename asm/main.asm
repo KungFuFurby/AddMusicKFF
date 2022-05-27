@@ -2338,9 +2338,6 @@ HandleArpeggioInterrupt:
 	dec	a
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
-	mov	a, y			; \
-	cmp	a, #$c6			; | Ties/rests don't mess up glissando.
-	bcs	.notGlissando		; /
 	mov	a, !ArpType+x		; \
 	cmp	a, #$02			; |
 	bne	.notGlissando		; | If the arpeggio type is glissando,
