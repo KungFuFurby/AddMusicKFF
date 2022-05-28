@@ -2109,7 +2109,12 @@ void Music::markEchoBufferAllocVCMD()
 
 void Music::parseNote()
 {
-	passedNote[channel] = true;
+	if (channel != 8) {
+		passedNote[channel] = true;
+	}
+	else {
+		passedNote[prevChannel] = true;
+	}
 	j = tolower(text[pos]);
 	pos++;
 
@@ -2264,7 +2269,7 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
-	if (songTargetProgram == 1) {
+	if (songTargetProgram == 1 && nonNativeCmdWarning) {
 		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
 		nonNativeCmdWarning = false;
 	}
