@@ -586,6 +586,20 @@ SubC_3:
 	eor	(!MusicEchoChannels), ($48)
 	bra	EffectModifier
 
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+SubC_10:
+	or	(!MusicPModChannels), ($48)
+	bra	EffectModifier
+
+SubC_11:
+	or	(!MusicPModChannels), ($48)
+SubC_B:
+	eor	(!MusicPModChannels), ($48)
+	bra	EffectModifier
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF8:					; Noise command.
 {

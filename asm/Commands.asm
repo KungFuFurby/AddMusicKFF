@@ -732,10 +732,6 @@ SubC_13:
 SubC_2:
 	eor	!WaitTime, #$03
 	ret
-
-SubC_E:
-	or	(!MusicEchoChannels), ($48)
-	jmp	EffectModifier
 	
 SubC_8:
 	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
@@ -744,16 +740,6 @@ SubC_8:
 SubC_A:
 	mov	!SecondVTable, #$00		; Toggle which velocity table we're using.
 	ret
-
-SubC_10:
-	or	(!MusicPModChannels), ($48)
-	jmp	EffectModifier
-
-SubC_11:
-	or	(!MusicPModChannels), ($48)
-SubC_B:
-	eor	(!MusicPModChannels), ($48)
-	jmp	EffectModifier
 
 SubC_14:
 	mov	!WaitTime, #$01
