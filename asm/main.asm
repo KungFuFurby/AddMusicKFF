@@ -570,11 +570,10 @@ endif
 
 ; add pitch slide delta and set DSP pitch
 L_09CD:
-	mov	a, #$02b0&$FF
-	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
+	mov	a, #$02b0&$FF      ; pitch (notenum fixed-point)
 	dec	$90+x
 	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
-	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+	call	L_1075Setup2       ; add pitch slide delta to value                                ;ERROR
 L_112A:
 DDEEFix:
 {
@@ -2613,10 +2612,9 @@ L_0FDB:
 	beq	L_0FEB
 	or	($5c), ($48)
 	mov	a, #$0240&$FF
-	mov	y, #$0240>>8
 	dec	$80+x
 	;Modifies $0240-$0241, $0250-$0251, $0260
-	call	L_1075
+	call	L_1075Setup2
 L_0FEB:
 	mov	y, $b1+x
 	beq	L_1013
@@ -2651,10 +2649,9 @@ L_1019:
 ; do: pan fade and set volume
 L_1024:
 	mov	a, #$0280&$FF
-	mov	y, #$0280>>8
 	dec	!PanFadeDuration+x
 	;Modifies $0280-$0281, $0290-$0291, $02a0
-	call	L_1075
+	call	L_1075Setup2
 L_102D:
 	mov	a, !Pan+x		; Get the pan for this channel.
 	mov	y, a		;
@@ -2739,6 +2736,10 @@ endif
 	bbc1	$12.1, L_103B
 	ret
 ; add fade delta to value (set final value at end)
+L_1075Setup2:
+	push	p
+	mov	y, #$02
+	pop	p
 L_1075:
 	movw	$14, ya		;
 	clrc			; Fade delta counter decides which way this branch goes

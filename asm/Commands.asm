@@ -1007,7 +1007,7 @@ HotPatchVCMDByte1Bit6StoragesEOF:
 HotPatchPresetTable:
 	  ;%!xyzabcd
 	  ;%! - New byte specified (shouldn't be found in the presets for now)
-	   ;%x - Reserved for playback adjustment for other Addmusics
+	   ;%x - When using arpeggio, glissando disables itself after one base note
 	    ;%y - Echo writes are disabled when EDL is zero on initial playback of local song
 	     ;%z - $F3 VCMD zeroes out pitch base fractional multiplier
 	      ;%a - $DD VCMD accounts for per-channel transposition
@@ -1016,7 +1016,7 @@ HotPatchPresetTable:
 	         ;%d - Arpeggio doesn't play during rests
 	db %00000000 ; 00 - AddmusicK1.0.8 and earlier (not counting Beta)
 	             ; %??0?000? also replicate Vanilla SMW's behavior
-	db %00111111 ; 01 - AddmusicK1.0.9
+	db %01111111 ; 01 - AddmusicK1.0.9
 	db %00000000 ; 02 - AddmusicK Beta
 	db %00000000 ; 03 - Romi's Addmusic404
 	db %00000000 ; 04 - Addmusic405
