@@ -733,7 +733,44 @@ endif
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
+SubC_table2_PitchMod:
+	mov     !MusicPModChannels, a	; \ This is for music.
+	bra	EffectModifier		; / Call the effect modifier routine.
 
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
+SubC_3:
+	eor	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+SubC_10:
+	or	(!MusicPModChannels), ($48)
+	bra	EffectModifier
+
+SubC_11:
+	or	(!MusicPModChannels), ($48)
+SubC_B:
+	eor	(!MusicPModChannels), ($48)
+	bra	EffectModifier
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF8:					; Noise command.
+{
+Noiz:
+		or	(!MusicNoiseChannels), ($48)
+if !noSFX = !false
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
+endif
+		call	ModifyNoise
++	
+}
 
 EffectModifier:				; Call this whenever either $1d or the various echo, noise, or pitch modulation addresses are modified.
 {	
@@ -933,6 +970,13 @@ RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore 
 .restoreSample				; \ 
 	jmp   RestoreMusicSample	; / Fix sample.
 }
+
+SubC_9:
+	mov     x, $46				; \ 
+	mov	a, #$00				; | Turn the current instrument back on.
+	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
+	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
+
 if !noSFX = !false
 HandleSFXVoice:
 {
@@ -2672,6 +2716,37 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF0:					; Echo off
+{
+	mov	!MusicEchoChannels, a           ; clear all echo vbits
+L_0F22: 
+	mov	y, a
+	movw	$61, ya            ; zero echo vol L shadow
+	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
+	call	L_0EEB             ; set echo vol DSP regs from shadows
+	set1	!NCKValue.5        ; disable echo write
+}
+SetFLGFromNCKValue:
+	mov	a, !NCKValue
+ModifyNoise:				; A should contain the noise value.
+	and	a, #$1f
+	and	!NCKValue, #$e0		; Clear the current noise bits.
+	or	a, !NCKValue		; \ Set and save the current noise bits.
+	mov	!NCKValue, a		; / 
+	mov	y, #$6c			; \ Write
+	bra	DSPWrite		; /
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF6:					; DSP Write command.
+{
+	push a
+	call GetCommandDataFast
+	pop y
+	bra DSPWrite
+}
+
 SubC_1E:
 KeyOffVoiceWithCheck:
 if !noSFX = !false
@@ -3578,16 +3653,6 @@ L_124D:
 	mov	a, y		; /
 	mov	$0371+x, a         ; voice volume
 	ret
-	
-SetFLGFromNCKValue:
-	mov	a, !NCKValue
-ModifyNoise:				; A should contain the noise value.
-	and	a, #$1f
-	and	!NCKValue, #$e0		; Clear the current noise bits.
-	or	a, !NCKValue		; \ Set and save the current noise bits.
-	mov	!NCKValue, a		; / 
-	mov	y, #$6c			; \ Write
-	jmp	DSPWrite		; /
 
 ; for 0C89 - note dur%'s
 NoteDurations:
