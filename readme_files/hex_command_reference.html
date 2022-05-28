@@ -806,7 +806,7 @@
 	Byte 0: %xyzabcde...<br>
 	<ul>
 	<li>%x - Define a new byte. Each byte that has this bit set will cause another byte to be defined. By default, all undefined bytes have their bits cleared.</li>
-	<li>%y - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%y - When set, glissando runs for only one note. Otherwise, it runs for two notes.</li>
 	<li>%z - When set, during buffer initialization done through the $FA $04 command, echo writes are not initially enabled if a zero echo delay is used (the $F1 command will enable them). Otherwise, echo writes are enabled even if a zero echo delay is used: as a side effect, $FF00-$FF03 will be overwritten in ARAM, meaning extremely large songs may lose some data (most likely sample data) when crossing this region. <b>This must be used at the start of the song on the lowest number channel prior to both any intro markers and notes in order to properly work, otherwise this won't stop $FF00-$FF03 from being overwritten if you are not using echo.</b></li>
 	<li>%a - When set, the $F3 command will zero out the fractional pitch base. Otherwise, this operation is not performed.</li>
 	<li>%b - When set, $FA $02 (Semitone tune) is not ignored by the $DD command for its target note. Otherwise, $FA $02 (Semitone tune) is ignored by the $DD command's target note.</li>
