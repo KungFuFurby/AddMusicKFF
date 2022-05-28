@@ -7,6 +7,7 @@
 #include <cstring>
 #include <map>
 #include <stack>
+#include <algorithm>
 
 #include "fs.h"		// // //
 
@@ -22,7 +23,7 @@ SoundEffect soundEffectsDF9[256];
 SoundEffect soundEffectsDFC[256];
 SoundEffect *soundEffects[2] = {soundEffectsDF9, soundEffectsDFC};
 //std::vector<SampleGroup> sampleGroups;
-std::vector<BankDefine *> bankDefines;
+std::vector<std::unique_ptr<BankDefine>> bankDefines;
 std::map<File, int> sampleToIndex;
 
 bool convert = true;

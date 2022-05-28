@@ -164,6 +164,17 @@ includeonce
 
 ;=======================================
 ;---------------
+!useSFXSequenceFor1DFASFX = !true
+
+;Default setting: !true
+;Vanilla SMW setting: !false
+;---------------
+; Replaces the hard-coded 1DFA SFX with a standard sequence used for 1DF9
+; and 1DFB.
+;=======================================
+
+;=======================================
+;---------------
 !PSwitchSFXCh0ID = 5
 
 ;Default setting: 5
@@ -212,6 +223,18 @@ includeonce
 ; WARNING: This number starts from zero, not 1, like the MML channels!
 ; Also, please don't include the # sign: this is used for more than just a
 ; constant number: it's also involved in math operations.
+;=======================================
+
+;=======================================
+;---------------
+!PSwitchStarRestart = !false
+
+;Default setting: !false
+;Vanilla setting: !true
+;---------------
+; If you set this to true, then the P-switch and star global songs will 
+; restart whenever they're called again (i.e., by pressing another P-switch
+; or collecting another star).
 ;=======================================
 
 ;=======================================
