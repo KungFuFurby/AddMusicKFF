@@ -12,6 +12,71 @@ TerminateIfSFXPlaying:
 	ret
 endif
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdED:					; ADSR
+{
+	push	a
+	
+	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	!BackupSRCN+x, a	; /
+	
+	call	GetBackupInstrTable
+	
+	pop	a			; \ 
+	eor	a,#$80			; | Write ADSR 1 to the table.
+	push	p
+	mov	y, #$01			; | 
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \
+	mov	y, #$02			; | Write ADSR 2 to the table.
+	pop	p			; | 
+	bmi	+			; | 
+	inc	y			; | Write GAIN to the table.
++	mov	($10)+y, a		; /
+	
+	bra	UpdateInstr
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF3:					; Sample load command
+{
+MSampleLoad:
+	push	a
+	mov	a, #$01
+	mov	!BackupSRCN+x, a
+	call	GetBackupInstrTable
+	pop	a			; \ 
+	mov	y, #$00			; | Write the sample to the backup table.
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \ 
+	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; |
+.clearSubmultiplierPatchGate		; |
+	inc	y			; | Zero out pitch sub-multiplier.
+	bra	.clearSubmultiplierSkip	; |
+	mov	a, #$00			; |
+	mov	($10)+y, a		; /
+.clearSubmultiplierSkip
+	bra	UpdateInstr
+}
+
+SubC_table2_GAIN:
+	push	a
+	
+	mov	a, #$01
+	mov	!BackupSRCN+x, a
+	
+	call	GetBackupInstrTable
+	
+	pop	a			;
+	mov     y, #$03			; \ GAIN byte = parameter
+	mov 	($10)+y, a		; /
+	mov	y, #$01			
+	mov	a, ($10)+y		; \ Clear ADSR bit 7.
+	and	a, #$7f			; /
+	mov	($10)+y, a		;
+	bra	UpdateInstr
+
 RestoreMusicSample:
 	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
 	mov	!BackupSRCN+x, a	; /
@@ -243,6 +308,11 @@ cmdE1:					; Fade the master volume
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_7:
+	mov	a, #$00				; \ 
+	mov	$0387, a			; | Set the tempo to normal.
+	mov	a, $51				; /
+
 cmdE2:					; Change the tempo
 {
 L_0E14: 
@@ -318,31 +388,6 @@ label3:
 label4:
 	ret
 }	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdED:					; ADSR
-{
-	push	a
-	
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
-	
-	call	GetBackupInstrTable
-	
-	pop	a			; \ 
-	eor	a,#$80			; | Write ADSR 1 to the table.
-	push	p
-	mov	y, #$01			; | 
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \
-	mov	y, #$02			; | Write ADSR 2 to the table.
-	pop	p			; | 
-	bmi	+			; | 
-	inc	y			; | Write GAIN to the table.
-+	mov	($10)+y, a		; /
-	
-	jmp	UpdateInstr
-		
-}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
 {
@@ -435,17 +480,9 @@ L_0EEB:
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF0:					; Echo off
+;cmdF0:					; Echo off
 {
-	mov	!MusicEchoChannels, a           ; clear all echo vbits
-L_0F22: 
-	mov	y, a
-	movw	$61, ya            ; zero echo vol L shadow
-	movw	$63, ya            ; zero echo vol R shadow
-	call	EffectModifier
-	call	L_0EEB             ; set echo vol DSP regs from shadows
-	set1	!NCKValue.5        ; disable echo write
-	jmp	SetFLGFromNCKValue
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -560,28 +597,6 @@ cmdF2:					; Echo fade
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF3:					; Sample load command
-{
-MSampleLoad:
-	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	call	GetBackupInstrTable
-	pop	a			; \ 
-	mov	y, #$00			; | Write the sample to the backup table.
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$04			; | Get the pitch multiplier byte.
-	mov	($10)+y, a		; |
-	inc	y			; | Zero out pitch sub-multiplier.
-.clearSubmultiplierPatchGate		; |
-	bra	.clearSubmultiplierSkip	; |
-	mov	a, #$00			; |
-	mov	($10)+y, a		; /
-.clearSubmultiplierSkip
-	jmp	UpdateInstr
-}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF4:					; Misc. command
 {
 	asl	a
@@ -632,10 +647,6 @@ SubC_1:
 SubC_2:
 	eor	!WaitTime, #$03
 	ret
-
-SubC_3:
-	eor	(!MusicEchoChannels), ($48)
-	jmp	EffectModifier
 	
 SubC_5:
 	mov    a, #$00
@@ -650,23 +661,9 @@ SubC_6:
 	eor	($6e), ($48)
 	bra	SubC_00
 	
-SubC_7:
-	mov	a, #$00				; \ 
-	mov	$0387, a			; | Set the tempo to normal.
-	mov	a, $51				; |
-	jmp	L_0E14				; /
-	
 SubC_8:
 	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
-	ret
-	
-SubC_9:
-	mov     x, $46				; \ 
-	mov	a, #$00				; | Turn the current instrument back on.
-	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
-	jmp	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
-	
-	
+	ret	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -682,13 +679,9 @@ cmdF5:					; FIR Filter command.
 +		ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF6:					; DSP Write command.
+;cmdF6:					; DSP Write command.
 {
-	push a
-	call GetCommandDataFast
-	pop y
-	jmp DSPWrite
-	;ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF7:					; Originally the "write to ARAM command". Disabled by default.
@@ -704,19 +697,9 @@ cmdF7:					; Originally the "write to ARAM command". Disabled by default.
 ;	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF8:					; Noise command.
+;cmdF8:					; Noise command.
 {
-Noiz:
-		or	(!MusicNoiseChannels), ($48)
-if !noSFX = !false
-		and	a, #$1f
-		mov	$0389, a
-		cmp	!SFXNoiseChannels, #$00
-		bne	+
-endif
-		call	ModifyNoise
-+
-		jmp	EffectModifier		
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF9:					; Send data to 5A22 command.
@@ -1037,27 +1020,7 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
-
-.PitchMod
-	mov     !MusicPModChannels, a	; \ This is for music.
-	jmp	EffectModifier		; / Call the effect modifier routine.
 	
-.GAIN	
-	push	a
-	
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	
-	call	GetBackupInstrTable
-	
-	pop	a			;
-	mov     y, #$03			; \ GAIN byte = parameter
-	mov 	($10)+y, a		; /
-	mov	y, #$01			
-	mov	a, ($10)+y		; \ Clear ADSR bit 7.
-	and	a, #$7f			; /
-	mov	($10)+y, a		;
-	jmp	UpdateInstr
 .HFDTune
 	mov     !HTuneValues+x, a
 	ret
