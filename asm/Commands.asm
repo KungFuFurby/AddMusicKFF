@@ -310,6 +310,7 @@ cmdE1:					; Fade the master volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SubC_7:
 	mov	a, #$00				; \ 
+SubC_7_storeTo387:
 	mov	$0387, a			; | Set the tempo to normal.
 	mov	a, $51				; /
 

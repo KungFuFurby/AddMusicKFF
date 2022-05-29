@@ -200,10 +200,8 @@ if !noSFX = !false
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
-	inc   x
-	call  ReadInputRegister             ; read/send APU1
-	mov   x, #$03
-	call  ReadInputRegister             ; read/send APU3
+	call  ReadInputRegisterIncX1        ; read/send APU1
+	call  ReadInputRegisterIncX2        ; read/send APU3
 if !noSFX = !false	
 	mov	a, !ProtectSFX6
 	beq	+
@@ -276,6 +274,10 @@ L_059D:
 }
 	
 }	
+ReadInputRegisterIncX2:
+	inc	x
+ReadInputRegisterIncX1:
+	inc	x
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
 ;L_05A5:
 ReadInputRegister:
@@ -1448,9 +1450,7 @@ SFXTerminateCh:
 endif
 SpeedUpMusic:
 	mov	a, #$0a
-	mov	$0387, a
-	mov	a, $51
-	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
 if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
