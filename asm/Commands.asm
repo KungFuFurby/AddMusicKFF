@@ -365,12 +365,12 @@ TSampleLoad:
 cmdE6:					; Second loop
 {
 	bne   label2
+	dec   a				; \ ?
+	mov   $01f0+x,a			; /
 	mov   a,$30+x			; \
 	mov   $01e0+x,a			; | Save the current song position into $01e0
 	mov   a,$31+x			; |
 	mov   $01e1+x,a			; /
-	mov   a,#$ff			; \ ?
-	mov   $01f0+x,a			; /
 	ret				;
 
 label2:
