@@ -199,10 +199,8 @@ if !noSFX = !false
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
-	inc   x
-	call  ReadInputRegister             ; read/send APU1
-	mov   x, #$03
-	call  ReadInputRegister             ; read/send APU3
+	call  ReadInputRegisterIncX1        ; read/send APU1
+	call  ReadInputRegisterIncX2        ; read/send APU3
 if !noSFX = !false	
 	mov	a, !ProtectSFX6
 	beq	+
@@ -351,6 +349,10 @@ Square_getSpecialWavePtr:
 	ret
 	
 }	
+ReadInputRegisterIncX2:
+	inc	x
+ReadInputRegisterIncX1:
+	inc	x
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
 ;L_05A5:
 ReadInputRegister:
@@ -926,11 +928,9 @@ endif
 	mov 	$15, a			; / 
 	push	x			; \ 
 	mov	x, #$00			; | Jump to that address
-	call	+			; | (no "call (d+x)")
+	call	JumpToUploadLocation	; | (no "call (d+x)")
 	pop	x			; / 
 	bra	.getMoreSFXData		;
-+					;
-	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$dd			; \ 
@@ -1503,9 +1503,7 @@ SFXTerminateCh:
 endif
 SpeedUpMusic:
 	mov	a, #$0a
-	mov	$0387, a
-	mov	a, $51
-	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
 if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
@@ -1773,17 +1771,16 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	clr1 !NCKValue.6		; Unset the mute flag.
-	call SetFLGFromNCKValue
-
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
-	ret
+
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 
 .silent:	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-	
+
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
@@ -1819,7 +1816,7 @@ L_099C:
 	mov	a, #$ff
 	call	KeyOffVoices
 
-	mov	a, #$00
+	inc	a
 	call	SetEDLDSP		; Also set the delay to 0.
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
@@ -3545,7 +3542,7 @@ endif
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
-	
+JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address
 	
 GetSampleTableLocation:
@@ -3568,7 +3565,7 @@ GetSampleTableLocation:
 	pop	a
 	mov	$f5, a		; Echo back DIR
 	mov	y, #$00
-	jmp	($0014+x)		; Jump to the upload location.
+	bra	JumpToUploadLocation	; Jump to the upload location.
 	
 
 	incsrc "InstrumentData.asm"
