@@ -852,11 +852,9 @@ endif
 	mov 	$15, a			; / 
 	push	x			; \ 
 	mov	x, #$00			; | Jump to that address
-	call	+			; | (no "call (d+x)")
+	call	JumpToUploadLocation	; | (no "call (d+x)")
 	pop	x			; / 
 	bra	.getMoreSFXData		;
-+					;
-	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$dd			; \ 
@@ -3460,6 +3458,7 @@ endif
 if !PSwitchIsSFX = !true
 	mov	$1b, #$00
 endif	
+JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address
 	
 GetSampleTableLocation:
@@ -3482,7 +3481,7 @@ GetSampleTableLocation:
 	pop	a
 	mov	$f5, a		; Echo back DIR
 	mov	y, #$00
-	jmp	($0014+x)		; Jump to the upload location.
+	bra	JumpToUploadLocation	; Jump to the upload location.
 	
 
 	incsrc "InstrumentData.asm"
