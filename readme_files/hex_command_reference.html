@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html>
 <head>
-	<title>AddmusicK Readme</title>
+	<title>Hex Command Reference - AddmusicK Readme</title>
 	<link href="readme.css" type="text/css" rel="stylesheet">
 	<script>
 	var attack = 4, decay = 2, sustain = 5, release = 9;
@@ -208,7 +208,7 @@
 
 </head>
 <body text="#FFFFFF" onload="init();">
-	<h1>Command Reference</h1><br><br>
+	<h1>Hex Command Reference</h1><br><br>
 	<h2>Standard commands:</h2>
 	The following is a list of all available hex commands that may be used in a song.  In all cases, the parameters are listed in the order in which they are to be used after the initial command.  If a parameter is a number, then that parameter must be the specified constant instead of being variable.
 	
@@ -742,6 +742,56 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 <tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">Hot Patch Preset<br></td>
+		<td rowspan="2">Applies a preset that replicates the music playback of a different Addmusic. Note that these settings are "global"; i.e. it applies to all channels. Preset IDs are as following (not all of them have been properly implemented yet, and are subject to change as new ones are added on)... <br>
+		<ul>
+		<li>$00 - AddmusicK 1.0.8 and earlier (not counting Beta)</li>
+		<li>$01 - AddmusicK 1.0.9</li>
+		<li>$02 - AddmusicK Beta</li>
+		<li>$03 - Romi's Addmusic404</li>
+		<li>$04 - Addmusic405</li>
+		<li>$05 - AddmusicM</li>
+		<li>$06 - carol's MORE.bin</li>
+		<li>$07-$7F - Reserved. Do not use.</li>
+		<li>$80-$FF - User-defined Preset ID. Note that the preceding presets all use a pre-defined set of bits to use: you don't need to follow the same procedure and can do something else instead.</li>
+		</ul>
+<br></td>
+		<td>$7F</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>Preset ID<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">Hot Patch Toggle Bits<br></td>
+		<td rowspan="2">Contains a series of individual patches that can be toggled on and off on a per-bit basis. Note that these settings are "global"; i.e. it applies to all channels. The number of bytes this command takes up is variable: setting the highest bit (%1???????) means you define a second byte that contains an additional seven bits to set on and off (they will otherwise default to off). These bits are pre-defined...<br>
+	Byte 0: %xyzabcde...<br>
+	<ul>
+	<li>%x - Define a new byte. Each byte that has this bit set will cause another byte to be defined. By default, all undefined bytes have their bits cleared.</li>
+	<li>%y - When set, glissando runs for only one note. Otherwise, it runs for two notes.</li>
+	<li>%z - When set, during buffer initialization done through the $FA $04 command, echo writes are not initially enabled if a zero echo delay is used (the $F1 command will enable them). Otherwise, echo writes are enabled even if a zero echo delay is used: as a side effect, $FF00-$FF03 will be overwritten in ARAM, meaning extremely large songs may lose some data (most likely sample data) when crossing this region. <b>This must be used at the start of the song on the lowest number channel prior to both any intro markers and notes in order to properly work, otherwise this won't stop $FF00-$FF03 from being overwritten if you are not using echo.</b></li>
+	<li>%a - When set, the $F3 command will zero out the fractional pitch base. Otherwise, this operation is not performed.</li>
+	<li>%b - When set, $FA $02 (Semitone tune) is not ignored by the $DD command for its target note. Otherwise, $FA $02 (Semitone tune) is ignored by the $DD command's target note.</li>
+	<li>%c - When set, readahead looks inside loops and superloops. Otherwise, readahead does not look inside loops and superloops.</li>
+	<li>%d - When set, the GAIN register is written to first, then the ADSR registers when initializing an instrument. Otherwise, the ADSR registers are written to first, then GAIN.</li>
+	<li>%e - When set, arpeggio notes will not play during rests. Otherwise, they will run normally even if a rest is used.</li>
+	</ul>
+	All other bytes are currently undefined. They are subject to being used in future Addmusic versions.
+<br></td>
+		<td>$FE</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$...<br></td>
+		<td>Bits to set. An extra byte is defined for each byte that the highest bit is set on.<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+<tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
 		<td rowspan="3">$FB<br></td>
 		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Arpeggio</td>
@@ -879,7 +929,7 @@ With the exception of the hex command below, this was nearly identical to Vanill
 	</tr>
 	<tr>
 		<td rowspan="2">$ED</td>
-		<td rowspan="2">N/A<br>($F6 $x5 %1dddaaaa $F6 $x6 %1dddaaaa, where x is the channel ID, is the closest approximation: AMK's ADSR command has the same general functionality, but both writes to a backup table for restoration if interrupted by SFX and also supports GAIN)</td>
+		<td rowspan="2">N/A<br>($F6 $x5 %1dddaaaa $F6 $x6 %sssrrrrr, where x is the channel ID, is the closest approximation: AMK's ADSR command has the same general functionality, but both writes to a backup table for restoration if interrupted by SFX and also supports GAIN)</td>
 		<td rowspan="2">ADSR<br></td>
 		<td rowspan="2">Enables a custom ADSR on the current channel. See <a href="#ADSRInfo">here</a> for more information. Note that unlike AddmusicK's ADSR, this writes directly to the DSP registers and forces on ADSR, meaning GAIN is not supported.<br></td>
 		<td>$DA<br></td>
