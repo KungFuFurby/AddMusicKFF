@@ -1429,9 +1429,7 @@ SFXTerminateCh:
 endif
 SpeedUpMusic:
 	mov	a, #$0a
-	mov	$0387, a
-	mov	a, $51
-	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
 if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
