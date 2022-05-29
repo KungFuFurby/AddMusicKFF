@@ -852,11 +852,9 @@ endif
 	mov 	$15, a			; / 
 	push	x			; \ 
 	mov	x, #$00			; | Jump to that address
-	call	+			; | (no "call (d+x)")
+	call	JumpToUploadLocation	; | (no "call (d+x)")
 	pop	x			; / 
 	bra	.getMoreSFXData		;
-+					;
-	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$dd			; \ 
@@ -1697,17 +1695,16 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	clr1 !NCKValue.6		; Unset the mute flag.
-	call SetFLGFromNCKValue
-
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
-	ret
+
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 
 .silent:	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-	
+
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
@@ -1743,7 +1740,7 @@ L_099C:
 	mov	a, #$ff
 	call	KeyOffVoices
 
-	mov	a, #$00
+	inc	a
 	call	SetEDLDSP		; Also set the delay to 0.
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
@@ -3461,6 +3458,7 @@ endif
 if !PSwitchIsSFX = !true
 	mov	$1b, #$00
 endif	
+JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address
 	
 GetSampleTableLocation:
@@ -3483,7 +3481,7 @@ GetSampleTableLocation:
 	pop	a
 	mov	$f5, a		; Echo back DIR
 	mov	y, #$00
-	jmp	($0014+x)		; Jump to the upload location.
+	bra	JumpToUploadLocation	; Jump to the upload location.
 	
 
 	incsrc "InstrumentData.asm"
