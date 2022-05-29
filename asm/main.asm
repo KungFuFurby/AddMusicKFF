@@ -1697,17 +1697,16 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	clr1 !NCKValue.6		; Unset the mute flag.
-	call SetFLGFromNCKValue
-
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
-	ret
+
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 
 .silent:	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-	
+
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
