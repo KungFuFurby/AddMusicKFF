@@ -2066,6 +2066,9 @@ L_0B5A:
 	pop	y
 	pop	a
 	movw	$40, ya
+
+	mov	a, #$ff
+	mov	GlobalVolumeHi+1, a ; GlobalVolume = 255
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
@@ -2112,6 +2115,9 @@ endif
 	mov	!MusicEchoChannels, a
 	mov	!MusicNoiseChannels, a
 	mov	!SecondVTable, a
+	mov	GlobalVolumeLo+1, a
+	mov	GlobalVolumeFadeRateLo+1, a ; GlobalVolumeFade = 0
+	mov	GlobalVolumeFadeRateHi+1, a
 	; MODIFIED CODE END	
 	mov	$58, a             ; MasterVolumeFade = 0
 	mov	$60, a             ; EchoVolumeFade = 0
@@ -2168,16 +2174,49 @@ else
 	mov	a, #$ff
 	jmp	KeyOffVoices
 endif
-; fade volume out over 240 counts
-FadeOut:
-	mov	x, #$f0
-	mov	$58, x
-	mov	a, #$00
-	mov	$59, a
+; fade volume out over x counts
+;Bit 7: Must be set to 1
+;Bits 4-6: Fade speed ((x*32)+16 ticks, minimum 16, maximum 240)
+;Bits 0-3: Target volume (inverted: this way, $F means zero, and thus
+;                         makes $FF a 240-tick fade to zero volume)
+FadeSound:
+	;Read the fade length...
+	and	a, #%01110000
+	asl	a
+	or	a, #%00010000
+	mov	x, a
+	;Read the target volume...
+	mov	a, $02
+	and	a, #$0f
+	eor	a, #$0f ;Required so $FF = 240-tick fade to zero
+	mov	y, #$11
+	mul	ya
+	mov	FadeSoundTargetVolume+1, a
 	setc
-	sbc	a, !MasterVolume
+	sbc	a, GlobalVolumeHi+1
+	notc
+	db	$CA ;mov1 mem.bit,c opcode
+	dw	FadeSoundTargetCheckSign|(5<<13)
+	;mov1	FadeSoundTargetCheckSign.5, c ;TODO this errors? The error doesn't even output to the console!
+	db	$CA ;mov1 mem.bit,c opcode
+	dw	FadeSoundOverflowCheckSign|(5<<13)
+	;mov1	FadeSoundOverflowCheckSign.5, c ;TODO this errors? The error doesn't even output to the console!
+	notc
+	;mov	x, #$f0
+	;mov	$58, x
+	;mov	a, #$00
+	;mov	$59, a
+	;WARNING: CONFLICT WITH $E0 COMMAND (master volume)!
+	;This code has been revised.
+	;setc
+	;sbc	a, !MasterVolume
+	;A - Global volume delta
+	;X - Number of ticks
 	call	Divide16
-	movw	$5a, ya            ; set volume fade out after 240 counts
+	; set volume fade out after x counts
+	mov	GlobalVolumeFadeRateLo+1, a
+	mov	GlobalVolumeFadeRateHi+1, y
+	;movw	$5a, ya            
 	bra	L_0BE7
 ;
 ProcessAPU2Input:
@@ -2196,7 +2235,7 @@ ProcessAPU2Input:
 .nothing			; 
 	clrp			;
 	mov	a, $02
-	bmi	FadeOut		
+	bmi	FadeSound
 	beq	L_0BE7
 	jmp	PlaySong             ; play song in A
 L_0BE7:
@@ -2428,7 +2467,7 @@ L_0CFE:
 	call	L_0EEB
 L_0D03:
 	mov	a, $58
-	beq	L_0D17
+	beq	GlobalVolumeFadeProcessing
 	dbnz	$58, L_0D0E
 	movw	ya, $58
 	bra	L_0D12
@@ -2438,6 +2477,51 @@ L_0D0E:
 L_0D12:
 	movw	$56, ya
 	mov	$5c, #$ff          ; set all vol chg flags
+;MODIFIED CODE START
+;Perform a global volume fade independent of the master volume to avoid
+;conflicting with the SNES's fade commands every time the master volume is
+;set by a song.
+GlobalVolumeFadeProcessing:
+GlobalVolumeFadeRateLo:
+	mov	a, #$00
+	bne	GlobalVolumeFadeRateHi
+	mov	y, GlobalVolumeFadeRateHi+1
+	beq	L_0D17
+GlobalVolumeFadeRateHi:
+	mov	y, #$00
+;Keep fading the global volume until the target value is reached.
+	clrc
+GlobalVolumeLo:
+	mov	$14, #$00
+GlobalVolumeHi:
+	mov	$15, #$f0
+	addw	ya, $14
+
+FadeSoundOverflowCheckSign:
+	bcs	FadeSoundTargetVolume
+	mov	a, #$00
+	mov	y, #$00
+	mov	GlobalVolumeFadeRateLo+1, a
+	mov	GlobalVolumeFadeRateHi+1, y
+	bcc	FadeSoundVolumeWrite
+	mov	y, #$f0
+	bra	FadeSoundVolumeWrite
+
+FadeSoundTargetVolume:
+	cmp	y, #$00
+FadeSoundTargetCheckSign:
+	bcc	FadeSoundVolumeWrite
+
+;Target volume reached: stop fading the volume.
+	mov	y, FadeSoundTargetVolume+1
+	mov	a, #$00
+	mov	GlobalVolumeFadeRateLo+1, a
+	mov	GlobalVolumeFadeRateHi+1, a
+FadeSoundVolumeWrite:
+	mov	GlobalVolumeLo+1, a
+	mov	GlobalVolumeHi+1, y
+	mov	$5c, #$ff          ; set all vol chg flags
+;MODIFIED CODE END
 L_0D17:
 	mov	x, #$0e
 	mov	$48, #$80
@@ -3313,6 +3397,13 @@ L_124D:
 	mul	ya		; Multiply by qX
 	mov	a, !MasterVolume             ; master volume
 	mul	ya		; Multiply by master volume.
+;MODIFIED CODE HERE
+	mov	a, GlobalVolumeHi+1 ; Multiply by global volume
+	cmp	a, #$ff
+	beq	+
+	mul	ya
++
+;END MODIFIED CODE
 	mov	a, y		;
 	mul	ya		; \ Vol = [(Vol^2) / 2] ?
 	mov	a, y		; /
