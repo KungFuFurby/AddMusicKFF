@@ -2202,21 +2202,12 @@ FadeSound:
 	dw	FadeSoundOverflowCheckSign|(5<<13)
 	;mov1	FadeSoundOverflowCheckSign.5, c ;TODO this errors? The error doesn't even output to the console!
 	notc
-	;mov	x, #$f0
-	;mov	$58, x
-	;mov	a, #$00
-	;mov	$59, a
-	;WARNING: CONFLICT WITH $E0 COMMAND (master volume)!
-	;This code has been revised.
-	;setc
-	;sbc	a, !MasterVolume
 	;A - Global volume delta
 	;X - Number of ticks
 	call	Divide16
 	; set volume fade out after x counts
 	mov	GlobalVolumeFadeRateLo+1, a
-	mov	GlobalVolumeFadeRateHi+1, y
-	;movw	$5a, ya            
+	mov	GlobalVolumeFadeRateHi+1, y       
 	bra	L_0BE7
 ;
 ProcessAPU2Input:
