@@ -2195,12 +2195,9 @@ FadeSound:
 	setc
 	sbc	a, GlobalVolumeHi+1
 	notc
-	db	$CA ;mov1 mem.bit,c opcode
-	dw	FadeSoundTargetCheckSign|(5<<13)
-	;mov1	FadeSoundTargetCheckSign.5, c ;TODO this errors? The error doesn't even output to the console!
-	db	$CA ;mov1 mem.bit,c opcode
-	dw	FadeSoundOverflowCheckSign|(5<<13)
-	;mov1	FadeSoundOverflowCheckSign.5, c ;TODO this errors? The error doesn't even output to the console!
+	;NOTE: A bug in asar was circumnavigated: without &$1fff, it silently fails.
+	mov1	FadeSoundTargetCheckSign&$1fff.5, c
+	mov1	FadeSoundOverflowCheckSign&$1fff.5, c
 	notc
 	;A - Global volume delta
 	;X - Number of ticks
