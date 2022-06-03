@@ -68,6 +68,10 @@ public:
 	std::vector<unsigned short> mySamples;
 	//int mySampleCount;
 	int echoBufferSize;
+	bool hasEchoBufferCommand;
+	bool echoBufferAllocVCMDIsSet;
+	unsigned short echoBufferAllocVCMDLoc;
+	int echoBufferAllocVCMDChannel;
 
 	std::string statStr;
 
@@ -167,7 +171,7 @@ private:
 	int getHex(bool anyLength = false);
 	int getPitch(int j);
 	int getNoteLength(int);
-	int getNoteLengthModifier(int);
+	int getNoteLengthModifier(int, bool);
 
 	bool guessLength;
 	int resizedChannel;
@@ -178,7 +182,7 @@ private:
 	double superLoopLength;					// How many ticks were in the most previously declared super loop.
 	std::vector<std::pair<double, int>> tempoChanges;	// Where any changes in tempo occur. A negative tempo marks the beginning of the main loop, if an intro exists.
 
-	std::vector<std::vector<uint8_t>> remoteGainConversion;	// Containers that hold data for anticipation gain and rest/gain replacement so that we can convert it to a remote command.
+	std::vector<std::vector<uint8_t>> remoteGainConversion[9];	// Containers that hold data for anticipation gain and rest/gain replacement so that we can convert it to a remote command.
 	std::vector<unsigned int> remoteGainPositions[9];	// Container that holds the positions for the pointers that we have to go back and correct during old gain and remote command conversion.
 
 	bool baseLoopIsNormal;
@@ -193,6 +197,8 @@ private:
 	void handleSuperLoopExit(int loopCount);			// Call any time a definition of a super loop is exited.
 
 	void addNoteLength(double ticks);				// Call this every note.  The correct channel/loop will be automatically updated.
+	
+	void markEchoBufferAllocVCMD();		// Called when the Hot Patch VCMD is manually defined. Required because of a bit that handles a special case when the echo buffer size is zero.
 };
 
 #endif

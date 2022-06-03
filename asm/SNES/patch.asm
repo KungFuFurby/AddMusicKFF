@@ -1,5 +1,5 @@
-
-lorom
+;Don't stop program due to changing the mapper multiple times.
+warnings disable W1029
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -20,7 +20,7 @@ if !UsingSA1
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
 else
-	fastrom
+	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
 endif
@@ -47,6 +47,9 @@ endif
 !SampleCount		= !FreeRAM+$09
 !SRCNTableBuffer	= !FreeRAM+$0A
 
+!Trick   = !FreeRAM+$08
+!Tricker = !BonusEnd
+
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
 ; Normally you shouldn't need to change this.
 ;
@@ -63,7 +66,7 @@ endif
 ; FREERAM+$0009: Used as a buffer for the sample pointer/loop table.  Could be up to 1024 bytes long, but this is unlikely (4 bytes per sample; do the math).
 
 ; 1DFB: Use this to request a song to play (more or less default behavior).
-; 1DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
+; 0DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
 
 ; Special status byte details:
 
@@ -94,7 +97,7 @@ endif
 !MusicBackup = $0DDA|!SA1Addr2
 
 
-!DefARAMRet = $044E	; This is the address that the SPC will jump to after uploading a block of data normally.
+!DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 !TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
@@ -128,6 +131,15 @@ MainLabel:
 	PHB
 	PHK
 	PLB
+if !PSwitchStarRestart == !true
+	lda !Trick
+	beq +
+	lda !CurrentSong
+	sta !MusicReg
+	lda #$00
+	sta !Trick
++
+endif
 	JSR HandleSpecialSongs
 	REP #$20
 	LDA !SFX1DF9Reg
@@ -149,8 +161,15 @@ MainLabel:
 	BEQ NoMusic
 	CMP !CurrentSong
 	BNE ChangeMusic
+if !PSwitchStarRestart == !true
+	cmp !GlobalMusicCount+1
+	bcc ChangeMusic
+endif
 
 End:	
+if !PSwitchStarRestart == !true	
+	stz !MusicMir
+endif
 	CLI
 	PLB
 	PLP
@@ -188,9 +207,22 @@ PlayDirect:
 ;	STA !CurrentSong
 ;	BRA End
 
+if !PSwitchStarRestart == !true
+	cmp !CurrentSong
+	beq +
+endif
+
 	STA !MusicReg
 	STA !CurrentSong
 	BRA End
+
+if !PSwitchStarRestart == !true
++	lda #$01
+	sta !Trick
+	lda !Tricker
+	sta !MusicReg
+	bra End
+endif
 
 	
 ChangeMusic:
@@ -205,8 +237,10 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
+if !PSwitchIsSFX = !false
 ;	CMP !PSwitch
 ;	BEQ .doExtraChecks
+endif
 ;	CMP !Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
@@ -243,7 +277,9 @@ LevelEndMusicChange:
 	;;; CMP !IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
+if !PSwitchStarRestart == !false
 	STZ !MusicMir
+endif
 	BRA End
 	
 Okay:
@@ -256,8 +292,10 @@ Okay:
 	BEQ Fade			; /
 	
 	LDA !CurrentSong		; \ 
+if !PSwitchIsSFX = !false
 	CMP !PSwitch			; |
 	BEQ +				; |
+endif
 	CMP !Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
 	;;;BRA ++			; |
@@ -332,6 +370,13 @@ Okay:
 
 	LDA #$FF		; Send this as early as possible
 	STA $2141		;
+
+	LDA $0100|!SA1Addr2	;\     Check Gamemode.
+    	CMP #$0E		; | If on the Overworld,
+	BNE +			; |    
+	WAI			;/     then wait for an interrupt to prevent garbage during Submap transitions.
+    
++
 	
 	SEI
 	
@@ -606,24 +651,87 @@ HandleSpecialSongs:
 	RTS
 	
 .powMusic
+	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
+	ora $1434|!SA1Addr2		;| (keyhole)
+	ora $14AB|!SA1Addr2		;| (bonus game)
+	bne ++					;/ This prevents an issue with non-standard goal songs.
+
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+	lda $1490|!SA1Addr2		; If both P-switch and starman music should be playing
+	cmp #$1E
+	bcs .starMusic			;;; just play the star music
+if !PSwitchIsSFX = !false
+	lda !MusicMir
+	cmp !PSwitch
+	beq ++
+	lda !CurrentSong
+	cmp !PSwitch
+	bne +
+endif
+
+	stz !MusicMir
+	rts
+
+if !PSwitchIsSFX = !false
++	LDA !PSwitch
+	STA !MusicMir
+++	RTS
+endif
+
+else
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
-	BNE .starMusic			;;; just play the star music
+	CMP #$1E
+	BCS .starMusic			;;; just play the star music
+endif
+
+if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
 	LDA !PSwitch
 	STA !MusicMir
-+
+endif
+++
 	RTS
 	
 .starMusic
-	LDA !Starman
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+	lda !MusicMir
+	cmp !Starman
+	beq ++
+	lda !CurrentSong
+	cmp !Starman
+	bne +
+	stz !MusicMir
+	rts
+endif
+
++	LDA !Starman
 	STA !MusicMir
-+
-	RTS
+++	RTS
+
 	
 .restoreFromStarMusic
 	LDA !MusicBackup
 	STA !MusicMir
 +
 	RTS
+
+if !PSwitchStarRestart == !true
+SkipPowStar:
+	lda !CurrentSong
+	cmp !StageClear
+	beq +
+	cmp !IrisOut
+	beq +
+	cmp !BossClear
+	beq +
+	cmp !Keyhole
+	beq +
+	clc
++	rts
+endif
 	
 pushpc
 
