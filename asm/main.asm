@@ -2714,11 +2714,10 @@ GlobalVolumeFadeRateLo:
 GlobalVolumeFadeRateHi:
 	mov	y, #$00
 ;Keep fading the global volume until the target value is reached.
-	clrc
 GlobalVolumeLo:
 	mov	$14, #$00
 GlobalVolumeHi:
-	mov	$15, #$f0
+	mov	$15, #$ff
 	addw	ya, $14
 
 FadeSoundOverflowCheckSign:
@@ -2728,7 +2727,7 @@ FadeSoundOverflowCheckSign:
 	mov	GlobalVolumeFadeRateLo+1, a
 	mov	GlobalVolumeFadeRateHi+1, y
 	bcc	FadeSoundVolumeWrite
-	mov	y, #$f0
+	mov	y, #$ff
 	bra	FadeSoundVolumeWrite
 
 FadeSoundTargetVolume:
