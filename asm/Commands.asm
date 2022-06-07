@@ -12,16 +12,17 @@ TerminateIfSFXPlaying:
 	ret
 endif
 
+SetBackupSRCN:
+	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	!BackupSRCN+x, a	; /
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdED:					; ADSR
 {
 	push	a
-	
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
-	
+	call	SetBackupSRCN	
 	call	GetBackupInstrTable
-	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
 	push	p
@@ -42,8 +43,7 @@ cmdF3:					; Sample load command
 {
 MSampleLoad:
 	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
+	call	SetBackupSRCN
 	call	GetBackupInstrTable
 	pop	a			; \ 
 	mov	y, #$00			; | Write the sample to the backup table.
@@ -62,12 +62,8 @@ MSampleLoad:
 
 SubC_table2_GAIN:
 	push	a
-	
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	
+	call	SetBackupSRCN
 	call	GetBackupInstrTable
-	
 	pop	a			;
 	mov     y, #$03			; \ GAIN byte = parameter
 	mov 	($10)+y, a		; /
@@ -78,8 +74,7 @@ SubC_table2_GAIN:
 	bra	UpdateInstr
 
 RestoreMusicSample:
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
+	call	SetBackupSRCN
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
 	mov	a, #$00
