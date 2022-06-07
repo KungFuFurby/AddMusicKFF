@@ -337,18 +337,16 @@ RunRemoteCode2:
 }
 
 UseGainInstead:
-	push	a			; 
+	mov	y, a			;
 	mov	a, x			; \
-	lsr	a			; | GAIN Register into y
+	lsr	a			; | GAIN Register into a
 	xcn	a			; |
-	or	a, #$07			; |
-	mov	y, a			; /
-	pop	a			; 
-	call	DSPWrite		; Write
-	dec	y			; \
-	dec	y			; | Clear ADSR bit to force GAIN.
-	mov	a, #$7f			; |
-	call	DSPWrite		; /
+	or	a, #$07			; /
+	movw	$f2, ya			; Write
+	dec	a			; \
+	dec	a			; | Clear ADSR bit to force GAIN.
+	mov	y, #$7f			; |
+	movw	$f2, ya			; /
 	bra	RestoreTrackPtrFromStack
 	
 ; handle a note vcmd
