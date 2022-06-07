@@ -310,6 +310,8 @@ RunRemoteCode:
 	mov	a, !remoteCodeTargetAddr+1+x
 RunRemoteCode_Exec:
 	mov	$31+x, a
+	dec	a
+	beq	UseGainInstead
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -333,6 +335,21 @@ RunRemoteCode2:
 	mov	a, !remoteCodeTargetAddr2+1+x
 	bra	RunRemoteCode_Exec
 }
+
+UseGainInstead:
+	push	a			; 
+	mov	a, x			; \
+	lsr	a			; | GAIN Register into y
+	xcn	a			; |
+	or	a, #$07			; |
+	mov	y, a			; /
+	pop	a			; 
+	call	DSPWrite		; Write
+	dec	y			; \
+	dec	y			; | Clear ADSR bit to force GAIN.
+	mov	a, #$7f			; |
+	call	DSPWrite		; /
+	bra	RestoreTrackPtrFromStack
 	
 ; handle a note vcmd
 NoteVCMD:			
@@ -359,19 +376,6 @@ endif
 	tclr	$0162, a
 L_05CD:
 	ret
-;UseGainInstead:
-;	push	a			; 
-;	mov	a, x			; \
-;	lsr	a			; | GAIN Register into y
-;	xcn	a			; |
-;	or	a, #$07			; |
-;	mov	y, a			; /
-;	pop	a			; 
-;	call	DSPWrite		; Write
-;	dec	y			; \
-;	dec	y			; | Clear ADSR bit to force GAIN.
-;	mov	a, #$7f			; |
-;	jmp	DSPWrite		; /
 	
 PercNote:
 	
