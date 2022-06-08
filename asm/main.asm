@@ -306,9 +306,10 @@ RunRemoteCode:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr+1+x
 RunRemoteCode_Exec:
+	mov	$30+x, y
 	mov	$31+x, a
 	dec	a
 	beq	UseGainInstead
@@ -331,13 +332,12 @@ RunRemoteCode2:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr2+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr2+1+x
 	bra	RunRemoteCode_Exec
 }
 
 UseGainInstead:
-	mov	y, a			;
 	mov	a, x			; \
 	lsr	a			; | GAIN Register into a
 	xcn	a			; |
