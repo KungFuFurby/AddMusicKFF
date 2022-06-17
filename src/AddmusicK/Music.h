@@ -183,9 +183,6 @@ private:
 	double superLoopLength;					// How many ticks were in the most previously declared super loop.
 	std::vector<std::pair<double, int>> tempoChanges;	// Where any changes in tempo occur. A negative tempo marks the beginning of the main loop, if an intro exists.
 
-	std::vector<std::vector<uint8_t>> remoteGainConversion[9];	// Containers that hold data for anticipation gain and rest/gain replacement so that we can convert it to a remote command.
-	std::vector<unsigned int> remoteGainPositions[9];	// Container that holds the positions for the pointers that we have to go back and correct during old gain and remote command conversion.
-
 	bool baseLoopIsNormal;
 	bool baseLoopIsSuper;
 	bool extraLoopIsNormal;
