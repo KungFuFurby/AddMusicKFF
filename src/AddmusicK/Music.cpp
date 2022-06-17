@@ -788,10 +788,13 @@ void Music::parseInstrumentCommand()
 		{
 			if (i < 30)
 				usedSamples[instrToSample[i]] = true;
-			else if ((i - 30) * 6 < instrumentData.size())
-				usedSamples[instrumentData[(i - 30) * 6]] = true;
-			else
-				error("This custom instrument has not been defined yet.")
+			else {
+				int customInstrIndex = i - 30;
+				if (customInstrIndex * 6 < instrumentData.size())
+					usedSamples[instrumentData[customInstrIndex * 6]] = true;
+				else
+					error("This custom instrument has not been defined yet.")
+			}
 		}
 
 		if (songTargetProgram == 1)
@@ -855,19 +858,10 @@ void Music::parseSampleLoadCommand()
 			error("Error parsing sample load command.")
 				return;
 		}
-		i = -1;
 
 		s = basepath + s;
 
-		int gs = getSample(s, this);
-		for (j = 0; j < mySamples.size(); j++)
-		{
-			if (mySamples[j] == gs)
-			{
-				i = j;
-				break;
-			}
-		}
+		i = getMySample(s, this);
 
 		if (i == -1)
 			error("The specified sample was not included in this song.");
@@ -2556,18 +2550,8 @@ void Music::parseInstrumentDefinitions()
 				brrName += text[pos++];
 			}
 			pos++;
-			i = -1;
 			brrName = basepath + brrName;
-			int gs = getSample(brrName, this);
-			for (j = 0; j < mySamples.size(); j++)
-			{
-				if (mySamples[j] == gs)
-				{
-					i = j;
-					break;
-				}
-			}
-
+			i = getMySample(brrName, this);
 
 			if (i == -1)
 				fatalError("The specified sample was not included in this song.")
@@ -3042,11 +3026,12 @@ void Music::pointersFirstPass()
 
 	if (optimizeSampleUsage)
 	{
-		int emptySampleIndex = ::getSample("EMPTY.brr", this);
+		int emptySampleIndex = getGlobalSample("EMPTY.brr", this);
 		if (emptySampleIndex == -1)
 		{
-			addSample("EMPTY.brr", this, true);
-			emptySampleIndex = getSample("EMPTY.brr", this);
+			// Add EMPTY.brr to global::samples and global::sampleToIndex, but not mySamples.
+			addSample("EMPTY.brr", nullptr, true);
+			emptySampleIndex = getGlobalSample("EMPTY.brr", this);
 		}
 
 

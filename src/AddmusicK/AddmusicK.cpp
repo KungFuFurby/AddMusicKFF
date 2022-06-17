@@ -1143,103 +1143,132 @@ void fixMusicPointers()
 	if (verbose)
 		std::cout << "Fixing song pointers..." << std::endl;
 
-	int pointersPos = programSize + 0x400;
-	std::stringstream globalPointers;
-	std::stringstream incbins;
+	// Text appended to main.asm after the SongPointers: label.
+	std::stringstream songDataSrc;
 
+	// Generate songDataSrc.
+	{
+		// Populate SongPointers table with addresses of songs present.
+		for (int i = 0; i < 256; i++)
+		{
+			if (musics[i].exists == false) continue;
+			if (i <= highestGlobalSong)
+				songDataSrc << "\tdw song" << hex2 << i << "\n";
+			else
+				break;
+		}
+		songDataSrc << "\tdw localSong\n\n";
+
+		// Populate destinations of SongPointers table with song data.
+		for (int i = 0; i < 256; i++)
+		{
+			if (musics[i].exists == false) continue;
+			if (i <= highestGlobalSong)
+				songDataSrc << "song" << hex2 << i << ": incbin \"SNES/bin/music" << hex2 << i << ".bin\"\n";
+			else
+				break;
+		}
+		// The localSong label is at the very end of asm/tempmain.asm (compiled to
+		// asm/SNES/bin/main.bin). It points to a local song loaded in ARAM just after
+		// asm/SNES/bin/main.bin.
+		songDataSrc << "localSong:\n";
+	}
+
+	// Process songs.
 	int songDataARAMPos = programSize + programPos + highestGlobalSong * 2 + 2;
 	//                    size + startPos + pointer to each global song + pointer to local song.
-	//int songPointerARAMPos = programSize + programPos;
-
-	bool addedLocalPtr = false;
 
 	for (int i = 0; i < 256; i++)
 	{
-		if (musics[i].exists == false) continue;
+		Music & song = musics[i];
+		if (song.exists == false) continue;
 
-		musics[i].posInARAM = songDataARAMPos;
+		song.posInARAM = songDataARAMPos;
 
 		int untilJump = -1;
 
-		if (i <= highestGlobalSong)
-		{
-			globalPointers << "\ndw song" << hex2 << i;
-			incbins << "song" << hex2 << i << ": incbin \"" << "SNES/bin/" << "music" << hex2 << i << ".bin\"\n";
-		}
-		else if (addedLocalPtr == false)
-		{
-			globalPointers << "\ndw localSong";
-			incbins << "localSong: ";
-			addedLocalPtr = true;
-		}
-
-		for (int j = 0; j < musics[i].spaceForPointersAndInstrs; j+=2)
+		for (int j = 0; j < song.spaceForPointersAndInstrs; j+=2)
 		{
 			if (untilJump == 0)
 			{
-				j += musics[i].instrumentData.size();
+				j += song.instrumentData.size();
 				untilJump = -1;
 			}
 
-			int temp = musics[i].allPointersAndInstrs[j] | musics[i].allPointersAndInstrs[j+1] << 8;
+			int temp = song.allPointersAndInstrs[j] | song.allPointersAndInstrs[j+1] << 8;
 
 			if (temp == 0xFFFF)		// 0xFFFF = swap with 0x0000.
 			{
-				musics[i].allPointersAndInstrs[j] = 0;
-				musics[i].allPointersAndInstrs[j+1] = 0;
+				song.allPointersAndInstrs[j] = 0;
+				song.allPointersAndInstrs[j+1] = 0;
 				untilJump = 1;
 			}
 			else if (temp == 0xFFFE)	// 0xFFFE = swap with 0x00FF.
 			{
-				musics[i].allPointersAndInstrs[j] = 0xFF;
-				musics[i].allPointersAndInstrs[j+1] = 0;
+				song.allPointersAndInstrs[j] = 0xFF;
+				song.allPointersAndInstrs[j+1] = 0;
 				untilJump = 2;
 			}
 			else if (temp == 0xFFFD)	// 0xFFFD = swap with the song's position (its first track pointer).
 			{
-				musics[i].allPointersAndInstrs[j] = (musics[i].posInARAM + 2) & 0xFF;
-				musics[i].allPointersAndInstrs[j+1] = (musics[i].posInARAM + 2) >> 8;
+				song.allPointersAndInstrs[j] = (song.posInARAM + 2) & 0xFF;
+				song.allPointersAndInstrs[j+1] = (song.posInARAM + 2) >> 8;
 			}
 			else if (temp == 0xFFFC)	// 0xFFFC = swap with the song's position + 2 (its second track pointer).
 			{
-				musics[i].allPointersAndInstrs[j] = musics[i].posInARAM & 0xFF;
-				musics[i].allPointersAndInstrs[j+1] = musics[i].posInARAM >> 8;
+				song.allPointersAndInstrs[j] = song.posInARAM & 0xFF;
+				song.allPointersAndInstrs[j+1] = song.posInARAM >> 8;
 			}
 			else if (temp == 0xFFFB)	// 0xFFFB = swap with 0x0000, but don't set untilSkip.
 			{
-				musics[i].allPointersAndInstrs[j] = 0;
-				musics[i].allPointersAndInstrs[j+1] = 0;
+				song.allPointersAndInstrs[j] = 0;
+				song.allPointersAndInstrs[j+1] = 0;
 			}
 			else
 			{
-				temp += musics[i].posInARAM;
-				musics[i].allPointersAndInstrs[j] = temp & 0xFF;
-				musics[i].allPointersAndInstrs[j+1] = temp >> 8;
+				temp += song.posInARAM;
+				song.allPointersAndInstrs[j] = temp & 0xFF;
+				song.allPointersAndInstrs[j+1] = temp >> 8;
 			}
 			untilJump--;
 		}
 
-		int normalChannelsSize = musics[i].data[0].size() + musics[i].data[1].size() + musics[i].data[2].size() + musics[i].data[3].size() + musics[i].data[4].size() + musics[i].data[5].size() + musics[i].data[6].size() + musics[i].data[7].size();
+		// Loop bodies are located in channel 8. Channels 0 through 7 (and loops in
+		// Channel 8?) contain loop pointers relative to channel 8's start address.
+		// Compute Channel 8's absolute start address.
+		int loopDataAddress =
+			song.posInARAM
+			+ song.spaceForPointersAndInstrs
+			+ song.data[0].size()
+			+ song.data[1].size()
+			+ song.data[2].size()
+			+ song.data[3].size()
+			+ song.data[4].size()
+			+ song.data[5].size()
+			+ song.data[6].size()
+			+ song.data[7].size();
 
+		// Add Channel 8's absolute start address to all relative loop pointers,
+		// converting them into absolute loop pointers.
 		for (int j = 0; j < 9; j++)
 		{
-			for (unsigned int k = 0; k < musics[i].loopLocations[j].size(); k++)
+			for (auto loopPointerPos : song.loopLocations[j])
 			{
-				int temp = (musics[i].data[j][musics[i].loopLocations[j][k]] & 0xFF) | (musics[i].data[j][musics[i].loopLocations[j][k] + 1] << 8);
-				temp += musics[i].posInARAM + normalChannelsSize + musics[i].spaceForPointersAndInstrs;
-				musics[i].data[j][musics[i].loopLocations[j][k]] = temp & 0xFF;
-				musics[i].data[j][musics[i].loopLocations[j][k] + 1] = temp >> 8;
+				int loopPointer = (song.data[j][loopPointerPos] & 0xFF) | (song.data[j][loopPointerPos + 1] << 8);
+				loopPointer += loopDataAddress;
+				song.data[j][loopPointerPos] = loopPointer & 0xFF;
+				song.data[j][loopPointerPos + 1] = loopPointer >> 8;
 			}
 		}
 
 
 		std::vector<uint8_t> final;
 
-		int sizeWithPadding = (musics[i].minSize > 0) ? musics[i].minSize : musics[i].totalSize;
+		int sizeWithPadding = (song.minSize > 0) ? song.minSize : song.totalSize;
 
 		if (i > highestGlobalSong)
 		{
-			int RATSSize = musics[i].totalSize + 4 - 1;
+			int RATSSize = song.totalSize + 4 - 1;
 			final.push_back('S');
 			final.push_back('T');
 			final.push_back('A');
@@ -1259,22 +1288,22 @@ void fixMusicPointers()
 		}
 
 
-		for (unsigned int j = 0; j < musics[i].allPointersAndInstrs.size(); j++)
-			final.push_back(musics[i].allPointersAndInstrs[j]);
+		for (unsigned int j = 0; j < song.allPointersAndInstrs.size(); j++)
+			final.push_back(song.allPointersAndInstrs[j]);
 
 		for (unsigned int j = 0; j < 9; j++)
-			for (unsigned int k = 0; k < musics[i].data[j].size(); k++)
-				final.push_back(musics[i].data[j][k]);
+			for (unsigned int k = 0; k < song.data[j].size(); k++)
+				final.push_back(song.data[j][k]);
 
-		if (musics[i].minSize > 0 && i <= highestGlobalSong)
-			while (final.size() < musics[i].minSize)
+		if (song.minSize > 0 && i <= highestGlobalSong)
+			while (final.size() < song.minSize)
 				final.push_back(0);
 
 
 		if (i > highestGlobalSong)
 		{
-			musics[i].finalData.resize(final.size() - 12);
-			musics[i].finalData.assign(final.begin() + 12, final.end());
+			song.finalData.resize(final.size() - 12);
+			song.finalData.assign(final.begin() + 12, final.end());
 		}
 
 		std::stringstream fname;
@@ -1291,58 +1320,58 @@ void fixMusicPointers()
 		{
 			if (checkEcho)
 			{
-				musics[i].spaceInfo.songStartPos = songDataARAMPos;
-				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
+				song.spaceInfo.songStartPos = songDataARAMPos;
+				song.spaceInfo.songEndPos = song.spaceInfo.songStartPos + sizeWithPadding;
 
 				int checkPos = songDataARAMPos + sizeWithPadding;
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
-				musics[i].spaceInfo.sampleTableStartPos = checkPos;
+				song.spaceInfo.sampleTableStartPos = checkPos;
 
-				checkPos += musics[i].mySamples.size() * 4;
+				checkPos += song.mySamples.size() * 4;
 
-				musics[i].spaceInfo.sampleTableEndPos = checkPos;
+				song.spaceInfo.sampleTableEndPos = checkPos;
 
 				int importantSampleCount = 0;
-				for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
+				for (unsigned int j = 0; j < song.mySamples.size(); j++)
 				{
-					auto thisSample = musics[i].mySamples[j];
+					auto thisSample = song.mySamples[j];
 					auto thisSampleSize = samples[thisSample].data.size();
 					bool sampleIsImportant = samples[thisSample].important;
 					if (sampleIsImportant) importantSampleCount++;
 
-					musics[i].spaceInfo.individualSampleStartPositions.push_back(checkPos);
-					musics[i].spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
-					musics[i].spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
+					song.spaceInfo.individualSampleStartPositions.push_back(checkPos);
+					song.spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
+					song.spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
 
 					checkPos += thisSampleSize;
 				}
-				musics[i].spaceInfo.importantSampleCount = importantSampleCount;
+				song.spaceInfo.importantSampleCount = importantSampleCount;
 
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
-				//musics[i].spaceInfo.echoBufferStartPos = checkPos;
+				//song.spaceInfo.echoBufferStartPos = checkPos;
 
-				checkPos += musics[i].echoBufferSize << 11;
+				checkPos += song.echoBufferSize << 11;
 
-				//musics[i].spaceInfo.echoBufferEndPos = checkPos;
+				//song.spaceInfo.echoBufferEndPos = checkPos;
 
-				musics[i].spaceInfo.echoBufferEndPos = 0x10000;
-				if (musics[i].echoBufferSize > 0)
+				song.spaceInfo.echoBufferEndPos = 0x10000;
+				if (song.echoBufferSize > 0)
 				{
-					musics[i].spaceInfo.echoBufferStartPos = 0x10000 - (musics[i].echoBufferSize << 11);
-					musics[i].spaceInfo.echoBufferEndPos = 0x10000;
+					song.spaceInfo.echoBufferStartPos = 0x10000 - (song.echoBufferSize << 11);
+					song.spaceInfo.echoBufferEndPos = 0x10000;
 				}
 				else
 				{
-					musics[i].spaceInfo.echoBufferStartPos = 0xFF00;
-					musics[i].spaceInfo.echoBufferEndPos = 0xFF04;
+					song.spaceInfo.echoBufferStartPos = 0xFF00;
+					song.spaceInfo.echoBufferEndPos = 0xFF04;
 				}
 
 
 				if (checkPos > 0x10000)
 				{
-					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					std::cerr << song.name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
 					quit(1);
 				}
 			}
@@ -1354,7 +1383,7 @@ void fixMusicPointers()
 	std::string patch;
 	openTextFile("asm/tempmain.asm", patch);
 
-	patch += globalPointers.str() + "\n" + incbins.str();
+	patch += songDataSrc.str();
 
 	writeTextFile("asm/tempmain.asm", patch);
 
