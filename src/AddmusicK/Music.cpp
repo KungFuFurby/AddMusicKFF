@@ -1714,28 +1714,13 @@ void Music::parseHexCommand()
 
 				if (i == 0)
 				{
-					//Because remote gain works like a type 2 remote code event, a zero for the timer would mean that it would be impossible for the event to fire.
-					//We will create a type 7 remote code event to stop the type 5 remote code event (and all other non-"key on" events).
-					append(0xFC);
-					append(0x00);
-					append(0x00);
-					append(0x07);
-					append(0x00);
 					usingFC[channelToCheck] = false;
+					lastFCDelayValue[channelToCheck] = i;
 				}
 				else
 				{
 					i = divideByTempoRatio(i, false);
 					lastFCDelayValue[channelToCheck] = i;
-					//Create a type 5 remote code type event.
-					//This remote code event is specifically reserved to replicate the remote gain as a type 2-like remote code event, but it also comes with built-in instrument restoration.
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0x05);
-					append(i);
 				}
 
 				return;
@@ -1749,21 +1734,17 @@ void Music::parseHexCommand()
 				else
 					channelToCheck = channel;
 				lastFCGainValue[channelToCheck] = i;
-				if (i != 0) {
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
+				if (i != 0 && lastFCDelayValue[channelToCheck] != 0) {
+					//Create a type 5 remote code type event.
+					//This remote code event is specifically reserved to replicate the remote gain as a type 2-like remote code event, but it also comes with built-in instrument restoration.
+					append(0xFC);
+					append(i);
+					append(0x01);
+					append(0x05);
+					append(lastFCDelayValue[channelToCheck]);
 				}
-				else if (lastFCDelayValue[channelToCheck] != 0) {
-					//Discard the gain conversion in progress and replace the remote code event.
-					//Because the gain value itself is zero even though the timer value is not zero, remote gain gets disabled.
-					remoteGainConversion[channel].pop_back();
-					remoteGainPositions[channel].pop_back();
-					data[channel].pop_back();
-					data[channel].pop_back();
-					data[channel].pop_back();
-					data[channel].pop_back();
+				else {
+					//There are two ways remote gain won't fire and will instead be canceled: if the timer is zero (meaning it is impossible to trigger in the first place) or if the gain value itself is zero.
 					//We will create a type 7 remote code event to stop the type 5 remote code event (and all other non-"key on" events).
 					append(0xFC);
 					append(0x00);
@@ -1789,19 +1770,10 @@ void Music::parseHexCommand()
 
 				if (i != 0)
 				{
-					// Add the "set gain" remote call.
-					remoteGainConversion[channel].push_back(std::vector<uint8_t>());
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0xFA);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x01);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(i);
-					remoteGainConversion[channel][remoteGainConversion[channel].size() - 1].push_back(0x00);
-
-					// And then the remote call data.
 					// We will be using a type 6 remote code event: this is a special reserved type 3-like remote code event that works in conjunction with type 5 (normally only "key on" events get this honor), and also has built-in instrument restoration.
 					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
+					append(i);
+					append(0x01);
 					append(0x06);
 					append(0x00);
 					usingFA[channelToCheck] = true;
@@ -2798,28 +2770,6 @@ void Music::pointersFirstPass()
 	if (data[0].size() == 0 && data[1].size() == 0 && data[2].size() == 0 && data[3].size() == 0 && data[4].size() == 0 && data[5].size() == 0 && data[6].size() == 0 && data[7].size() == 0)
 		error("This song contained no musical data!")
 
-
-	if (targetAMKVersion == 1)			// Handle more conversion of the old $FC command to remote call.
-	{
-		for (channel = 0; channel < 9; channel++)
-		{
-			for (unsigned int z = 0; z < remoteGainPositions[channel].size(); z++)
-			{
-				size_t dataIndex = remoteGainPositions[channel][z];
-				loopLocations[channel].push_back(remoteGainPositions[channel][z]);
-
-				data[channel][dataIndex] = data[8].size() & 0xFF;
-				data[channel][dataIndex + 1] = data[8].size() >> 8;
-
-				for (unsigned int y = 0; y < remoteGainConversion[channel][z].size(); y++)
-				{
-					data[8].push_back(remoteGainConversion[channel][z][y]);
-				}
-			}
-		}
-
-	}
-
 	if (resizedChannel != -1)
 	{
 		int z = 0;
@@ -2869,9 +2819,6 @@ void Music::pointersFirstPass()
 			for (int a = 0; a < loopLocations[echoBufferAllocVCMDChannel].size(); a++) {
 				loopLocations[echoBufferAllocVCMDChannel][a] += 3;
 			}
-			for (int a = 0; a < remoteGainPositions[echoBufferAllocVCMDChannel].size(); a++) {
-				remoteGainPositions[echoBufferAllocVCMDChannel][a] += 3;
-			}
 			for (int a = 0; a <= 1; a++) {
 				phrasePointers[echoBufferAllocVCMDChannel][a] += 3;
 			}
@@ -2881,9 +2828,6 @@ void Music::pointersFirstPass()
 		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.
 		for (int a = 0; a < loopLocations[resizedChannel].size(); a++) {
 			loopLocations[resizedChannel][a] += z;
-		}
-		for (int a = 0; a < remoteGainPositions[resizedChannel].size(); a++) {
-			remoteGainPositions[resizedChannel][a] += z;
 		}
 		for (int a = 0; a <= 1; a++) {
 			phrasePointers[resizedChannel][a] += z;
