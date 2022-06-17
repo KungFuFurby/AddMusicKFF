@@ -1662,10 +1662,10 @@ void Music::parseHexCommand()
 
 				return;
 			}
-			else if (targetAMKVersion > 1 && currentHex == 0xFC)
-			{
-				error("$FC has been replaced with remote code in #amk 2 and above.")
-			}
+			//else if (targetAMKVersion > 1 && currentHex == 0xFC)
+			//{
+			//	error("$FC has been replaced with remote code in #amk 2 and above.")
+			//}
 			else
 			{
 				hexLeft = hexLengths[currentHex - 0xDA] - 1;
