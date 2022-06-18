@@ -135,6 +135,7 @@ incsrc "UserDefines.asm"
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
 !remoteCodeTimeValue = $01a0	; The value to set the timer to when necessary.
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
+!remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
 arch spc700-raw
@@ -306,10 +307,13 @@ RunRemoteCode:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr+1+x
 RunRemoteCode_Exec:
+	mov	$30+x, y
 	mov	$31+x, a
+	dec	a
+	beq	UseGainInstead
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -329,10 +333,27 @@ RunRemoteCode2:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr2+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr2+1+x
 	bra	RunRemoteCode_Exec
 }
+
+UseGainInstead:
+	mov	a, x			; \
+	lsr	a			; | GAIN Register into a
+	xcn	a			; |
+	or	a, #$07			; /
+	movw	$f2, ya			; Write
+	dec	a			; \
+	dec	a			; | Clear ADSR bit to force GAIN.
+	mov	y, #$7f			; |
+	movw	$f2, ya			; /
+	bra	RestoreTrackPtrFromStack
+
+CheckForRemoteCodeType6:
+	mov	a, #$06
+	cmp	a, !remoteCodeType2+x
+	ret
 	
 ; handle a note vcmd
 NoteVCMD:			
@@ -354,24 +375,13 @@ endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
+	call	CheckForRemoteCodeType6
+	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
 	tclr	$0162, a
 L_05CD:
 	ret
-;UseGainInstead:
-;	push	a			; 
-;	mov	a, x			; \
-;	lsr	a			; | GAIN Register into y
-;	xcn	a			; |
-;	or	a, #$07			; |
-;	mov	y, a			; /
-;	pop	a			; 
-;	call	DSPWrite		; Write
-;	dec	y			; \
-;	dec	y			; | Clear ADSR bit to force GAIN.
-;	mov	a, #$7f			; |
-;	jmp	DSPWrite		; /
 	
 PercNote:
 	
@@ -395,17 +405,30 @@ if !noSFX = !false
 endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
+	call	CheckForRemoteCodeType6
+	beq	.remoteCodeRestoreInstrumentOnKON
+
+	dec	a
+	cmp	a, !remoteCodeType+x
+	bne	.checkRemoteCodeTypes
+.remoteCodeRestoreInstrumentOnKON
+	call	SubC_9
+
+.checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
 	dec	a
-	bne	.notType1RemoteCode
+	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
 	mov	!remoteCodeTimeLeft+x, a
 	
-.notType1RemoteCode
+.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode			
+
+	mov	a, !remoteCodeType2+x
+	bpl	.noRemoteCode
 
 	call	RunRemoteCode2
 	
@@ -2075,6 +2098,7 @@ endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
@@ -2089,7 +2113,6 @@ L_0B6D:
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
-	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
@@ -2949,8 +2972,7 @@ L_10B2:							; |
 	incw	$14
 	movw	ya, $14
 	movw	$16, ya
-.jmpToL_10B2
-	jmp	L_10B2
+	bra	.jmpToL_10B2
 
 .subroutineExit:
 	mov	$14, #$03e1&$FF
@@ -2982,7 +3004,8 @@ L_10B2:							; |
 	pop	y
 	pop	a
 	movw	$14, ya
-	bra	.jmpToL_10B2
+.jmpToL_10B2
+	jmp	L_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -2991,21 +3014,33 @@ L_10B2:							; |
 
 	mov	a, !InRest+x
 	bne	.keyoff
+	call	CheckForRemoteCodeType6
+	beq	.keyoffRemoteCodeCheck
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	.keyoff
+
+.keyoffRemoteCodeCheck
 	cmp	$10, #$c7
-	beq	.skipKeyOffAndRunCode
+	beq	.keyoffRemoteCodeTypeCheck
 	mov	a, $70+x
-	cbne	!WaitTime, .skipKeyOffAndRunCode
+	cbne	!WaitTime, .keyoffRemoteCodeTypeCheck
 .keyoff:
 	setc
 	ret
 
+.keyoffRemoteCodeTypeCheck
+	call	CheckForRemoteCodeType6
+	beq	.skipKeyOffAndRunCode2
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
 ;.skip_keyoff duplicate stored here since it's cheaper memory-wise
 ;(and the distance is too great to go backwards)
+	clrc
+	ret
+
+.skipKeyOffAndRunCode2:
+	call	RunRemoteCode2
 	clrc
 	ret
 
@@ -3065,8 +3100,11 @@ L_10A1:
 	
 	mov	a, !remoteCodeType+x			; \ Branch away if we have no code to run before a note ends.
 	cmp	a, #$02					; |
+	beq	.checkRemoteCodeTimeValue
+	cmp	a, #$05
 	bne 	.noRemoteCode				; /
 
+.checkRemoteCodeTimeValue
 	mov	a, !remoteCodeTimeValue+x		; \
 	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
 	bne	.noRemoteCode				; /
