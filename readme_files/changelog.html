@@ -53,7 +53,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-05-27</h2>
+	<h2>Version 1.0.9 - 2022-06-18</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -167,6 +167,7 @@
 		<li>"Fixed a conversion bug from Addmusic405 and AddmusicM songs where the & command was not properly factoring in a preceding tie, causing the intended delay effect to get lost." - KungFuFurby</li>
 		<li>"Fixed a conversion bug from AddmusicM where the transposition values were not being overwritten by the hard-coded instrument transposition table." - KungFuFurby</li>
 		<li>"Fixed a bug where the #pad command was only supporting two hex digits with #am4 songs." - KungFuFurby</li>
+		<li>"Revamped the anticipation gain/remote gain conversions due to the original design of the remote codes not being compatible with both of them running at the same time. Two reserved remote code events (5 and 6, of which 5 was originally reserved in the first place) are now used that can be used at the same time (and come with a feature to replicate the instrument restoration on key on without having to use a third remote code event), with two additional ones also created that can be used outside of these conversions." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>
