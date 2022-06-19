@@ -202,10 +202,8 @@ if !noSFX = !false
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
-	mov   x, #$01
-	call  ReadInputRegister             ; read/send APU1
-	mov   x, #$03
-	call  ReadInputRegister             ; read/send APU3
+	call  ReadInputRegisterIncX1        ; read/send APU1
+	call  ReadInputRegisterIncX2        ; read/send APU3
 if !noSFX = !false	
 	mov	a, !ProtectSFX6
 	beq	+
@@ -278,6 +276,10 @@ L_059D:
 }
 	
 }	
+ReadInputRegisterIncX2:
+	inc	x
+ReadInputRegisterIncX1:
+	inc	x
 ; send 04+X to APUX; get APUX to 00+X with "debounce"?
 ;L_05A5:
 ReadInputRegister:
@@ -307,10 +309,13 @@ RunRemoteCode:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr+1+x
 RunRemoteCode_Exec:
+	mov	$30+x, y
 	mov	$31+x, a
+	dec	a
+	beq	UseGainInstead
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -330,10 +335,27 @@ RunRemoteCode2:
 	mov	a, $31+x
 	push	a
 	mov	a, !remoteCodeTargetAddr2+x
-	mov	$30+x, a
+	mov	y, a
 	mov	a, !remoteCodeTargetAddr2+1+x
 	bra	RunRemoteCode_Exec
 }
+
+UseGainInstead:
+	mov	a, x			; \
+	lsr	a			; | GAIN Register into a
+	xcn	a			; |
+	or	a, #$07			; /
+	movw	$f2, ya			; Write
+	dec	a			; \
+	dec	a			; | Clear ADSR bit to force GAIN.
+	mov	y, #$7f			; |
+	movw	$f2, ya			; /
+	bra	RestoreTrackPtrFromStack
+
+CheckForRemoteCodeType6:
+	mov	a, #$06
+	cmp	a, !remoteCodeType2+x
+	ret
 	
 ; handle a note vcmd
 NoteVCMD:			
@@ -355,24 +377,13 @@ endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	beq	L_05CD
+	call	CheckForRemoteCodeType6
+	beq	L_05CD
 	mov	a, $48
 	call	KeyOffVoices
 	tclr	$0162, a
 L_05CD:
 	ret
-;UseGainInstead:
-;	push	a			; 
-;	mov	a, x			; \
-;	lsr	a			; | GAIN Register into y
-;	xcn	a			; |
-;	or	a, #$07			; |
-;	mov	y, a			; /
-;	pop	a			; 
-;	call	DSPWrite		; Write
-;	dec	y			; \
-;	dec	y			; | Clear ADSR bit to force GAIN.
-;	mov	a, #$7f			; |
-;	jmp	DSPWrite		; /
 	
 PercNote:
 	
@@ -396,17 +407,30 @@ if !noSFX = !false
 endif
 				; That says no pitch adjust, but we do more stuff here related to the "no sound effects allowed" club.
 
+	call	CheckForRemoteCodeType6
+	beq	.remoteCodeRestoreInstrumentOnKON
+
+	dec	a
+	cmp	a, !remoteCodeType+x
+	bne	.checkRemoteCodeTypes
+.remoteCodeRestoreInstrumentOnKON
+	call	SubC_9
+
+.checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
 	dec	a
-	bne	.notType1RemoteCode
+	bne	.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTimeValue+x
 	mov	!remoteCodeTimeLeft+x, a
 	
-.notType1RemoteCode
+.notTimerRemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
 	beq	.noRemoteCode
+
+	mov	a, !remoteCodeType2+x
+	bpl	.noRemoteCode
 
 .runningArpGate
 	bra	.runRemoteCodeKON
@@ -560,11 +584,10 @@ endif
 
 ; add pitch slide delta and set DSP pitch
 L_09CD:
-	mov	a, #$02b0&$FF
-	mov	y, #$02b0>>8       ; pitch (notenum fixed-point)
+	mov	a, #$02b0&$FF      ; pitch (notenum fixed-point)
 	dec	$90+x
 	;Modifies $02b0-$02b1, $02c0-$02c1, $02d0
-	call	L_1075             ; add pitch slide delta to value                                ;ERROR
+	call	L_1075Setup2       ; add pitch slide delta to value                                ;ERROR
 L_112A:
 DDEEFix:
 {
@@ -588,16 +611,34 @@ endif
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
+SubC_table2_PitchMod:
+	mov     !MusicPModChannels, a	; \ This is for music.
+	bra	EffectModifier		; / Call the effect modifier routine.
 
+SubC_3:
+	eor	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF8:					; Noise command.
+{
+Noiz:
+		or	(!MusicNoiseChannels), ($48)
+if !noSFX = !false
+		and	a, #$1f
+		mov	$0389, a
+		cmp	!SFXNoiseChannels, #$00
+		bne	+
+endif
+		call	ModifyNoise
++	
+}
 
 EffectModifier:				; Call this whenever either $1d or the various echo, noise, or pitch modulation addresses are modified.
 {	
 	push	x
-	push	y
-	mov	x, #$00
-	mov	y, #$d1			; The DSP register for pitch modulation reversed.
-					; $10 = the current music whatever
-					; $12 = the current SFX whatever
+	mov	x, #!MusicPModChannels
+	mov	$f2, #$1d		; The DSP register for pitch modulation minus #$10.
 -						
 					; Formula: The output for the DSP register is
 					; S'M + SE
@@ -607,33 +648,31 @@ EffectModifier:				; Call this whenever either $1d or the various echo, noise, o
 					; and S is $1d (the current channels for which SFX are enabled)
 					; Yay logic!
 
-	inc	y			; \
-	mov	a, y			; | Get the next DSP register into a.
-	xcn	a			; /
-	mov	$f2, a			;
+	clrc				; \
+	adc	$f2, #$10		; / Get the next DSP register.
 						
 if !noSFX = !false
 	mov	a, $1d			; \ a = S
 	eor	a, #$ff			; | a = S'
-	and	a, !MusicPModChannels+x	; / a = S'M
+	and	a, (X)			; / a = S'M
 	
-	mov	$15, a
+	mov	$10, a
 
-	mov	a, !SFXPModChannels+x	; \ a = S
+	;Go grab !SFXPModChannels+x.
+	mov	a, $03+x		; \ a = S
 	and	a, $1d			; | a = SE
-	or	a, $15			; / a = S'M + SE
+	or	a, $10			; / a = S'M + SE
+	inc	x
 else
-	mov	a, !MusicPModChannels+x
+	mov	a, (X+)
 endif
 	
 					; \ Write to the relevant DSP register.
 	mov	$f3, a			; / (coincidentally, the order is the opposite of DSPWrite)
 	
-	inc	x			; \
-	cmp	x, #$03			; | Do this three times.
-	bne	-			; /
+	cmp	x, #!MusicPModChannels+3 ; \ Do this three times.
+	bcc	-			 ; /
 
-	pop	y
 	pop	x
 	ret
 }
@@ -787,6 +826,13 @@ RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore 
 .restoreSample				; \ 
 	jmp   RestoreMusicSample	; / Fix sample.
 }
+
+SubC_9:
+	mov     x, $46				; \ 
+	mov	a, #$00				; | Turn the current instrument back on.
+	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
+	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
+
 if !noSFX = !false
 HandleSFXVoice:
 {
@@ -839,11 +885,9 @@ endif
 	mov 	$15, a			; / 
 	push	x			; \ 
 	mov	x, #$00			; | Jump to that address
-	call	+			; | (no "call (d+x)")
+	call	JumpToUploadLocation	; | (no "call (d+x)")
 	pop	x			; / 
 	bra	.getMoreSFXData		;
-+					;
-	jmp	($14+x)			;
 
 .noteOrCommand				; SFX commands!
 	cmp	a, #$dd			; \ 
@@ -1416,9 +1460,7 @@ SFXTerminateCh:
 endif
 SpeedUpMusic:
 	mov	a, #$0a
-	mov	$0387, a
-	mov	a, $51
-	call	L_0E14             ; add #$0A to tempo; zero tempo low      ;ERROR * 2
+	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
 if !noSFX = !false
 	mov	a, #$1d
 	mov	$03, a
@@ -1686,17 +1728,16 @@ UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
 .unsetMute:
-	clr1 !NCKValue.6		; Unset the mute flag.
-	call SetFLGFromNCKValue
-
 	mov a, !SpeedUpBackUp	;\
 	mov $0387, a			;/ Restore the tempo.
-	ret
+
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
 
 .silent:	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-	
+
 	mov $f2, #$5c		; \ Key off voices
 	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
@@ -1732,7 +1773,7 @@ L_099C:
 	mov	a, #$ff
 	call	KeyOffVoices
 
-	mov	a, #$00
+	inc	a
 	call	SetEDLDSP		; Also set the delay to 0.
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
@@ -2069,6 +2110,7 @@ endif
 L_0B6D:
 	mov	a, #$0a
 	mov	!Pan+x, a         ; Pan[ch] = #$0A
+	call	ClearRemoteCodeAddressesAndOpenGate
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
@@ -2083,7 +2125,6 @@ L_0B6D:
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
-	call	ClearRemoteCodeAddresses
 if !noSFX = !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
@@ -2357,9 +2398,6 @@ HandleArpeggioInterrupt:
 	dec	a
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
-	mov	a, y			; \
-	cmp	a, #$c6			; | Ties/rests don't mess up glissando.
-	bcs	.notGlissando		; /
 	mov	a, !ArpType+x		; \
 	cmp	a, #$02			; |
 	bne	.notGlissando		; | If the arpeggio type is glissando,
@@ -2474,6 +2512,37 @@ KeyOnVoices:
 	mov	$F3, a
 	tset	!PlayingVoices, a
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF0:					; Echo off
+{
+	mov	!MusicEchoChannels, a           ; clear all echo vbits
+L_0F22: 
+	mov	y, a
+	movw	$61, ya            ; zero echo vol L shadow
+	movw	$63, ya            ; zero echo vol R shadow
+	call	EffectModifier
+	call	L_0EEB             ; set echo vol DSP regs from shadows
+	set1	!NCKValue.5        ; disable echo write
+}
+SetFLGFromNCKValue:
+	mov	a, !NCKValue
+ModifyNoise:				; A should contain the noise value.
+	and	a, #$1f
+	and	!NCKValue, #$e0		; Clear the current noise bits.
+	or	a, !NCKValue		; \ Set and save the current noise bits.
+	mov	!NCKValue, a		; / 
+	mov	y, #$6c			; \ Write
+	bra	DSPWrite		; /
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF6:					; DSP Write command.
+{
+	push a
+	call GetCommandDataFast
+	pop y
+	bra DSPWrite
+}
 
 KeyOffVoiceWithCheck:
 if !noSFX = !false
@@ -2614,10 +2683,9 @@ L_0FDB:
 	beq	L_0FEB
 	or	($5c), ($48)
 	mov	a, #$0240&$FF
-	mov	y, #$0240>>8
 	dec	$80+x
 	;Modifies $0240-$0241, $0250-$0251, $0260
-	call	L_1075
+	call	L_1075Setup2
 L_0FEB:
 	mov	y, $b1+x
 	beq	L_1013
@@ -2652,10 +2720,9 @@ L_1019:
 ; do: pan fade and set volume
 L_1024:
 	mov	a, #$0280&$FF
-	mov	y, #$0280>>8
 	dec	!PanFadeDuration+x
 	;Modifies $0280-$0281, $0290-$0291, $02a0
-	call	L_1075
+	call	L_1075Setup2
 L_102D:
 	mov	a, !Pan+x		; Get the pan for this channel.
 	mov	y, a		;
@@ -2740,6 +2807,10 @@ endif
 	bbc1	$12.1, L_103B
 	ret
 ; add fade delta to value (set final value at end)
+L_1075Setup2:
+	push	p
+	mov	y, #$02
+	pop	p
 L_1075:
 	movw	$14, ya		;
 	clrc			; Fade delta counter decides which way this branch goes
@@ -2905,10 +2976,6 @@ L_10B2:							; |
 	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
 	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
 
-.keyoff:
-	setc
-	ret
-
 .loopSection:
 	incw	$14
 	mov	a, ($14)+y
@@ -2918,15 +2985,14 @@ L_10B2:							; |
 	incw	$14
 	movw	ya, $14
 	movw	$16, ya
-.jmpToL_10B2
-	jmp	L_10B2
+	bra	.jmpToL_10B2
 
 .subroutineExit:
 	mov	$14, #$03e1&$FF
 .setupJumpToIndirect03:
 	mov	$15, #$03e1>>8
 .setupJumpToIndirectFromIndex:
-	or	($15), ($46)
+	or	($14), ($46)
 	bra	.jumpToIndirect
 
 .subroutine:
@@ -2948,10 +3014,11 @@ L_10B2:							; |
 	movw	ya, $14
 	movw	$12, ya
 	;Jump inside subroutine.
-	pop	a
 	pop	y
+	pop	a
 	movw	$14, ya
-	bra	.jmpToL_10B2
+.jmpToL_10B2
+	jmp	L_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -2960,18 +3027,33 @@ L_10B2:							; |
 
 	mov	a, !InRest+x
 	bne	.keyoff
+	call	CheckForRemoteCodeType6
+	beq	.keyoffRemoteCodeCheck
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
 	bne	.keyoff
+
+.keyoffRemoteCodeCheck
 	cmp	$10, #$c7
-	beq	.skipKeyOffAndRunCode
+	beq	.keyoffRemoteCodeTypeCheck
 	mov	a, $70+x
-	cmp	a, !WaitTime
-	beq	.keyoff
+	cbne	!WaitTime, .keyoffRemoteCodeTypeCheck
+.keyoff:
+	setc
+	ret
+
+.keyoffRemoteCodeTypeCheck
+	call	CheckForRemoteCodeType6
+	beq	.skipKeyOffAndRunCode2
 .skipKeyOffAndRunCode:
 	call	RunRemoteCode
 ;.skip_keyoff duplicate stored here since it's cheaper memory-wise
 ;(and the distance is too great to go backwards)
+	clrc
+	ret
+
+.skipKeyOffAndRunCode2:
+	call	RunRemoteCode2
 	clrc
 	ret
 
@@ -3031,13 +3113,17 @@ L_10A1:
 	
 	mov	a, !remoteCodeType+x			; \ Branch away if we have no code to run before a note ends.
 	cmp	a, #$02					; |
+	beq	.checkRemoteCodeTimeValue
+	cmp	a, #$05
 	bne 	.noRemoteCode				; /
 
+.checkRemoteCodeTimeValue
 	mov	a, !remoteCodeTimeValue+x		; \
 	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3047,7 +3133,7 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
-	
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +
@@ -3100,18 +3186,13 @@ L_1133:
 	mov	a, $a1+x
 	beq	L_1140
 	mov	a, $0340+x
-	cmp	a, $a0+x
-	beq	L_1144
-	inc	$a0+x
-L_1140:
-	bbs1	$13.7, L_1195		; If $13.7 is set, recalibrate the pitch.
--
-	ret
+	cbne	$a0+x, L_113E
+
 L_1144:					; Process vibrato.
 
 	mov	a, !PlayingVoices	; \ 
 	and	a, $48			; | If there's no voice playing on this channel,
-	beq	-			; / then don't do all these time-consuming calculations.
+	beq	+			; / then don't do all these time-consuming calculations.
 	
 	mov	a, $0341+x
 	beq	L_1166
@@ -3165,9 +3246,15 @@ L_1191:
 	movw	$10, ya
 L_1195:
 	jmp	SetPitch
+
+L_113E:
+	inc	$a0+x
+L_1140:
+	bbs1	$13.7, L_1195		; If $13.7 is set, recalibrate the pitch.
++
+	ret
+
 ; per-voice fades/dsps?
-
-
 HandleVoice:
 	clr1	$13.7
 	
@@ -3282,16 +3369,6 @@ L_124D:
 	mov	a, y		; /
 	mov	$0371+x, a         ; voice volume
 	ret
-	
-SetFLGFromNCKValue:
-	mov	a, !NCKValue
-ModifyNoise:				; A should contain the noise value.
-	and	a, #$1f
-	and	!NCKValue, #$e0		; Clear the current noise bits.
-	or	a, !NCKValue		; \ Set and save the current noise bits.
-	mov	!NCKValue, a		; / 
-	mov	y, #$6c			; \ Write
-	jmp	DSPWrite		; /
 
 ; for 0C89 - note dur%'s
 NoteDurations:
@@ -3432,6 +3509,7 @@ endif
 if !PSwitchIsSFX = !true
 	mov	$1b, #$00
 endif	
+JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address
 	
 GetSampleTableLocation:
@@ -3454,7 +3532,7 @@ GetSampleTableLocation:
 	pop	a
 	mov	$f5, a		; Echo back DIR
 	mov	y, #$00
-	jmp	($0014+x)		; Jump to the upload location.
+	bra	JumpToUploadLocation	; Jump to the upload location.
 	
 
 	incsrc "InstrumentData.asm"
