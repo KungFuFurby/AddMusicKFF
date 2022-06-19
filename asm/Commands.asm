@@ -12,16 +12,17 @@ TerminateIfSFXPlaying:
 	ret
 endif
 
+SetBackupSRCN:
+	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	!BackupSRCN+x, a	; /
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdED:					; ADSR
 {
 	push	a
-	
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
-	
+	call	SetBackupSRCN	
 	call	GetBackupInstrTable
-	
 	pop	a			; \ 
 	eor	a,#$80			; | Write ADSR 1 to the table.
 	push	p
@@ -42,8 +43,7 @@ cmdF3:					; Sample load command
 {
 MSampleLoad:
 	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
+	call	SetBackupSRCN
 	call	GetBackupInstrTable
 	pop	a			; \ 
 	mov	y, #$00			; | Write the sample to the backup table.
@@ -62,12 +62,8 @@ MSampleLoad:
 
 SubC_table2_GAIN:
 	push	a
-	
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	
+	call	SetBackupSRCN
 	call	GetBackupInstrTable
-	
 	pop	a			;
 	mov     y, #$03			; \ GAIN byte = parameter
 	mov 	($10)+y, a		; /
@@ -78,8 +74,7 @@ SubC_table2_GAIN:
 	bra	UpdateInstr
 
 RestoreMusicSample:
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
+	call	SetBackupSRCN
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
 	mov	a, #$00
@@ -310,6 +305,7 @@ cmdE1:					; Fade the master volume
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SubC_7:
 	mov	a, #$00				; \ 
+SubC_7_storeTo387:
 	mov	$0387, a			; | Set the tempo to normal.
 	mov	a, $51				; /
 
@@ -364,12 +360,12 @@ TSampleLoad:
 cmdE6:					; Second loop
 {
 	bne   label2
+	dec   a				; \ ?
+	mov   $01f0+x,a			; /
 	mov   a,$30+x			; \
 	mov   $01e0+x,a			; | Save the current song position into $01e0
 	mov   a,$31+x			; |
 	mov   $01e1+x,a			; /
-	mov   a,#$ff			; \ ?
-	mov   $01f0+x,a			; /
 	ret				;
 
 label2:
@@ -1224,7 +1220,13 @@ cmdFC:
 	cmp	a, #$ff					; |
 	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
-	beq	.immediateCall				; /
+	beq	.immediateCall				; |
+	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
+	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
+	cmp	a, #$07					; |
+	beq	ClearNonKONRemoteCodeAddressesPre	; |
+	cmp	a, #$08					; |
+	beq	ClearKONRemoteCodeAddressesPre		; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -1232,10 +1234,6 @@ cmdFC:
 	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	mov	a, y					; \ Store the code type.
-	cmp	a, #$05
-	bne +
-	mov	a, #$03
-	+
 	mov	!remoteCodeType+x, a			; |
 	call	GetCommandDataFast			; \ Store the argument.
 	mov	!remoteCodeTimeValue+x, a		; /
@@ -1243,6 +1241,7 @@ cmdFC:
 	
 	
 .noteStartCommand					;
+	mov	!remoteCodeType2+x, a			;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr2+1+x, a		; | Note start code; get the address back and store it where it belongs.
 	pop	a					; |
@@ -1281,18 +1280,45 @@ ClearRemoteCodeAddressesPre:
 	pop	a
 	call	L_1260
 	
-ClearRemoteCodeAddresses:
+ClearRemoteCodeAddressesAndOpenGate:
 	%OpenRunningRemoteCodeGate()
+ClearRemoteCodeAddresses:
+	call	ClearKONRemoteCodeAddresses
+	call	ClearNonKONRemoteCodeAddresses
+	ret
+
+ClearRemoteCodeAddressesXInit:
+	;mov	x, $46
+	;bra	ClearRemoteCodeAddresses
+
+ClearNonKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearNonKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearNonKONRemoteCodeAddresses:
 	mov	a, #$00
-	mov	!remoteCodeTargetAddr2+1+x, a
-	mov	!remoteCodeTargetAddr2+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTimeValue+x, a
 	mov	!remoteCodeTimeLeft+x, a
 	mov	!remoteCodeType+x, a
-	mov	!remoteCodeTargetAddr+x, a
-	mov	!remoteCodeTargetAddr+1+x, a
+	ret
+
+ClearKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearKONRemoteCodeAddresses:
+	mov	a, #$00
+	mov	!remoteCodeTargetAddr2+1+x, a
+	mov	!remoteCodeTargetAddr2+x, a
+	mov	!remoteCodeType2+x, a
 	ret
 }
 
