@@ -435,7 +435,6 @@ endif
 .runningArpGate
 	bra	.runRemoteCodeKON
 
-	mov	a, !remoteCodeType2+x
 	cmp	a, #$fe
 	beq	.noRemoteCode
 
