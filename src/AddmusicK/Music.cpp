@@ -1008,7 +1008,7 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
-			if (targetAMKVersion == 3 && '!' == text[pos])			//if it was actually !! instead of just !
+			if (targetAMKVersion >= 3 && text[pos] == '!')			//if it was actually !! instead of just !
 			{
 				pos++;
 				//--------------------------------------
