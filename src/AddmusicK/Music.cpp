@@ -2133,6 +2133,18 @@ void Music::parseHexCommand()
 				if (i == 0x00 || i == 0x06)
 					hasYoshiDrums = true;
 				//Convert VCMD IDs from Codec's AMK Beta
+				else if (i == 0x0a && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FD command.
+					append(0xFD);
+					return;
+				}
+				else if (i == 0x0b && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FE command.
+					append(0xFE);
+					return;
+				}
 				else if (i == 0x0c && targetAMKVersion == 3) {
 					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
 					data[channel].pop_back(); //Thus, replace $F4 $0C with the equivalent $FC remote code event.
