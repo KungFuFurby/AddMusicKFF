@@ -93,6 +93,7 @@ static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
 static bool caseNoteWarning;
 static bool octaveForDDWarning;
+static bool remoteGainWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -186,6 +187,7 @@ void Music::init()
 	nonNativeCmdWarning = true;
 	octaveForDDWarning = true;
 	caseNoteWarning = true;
+	remoteGainWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -1763,15 +1765,16 @@ void Music::parseHexCommand()
 				// We won't know the gain and delays until later, so don't generate anything else for now.
 				return;
 			}
-			//else if (targetAMKVersion > 1 && currentHex == 0xFC)
-			//{
-			//	error("$FC has been replaced with remote code in #amk 2 and above.")
-			//}
 			else
 			{
 				hexLeft = hexLengths[currentHex - 0xDA] - 1;
 				if (currentHex == 0xE3)
 					guessLength = false;						// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+			}
+			if (targetAMKVersion > 1 && targetAMKVersion < 4 && currentHex == 0xFC && remoteGainWarning)
+			{
+				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz");
+				remoteGainWarning = false;
 			}
 		}
 		else
