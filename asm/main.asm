@@ -1953,6 +1953,7 @@ if !noSFX = !false
 PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
+-
 	mov	!ProtectSFX6, a
 if !useSFXSequenceFor1DFASFX = !false
 	bra	ProcessAPU1SFX
@@ -1968,13 +1969,8 @@ PlayUnpauseSFX:
 +
 	mov	$00, a
 	mov	a, #$00
-	mov	!ProtectSFX6, a
 	;mov	$08, #$00
-if !useSFXSequenceFor1DFASFX = !false
-	bra	ProcessAPU1SFX
-else
-	ret
-endif
+	bra	-
 
 ForceSFXEchoOff:
 	mov	a, #$00
