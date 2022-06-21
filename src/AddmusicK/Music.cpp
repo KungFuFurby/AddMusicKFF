@@ -2129,9 +2129,41 @@ void Music::parseHexCommand()
 				}
 			}
 
-			if (hexLeft == 0 && currentHex == 0xF4)
-			if (i == 0x00 || i == 0x06)
-				hasYoshiDrums = true;
+			if (hexLeft == 0 && currentHex == 0xF4) {
+				if (i == 0x00 || i == 0x06)
+					hasYoshiDrums = true;
+				//Convert VCMD IDs from Codec's AMK Beta
+				else if (i == 0x0c && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0C with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0d && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0D with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0e && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0E with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					return;
+				}
+			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
 			{
