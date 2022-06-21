@@ -1997,9 +1997,53 @@ void Music::parseHexCommand()
 				}
 			}
 
-			if (hexLeft == 0 && currentHex == 0xF4)
-			if (i == 0x00 || i == 0x06 || i == 0x0C)
-				hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
+			if (hexLeft == 0 && currentHex == 0xF4) {
+				if (i == 0x00 || i == 0x06 || i == 0x0C)
+					hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
+				//Convert VCMD IDs from Codec's AMK Beta
+				else if (i == 0x0a && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FD command.
+					append(0xFD);
+					return;
+				}
+				else if (i == 0x0b && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FE command.
+					append(0xFE);
+					return;
+				}
+				else if (i == 0x0c && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0C with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0d && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0D with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0e && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0E with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					return;
+				}
+			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
 			{
