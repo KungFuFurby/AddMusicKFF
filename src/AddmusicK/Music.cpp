@@ -2043,6 +2043,11 @@ void Music::parseHexCommand()
 					append(0x00);
 					return;
 				}
+				else if (i == 0x10 && targetAMKVersion == 3) {
+					//This VCMD ID was relocated.
+					append(0x21);
+					return;
+				}
 			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
