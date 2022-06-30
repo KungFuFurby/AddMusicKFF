@@ -94,6 +94,7 @@ static bool nonNativeCmdWarning;
 static bool caseNoteWarning;
 static bool octaveForDDWarning;
 static bool remoteGainWarning;
+static bool fractionNoteLengthWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -188,6 +189,7 @@ void Music::init()
 	octaveForDDWarning = true;
 	caseNoteWarning = true;
 	remoteGainWarning = true;
+	fractionNoteLengthWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -628,6 +630,9 @@ void Music::parseGlobalVolumeCommand()
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE1);
 		append(duration);
 		append(volume);
@@ -663,6 +668,9 @@ void Music::parseVolumeCommand()
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE8);
 		append(duration);
 		append(volume);
@@ -801,6 +809,9 @@ void Music::parseTempoCommand()
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
 		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE3);
 		append(duration);
 		append(tempo);
@@ -1773,7 +1784,7 @@ void Music::parseHexCommand()
 			}
 			if (targetAMKVersion > 1 && targetAMKVersion < 4 && currentHex == 0xFC && remoteGainWarning)
 			{
-				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz");
+				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK 1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz", name, line);
 				remoteGainWarning = false;
 			}
 		}
@@ -2978,7 +2989,13 @@ int Music::getNoteLength(int i)
 	//if (still)
 	//{
 	else if (i < 1 || i > 192) i = defaultNoteLength;
-	else i = 192 / i;
+	else {
+		if (i % 192 != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: A note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
+		i = 192 / i;
+	}
 
 	return getNoteLengthModifier(i, true);
 }
@@ -2989,6 +3006,17 @@ int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 	int times = 0;
 	while (pos < text.size() && text[pos] == '.')
 	{
+		if (frac % 2 != 0 && fractionNoteLengthWarning) {
+			if (times != 0) {
+				char buffer[255];
+				sprintf(buffer, "%i", times+1);
+				printWarning((std::string)"WARNING: Adding " + buffer + " dots to this note results in a fractional tick value.", name, line);
+			}
+			else {
+				printWarning("WARNING: Adding a dot to this note results in a fractional tick value.", name, line);
+			}
+			fractionNoteLengthWarning = false;
+		}
 		frac = frac / 2;
 		i += frac;
 		pos++;
@@ -2996,8 +3024,13 @@ int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 		if (times == 2 && songTargetProgram == 1) break;	// AM4 only allows two dots for whatever reason.
 	}
 	//}
-	if (triplet && allowTriplet)
+	if (triplet && allowTriplet) {
+		if (i % 3 != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: Putting this note in a triplet results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
+	}
 	return i;
 }
 
@@ -3707,14 +3740,24 @@ void Music::addNoteLength(double ticks)
 
 int Music::divideByTempoRatio(int value, bool fractionIsError)
 {
-	return value;
+	if (targetAMKVersion < 4 || tempoRatio == 1) {
+		return value;
+	}
 	int temp = value / tempoRatio;
-	if (temp * tempoRatio != value)
+	if (value % tempoRatio != 0)
 	{
-		if (fractionIsError)
-			printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+		if (fractionIsError) {
+			if (fractionNoteLengthWarning) {
+				printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+			}
+			else {
+				printError("Attempted to use a tempo ratio on a value that was already going to output a fractional value.", false, name, line);
+			}
+		}
 		else
+		{
 			printWarning("The tempo ratio resulted in a fractional value.", name, line);
+		}
 	}
 
 	return temp;
