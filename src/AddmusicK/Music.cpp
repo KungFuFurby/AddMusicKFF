@@ -618,6 +618,9 @@ void Music::parseGlobalVolumeCommand()
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE1);
 		append(duration);
 		append(volume);
@@ -653,6 +656,9 @@ void Music::parseVolumeCommand()
 	}
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE8);
 		append(duration);
 		append(volume);
@@ -791,6 +797,9 @@ void Music::parseTempoCommand()
 	else {
 		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
 		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		if (targetAMKVersion >= 4) {
+			duration = divideByTempoRatio(duration, false);
+		}
 		append(0xE3);
 		append(duration);
 		append(tempo);
