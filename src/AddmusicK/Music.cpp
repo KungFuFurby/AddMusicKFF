@@ -590,24 +590,73 @@ void Music::parseLDirective()
 }
 void Music::parseGlobalVolumeCommand()
 {
-	pos++;
-	i = getInt();
-	if (i == -1) error("Error parsing global volume (\"w\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"w\") command.")
+	int duration = -1;
+	int volume = -1;
 
+	pos++;
+	volume = getInt();
+	if (volume == -1) error("Error parsing global volume (\"w\") command.");
+
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing global volume (\"w\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for global volume (\"w\") command.");
+
+	if (duration == -1) {
 		append(0xE0);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		append(0xE1);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseVolumeCommand()
 {
+	int duration = -1;
+	int volume = -1;
+
 	pos++;
-	i = getInt();
+	volume = getInt();
+	if (volume == -1) error("Error parsing volume (\"v\") command.");
 
-	if (i == -1) error("Error parsing volume (\"v\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"v\") command.")
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing volume (\"v\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
+	if (duration == -1) {
 		append(0xE7);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
+		append(0xE8);
+		append(duration);
+		append(volume);
+	}
 }
 void Music::parseQuantizationCommand()
 {
@@ -695,32 +744,57 @@ void Music::parseT()
 }
 void Music::parseTempoCommand()
 {
-	i = getInt();
+	int duration = -1;
+	int ltempo = -1;
 
-	if (i == -1) error("Error parsing tempo (\"t\") command.")
-	if (i <= 0 || i > 255) error("Illegal value for tempo (\"t\") command.")
+	ltempo = getInt();
+	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
-	i = divideByTempoRatio(i, false);
-
-	if (i == 0)
-		error("Tempo has been zeroed out by #halvetempo")
-
-		tempo = i;
-	tempoDefined = true;
-
-	if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
-	{
-		guessLength = false;
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = ltempo;
+		
+				ltempo = getInt();
+				if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
+			}
 	}
-	else
-	{
-		tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+	
+	if (ltempo < 0 || ltempo > 255) error("Illegal value for tempo (\"t\") command.");
+	
+	tempo = divideByTempoRatio(ltempo, false);
+	
+	if (tempo == 0) {
+		error("Tempo has been zeroed out by #halvetempo");
+		tempo = ltempo;
 	}
 
+	if (duration == -1) {
+		tempoDefined = true;
 
-	append(0xE2);
-	append(tempo);
+		if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
+		{
+			guessLength = false;
+		}
+		else
+		{
+			tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+		}
 
+		append(0xE2);
+		append(tempo);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		append(0xE3);
+		append(duration);
+		append(tempo);
+	}
 }
 void Music::parseTransposeDirective()
 {
@@ -924,6 +998,55 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
+			if (targetAMKVersion >= 3 && text[pos] == '!')			//if it was actually !! instead of just !
+			{
+				pos++;
+				//--------------------------------------
+				// Reset RemoteCommand
+				//--------------------------------------
+				try
+				{
+					i = getIntWithNegative();
+				}
+				catch (...)
+				{
+					error("Error parsing remote code reset. Remember that remote code cannot be defined within a channel.");
+				}
+				skipSpaces;
+
+				if (text[pos] != ')')
+					error("Error parsing remote reset.")
+					pos++;
+
+				switch (i)
+				{
+				case 0:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					break;
+				case -1:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					break;
+				default:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					break;
+				}
+				return;
+			}
+			//--------------------------------------
+			// Call RemoteCommand
+			//--------------------------------------
 			//bool negative = false;
 			i = getInt();
 			if (i == -1) error("Error parsing remote code setup.")
