@@ -1756,7 +1756,7 @@ void Music::parseHexCommand()
 			}
 			if (targetAMKVersion > 1 && targetAMKVersion < 4 && currentHex == 0xFC && remoteGainWarning)
 			{
-				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK 1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz");
+				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK 1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz", name, line);
 				remoteGainWarning = false;
 			}
 		}
