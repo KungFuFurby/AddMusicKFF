@@ -3626,7 +3626,7 @@ int Music::divideByTempoRatio(int value, bool fractionIsError)
 		return value;
 	}
 	int temp = value / tempoRatio;
-	if (value % tempoRatio == 0)
+	if (value % tempoRatio != 0)
 	{
 		if (fractionIsError) {
 			if (fractionNoteLengthWarning) {
