@@ -91,6 +91,10 @@ static bool sortReplacements;
 static bool manualNoteWarning;
 static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
+static bool caseNoteWarning;
+static bool octaveForDDWarning;
+static bool remoteGainWarning;
+static bool fractionNoteLengthWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -182,6 +186,10 @@ void Music::init()
 	manualNoteWarning = true;
 	nonNativeHexWarning = true;
 	nonNativeCmdWarning = true;
+	octaveForDDWarning = true;
+	caseNoteWarning = true;
+	remoteGainWarning = true;
+	fractionNoteLengthWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -347,7 +355,7 @@ void Music::init()
 			return;
 		}
 
-#if PARSER_VERSION != 2
+#if PARSER_VERSION != 4
 #error You forgot to update the #amk syntax.  Aren't you glad you at least remembered to put in this warning?
 #endif
 		/*			targetAMKVersion = 0;
@@ -564,7 +572,7 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
-	if (i == -1 && text[pos] == '=')
+	if (i == -1 && text[pos] == '=' && targetAMKVersion >= 4)
 	{
 		pos++;
 		i = getInt();
@@ -578,28 +586,79 @@ void Music::parseLDirective()
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
 	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	if (targetAMKVersion >= 4) {
+		defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	}
 }
 void Music::parseGlobalVolumeCommand()
 {
-	pos++;
-	i = getInt();
-	if (i == -1) error("Error parsing global volume (\"w\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"w\") command.")
+	int duration = -1;
+	int volume = -1;
 
+	pos++;
+	volume = getInt();
+	if (volume == -1) error("Error parsing global volume (\"w\") command.");
+
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing global volume (\"w\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for global volume (\"w\") command.");
+
+	if (duration == -1) {
 		append(0xE0);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		append(0xE1);
+		append(divideByTempoRatio(duration, false));
+		append(volume);
+	}
 }
 void Music::parseVolumeCommand()
 {
+	int duration = -1;
+	int volume = -1;
+
 	pos++;
-	i = getInt();
+	volume = getInt();
+	if (volume == -1) error("Error parsing volume (\"v\") command.");
 
-	if (i == -1) error("Error parsing volume (\"v\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"v\") command.")
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing volume (\"v\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
+	if (duration == -1) {
 		append(0xE7);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
+		append(0xE8);
+		append(divideByTempoRatio(duration, false));
+		append(volume);
+	}
 }
 void Music::parseQuantizationCommand()
 {
@@ -687,32 +746,57 @@ void Music::parseT()
 }
 void Music::parseTempoCommand()
 {
-	i = getInt();
+	int duration = -1;
+	int ltempo = -1;
 
-	if (i == -1) error("Error parsing tempo (\"t\") command.")
-	if (i <= 0 || i > 255) error("Illegal value for tempo (\"t\") command.")
+	ltempo = getInt();
+	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
-	i = divideByTempoRatio(i, false);
-
-	if (i == 0)
-		error("Tempo has been zeroed out by #halvetempo")
-
-		tempo = i;
-	tempoDefined = true;
-
-	if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
-	{
-		guessLength = false;
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = ltempo;
+		
+				ltempo = getInt();
+				if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
+			}
 	}
-	else
-	{
-		tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+	
+	if (ltempo < 0 || ltempo > 255) error("Illegal value for tempo (\"t\") command.");
+	
+	tempo = divideByTempoRatio(ltempo, false);
+	
+	if (tempo == 0) {
+		error("Tempo has been zeroed out by #halvetempo");
+		tempo = ltempo;
 	}
 
+	if (duration == -1) {
+		tempoDefined = true;
 
-	append(0xE2);
-	append(tempo);
+		if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
+		{
+			guessLength = false;
+		}
+		else
+		{
+			tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+		}
 
+		append(0xE2);
+		append(tempo);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		append(0xE3);
+		append(divideByTempoRatio(duration, false));
+		append(tempo);
+	}
 }
 void Music::parseTransposeDirective()
 {
@@ -916,6 +1000,55 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
+			if (targetAMKVersion >= 3 && text[pos] == '!')			//if it was actually !! instead of just !
+			{
+				pos++;
+				//--------------------------------------
+				// Reset RemoteCommand
+				//--------------------------------------
+				try
+				{
+					i = getIntWithNegative();
+				}
+				catch (...)
+				{
+					error("Error parsing remote code reset. Remember that remote code cannot be defined within a channel.");
+				}
+				skipSpaces;
+
+				if (text[pos] != ')')
+					error("Error parsing remote reset.")
+					pos++;
+
+				switch (i)
+				{
+				case 0:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					break;
+				case -1:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					break;
+				default:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					break;
+				}
+				return;
+			}
+			//--------------------------------------
+			// Call RemoteCommand
+			//--------------------------------------
 			//bool negative = false;
 			i = getInt();
 			if (i == -1) error("Error parsing remote code setup.")
@@ -1608,15 +1741,16 @@ void Music::parseHexCommand()
 				// We won't know the gain and delays until later, so don't generate anything else for now.
 				return;
 			}
-			//else if (targetAMKVersion > 1 && currentHex == 0xFC)
-			//{
-			//	error("$FC has been replaced with remote code in #amk 2 and above.")
-			//}
 			else
 			{
 				hexLeft = hexLengths[currentHex - 0xDA] - 1;
 				if (currentHex == 0xE3)
 					guessLength = false;						// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+			}
+			if (targetAMKVersion > 1 && targetAMKVersion < 4 && currentHex == 0xFC && remoteGainWarning)
+			{
+				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK 1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz", name, line);
+				remoteGainWarning = false;
 			}
 		}
 		else
@@ -1851,6 +1985,10 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						if (targetAMKVersion < 4 && octaveForDDWarning) {
+							printWarning("WARNING: Using o after reading $DD will freeze on hex validation for AddmusicK 1.0.8 and lower!", name, line);
+							octaveForDDWarning = false;
+						}
 						pos++;
 						getInt();
 					}
@@ -1952,6 +2090,10 @@ void Music::markEchoBufferAllocVCMD()
 
 void Music::parseNote()
 {
+	if (isupper(text[pos]) && targetAMKVersion < 4 && caseNoteWarning){
+		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
+		caseNoteWarning = false;
+	}
 	if (channel != 8) {
 		passedNote[channel] = true;
 	}
@@ -2724,14 +2866,23 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		//return i;
+		if (targetAMKVersion < 4)
+		{
+			return i;
+		}
 		//if (i < 1) still = false; else return i;
 	}
 
 	//if (still)
 	//{
 	else if (i < 1 || i > 192) i = defaultNoteLength;
-	else i = 192 / i;
+	else {
+		if (i % 192 != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: A note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
+		i = 192 / i;
+	}
 
 	return getNoteLengthModifier(i, true);
 }
@@ -2742,6 +2893,17 @@ int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 	int times = 0;
 	while (pos < text.size() && text[pos] == '.')
 	{
+		if (frac % 2 != 0 && fractionNoteLengthWarning) {
+			if (times != 0) {
+				char buffer[255];
+				sprintf(buffer, "%i", times+1);
+				printWarning((std::string)"WARNING: Adding " + buffer + " dots to this note results in a fractional tick value.", name, line);
+			}
+			else {
+				printWarning("WARNING: Adding a dot to this note results in a fractional tick value.", name, line);
+			}
+			fractionNoteLengthWarning = false;
+		}
 		frac = frac / 2;
 		i += frac;
 		pos++;
@@ -2749,8 +2911,13 @@ int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 		if (times == 2 && songTargetProgram == 1) break;	// AM4 only allows two dots for whatever reason.
 	}
 	//}
-	if (triplet && allowTriplet)
+	if (triplet && allowTriplet) {
+		if (i % 3 != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: Putting this note in a triplet results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
+	}
 	return i;
 }
 
@@ -3446,14 +3613,24 @@ void Music::addNoteLength(double ticks)
 
 int Music::divideByTempoRatio(int value, bool fractionIsError)
 {
-	return value;
+	if (targetAMKVersion < 4 || tempoRatio == 1) {
+		return value;
+	}
 	int temp = value / tempoRatio;
-	if (temp * tempoRatio != value)
+	if (value % tempoRatio != 0)
 	{
-		if (fractionIsError)
-			printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+		if (fractionIsError) {
+			if (fractionNoteLengthWarning) {
+				printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+			}
+			else {
+				printError("Attempted to use a tempo ratio on a value that was already going to output a fractional value.", false, name, line);
+			}
+		}
 		else
+		{
 			printWarning("The tempo ratio resulted in a fractional value.", name, line);
+		}
 	}
 
 	return temp;
