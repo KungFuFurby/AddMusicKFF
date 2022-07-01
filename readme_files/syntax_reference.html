@@ -110,13 +110,13 @@
 	<tr>
 		<td>t</td>
 		<td>Tempo</td>
-		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4.  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
+		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4 (or if you want higher precision, multiply by 8192, then divide by 20025).  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
 		<td>t40</td>
 	</tr>
 	<tr>
 		<td>p</td>
 		<td>Vibrato</td>
-		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured in the same manner as notes (1 is the length of a whole note, etc.)</td>
+		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured as if = was placed next to a note (thus, by the number of ticks).</td>
 		<td>p24,12,8 p12,8</td>
 	</tr>
 	<tr>
