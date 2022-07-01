@@ -12,9 +12,69 @@ TerminateIfSFXPlaying:
 	ret
 endif
 
-RestoreMusicSample:
+SetBackupSRCN:
 	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
 	mov	!BackupSRCN+x, a	; /
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdED:					; ADSR
+{
+	push	a
+	call	SetBackupSRCN	
+	call	GetBackupInstrTable
+	pop	a			; \ 
+	eor	a,#$80			; | Write ADSR 1 to the table.
+	push	p
+	mov	y, #$01			; | 
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \
+	mov	y, #$02			; | Write ADSR 2 to the table.
+	pop	p			; | 
+	bmi	+			; | 
+	inc	y			; | Write GAIN to the table.
++	mov	($10)+y, a		; /
+	
+	bra	UpdateInstr
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cmdF3:					; Sample load command
+{
+MSampleLoad:
+	push	a
+	call	SetBackupSRCN
+	call	GetBackupInstrTable
+	pop	a			; \ 
+	mov	y, #$00			; | Write the sample to the backup table.
+	mov	($10)+y, a		; /
+	call	GetCommandData		; \ 
+	mov	y, #$04			; | Get the pitch multiplier byte.
+	mov	($10)+y, a		; |
+.clearSubmultiplierPatchGate		; |
+	inc	y			; | Zero out pitch sub-multiplier.
+	bra	.clearSubmultiplierSkip	; |
+	mov	a, #$00			; |
+	mov	($10)+y, a		; /
+.clearSubmultiplierSkip
+	bra	UpdateInstr
+}
+
+SubC_table2_GAIN:
+	push	a
+	call	SetBackupSRCN
+	call	GetBackupInstrTable
+	pop	a			;
+	mov     y, #$03			; \ GAIN byte = parameter
+	mov 	($10)+y, a		; /
+	mov	y, #$01			
+	mov	a, ($10)+y		; \ Clear ADSR bit 7.
+	and	a, #$7f			; /
+	mov	($10)+y, a		;
+	bra	UpdateInstr
+
+RestoreMusicSample:
+	call	SetBackupSRCN
 	call	GetBackupInstrTable	; \ 
 UpdateInstr:
 	mov	a, #$00
@@ -116,7 +176,7 @@ if !noSFX = !false
 	bne	.DSPWriteDirectionGate1
 endif	
 	push	y
-	call	ModifyNoise		; EffectModifier is called at the end of this routine, since it messes up $14 and $15.
+	call	ModifyNoise
 	pop	y
 .DSPWriteDirectionGate1
 	bra	.incXY
@@ -149,13 +209,10 @@ endif
 	inc	y			;
 	mov	a, ($14)+y		; The final byte is the sub multiplier.
 	mov	$02f0+x, a		;
+	call	EffectModifier
 	
 	inc	y			; If this was a percussion instrument,
 	mov	a, ($14)+y		; Then it had one extra pitch byte.  Get it just in case.
-	
-	push	a	
-	call	EffectModifier
-	pop	a
 
 	ret
 
@@ -246,6 +303,12 @@ cmdE1:					; Fade the master volume
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_7:
+	mov	a, #$00				; \ 
+SubC_7_storeTo387:
+	mov	$0387, a			; | Set the tempo to normal.
+	mov	a, $51				; /
+
 cmdE2:					; Change the tempo
 {
 L_0E14: 
@@ -297,12 +360,12 @@ TSampleLoad:
 cmdE6:					; Second loop
 {
 	bne   label2
+	dec   a				; \ ?
+	mov   $01f0+x,a			; /
 	mov   a,$30+x			; \
 	mov   $01e0+x,a			; | Save the current song position into $01e0
 	mov   a,$31+x			; |
 	mov   $01e1+x,a			; /
-	mov   a,#$ff			; \ ?
-	mov   $01f0+x,a			; /
 	ret				;
 
 label2:
@@ -321,31 +384,6 @@ label3:
 label4:
 	ret
 }	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdED:					; ADSR
-{
-	push	a
-	
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
-	mov	!BackupSRCN+x, a	; /
-	
-	call	GetBackupInstrTable
-	
-	pop	a			; \ 
-	eor	a,#$80			; | Write ADSR 1 to the table.
-	push	p
-	mov	y, #$01			; | 
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \
-	mov	y, #$02			; | Write ADSR 2 to the table.
-	pop	p			; | 
-	bmi	+			; | 
-	inc	y			; | Write GAIN to the table.
-+	mov	($10)+y, a		; /
-	
-	jmp	UpdateInstr
-		
-}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
 {
@@ -438,17 +476,9 @@ L_0EEB:
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF0:					; Echo off
+;cmdF0:					; Echo off
 {
-	mov	!MusicEchoChannels, a           ; clear all echo vbits
-L_0F22: 
-	mov	y, a
-	movw	$61, ya            ; zero echo vol L shadow
-	movw	$63, ya            ; zero echo vol R shadow
-	call	EffectModifier
-	call	L_0EEB             ; set echo vol DSP regs from shadows
-	set1	!NCKValue.5        ; disable echo write
-	jmp	SetFLGFromNCKValue
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
@@ -563,28 +593,6 @@ cmdF2:					; Echo fade
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF3:					; Sample load command
-{
-MSampleLoad:
-	push	a
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	call	GetBackupInstrTable
-	pop	a			; \ 
-	mov	y, #$00			; | Write the sample to the backup table.
-	mov	($10)+y, a		; /
-	call	GetCommandData		; \ 
-	mov	y, #$04			; | Get the pitch multiplier byte.
-	mov	($10)+y, a		; |
-	inc	y			; | Zero out pitch sub-multiplier.
-.clearSubmultiplierPatchGate		; |
-	bra	.clearSubmultiplierSkip	; |
-	mov	a, #$00			; |
-	mov	($10)+y, a		; /
-.clearSubmultiplierSkip
-	jmp	UpdateInstr
-}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF4:					; Misc. command
 {
 	asl	a
@@ -635,10 +643,6 @@ SubC_1:
 SubC_2:
 	eor	!WaitTime, #$03
 	ret
-
-SubC_3:
-	eor	(!MusicEchoChannels), ($48)
-	jmp	EffectModifier
 	
 SubC_5:
 	mov    a, #$00
@@ -653,23 +657,9 @@ SubC_6:
 	eor	($6e), ($48)
 	bra	SubC_00
 	
-SubC_7:
-	mov	a, #$00				; \ 
-	mov	$0387, a			; | Set the tempo to normal.
-	mov	a, $51				; |
-	jmp	L_0E14				; /
-	
 SubC_8:
 	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
-	ret
-	
-SubC_9:
-	mov     x, $46				; \ 
-	mov	a, #$00				; | Turn the current instrument back on.
-	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
-	jmp	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
-	
-	
+	ret	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -685,13 +675,9 @@ cmdF5:					; FIR Filter command.
 +		ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF6:					; DSP Write command.
+;cmdF6:					; DSP Write command.
 {
-	push a
-	call GetCommandDataFast
-	pop y
-	jmp DSPWrite
-	;ret
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF7:					; Originally the "write to ARAM command". Disabled by default.
@@ -707,19 +693,9 @@ cmdF7:					; Originally the "write to ARAM command". Disabled by default.
 ;	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cmdF8:					; Noise command.
+;cmdF8:					; Noise command.
 {
-Noiz:
-		or	(!MusicNoiseChannels), ($48)
-if !noSFX = !false
-		and	a, #$1f
-		mov	$0389, a
-		cmp	!SFXNoiseChannels, #$00
-		bne	+
-endif
-		call	ModifyNoise
-+
-		jmp	EffectModifier		
+	; Handled elsewhere.
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF9:					; Send data to 5A22 command.
@@ -933,8 +909,8 @@ HotPatchVCMDByte0Bit2Storages:
 	db	L_10B2_subroutine-L_10B2_subroutineBranchGate-2
 
 	dw	L_10B2_zeroVCMDCheckGate+1
-	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
 	db	L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
+	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
 HotPatchVCMDByte0Bit2StoragesEOF:
 
 	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition
@@ -963,8 +939,12 @@ HotPatchVCMDByte0Bit5Storages:
 	db	$10
 HotPatchVCMDByte0Bit5StoragesEOF:
 
+	;Byte 0 Bit 6 Clear - When using arpeggio, glissando disables itself after two base notes
+	;Byte 0 Bit 6 Set - When using arpeggio, glissando disables itself after one base note
 HotPatchVCMDByte0Bit6Storages:
-	;This bit is not yet defined.
+	dw	cmdFB_glissNoteCounter+1
+	db	$02
+	db	$01
 HotPatchVCMDByte0Bit6StoragesEOF:
 
 HotPatchVCMDByte1StorageSet:
@@ -1006,7 +986,7 @@ HotPatchVCMDByte1Bit6StoragesEOF:
 HotPatchPresetTable:
 	  ;%!xyzabcd
 	  ;%! - New byte specified (shouldn't be found in the presets for now)
-	   ;%x - Reserved for playback adjustment for other Addmusics
+	   ;%x - When using arpeggio, glissando disables itself after one base note
 	    ;%y - Echo writes are disabled when EDL is zero on initial playback of local song
 	     ;%z - $F3 VCMD zeroes out pitch base fractional multiplier
 	      ;%a - $DD VCMD accounts for per-channel transposition
@@ -1015,7 +995,7 @@ HotPatchPresetTable:
 	         ;%d - Arpeggio doesn't play during rests
 	db %00000000 ; 00 - AddmusicK1.0.8 and earlier (not counting Beta)
 	             ; %??0?000? also replicate Vanilla SMW's behavior
-	db %00111111 ; 01 - AddmusicK1.0.9
+	db %01111111 ; 01 - AddmusicK1.0.9
 	db %00000000 ; 02 - AddmusicK Beta
 	db %00000000 ; 03 - Romi's Addmusic404
 	db %00000000 ; 04 - Addmusic405
@@ -1036,27 +1016,7 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
-
-.PitchMod
-	mov     !MusicPModChannels, a	; \ This is for music.
-	jmp	EffectModifier		; / Call the effect modifier routine.
 	
-.GAIN	
-	push	a
-	
-	mov	a, #$01
-	mov	!BackupSRCN+x, a
-	
-	call	GetBackupInstrTable
-	
-	pop	a			;
-	mov     y, #$03			; \ GAIN byte = parameter
-	mov 	($10)+y, a		; /
-	mov	y, #$01			
-	mov	a, ($10)+y		; \ Clear ADSR bit 7.
-	and	a, #$7f			; /
-	mov	($10)+y, a		;
-	jmp	UpdateInstr
 .HFDTune
 	mov     !HTuneValues+x, a
 	ret
@@ -1102,9 +1062,7 @@ cmdFB:					; Arpeggio command.
 	mov	!ArpNoteCount+x, a	; / (But if it's negative, then it's a special command).
 	push	a			; Remember it.
 	
-	call	GetCommandDataFast	; \ Save the length between each change.
-	mov	!ArpLength+x, a		; |
-	mov	!ArpTimeLeft+x, a	; /
+	call	.fetchLength
 	
 	mov	a, $30+x		; \
 	mov	!ArpNotePtrs+x, a	; | The current channel pointer points to the sequence of notes,
@@ -1135,34 +1093,44 @@ cmdFB:					; Arpeggio command.
 	and	a, #$7f			; \
 	inc	a			; | Put this value into the type.
 	mov	!ArpType+x, a		; /
-	
+
+.glissNoteCounter
 	mov	a, #$02			; \ Force the note count to be non-zero, so it's treated as a valid command.
 	mov	!ArpNoteCount+x, a	; / 
 	
-	call	GetCommandDataFast	; \ Save the length between each change.
-	mov	!ArpLength+x, a		; |
-	mov	!ArpTimeLeft+x, a	; /
+	call	.fetchLength
 	
 	call	GetCommandDataFast	; \ The note difference goes into the note index.
 	mov	!ArpSpecial+x, a	; / Yes, its purpose changes here.
 	
 	mov	a, #$00			; \
 	mov	!ArpCurrentDelta+x, a	; / The current pitch change is 0.
-	
+HandleArpeggio_return:
+	ret
+
+cmdFB_fetchLength:
+	call	GetCommandDataFast	; \ Save the length between each change.
+	mov	!ArpLength+x, a		; |
+	mov	!ArpTimeLeft+x, a	; /
 	ret
 	
 HandleArpeggio:				; Routine that controls all things arpeggio-related.
 	mov	a, !ArpNoteCount+x	; \ If the note count is 0, then this channel is not using arpeggio.
 	beq	.return			; /
-	
+.nextNoteCheck
+	beq	.skipWaitTimeCheck
+	mov	a, !WaitTime		; \
+	cmp	a, !ArpLength+x		; | Don't prepare another note when the next base note is to be keyed on.
+	bcs	.skipWaitTimeCheck	; | An exception is made if the requested length is less than or equal
+	cmp	a, $70+x		; | to !WaitTime, since they bypass keying off anyways that way.
+	bcs	.return			; /
+.skipWaitTimeCheck
 	mov	a, !ArpTimeLeft+x	; \
 	dec	a			; | Decrement the timer.
 	mov	!ArpTimeLeft+x, a	; /
 	beq	.doStuff		; If the time left is 0, then we have work to do.
-	cmp	a, !WaitTime		; \ If the time left is 2 (or 1), then key off this voice in preparation. 
-	beq	.keyOffVoice		; /
-.return
-	ret				; Otherwise, do nothing.
+	cbne	!WaitTime, .return	; If the time left is 2 (or 1), then key off this voice in preparation. 
+					; Otherwise, do nothing.
 	
 .keyOffVoice
 	call	TerminateOnLegatoEnable ; Key off the current voice (with conditions).
@@ -1246,7 +1214,13 @@ cmdFC:
 	cmp	a, #$ff					; |
 	beq	.noteStartCommand			; |
 	cmp	a, #$04					; |
-	beq	.immediateCall				; /
+	beq	.immediateCall				; |
+	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
+	beq	.noteStartCommand			; | It takes up a slot normally reserved for key on VCMDs since it comes built-in to the code type AND it needs to execute simultaneously with remote code type $05.
+	cmp	a, #$07					; |
+	beq	ClearNonKONRemoteCodeAddressesPre	; |
+	cmp	a, #$08					; |
+	beq	ClearKONRemoteCodeAddressesPre		; /
 							;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr+1+x, a		; | Normal code; get the address back and store it where it belongs.
@@ -1254,10 +1228,6 @@ cmdFC:
 	mov	!remoteCodeTargetAddr+x, a		; /
 							;
 	mov	a, y					; \ Store the code type.
-	cmp	a, #$05
-	bne +
-	mov	a, #$03
-	+
 	mov	!remoteCodeType+x, a			; |
 	call	GetCommandDataFast			; \ Store the argument.
 	mov	!remoteCodeTimeValue+x, a		; /
@@ -1265,6 +1235,7 @@ cmdFC:
 	
 	
 .noteStartCommand					;
+	mov	!remoteCodeType2+x, a			;
 	pop	a					; \
 	mov	!remoteCodeTargetAddr2+1+x, a		; | Note start code; get the address back and store it where it belongs.
 	pop	a					; |
@@ -1303,18 +1274,45 @@ ClearRemoteCodeAddressesPre:
 	pop	a
 	call	L_1260
 	
-ClearRemoteCodeAddresses:
+ClearRemoteCodeAddressesAndOpenGate:
 	%OpenRunningRemoteCodeGate()
+ClearRemoteCodeAddresses:
+	call	ClearKONRemoteCodeAddresses
+	call	ClearNonKONRemoteCodeAddresses
+	ret
+
+ClearRemoteCodeAddressesXInit:
+	;mov	x, $46
+	;bra	ClearRemoteCodeAddresses
+
+ClearNonKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearNonKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearNonKONRemoteCodeAddresses:
 	mov	a, #$00
-	mov	!remoteCodeTargetAddr2+1+x, a
-	mov	!remoteCodeTargetAddr2+x, a
 	mov	!remoteCodeTargetAddr+1+x, a
 	mov	!remoteCodeTargetAddr+x, a
 	mov	!remoteCodeTimeValue+x, a
 	mov	!remoteCodeTimeLeft+x, a
 	mov	!remoteCodeType+x, a
-	mov	!remoteCodeTargetAddr+x, a
-	mov	!remoteCodeTargetAddr+1+x, a
+	ret
+
+ClearKONRemoteCodeAddressesPre:
+	pop	a
+	pop	a
+	call	L_1260
+
+ClearKONRemoteCodeAddressesXInit:
+	;mov	x, $46
+ClearKONRemoteCodeAddresses:
+	mov	a, #$00
+	mov	!remoteCodeTargetAddr2+1+x, a
+	mov	!remoteCodeTargetAddr2+x, a
+	mov	!remoteCodeType2+x, a
 	ret
 }
 

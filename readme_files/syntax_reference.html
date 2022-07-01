@@ -110,13 +110,13 @@
 	<tr>
 		<td>t</td>
 		<td>Tempo</td>
-		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4.  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
+		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4 (or if you want higher precision, multiply by 8192, then divide by 20025).  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
 		<td>t40</td>
 	</tr>
 	<tr>
 		<td>p</td>
 		<td>Vibrato</td>
-		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured in the same manner as notes (1 is the length of a whole note, etc.)</td>
+		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured as if = was placed next to a note (thus, by the number of ticks).</td>
 		<td>p24,12,8 p12,8</td>
 	</tr>
 	<tr>
@@ -190,6 +190,9 @@
 				3: Run code whenever a note is keyed off. This is also relative to the qXX command.  Unlike 2, this cancels the note cut event, so the note keeps playing.  The note is absolutely keyed off, however, before the next note begins (this does not trigger this event).<br>
 				4: Run once, right now. This is also compatible with all other events, and because it can be used within loops, it effectively allows you to have a third layer of nested loops (see [[ ]] for the second layer), though with the same limitation as before on not being able to use notes.<br>
 				5: Reserved.  Do not use this event type.<br>
+				6: Reserved.  Do not use this event type.<br>
+				7: Disable the remote commands for this channel, except for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
+				8: Disable the remote command for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
 				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>

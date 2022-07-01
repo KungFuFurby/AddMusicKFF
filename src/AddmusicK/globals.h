@@ -47,6 +47,7 @@ class SampleGroup;
 #include <vector>
 #include <fstream>
 #include <map>
+#include <memory>
 #include "Directory.h"
 #include "asardll.h"
 #include <sys/types.h>
@@ -60,7 +61,7 @@ extern Music musics[256];
 //extern Sample samples[256];
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];
-extern std::vector<BankDefine *> bankDefines;
+extern std::vector<std::unique_ptr<BankDefine>> bankDefines;
 
 extern std::map<File, int> sampleToIndex;
 
