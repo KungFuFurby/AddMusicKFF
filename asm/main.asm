@@ -314,7 +314,7 @@ L_059D:
 	dec   x
 	dec   x
 	bpl   L_0596             ; loop for each voice
-	jmp   MainLoop             ; restart main loop
+	bra   -                  ; restart main loop
 
 }
 
