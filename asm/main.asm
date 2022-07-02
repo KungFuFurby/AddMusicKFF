@@ -3412,9 +3412,8 @@ L_10B2:							; |
 +
 	cmp	a, #$21
 	bne	+
-	mov	a, $c0+x
-	dec	a
-	bne	.F4Command_skip
+	mov	y, $c0+x
+	dbnz	y, .F4Command_skip
 	jmp	.subroutineCheck
 +
 	cmp	a, #$22
