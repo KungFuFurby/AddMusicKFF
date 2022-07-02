@@ -585,7 +585,13 @@ void Music::parseLDirective()
 	}
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
-	else {defaultNoteLength = 192 / i;}
+	else {
+		if (192 % i != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: A default note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
+		defaultNoteLength = 192 / i;
+	}
 	if (targetAMKVersion >= 4) {
 		defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
 	}
@@ -2877,7 +2883,7 @@ int Music::getNoteLength(int i)
 	//{
 	else if (i < 1 || i > 192) i = defaultNoteLength;
 	else {
-		if (i % 192 != 0 && fractionNoteLengthWarning) {
+		if (192 % i != 0 && fractionNoteLengthWarning) {
 			printWarning("WARNING: A note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
 			fractionNoteLengthWarning = false;
 		}
