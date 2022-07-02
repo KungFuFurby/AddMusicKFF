@@ -342,7 +342,7 @@ L_059D:
 	dec   x
 	dec   x
 	bpl   L_0596             ; loop for each voice
-	jmp   MainLoop             ; restart main loop
+	bra   -                  ; restart main loop
 
 }
 
@@ -2256,14 +2256,7 @@ if !noVcmdFB = !false
 	mov	a, #!runningArpGateOnJumpDistance
 	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
 endif
-	mov	a,#$00			; Clear various new addresses.
-	mov	y,#$08			; These weren't used before, so they weren't cleared before.
--					;
-	mov	$0160-1+y,a		;
-	mov	$0168-1+y,a		;
-	dbnz	y, -			;
-					;
-	mov	$46, a			;
+	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
 	call	HotPatchVCMDByBit	; The code will handle the rest.
@@ -2375,6 +2368,7 @@ if !noVcmdFB = !false
 	mov	!ArpLength-1+y, a
 endif
 	mov	$0300-1+y, a
+	mov	$0160-1+y,a
 	dbnz	y, -
 	; MODIFIED CODE END
 	
