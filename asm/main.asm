@@ -2115,14 +2115,7 @@ L_0B5A:
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
-	mov	a,#$00			; Clear various new addresses.
-	mov	y,#$08			; These weren't used before, so they weren't cleared before.
--					;
-	mov	$0160-1+y,a		;
-	mov	$0168-1+y,a		;
-	dbnz	y, -			;
-					;
-	mov	$46, a			;
+	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
 	call	HotPatchVCMDByBit	; The code will handle the rest.
@@ -2219,6 +2212,7 @@ endif
 	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
 	mov	!ArpLength-1+y, a
 	mov	$0300-1+y, a
+	mov	$0160-1+y,a
 	dbnz	y, -
 	; MODIFIED CODE END
 	
