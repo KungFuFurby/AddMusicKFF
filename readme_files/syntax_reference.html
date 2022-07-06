@@ -198,6 +198,12 @@
 		<td>(!6, 1, 4) (!7, -1)</td>
 	</tr>
 	<tr>
+		<td>(!!)</td>
+		<td>Stop remote code</td>
+		<td>Disables a remote code event by number. Note that currently they're technically split into "key on" (by using -1) and "non-key on" types (any other number), with 0 disabling both, since currently they don't all run at the same time.</td>
+		<td>(!!-1) (!!0) (!!3)</td>
+	</tr>
+	<tr>
 		<td>[[ ]]</td>
 		<td>Superloop</td>
 		<td>A special loop variation.  Normal loops may go inside of this and this may be placed in normal loops.  You may not assign a value to this kind of a loop with parantheses, nor may you call it with the * command.</td>
