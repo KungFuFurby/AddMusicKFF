@@ -16,7 +16,7 @@ else
 	CXX = g++
 endif
 
-CXXFLAGS = -Wall -pedantic -std=c++17 -O3
+CXXFLAGS = -Wall -pedantic -std=c++17 -Os
 #Commented out for now
 #with libboost (this specifically targets MacPorts inclusions)
 #CXXFLAGS += -I/opt/local/include
