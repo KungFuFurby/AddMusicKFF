@@ -86,14 +86,14 @@
 	<tr>
 		<td>v</td>
 		<td>Volume</td>
-		<td>Sets the volume for the currently playing channel.  Valid values are 0 to 255.</td>
-		<td>v240</td>
+		<td>Sets the volume for the currently playing channel.  Valid values are 0 to 255.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>v24,240</td>
 	</tr>
 	<tr>
 		<td>w</td>
 		<td>Global volume</td>
-		<td>Sets the volume for the entire song.  Valid values are 0 to 255.</td>
-		<td>w200</td>
+		<td>Sets the volume for the entire song.  Valid values are 0 to 255.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>w24,200</td>
 	</tr>
 	<tr>
 		<td>y</td>
@@ -110,8 +110,8 @@
 	<tr>
 		<td>t</td>
 		<td>Tempo</td>
-		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4 (or if you want higher precision, multiply by 8192, then divide by 20025).  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
-		<td>t40</td>
+		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4 (or if you want higher precision, multiply by 8192, then divide by 20025).  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>t24,40</td>
 	</tr>
 	<tr>
 		<td>p</td>
@@ -196,6 +196,12 @@
 				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>
+	</tr>
+	<tr>
+		<td>(!!)</td>
+		<td>Stop remote code</td>
+		<td>Disables a remote code event by number. Note that currently they're technically split into "key on" (by using -1) and "non-key on" types (any other number), with 0 disabling both, since currently they don't all run at the same time.</td>
+		<td>(!!-1) (!!0) (!!3)</td>
 	</tr>
 	<tr>
 		<td>[[ ]]</td>
