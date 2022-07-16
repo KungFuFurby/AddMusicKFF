@@ -412,7 +412,7 @@ endif
 	cmp	a, !remoteCodeType+x
 	bne	.checkRemoteCodeTypes
 .remoteCodeRestoreInstrumentOnKON
-	call	SubC_9
+	call	RestoreInstrumentInformation
 
 .checkRemoteCodeTypes
 	mov	a, !remoteCodeType+x
