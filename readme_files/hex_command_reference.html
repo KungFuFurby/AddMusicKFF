@@ -877,7 +877,7 @@
 		<td rowspan="4">$FC</td>
 		<td rowspan="4">AddmusicK<br></td>
 		<td rowspan="4">Remote commands</td>
-		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.<br><br>For the sake of reference, for songs labeled #amk 1, this command is anticipation gain.  It used to cause gain to occur some amount of time before a note ended. It has been replaced entirely with remote commands, and will be converted to that in current versions of AddmusicK.</td>
+		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.</td>
 		<td>$WW<br></td>
 		<td>Address to jump to, low byte (not used for event type 0)<br></td>
 	</tr>
@@ -891,6 +891,26 @@
 	</tr>
 	<tr>
 		<td>$ZZ</td>
+		<td><a href="#LengthInfo">How long to wait when using wait types 1 or 2.</a> Note that a value of $00 is treated as $0100<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="4">$FC</td>
+		<td rowspan="4">New<br></td>
+		<td rowspan="4">Remote Gain</td>
+		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.<br><br>For the sake of reference, for songs labeled #amk 1, this command is essentially a more customizable version of remote gain and anticipation gain (though in both cases you need a -1 event type to automate instrument restoration unless you want to do something else), with remote gain previously using type 2 and anticipation gain using type 3.</td>
+		<td>$WW<br></td>
+		<td>GAIN value to set on trigger.</td>
+	</tr>
+	<tr>
+		<td>$01<br></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>The event type<br></td>
+	</tr>
+	<tr>
+		<td>$YY</td>
 		<td><a href="#LengthInfo">How long to wait when using wait types 1 or 2.</a> Note that a value of $00 is treated as $0100<br></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
@@ -988,7 +1008,7 @@ Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6:
 	</tr>
 	<tr>
 		<td>$E4</td>
-		<td>N/A<br>($F4 $02 is the closet approximation, but this toggles light staccato rather than enables it, and $E4 $01 added to this enables the side effect of doing this)</td>
+		<td>N/A<br>($F4 $02 is the closest approximation, but this toggles light staccato rather than enables it, and $E4 $01 added to this enables the side effect of doing this)</td>
 		<td>Light staccato<br></td>
 		<td>Enable light staccato (notes will be played with less of a delay between). As a side effect, also sets global transposition to 1 semitone.  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
 		<td>$AA</td>
@@ -1162,7 +1182,10 @@ The highest command ID supported was $FC.
 	</tr>
 	<tr>
 		<td rowspan="2">$FA <br></td>
-		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 3 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command.)</td>
+		<td rowspan="2">$FC $XX $01 $03 $00<br>
+along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)<br><br>
+The instrument restoration cannot be fully replicated at this time if the $ED, $F3 and/or $FA $02 commands were used, as the restoration would be done from the backup table, for which there is currently no hex command to do so: instead one would just use the last set of $ED, $F3 and/or $FA $02 commands used to manually do so.<br>
+This method is not compatible with running Remote Gain at the same time: songs automatically converted from AddmusicK Beta use a special reserved remote code type (in this command's case, 5, and it is designed to run in unison with 6, which takes up a slot normally used for -1 remote code events, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.</td>
 		<td rowspan="2">Anticipation Gain<br></td>
 		<td rowspan="2">Sets the GAIN value of a voice whenever the note is keyed off.</td>
 		<td>$05 <br></td>
@@ -1174,7 +1197,10 @@ The highest command ID supported was $FC.
 	</tr>
 	<tr>
 		<td rowspan="2">$FC <br></td>
-		<td rowspan="2">N/A<br>(In general, this can be replicated for the most part using two remote code calls: a type 2 remote code call with the $F6 command (however, voice-specific DSP register writes are not implemented) and a type -1 remote code call with the $F4 $09 command.)</td>
+		<td rowspan="2">$FC $YY $01 $02 $XX<br>
+along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)<br><br>
+The instrument restoration cannot be fully replicated at this time if the $ED, $F3 and/or $FA $02 commands were used, as the restoration would be done from the backup table, for which there is currently no hex command to do so: instead one would just use the last set of $ED, $F3 and/or $FA $02 commands used to manually do so.<br>
+This method is not compatible with running Anticipation Gain at the same time: songs automatically converted from AddmusicK beta use a special reserved remote code type (in this command's case, 6, and yes, for those of you looking at the source, this does use the slot normally taken up by a -1 remote code in order to run in unison with the remote code type 5 event, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.</td>
 		<td rowspan="2">Remote Gain<br></td>
 		<td rowspan="2">Sets the GAIN value of a voice some time before a note ends.</td>
 		<td>$XX <br></td>

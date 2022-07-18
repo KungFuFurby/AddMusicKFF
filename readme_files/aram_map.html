@@ -472,7 +472,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$C0, $C2, $C4, $C6, $C8, $CA, $CC, $CE</td>
-				<td>Subroutine ($E9 VCMD) loop counter, one byte per voice.</td>
+				<td>Subroutine ($E9 command) loop counter, one byte per voice.</td>
 				<td>N/A</td>
 				<td>Vanilla</td>
 			</tr>
@@ -618,7 +618,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0190-$019F</td>
-				<td>Remote code pointer for the -1 event (on note start), one pointer per voice.</td>
+				<td>Remote code pointer for negative event IDs (on note start), one pointer per voice.</td>
 				<td>N/A</td>
 				<td>AddmusicK</td>
 			</tr>
@@ -652,13 +652,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$01E0-$01EF</td>
-				<td>Track pointer for the superloop ($E6) VCMD to jump back to, one pointer per voice.</td>
+				<td>Track pointer for the superloop ($E6 command) to jump back to, one pointer per voice.</td>
 				<td>N/A</td>
 				<td>carol's MORE.bin<br>(shows up again in AddmusicM, but not Addmusic405)</td>
 			</tr>
 			<tr>
 				<td>$01F0, $01F2, $01F4, $01F6, $01F8, $01FA, $01FC, $01FE</td>
-				<td>Repeat counter for the superloop ($E6) VCMD, one byte per voice.</td>
+				<td>Repeat counter for the superloop ($E6 command), one byte per voice.</td>
 				<td>N/A</td>
 				<td>carol's MORE.bin<br>(shows up again in AddmusicM, but not Addmusic405)</td>
 			</tr>
@@ -1022,13 +1022,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0390-$039F</td>
-				<td>Remote code pointer for all events except -1. One pointer per voice.</td>
+				<td>Remote code pointer for all events except negative event IDs. One pointer per voice.</td>
 				<td>N/A</td>
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
 				<td>$03A0, $03A2, $03A4, $03A6, $03A8, $03AA, $03AC, $03AE</td>
-				<td>Remote code type ID, one byte per voice.</td>
+				<td>Remote code type ID for positive event IDs, one byte per voice.</td>
 				<td>N/A</td>
 				<td>AddmusicK</td>
 			</tr>
@@ -1052,7 +1052,9 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03D0, $03D2, $03D4, $03D6, $03D8, $03DA, $03DC, $03DE</td>
-				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+				<td>Remote code type ID for negative event IDs (on note start), one byte per voice.</td>
+				<td>N/A</td>
+				<td>New</td>
 			</tr>
 			<tr>
 				<td>$03D1, $03D3, $03D5, $03D7, $03D9, $03DB, $03DD, $03DF</td>
@@ -1062,13 +1064,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$03E0-$03EF</td>
-				<td>Pointer to return to once exiting the subroutine ($E9 VCMD) and all loops have been executed. One pointer per voice.</td>
+				<td>Pointer to return to once exiting the subroutine ($E9 command) and all loops have been executed. One pointer per voice.</td>
 				<td>N/A</td>
 				<td>Vanilla</td>
 			</tr>
 			<tr>
 				<td>$03F0-$03FF</td>
-				<td>Start of subroutine ($E9 VCMD) pointer, used when looping. One pointer per voice.</td>
+				<td>Start of subroutine ($E9 command) pointer, used when looping. One pointer per voice.</td>
 				<td>N/A</td>
 				<td>Vanilla</td>
 			</tr>
@@ -1136,7 +1138,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 
 		</table>
 	<h2>AddmusicM (by homing)</h2>
-	Contains the majority of carol's MORE.bin except for global transposition ($E4 VCMD) due to sending staccato to its own VCMD slot and not checking for $20 as a song ID due to sending set sample to its own VCMD slot ($F3 VCMD) and overwriting tremolo off with repeat section ($E6 VCMD).
+	Contains the majority of carol's MORE.bin except for global transposition ($E4 command) due to sending staccato to its own hex command slot and not checking for $20 as a song ID, tremolo ($E5 command) due to sending set sample to its own hex command slot and not checking for $20 as a song ID, and tremolo off ($E6 command) by overwriting it with the repeat section hex command.
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1159,7 +1161,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$20-$21</td>
-				<td>Memory location to write to. Used exclusively by the ARAM Write ($F7) VCMD.</td>
+				<td>Memory location to write to. Used exclusively by the ARAM Write ($F7) command.</td>
 				<td>N/A (New)</td>
 				<td>N/A (moved to scratch RAM at $10-$17, thus it no longer has a permanent allocation... plus, it's currently disabled for safety reasons)</td>
 			</tr>
@@ -1195,9 +1197,9 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0168</td>
-				<td>Only zeroes are ever written here. The memory location references this overwrites causes the tempo offset caused by the Hurry Up! SFX to last beyond loading new data and from fixed music IDs that would normally zero out the tempo offset. As for why this bypass is here? Because of the ARAM write ($F7) VCMD, which is used instead to stop the tempo offset by writing a zero directly to $0387.</td>
+				<td>Only zeroes are ever written here. The memory location references this overwrites causes the tempo offset caused by the Hurry Up! SFX to last beyond loading new data and from fixed music IDs that would normally zero out the tempo offset. As for why this bypass is here? Because of the ARAM write ($F7) command, which is used instead to stop the tempo offset by writing a zero directly to $0387.</td>
 				<td>N/A (New)</td>
-				<td>N/A (The bypass was removed in AddmusicK, and instead a special VCMD is used to reset tempo offsets caused by the Hurry Up! SFX)</td>
+				<td>N/A (The bypass was removed in AddmusicK, and instead a special hex command is used to reset tempo offsets caused by the Hurry Up! SFX)</td>
 			</tr>
 			<tr>
 				<td>$0400-$04FF</td>
@@ -1212,7 +1214,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 		</table>
 
 	<h2>Addmusic405 (by HuFlungDu)</h2>
-	Contains the majority of carol's MORE.bin except for the repeat section ($E6) VCMD (which was previously limited to song IDs $20 and up) and ADSR ($ED VCMD), which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
+	Contains the majority of carol's MORE.bin except for the repeat section ($E6) command (which was previously limited to song IDs $20 and up) and the ADSR ($ED) command, which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1242,13 +1244,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$E0</td>
-				<td>Used as scratch RAM for two purposes: it either stores the SRCN ID last defined by what is now the $F3 VCMD, or it stores the first of two bytes of the $ED VCMD (GAIN/ADSR switch specifically).</td>
+				<td>Used as scratch RAM for two purposes: it either stores the SRCN ID last defined by what is now the $F3 command, or it stores the first of two bytes of the $ED command (GAIN/ADSR switch specifically).</td>
 				<td>N/A (New)</td>
 				<td>N/A (the storage mechanism was removed)</td>
 			</tr>
 			<tr>
 				<td>$E1</td>
-				<td>Used as scratch RAM for two purposes: it either stores the pitch base multiplier last defined by what is now the $F3 VCMD, or it stores the second of two bytes of the $ED VCMD (either VxADSR2 or VxGAIN, depending on what the first byte was).</td>
+				<td>Used as scratch RAM for two purposes: it either stores the pitch base multiplier last defined by what is now the $F3 command, or it stores the second of two bytes of the $ED command (either VxADSR2 or VxGAIN, depending on what the first byte was).</td>
 				<td>N/A (New)</td>
 				<td>N/A (the storage mechanism was removed)</td>
 			</tr>
@@ -1327,7 +1329,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$2F</td>
-				<td>NON (noise on) DSP register mirror. Interestingly, in vanilla SMW, for SFX, you can only enable noise with the $DA VCMD for CPUIO3 SFX, and no other known voices to my knowledge can do this because noise is not implemented for music, not even its instruments.</td>
+				<td>NON (noise on) DSP register mirror. Interestingly, in vanilla SMW, for SFX, you can only enable noise with the $DA command for CPUIO3 SFX, and no other known voices to my knowledge can do this because noise is not implemented for music, not even its instruments.</td>
 				<td>De-facto split between $4B for music and $4E for SFX. Within the context of the actual utilization of this memory location, though, it's $4E.</td>
 			</tr>
 			<tr>
@@ -1388,7 +1390,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0361, $0363, $0365, $0367, $0369, $036B, $036D, $036F</td>
-				<td>Supposed to be tremolo volume offset per music tempo tick, one byte per voice. However, vanilla SMW uses $0362+x in the opcodes rather than $0361+x. Therefore, this causes the tremolo VCMDs to be de-facto non-functional.</td>
+				<td>Supposed to be tremolo volume offset per music tempo tick, one byte per voice. However, vanilla SMW uses $0362+x in the opcodes rather than $0361+x. Therefore, this causes the tremolo hex commands to be de-facto non-functional.</td>
 				<td>$0361, $0363, $0365, $0367, $0369, $036B, $036D, $036F</td>
 			</tr>
 			<tr>
