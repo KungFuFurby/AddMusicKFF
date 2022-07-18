@@ -218,10 +218,10 @@ includeonce
 
 ;=======================================
 ;---------------
-!PSwitchStarRestart = !false
+!PSwitchStarRestart = !true
 
-;Default setting: !false
-;Vanilla setting: !true
+;Default setting: !true (!false in AddmusicK 1.0.8 and earlier)
+;Vanilla SMW setting: !true
 ;---------------
 ; If you set this to true, then the P-switch and star global songs will 
 ; restart whenever they're called again (i.e., by pressing another P-switch
