@@ -394,7 +394,39 @@ to overcome this.
 
 <br><br><h3>#amk</h3>
 	Specifies which AddmusicK "song parser" this song was designed for.  It is inserted automatically by AddmusicK to the bottom of every song if that song does not already contain it or an alternative (such as #am4 or #amm).  The equals sign should be followed by an integer value.  The "correct" value to use will only change if future features are added AddmusicK that make older song files incompatible with new ones, so that these older files may be identified and parsed correctly.  Because this command is inserted automatically, you should not need to worry about it.  As with the preprocessor directives, this should be the first and only thing on any line it's on.  Finally, #am4 and #amm override #amk in all circumstances, with no warnings, even if they come before #amk.
-	
+
+<br><br>The latest parser version is currently 4. This is a changelog between parser versions (as well as a brief explanation of their original source):
+
+	<h4>#amk=1</h4>
+	This is the original parser version used in AddmusicK Beta.
+
+	<h4>#amk 2</h4>
+	This was used in AddmusicK versions 1.0 to 1.0.8.
+	<ul>
+	<li>Anticipation gain ($FA $05 command) and remote gain ($FC) were replaced with remote code (!), which debuts in this parser version.</li>
+	<li>Added #option directives.</li>
+	<li>Velocity table defaults to N-SPC instead of Super Mario World. These directives, although still valid, are de-facto rendered redundant:
+		<ul>
+		<li>#nspcvtable</li>
+		<li>#louder</li>
+		</ul>
+	</li>
+	</ul>
+
+	<h4>#amk 3</h4>
+	This was used in Codec's AddmusicK Beta. <i>Implementation of this parser version is incomplete (and thus is currently not supported): all of the changes listed below are the ones that have been implemented and are accessible through #amk 4.</i>
+	<ul>
+	<li>Added remote command reset syntax via (!!0), (!!-1), (!!1), etc.</li>
+	<li>Added fade support to the v (volume), t (tempo) and w (global volume) MML commands.</li>
+	</ul>
+
+	<h4>#amk 4</h4>
+	This is the latest parser version to be released for AddmusicK 1.0.9. It doesn't directly incorporate all of #amk 3 due to not yet having all of the extra hex commands to completely implement them: it only has remote code reset and fade support for v, t and w, the former being included as a side effect of the restoration of remote and anticipation gain as part of the update for AddmusicK 1.0.9.
+	<ul>
+	<li>Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music.</li>
+	<li>Fixed a bug where #halvetempo and #option dividetempo were not dividing the tempo ratio at all because they were immediately returning. Multiplication was working fine, though. Note that if the tempo ratio is 1, this will still immediately return since it is redundant.</li>
+	</ul>
+
 <br><br><br>Note that all "special" commands are case insensitive.
 	
 	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
