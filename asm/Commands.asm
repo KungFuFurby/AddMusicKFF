@@ -52,8 +52,8 @@ MSampleLoad:
 	mov	y, #$04			; | Get the pitch multiplier byte.
 	mov	($10)+y, a		; |
 .clearSubmultiplierPatchGate		; |
-	inc	y			; | Zero out pitch sub-multiplier.
 	bra	.clearSubmultiplierSkip	; |
+	inc	y			; | Zero out pitch sub-multiplier.
 	mov	a, #$00			; |
 	mov	($10)+y, a		; /
 .clearSubmultiplierSkip
