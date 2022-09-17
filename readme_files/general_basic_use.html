@@ -11,6 +11,7 @@
 	<ul>
 	<li><a href="#HowDoIInsertedMusic">How do I insert music?</a></li>
 	<li><a href="#EvilDotNetFramework">What if I can't use AMKGUI? Or I don't want to? Or my religion disallows it?</a></li>
+	<li><a href="#StillUsingOutdatedTXTFiles">What if the music was made for Addmusic405?</a></li>
 	<li><a href="#OhAddmusicMYouWerePrettyRevolutionaryButYouSureMadeThingsDifficultDidntYou">What about AddmusicM songs?</a></li>
 	<li><a href="#Hey64KilobytesOfARAMIsQuiteALotThankYouVeryMuch">Echo buffer exceeded total space in ARAM?</a></li>
 	<li><a href="#GottaGoFast">When the timer drops below 100 seconds and I die, the music doesn't slow back down!</a></li>
@@ -30,27 +31,6 @@
 	<li><p>Obtain the custom music you with to use.  A large collection of songs to use may be obtained <a href="http://www.smwcentral.net/?p=list&type=music">here</a>.  Please note that MIDI, MP3, WAV, and other files will not work!  Only the file types obtained at that link are guaranteed to work.</p></li>
 	<li><p>Download the song and save the whole ZIP file in the folder labelled "music".</li></p>
 	<li><p>Right click the ZIP folder and select "Extract All" if you're using Windows. If you are not using Windows or this option is not available for whatever reason, create a new folder in your "music" folder (named whatever you want) and copy the contents of the ZIP file into this new folder.  You can delete the ZIP file at this point if you wish.</p></li>
-	<li><p>Go into the folder you just created and open up the text file inside. Don't worry if you don't understand what's going on inside, it's not important.  For now, just type "#am4" (without quotes) at the top of the file.  Make sure it's on its own line.  If this was a song for AddmusicM, use "#amm" instead.  Now save the file.</li></p>
-	<li><p><i>If your song is sampled</i>, there is one extra step.  Just below the "#am4" you just typed, copy and paste this in there:
-	<br>
-	<br><code>
-	#samples<br>
-	{<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"XXXXXXXX.bnk"<br>
-	}</code><br>
-	<br>
-	where XXXXXXXX.bnk is the name of the bank file that was included in your song.  So, for example,
-	<br>
-	<br><code>
-	#samples<br>
-	{<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"samples.bnk"<br>
-	}</code><br>
-	<br>
-	
-	Save your file again.
-	
-	</li></p>
 	<!--<li><p>Once you have your song, open up "Addmusic_list.txt".</p></li>
 	<li><p>Add a new line at the bottom of the file, type in an unused number, and then the song's filename.  For example, "34 My Song.txt" (without the quotes).  This will be the song number that you will use in Lunar Magic.</p></li>-->
 	<li><p>Run "AMKGUI" (if you cannot, see below for manual instructions).  To add a new song, simply drag and drop the text file that's in the folder you just created into AMKGUI.  The song will be inserted after your currently selected song.  Alternatively, you can click the "Add new song" button, navigate to the folder you created earlier, and select the text file that contains the music (e.g. "SMB1 Theme.txt").  You can change or remove songs as well by clicking on their appropriate buttons.</p></li>
@@ -89,6 +69,31 @@
 	<br>
 	where XXXXXXXX.bnk is the name of the bank file.  <i>DO NOT</i> use Sample Tool, <i>just</i> add this bit of text.  You will also need to copy and paste this bank file into the "samples" folder.-->
 	
+	<br><br><h2><a id="StillUsingOutdatedTXTFiles">What if the music was made for Addmusic405?</a></h2>
+	<ol>
+	<li><p>Open up your song's text file and type "#am4" (without quotes) at the top of the file.  Make sure it's on its own line. Now save the file.</li></p>
+	<li><p><i>If your song is sampled</i>, there is one extra step.  Just below the "#am4" you just typed, copy and paste this in there:
+	<br>
+	<br><code>
+	#samples<br>
+	{<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"XXXXXXXX.bnk"<br>
+	}</code><br>
+	<br>
+	where XXXXXXXX.bnk is the name of the bank file that was included in your song.  So, for example,
+	<br>
+	<br><code>
+	#samples<br>
+	{<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"samples.bnk"<br>
+	}</code><br>
+	<br>
+	
+	Save your file again.
+	
+	</li></p>
+	</ol>
+
 	<br><br><h2><a id="OhAddmusicMYouWerePrettyRevolutionaryButYouSureMadeThingsDifficultDidntYou">What about AddmusicM songs?</a></h2>
 	AddmusicM songs require some extra steps:
 	<ol>
