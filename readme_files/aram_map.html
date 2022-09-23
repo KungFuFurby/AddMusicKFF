@@ -472,9 +472,9 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$C0, $C2, $C4, $C6, $C8, $CA, $CC, $CE</td>
-				<td>Subroutine ($E9 command) loop counter, one byte per voice.</td>
+				<td>Current nesting level, one byte per voice.</td>
 				<td>N/A</td>
-				<td>Vanilla</td>
+				<td>New</td>
 			</tr>
 			<tr>
 				<td>$C1, $C3, $C5, $C7, $C9, $CB, $CD, $CF</td>
@@ -626,15 +626,11 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$01E0-$01EF</td>
-				<td>Track pointer for the superloop ($E6 command) to jump back to, one pointer per voice.</td>
-				<td>N/A</td>
-				<td>carol's MORE.bin<br>(shows up again in AddmusicM, but not Addmusic405)</td>
+				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
 			</tr>
 			<tr>
 				<td>$01F0, $01F2, $01F4, $01F6, $01F8, $01FA, $01FC, $01FE</td>
-				<td>Repeat counter for the superloop ($E6 command), one byte per voice.</td>
-				<td>N/A</td>
-				<td>carol's MORE.bin<br>(shows up again in AddmusicM, but not Addmusic405)</td>
+				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
 			</tr>
 			<tr>
 				<td>$01F1, $01F3, $01F5, $01F7, $01F9, $01FB, $01FD, $01FF</td>
@@ -1037,16 +1033,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>AddmusicK</td>
 			</tr>
 			<tr>
-				<td>$03E0-$03EF</td>
-				<td>Pointer to return to once exiting the subroutine ($E9 command) and all loops have been executed. One pointer per voice.</td>
-				<td>N/A</td>
-				<td>Vanilla</td>
-			</tr>
-			<tr>
-				<td>$03F0-$03FF</td>
-				<td>Start of subroutine ($E9 command) pointer, used when looping. One pointer per voice.</td>
-				<td>N/A</td>
-				<td>Vanilla</td>
+				<td>$03E0-$03FF</td>
+				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
 			</tr>
 		</table>
 
@@ -1251,6 +1239,18 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td colspan="3"><div style="text-align:center; font-weight: bold;">Reserved for code.</div></td>
 			</tr>
 			<tr>
+				<td>$01E0-$01EF</td>
+				<td>Track pointer for the superloop ($E6 command) to jump back to, one pointer per voice.</td>
+				<td>N/A (New)</td>
+				<td>N/A (Showed up again in AddmusicM, but not Addmusic405. Location is no longer stable after AddmusicK 1.0.9.)</td>
+			</tr>
+			<tr>
+				<td>$01F0, $01F2, $01F4, $01F6, $01F8, $01FA, $01FC, $01FE</td>
+				<td>Repeat counter for the superloop ($E6 command), one byte per voice.</td>
+				<td>N/A (New)</td>
+				<td>N/A (Showed up again in AddmusicM, but not Addmusic405. Location is no longer stable after AddmusicK 1.0.9.)</td>
+			</tr>
+			<tr>
 				<td>$01F1, $01F3, $01F5, $01F7, $01F9, $01FB, $01FD, $01FF</td>
 				<td>Tremolo volume offset per music tempo tick, one byte per voice.</td>
 				<td>$0361, $0363, $0365, $0367, $0369, $036B, $036D, $036F (was initially nonfunctional due to using $0362+x for its references by mistake)</td>
@@ -1333,6 +1333,11 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$71, $73, $75, $77, $79, $7B, $7D, $7F</td>
 				<td colspan="2"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+			</tr>
+			<tr>
+				<td>$C0, $C2, $C4, $C6, $C8, $CA, $CC, $CE</td>
+				<td>Subroutine ($E9 command) loop counter, one byte per voice.</td>
+				<td>N/A (Location is no longer stable after AddmusicK 1.0.9)</td>
 			</tr>
 			<tr>
 				<td>$D0-$EF</td>
@@ -1422,6 +1427,16 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			<tr>
 				<td>$038A-$03DF</td>
 				<td colspan="2"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+			</tr>
+			<tr>
+				<td>$03E0-$03EF</td>
+				<td>Pointer to return to once exiting the subroutine ($E9 command) and all loops have been executed. One pointer per voice.</td>
+				<td>N/A (Location is no longer stable after AddmusicK 1.0.9)</td>
+			</tr>
+			<tr>
+				<td>$03F0-$03FF</td>
+				<td>Start of subroutine ($E9 command) pointer, used when looping. One pointer per voice.</td>
+				<td>N/A (Location is no longer stable after AddmusicK 1.0.9)</td>
 			</tr>
 			<tr>
 				<td>$0400-$04FF</td>
