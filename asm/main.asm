@@ -913,15 +913,16 @@ endif
 	tclr	!SFXNoiseChannels, a	; / Turn noise off for this channel's SFX.
 
 	call	EffectModifier
+	mov	a, !SFXNoiseChannels
 if !noiseFrequencySFXInstanceResolution = !true
-	cmp	!SFXNoiseChannels, #$00
 	beq	.restoreMusicNoise
 	call	SetSFXNoise
 	call	ModifyNoise
 	bra	RestoreInstrumentInformation
+else
+	bne	RestoreInstrumentInformation
 endif
 .restoreMusicNoise:
-	mov	a, #$00
 	mov	$1f, a
 if !useSFXSequenceFor1DFASFX = !false
 	bbc!1DFASFXChannel	$18, +
