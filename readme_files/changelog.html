@@ -54,7 +54,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-08-14</h2>
+	<h2>Version 1.0.9 - 2022-09-29</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -169,6 +169,7 @@
 		<li>"Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation." - KungFuFurby</li>
 		<li>"SPC files no longer have a one-byte stack underflow when being generated." - KungFuFurby</li>
 		<li>"Fixed a bug where looking for samples relative to the music file itself would fail because of the actual path being incorrectly constructed once it was located." - KungFuFurby</li>
+		<li>"GetSampleTableAddress on the SPC side has been optimized out in favor of writing directly to the DSP registers via the standard loading routine." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
@@ -180,6 +181,7 @@
 		<li>"Fixed a typo in the code where !MaxEchoDelay was not being zeroed out prior to loading new data." - KungFuFurby</li>
 		<li>"Fixed a bug where turning off Yoshi Drums was not unmuting channels." - KungFuFurby</li>
 		<li>"A leftover from AddmusicM's behavior of how it handled Yoshi Drums, which currently doesn't affect anything else, has been modified to have its flag, stored in $0160, turn itself on if any channel has Yoshi Drums active, and otherwise be off." - KungFuFurby</li>
+		<li>"Corrected a bug where playing a different global song in the middle of a panning fade without initializing the panning would cause the panning to be slightly off center." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Historical Addmusic Adaptations
