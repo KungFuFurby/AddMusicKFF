@@ -503,11 +503,8 @@ L_05CD:
 PercNote:
 	
 	mov	$c1+x, a
-	setc
-	sbc	a, #$d0
-	mov	y, #$07
-	mov	$10, #PercussionTable
-	mov	$11, #PercussionTable>>8
+	dec	a
+	call	SetupPercInstrument
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
@@ -1111,24 +1108,24 @@ endif
 	mov     !ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	mov	a, $91+x		; If pitch slide is not being delayed...
-	beq	+
+	beq	.noPitchSlideDelay
 	dec	$91+x
+.return1
 	ret
-+
+.noPitchSlideDelay
 	mov	a, $90+x		; pitch slide counter
-	beq	+
+	beq	.noPitchSlide
 	call	L_09CD			; add pitch slide delta and set DSP pitch
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
-+
+.noPitchSlide
 	mov	a, #$02			; \
 	cmp	a, !ChSFXNoteTimer+x	; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
 	;call	DSPWrite		; /
-	call	KeyOffVoices
-.return1
-	ret
+	jmp	KeyOffVoices
+
 ; DD
 .pitchBendCommand			; This command is all sorts of weird.
 	call	GetNextSFXByte		; The pitch of the note is this byte.
@@ -2329,7 +2326,7 @@ L_0B6D:
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
-	mov	$b1+x, a		; ?
+	mov	$b1+x, a		; Tremolo[ch] = 0
 	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 if !noVcmdFB = !false	
@@ -3667,13 +3664,11 @@ L_11C6:
 	call	L_11FF             ; add pitch slide delta
 L_11E3:
 	mov	a, $a1+x
-	bne	L_11EB
-L_11E7:
-	bbs1	$13.7, L_1195      ; If $13.7 is set, recalibrate the pitch.
-	ret
+	beq	L_1140
+
 L_11EB:
 	mov	a, $0340+x	; Process vibrato.
-	cbne	$a0+x, L_11E7
+	cbne	$a0+x, L_1140
 	mov	y, $49
 	mov	a, $0331+x
 	mul	ya
