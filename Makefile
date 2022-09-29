@@ -1,9 +1,14 @@
 #AddmusicK Makefile
+#Please unzip src.zip first before using this makefile.
 #For Mac and Linux, should work with a standard issue G++
-#For Windows, you need MinGW to compile.
+#For Windows, you need MinGW_w64 to compile. Project files exist to compile
+#this program under Visual Studio 2019 inside src.zip as an alternative
+#method for compiling this program.
 #NOTE: C++17 support is recommended to ensure your program compiles
 #successfully!
-#Use Visual Studio 2019 instead to compile AMKGUI
+#Use Visual Studio 2019 instead to compile AMKGUI (there is no Mac/Linux
+#version at this time unless you're using Wine or some other emulation
+#layer)
 
 UNAME := $(shell uname -s)
 

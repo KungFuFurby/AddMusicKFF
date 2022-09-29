@@ -2363,6 +2363,16 @@ void Music::parseOptionDirective()
 		if (tempoRatio < 0)
 			error("#halvetempo has been used too many times...what are you even doing?")
 	}
+	else if (targetAMKVersion >= 4 && strnicmp(text.c_str() + pos, "amk109hotpatch", 14) == 0 && isspace(text[pos + 14]))
+	{
+		pos += 14;
+		append(0xFA);
+		append(0x7F);
+		append(0x01);
+		markEchoBufferAllocVCMD();
+		//Prevent an off by one error (normally this is offset by one due to the last hex parameter byte being added after it), but for the #option itself, we shouldn't do this).
+		echoBufferAllocVCMDLoc--;
+	}
 	else
 	{
 		error("#option directive missing its first argument")

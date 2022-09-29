@@ -49,7 +49,6 @@ int programPos;
 int programUploadPos;
 int mainLoopPos;
 int reuploadPos;
-int SRCNTableCodePos;
 int programSize;
 int highestGlobalSong;
 int totalSampleCount;
@@ -627,7 +626,7 @@ int getSample(const File &name, Music *music)
 	relativeDir += "/" + (std::string)name;
 
 	if (fileExists(relativeDir))
-		actualPath = relativeDir + (std::string)name;
+		actualPath = relativeDir;
 	else if (fileExists(absoluteDir))
 		actualPath = absoluteDir;
 	else
