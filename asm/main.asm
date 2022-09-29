@@ -923,24 +923,24 @@ endif
 	mov     !ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	mov	a, $91+x		; If pitch slide is not being delayed...
-	beq	+
+	beq	.noPitchSlideDelay
 	dec	$91+x
+.return1
 	ret
-+
+.noPitchSlideDelay
 	mov	a, $90+x		; pitch slide counter
-	beq	+
+	beq	.noPitchSlide
 	call	L_09CD			; add pitch slide delta and set DSP pitch
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
-+
+.noPitchSlide
 	mov	a, #$02			; \
 	cmp	a, !ChSFXNoteTimer+x	; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
 	;call	DSPWrite		; /
-	call	KeyOffVoices
-.return1
-	ret
+	jmp	KeyOffVoices
+
 ; DD
 .pitchBendCommand			; This command is all sorts of weird.
 	call	GetNextSFXByte		; The pitch of the note is this byte.
