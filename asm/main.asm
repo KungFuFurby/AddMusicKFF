@@ -3273,13 +3273,11 @@ L_11C6:
 	call	L_11FF             ; add pitch slide delta
 L_11E3:
 	mov	a, $a1+x
-	bne	L_11EB
-L_11E7:
-	bbs1	$13.7, L_1195      ; If $13.7 is set, recalibrate the pitch.
-	ret
+	beq	L_1140
+
 L_11EB:
 	mov	a, $0340+x	; Process vibrato.
-	cbne	$a0+x, L_11E7
+	cbne	$a0+x, L_1140
 	mov	y, $49
 	mov	a, $0331+x
 	mul	ya
