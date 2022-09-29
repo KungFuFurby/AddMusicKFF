@@ -2100,7 +2100,7 @@ L_0B6D:
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
-	mov	$b1+x, a		; ?
+	mov	$b1+x, a		; Tremolo[ch] = 0
 	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 	
