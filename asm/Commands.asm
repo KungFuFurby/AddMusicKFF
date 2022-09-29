@@ -13,7 +13,9 @@ TerminateIfSFXPlaying:
 endif
 
 SetBackupSRCN:
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	a, #$40			; \ Force !BackupSRCN to contain a non-zero value.
+ORBackupSRCN:
+	or	a, !BackupSRCN+x	; |
 	mov	!BackupSRCN+x, a	; /
 	ret
 
