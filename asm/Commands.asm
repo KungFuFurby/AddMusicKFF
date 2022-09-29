@@ -24,6 +24,14 @@ SetBackupSRCNAndGetBackupInstrTable:
 	pop	a
 	ret
 
+SetupPercInstrument:
+	setc
+	sbc	a, #$cf			; Also "correct" A. (Percussion instruments are stored "as-is", otherwise we'd subtract #$d0.
+	mov	y, #$07			; Percussion instruments have 7 bytes of data.
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdED:					; ADSR
 {
@@ -98,11 +106,7 @@ L_0D4B:					; |		???
 	dec	a			; /
 	
 	bpl	.normalInstrument	; \ 
-	mov	$10,#PercussionTable	; | If the instrument was negative, then we use the percussion table instead.	
-	mov	$11,#PercussionTable>>8	; /
-	setc				; \ 
-	sbc	a, #$cf			; | Also "correct" A. (Percussion instruments are stored "as-is", otherwise we'd subtract #$d0.
-	inc	y			; / Percussion instruments have 7 bytes of data.
+	call	SetupPercInstrument	; / If the instrument was negative, then we use the percussion table instead.
 	bra	+
 	
 	

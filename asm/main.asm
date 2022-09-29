@@ -386,11 +386,8 @@ L_05CD:
 PercNote:
 	
 	mov	$c1+x, a
-	setc
-	sbc	a, #$d0
-	mov	y, #$07
-	mov	$10, #PercussionTable
-	mov	$11, #PercussionTable>>8
+	dec	a
+	call	SetupPercInstrument
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
