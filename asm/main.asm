@@ -833,10 +833,11 @@ RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restor
 	call	SetInstrument		; |
 .checkRemoteGainRestoration		; |
 	pop	p			; |
-	bpl	.doneRestoring		; | Fix remote gain.
+	bpl	.doneRestoringNoPop	; | Fix remote gain.
 	jmp    RestoreRemoteGain	; /
 .doneRestoring				;
 	pop	p			;
+.doneRestoringNoPop			;
 	ret				;
 					;
 .restoreSample				; \ 
