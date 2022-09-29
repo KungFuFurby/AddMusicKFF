@@ -597,7 +597,17 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>New</td>
 			</tr>
 			<tr>
-				<td>$016D-$017F</td>
+				<td>$016D-$016F</td>
+				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+			</tr>
+			<tr>
+				<td>$0170, $0172, $0174, $0176, $0178, $017A, $017C, $017E</td>
+				<td>Backup remote gain values, in case they are overwritten by SFX. One byte per voice.</td>
+				<td>N/A</td>
+				<td>New</td>
+			</tr>
+			<tr>
+				<td>$0171, $0173, $0175, $0177, $0179, $017B, $017D, $017F</td>
 				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
 			</tr>
 			<tr>
@@ -684,9 +694,21 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			<tr>
 				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E</td>
+				<td>Contains various flags for various purposes, stored as %xy??????. One byte per voice.<br>See below for a list of bits whose usages don't match the latest version.</td>
+				<td>N/A</td>
+				<td>New<br>(At least one of the bits dates back to AddmusicK representing the entire byte, but was moved)</td>
+			</tr>
+			<tr>
+				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E bit 6 (%?y??????)</td>
 				<td>Flag indicating that instrument data has been modified, and thus must be restored via the backup tables at $0130-$015F. One byte per voice.</td>
 				<td>N/A</td>
-				<td>AddmusicK</td>
+				<td>New<br>(was also in AddmusicK representing the entire byte)</td>
+			</tr>
+			<tr>
+				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E bit 7 (%x???????)</td>
+				<td>Flag indicating that remote gain has been used, and thus must be restored via the backup tables at $0170, $0172, $0174, $0176, $0178, $017A, $017C, $017E. One byte per voice.</td>
+				<td>N/A</td>
+				<td>New</td>
 			</tr>
 			<tr>
 				<td>$0221, $0223, $0225, $0227, $0229, $022B, $022D, $022F</td>
@@ -1073,6 +1095,12 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<th>Description</th>
 				<th>Moved From</th>
 				<th>Moved To</th>
+			</tr>
+			<tr>
+				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E</td>
+				<td>Flag indicating that instrument data has been modified, and thus must be restored via the backup tables at $0130-$015F. One byte per voice.</td>
+				<td>N/A (New)</td>
+				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E bit 6 (%?y??????)</td>
 			</tr>
 			<tr>
 				<td>$0380</td>

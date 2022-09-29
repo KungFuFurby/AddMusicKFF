@@ -13,18 +13,32 @@ TerminateIfSFXPlaying:
 endif
 
 SetBackupSRCN:
-	mov	a, #$01			; \ Force !BackupSRCN to contain a non-zero value.
+	mov	a, #$40			; \ Force !BackupSRCN to contain a non-zero value.
+ORBackupSRCN:
+	or	a, !BackupSRCN+x	; |
 	mov	!BackupSRCN+x, a	; /
+	ret
+
+SetBackupSRCNAndGetBackupInstrTable:
+	push	a
+	call	SetBackupSRCN
+	call	GetBackupInstrTable
+	pop	a
+	ret
+
+SetupPercInstrument:
+	setc
+	sbc	a, #$cf			; Also "correct" A. (Percussion instruments are stored "as-is", otherwise we'd subtract #$d0.
+	mov	y, #$07			; Percussion instruments have 7 bytes of data.
+	mov	$10, #PercussionTable
+	mov	$11, #PercussionTable>>8
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdED:					; ADSR
 {
-	push	a
-	call	SetBackupSRCN	
-	call	GetBackupInstrTable
-	pop	a			; \ 
-	eor	a,#$80			; | Write ADSR 1 to the table.
+	call	SetBackupSRCNAndGetBackupInstrTable
+	eor	a,#$80			; \ Write ADSR 1 to the table.
 	push	p
 	mov	y, #$01			; | 
 	mov	($10)+y, a		; /
@@ -42,18 +56,15 @@ cmdED:					; ADSR
 cmdF3:					; Sample load command
 {
 MSampleLoad:
-	push	a
-	call	SetBackupSRCN
-	call	GetBackupInstrTable
-	pop	a			; \ 
-	mov	y, #$00			; | Write the sample to the backup table.
+	call	SetBackupSRCNAndGetBackupInstrTable
+	mov	y, #$00			; \ Write the sample to the backup table.
 	mov	($10)+y, a		; /
 	call	GetCommandData		; \ 
 	mov	y, #$04			; | Get the pitch multiplier byte.
 	mov	($10)+y, a		; |
 .clearSubmultiplierPatchGate		; |
-	inc	y			; | Zero out pitch sub-multiplier.
 	bra	.clearSubmultiplierSkip	; |
+	inc	y			; | Zero out pitch sub-multiplier.
 	mov	a, #$00			; |
 	mov	($10)+y, a		; /
 .clearSubmultiplierSkip
@@ -61,10 +72,7 @@ MSampleLoad:
 }
 
 SubC_table2_GAIN:
-	push	a
-	call	SetBackupSRCN
-	call	GetBackupInstrTable
-	pop	a			;
+	call	SetBackupSRCNAndGetBackupInstrTable
 	mov     y, #$03			; \ GAIN byte = parameter
 	mov 	($10)+y, a		; /
 	mov	y, #$01			
@@ -74,8 +82,7 @@ SubC_table2_GAIN:
 	bra	UpdateInstr
 
 RestoreMusicSample:
-	call	SetBackupSRCN
-	call	GetBackupInstrTable	; \ 
+	call	SetBackupSRCNAndGetBackupInstrTable
 UpdateInstr:
 	mov	a, #$00
 	bra	ApplyInstrumentY6	; / Set up the current instrument using the backup table instead of the main table.
@@ -101,11 +108,7 @@ L_0D4B:					; |		???
 	dec	a			; /
 	
 	bpl	.normalInstrument	; \ 
-	mov	$10,#PercussionTable	; | If the instrument was negative, then we use the percussion table instead.	
-	mov	$11,#PercussionTable>>8	; /
-	setc				; \ 
-	sbc	a, #$cf			; | Also "correct" A. (Percussion instruments are stored "as-is", otherwise we'd subtract #$d0.
-	inc	y			; / Percussion instruments have 7 bytes of data.
+	call	SetupPercInstrument	; / If the instrument was negative, then we use the percussion table instead.
 	bra	+
 	
 	

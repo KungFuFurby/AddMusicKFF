@@ -88,7 +88,6 @@ extern int programPos;
 extern int programUploadPos;
 extern int reuploadPos;
 extern int mainLoopPos;
-extern int SRCNTableCodePos;
 extern int programSize;
 extern int highestGlobalSong;
 //extern int totalSampleCount;
