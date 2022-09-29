@@ -49,7 +49,6 @@ int programPos;
 int programUploadPos;
 int mainLoopPos;
 int reuploadPos;
-int SRCNTableCodePos;
 int programSize;
 int highestGlobalSong;
 int totalSampleCount;

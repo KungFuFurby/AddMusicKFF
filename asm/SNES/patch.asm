@@ -99,7 +99,6 @@ endif
 
 !DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
-!TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
 !SongCount = $00	; How many songs exist.  Used by the fading routine; changed automatically.
 
@@ -555,29 +554,33 @@ NoMoreSamples:
 	ASL				; |
 	ASL				; |
 	STA $05				; |
-	LDA #!TabARAMRet		; | Jump in ARAM to the DIR set routine.
-	STA $03				; |
 	LDA.w #!SRCNTableBuffer		; |
 	STA $00				; | Upload the ARAM SRCN table.
 	SEP #$20			; |
 	LDA.b #!SRCNTableBuffer>>16	; |
 	STA $02				; |
 	JSL UploadSPCDataDynamic	; /
-	
+
+	LDA $08				; \
+	STA $0C				; | Set the DIR DSP register.
+	LDA #$5D ;DIR DSP register	; | We will save the writes to make to direct pages $0B-$0C.
+	STA $0B				; | 
+	STZ $02				; | 
+	REP #$20			; |
+	TDC				; | In case of non-zero direct page register...
+	CLC				; | 
+	ADC #$000B			; | 
+	STA $00				; | 
+	LDA #$0002			; | 
+	STA $05				; | 
+	LDA #$00F2 ;DSPADDR		; | 
+	STA $07				; | 
+	LDA #!DefARAMRet		; |
+	STA $03				; |
+	JSL UploadSPCDataDynamic	; /
+	SEP #$20
 	NOP #11				; Needed to waste time. 10817b
 					; On ZSNES it works with only 4 NOPs because...ZSNES.
-					
-	REP #$20
-	LDA #!DefARAMRet
-	STA $2142
-	SEP #$20
-	LDA $08
-	STA $2141
-	LDA #$CC
-	STA $2140
-	LDA $08
--	CMP $2141			; Wait for the SPC to echo the value back before continuing.
-	BNE -
 	JMP SkipSPCNormal
 	
 					; Time to get the SPC out of its loop.
