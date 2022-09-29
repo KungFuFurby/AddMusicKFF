@@ -313,7 +313,10 @@ RunRemoteCode_Exec:
 	mov	$30+x, y
 	mov	$31+x, a
 	dec	a
-	beq	UseGainInstead
+	bne	+
+	call	UseGainInstead
+	bra	RestoreTrackPtrFromStack
++
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -339,6 +342,17 @@ RunRemoteCode2:
 }
 
 UseGainInstead:
+	setp
+	mov	$0170&$FF+x, y
+	clrp
+	mov	a, #$80
+	call	ORBackupSRCN
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+RestoreRemoteGain:
+	mov	a, $0170+x
+	mov	y, a
 	mov	a, x			; \
 	lsr	a			; | GAIN Register into a
 	xcn	a			; |
@@ -348,7 +362,7 @@ UseGainInstead:
 	dec	a			; | Clear ADSR bit to force GAIN.
 	mov	y, #$7f			; |
 	movw	$f2, ya			; /
-	bra	RestoreTrackPtrFromStack
+	ret
 
 CheckForRemoteCodeType6:
 	mov	a, #$06
@@ -409,6 +423,9 @@ endif
 	cmp	a, !remoteCodeType+x
 	bne	.checkRemoteCodeTypes
 .remoteCodeRestoreInstrumentOnKON
+	mov	a, #$7F			; \ Don't restore remote gain.
+	and	a, !BackupSRCN+x	; | Instead, restore either the
+	mov	!BackupSRCN+x, a	; / instrument or the sample.
 	call	RestoreInstrumentInformation
 
 .checkRemoteCodeTypes
@@ -800,19 +817,29 @@ endif
 
 	mov	x, $46			; \ 
 endif
-RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore all instrument properties for that channel.
+
+RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restore all instrument properties for that channel.
 	
 	mov	a, !BackupSRCN+x	; |
-	bne	.restoreSample		; |
+	push	p			; |
+	asl	a			; |
+	bmi	.restoreSample		; |
 	mov	a, $c1+x		; | Fix instrument.
-	beq	+			; |
+	beq	.doneRestoring		; |
 	dec	a			; |
-	jmp	SetInstrument		; |
-+					; /
+	call	SetInstrument		; |
+.checkRemoteGainRestoration		; |
+	pop	p			; |
+	bpl	.doneRestoringNoPop	; | Fix remote gain.
+	jmp    RestoreRemoteGain	; /
+.doneRestoring				;
+	pop	p			;
+.doneRestoringNoPop			;
 	ret				;
 					;
 .restoreSample				; \ 
-	jmp   RestoreMusicSample	; / Fix sample.
+	call   RestoreMusicSample	; / Fix sample.
+	bra	.checkRemoteGainRestoration
 }
 
 SubC_9:
@@ -832,7 +859,8 @@ HandleSFXVoice:
 +
 .getMoreSFXData
 	call	GetNextSFXByte		
-	beq	EndSFX			; If the current byte is zero, then end it.
+	bne	+			; If the current byte is zero, then end it.
+	jmp	EndSFX
 +
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
