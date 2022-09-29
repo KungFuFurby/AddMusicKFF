@@ -313,7 +313,10 @@ RunRemoteCode_Exec:
 	mov	$30+x, y
 	mov	$31+x, a
 	dec	a
-	beq	UseGainInstead
+	bne	+
+	call	UseGainInstead
+	bra	RestoreTrackPtrFromStack
++
 	mov	a, #$6f			;RET opcode
 	mov	runningRemoteCodeGate, a
 	call	L_0C57			; This feels evil.  Oh well.  At any rate, this'll run the code we give it.
@@ -339,6 +342,17 @@ RunRemoteCode2:
 }
 
 UseGainInstead:
+	setp
+	mov	$0170&$FF+x, y
+	clrp
+	mov	a, #$80
+	call	ORBackupSRCN
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+RestoreRemoteGain:
+	mov	a, $0170+x
+	mov	y, a
 	mov	a, x			; \
 	lsr	a			; | GAIN Register into a
 	xcn	a			; |
@@ -348,7 +362,7 @@ UseGainInstead:
 	dec	a			; | Clear ADSR bit to force GAIN.
 	mov	y, #$7f			; |
 	movw	$f2, ya			; /
-	bra	RestoreTrackPtrFromStack
+	ret
 
 CheckForRemoteCodeType6:
 	mov	a, #$06
@@ -386,11 +400,8 @@ L_05CD:
 PercNote:
 	
 	mov	$c1+x, a
-	setc
-	sbc	a, #$d0
-	mov	y, #$07
-	mov	$10, #PercussionTable
-	mov	$11, #PercussionTable>>8
+	dec	a
+	call	SetupPercInstrument
 	call	ApplyInstrument             ; set sample A-$D0 in bank $5FA5 width 6
 NormalNote:						;;;;;;;;;;/ Code change
 	
@@ -412,6 +423,9 @@ endif
 	cmp	a, !remoteCodeType+x
 	bne	.checkRemoteCodeTypes
 .remoteCodeRestoreInstrumentOnKON
+	mov	a, #$7F			; \ Don't restore remote gain.
+	and	a, !BackupSRCN+x	; | Instead, restore either the
+	mov	!BackupSRCN+x, a	; / instrument or the sample.
 	call	RestoreInstrumentInformation
 
 .checkRemoteCodeTypes
@@ -803,19 +817,29 @@ endif
 
 	mov	x, $46			; \ 
 endif
-RestoreInstrumentInformation:		; Call this with x = currentchannel*2 to restore all instrument properties for that channel.
+
+RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restore all instrument properties for that channel.
 	
 	mov	a, !BackupSRCN+x	; |
-	bne	.restoreSample		; |
+	push	p			; |
+	asl	a			; |
+	bmi	.restoreSample		; |
 	mov	a, $c1+x		; | Fix instrument.
-	beq	+			; |
+	beq	.doneRestoring		; |
 	dec	a			; |
-	jmp	SetInstrument		; |
-+					; /
+	call	SetInstrument		; |
+.checkRemoteGainRestoration		; |
+	pop	p			; |
+	bpl	.doneRestoringNoPop	; | Fix remote gain.
+	jmp    RestoreRemoteGain	; /
+.doneRestoring				;
+	pop	p			;
+.doneRestoringNoPop			;
 	ret				;
 					;
 .restoreSample				; \ 
-	jmp   RestoreMusicSample	; / Fix sample.
+	call   RestoreMusicSample	; / Fix sample.
+	bra	.checkRemoteGainRestoration
 }
 
 SubC_9:
@@ -835,7 +859,8 @@ HandleSFXVoice:
 +
 .getMoreSFXData
 	call	GetNextSFXByte		
-	beq	EndSFX			; If the current byte is zero, then end it.
+	bne	+			; If the current byte is zero, then end it.
+	jmp	EndSFX
 +
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
@@ -926,24 +951,24 @@ endif
 	mov     !ChSFXNoteTimer+x, a	; / And since it was actually a length, store it.
 .processSFXPitch
 	mov	a, $91+x		; If pitch slide is not being delayed...
-	beq	+
+	beq	.noPitchSlideDelay
 	dec	$91+x
+.return1
 	ret
-+
+.noPitchSlideDelay
 	mov	a, $90+x		; pitch slide counter
-	beq	+
+	beq	.noPitchSlide
 	call	L_09CD			; add pitch slide delta and set DSP pitch
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
-+
+.noPitchSlide
 	mov	a, #$02			; \
 	cmp	a, !ChSFXNoteTimer+x	; |
 	bne	.return1		; | If the time between notes is 2 ticks
 	mov	a, $18			; | Then key off this channel in preparation for the next note.
 	;mov	y, #$5c			; | This doesn't happen during pitch bends.
 	;call	DSPWrite		; /
-	call	KeyOffVoices
-.return1
-	ret
+	jmp	KeyOffVoices
+
 ; DD
 .pitchBendCommand			; This command is all sorts of weird.
 	call	GetNextSFXByte		; The pitch of the note is this byte.
@@ -2099,11 +2124,12 @@ L_0B6D:
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
+	mov	$0280+x, a
 	mov	$02d1+x, a         ; Tuning[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
-	mov	$b1+x, a		; ?
+	mov	$b1+x, a		; Tremolo[ch] = 0
 	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 	
@@ -3276,13 +3302,11 @@ L_11C6:
 	call	L_11FF             ; add pitch slide delta
 L_11E3:
 	mov	a, $a1+x
-	bne	L_11EB
-L_11E7:
-	bbs1	$13.7, L_1195      ; If $13.7 is set, recalibrate the pitch.
-	ret
+	beq	L_1140
+
 L_11EB:
 	mov	a, $0340+x	; Process vibrato.
-	cbne	$a0+x, L_11E7
+	cbne	$a0+x, L_1140
 	mov	y, $49
 	mov	a, $0331+x
 	mul	ya
@@ -3494,30 +3518,7 @@ if !PSwitchIsSFX = !true
 	mov	$1b, #$00
 endif	
 JumpToUploadLocation:
-	jmp	($0014+x)		; Jump to address
-	
-GetSampleTableLocation:
-
-	print "SRCNTableCodePos: $",pc		
-				; This is where the engine should jump to after uploading samples.
-
--	cmp	$f4, #$CC	; Wait for the 5A22 to send #$CC to $2140.
-	bne -			; By then it should have also written DIR to $2141
-				; as well as the jump address to $2142-$2143.
-				
-	mov	a, #$5d
-	mov	y, $f5		; Set DIR to the 5A22's $2141
-	movw	$f2, ya
-	push	y
-	
-	movw	ya, $f6
-	movw	$14, ya
-	mov	$f1, #$31		; Reset input ports
-	pop	a
-	mov	$f5, a		; Echo back DIR
-	mov	y, #$00
-	bra	JumpToUploadLocation	; Jump to the upload location.
-	
+	jmp	($0014+x)		; Jump to address	
 
 	incsrc "InstrumentData.asm"
 	
