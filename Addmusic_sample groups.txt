@@ -61,3 +61,61 @@
 	"EMPTY.brr"
 	"EMPTY.brr"
 }
+
+#AMMKisoPCM
+{
+	"AMM/KisoPCM/00 SMW @0.brr"!
+	"AMM/KisoPCM/01 SMW @1.brr"!
+	"AMM/KisoPCM/02 SMW @2.brr"!
+	"AMM/KisoPCM/03 SMW @3.brr"!
+	"AMM/KisoPCM/04 SMW @4.brr"!
+	"AMM/KisoPCM/05 SMW @8.brr"!
+	"AMM/KisoPCM/06 SMW @22.brr"!
+	"AMM/02_SMW@5.brr"!
+	"AMM/KisoPCM/08 SMW @6.brr"!
+	"AMM/01_SMW@7.brr"!
+	"AMM/00_SMW@9.brr"!
+	"AMM/KisoPCM/0B SMW @10.brr"!
+	"AMM/KisoPCM/0C SMW @13.brr"!
+	"AMM/03_SMW@14.brr"
+	"AMM/KisoPCM/0E SMW @29.brr"!
+	"AMM/05_SMW@21.brr"
+	"AMM/KisoPCM/10 SMW @12.brr"!
+	"AMM/04_SMW@17.brr"
+	"AMM/KisoPCM/12 SMW @15.brr"!
+	"AMM/KisoPCM/13 SMW Thunder.brr"!
+	"EMPTY.brr"!
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+	"EMPTY.brr"
+}
+
+#AMMS01
+{
+	"AMM/00_SMW@9.brr"!
+}
+
+#AMMS02
+{
+	"AMM/00_SMW@9.brr"!
+	"AMM/01_SMW@7.brr"!
+	"AMM/02_SMW@5.brr"!
+	"AMM/03_SMW@14.brr"
+	"AMM/04_SMW@17.brr"
+	"AMM/05_SMW@21.brr"
+}
+
+#AMMS03
+{
+	"EMPTY.brr"!
+	"EMPTY.brr"
+	"AMM/07_SMW@5_light.brr"
+}
