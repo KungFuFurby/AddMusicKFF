@@ -95,6 +95,7 @@ static bool caseNoteWarning;
 static bool octaveForDDWarning;
 static bool remoteGainWarning;
 static bool fractionNoteLengthWarning;
+static bool lowNoteWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -190,6 +191,7 @@ void Music::init()
 	caseNoteWarning = true;
 	remoteGainWarning = true;
 	fractionNoteLengthWarning = true;
+	lowNoteWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -2210,11 +2212,16 @@ void Music::parseNote()
 				i -= transposeMap[instrument[channel]];
 		}
 
-
 		if (i < 0x80)
 		{
-			error("Note's pitch was too low.")
+			if (songTargetProgram == 0 && targetAMKVersion < 4 && lowNoteWarning) {
+				printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+				lowNoteWarning = false; 
+			}
+			else {
+				error("Note's pitch was too low.");
 				i = 0xC7;
+			}
 		}
 		else if (i >= 0xC6)
 		{
