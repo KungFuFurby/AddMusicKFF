@@ -341,29 +341,6 @@ RunRemoteCode2:
 	bra	RunRemoteCode_Exec
 }
 
-UseGainInstead:
-	setp
-	mov	$0170&$FF+x, y
-	clrp
-	mov	a, #$80
-	call	ORBackupSRCN
-if !noSFX = !false
-	call	TerminateIfSFXPlaying
-endif
-RestoreRemoteGain:
-	mov	a, $0170+x
-	mov	y, a
-	mov	a, x			; \
-	lsr	a			; | GAIN Register into a
-	xcn	a			; |
-	or	a, #$07			; /
-	movw	$f2, ya			; Write
-	dec	a			; \
-	dec	a			; | Clear ADSR bit to force GAIN.
-	mov	y, #$7f			; |
-	movw	$f2, ya			; /
-	ret
-
 CheckForRemoteCodeType6:
 	mov	a, #$06
 	cmp	a, !remoteCodeType2+x
@@ -831,7 +808,7 @@ RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restor
 .checkRemoteGainRestoration		; |
 	pop	p			; |
 	bpl	.doneRestoringNoPop	; | Fix remote gain.
-	jmp    RestoreRemoteGain	; /
+	bra    RestoreRemoteGain	; /
 .doneRestoring				;
 	pop	p			;
 .doneRestoringNoPop			;
@@ -847,6 +824,29 @@ SubC_9:
 	mov	a, #$00				; | Turn the current instrument back on.
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
+
+UseGainInstead:
+	setp
+	mov	$0170&$FF+x, y
+	clrp
+	mov	a, #$80
+	call	ORBackupSRCN
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+RestoreRemoteGain:
+	mov	a, $0170+x
+	mov	y, a
+	mov	a, x			; \
+	lsr	a			; | GAIN Register into a
+	xcn	a			; |
+	or	a, #$07			; /
+	movw	$f2, ya			; Write
+	dec	a			; \
+	dec	a			; | Clear ADSR bit to force GAIN.
+	mov	y, #$7f			; |
+	movw	$f2, ya			; /
+	ret
 
 if !noSFX = !false
 HandleSFXVoice:
