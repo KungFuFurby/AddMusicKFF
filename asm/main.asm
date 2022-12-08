@@ -931,6 +931,7 @@ endif
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
+.braToGetMoreSFXData
 	bra	.getMoreSFXData
 	
 .playNote
@@ -998,7 +999,7 @@ endif
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
 	bmi	.noise			; If it's negative, then it's a noise command.
 	call	SetSFXInstrument	; No noise here!
-	jmp	.getMoreSFXData		; We're done here; get the next SFX command.
+	bra	.braToGetMoreSFXData	; We're done here; get the next SFX command.
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
 	or	(!SFXNoiseChannels), ($18)
