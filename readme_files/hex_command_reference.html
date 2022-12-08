@@ -1023,6 +1023,7 @@
 		<li>$04 - Addmusic405</li>
 		<li>$05 - AddmusicM</li>
 		<li>$06 - carol's MORE.bin</li>
+		<li>$07 - Vanilla SMW</li>
 		<li>$07-$7F - Reserved. Do not use.</li>
 		<li>$80-$FF - User-defined Preset ID. Note that the preceding presets all use a pre-defined set of bits to use: you don't need to follow the same procedure and can do something else instead.</li>
 		</ul>
@@ -1049,6 +1050,17 @@
 	<li>%c - When set, readahead looks inside loops and superloops. Otherwise, readahead does not look inside loops and superloops.</li>
 	<li>%d - When set, the GAIN register is written to first, then the ADSR registers when initializing an instrument. Otherwise, the ADSR registers are written to first, then GAIN.</li>
 	<li>%e - When set, arpeggio notes will not play during rests. Otherwise, they will run normally even if a rest is used.</li>
+	</ul>
+	Byte 1: %xyzabcde...<br>
+	<ul>
+	<li>%x - Define a new byte. Each byte that has this bit set will cause another byte to be defined. By default, all undefined bytes have their bits cleared.</li>
+	<li>%y - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%z - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%a - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%b - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%c - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%d - Currently undefined. Please do not set under normal circumstances (unless you're doing your own hot patches: even then, this bit is subject to being used in future Addmusic versions).</li>
+	<li>%e - When set, rests are only keyed off if they are detected in readahead. Otherwise, they are keyed off immediately when encountered.</li>
 	</ul>
 	All other bytes are currently undefined. They are subject to being used in future Addmusic versions.
 <br></td>
