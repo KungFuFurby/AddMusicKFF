@@ -2896,8 +2896,7 @@ L_10B2:							; |
 	cmp	a, #$c6					; \ C6 is a tie.
 	beq	.skip_keyoff				; / So we shouldn't key off the voice.
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
-	bcs	+					; / So we have to key off in preparation
-	jmp	.L_10D1
+	bcc	.jmpToL_10D1				; / So we have to key off in preparation
 +
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
@@ -2953,7 +2952,7 @@ L_10B2:							; |
 	bra	L_10B2					; /
 
 .jmpToL_10D1
-	jmp	.L_10D1
+	bra	.L_10D1
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
@@ -2974,7 +2973,8 @@ L_10B2:							; |
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
-	bra	.jmpToL_10B2
+.jmpToL_10B2_1:
+	bra	L_10B2
 
 .skip_keyoff:
 	clrc
@@ -3001,7 +3001,7 @@ L_10B2:							; |
 	incw	$14
 	movw	ya, $14
 	movw	$16, ya
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_1
 
 .subroutineExit:
 	mov	$14, #$03e1&$FF
@@ -3033,8 +3033,8 @@ L_10B2:							; |
 	pop	y
 	pop	a
 	movw	$14, ya
-.jmpToL_10B2
-	jmp	L_10B2
+.jmpToL_10B2_2:
+	bra	.jmpToL_10B2_1
 
 .L_10D1:
 	mov	$10, a
@@ -3089,13 +3089,13 @@ L_10B2:							; |
 .loopSectionJumpFromScratchRAM:
 	movw	ya, $16
 	movw	$14, ya
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_2
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
-	bra	.jmpToL_10B2
+	bra	.jmpToL_10B2_2
 }
 
 TerminateOnLegatoEnable:
