@@ -517,6 +517,25 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	bra	L_0EEB			; Set the echo volume.
+
+SubC_table2_reserveBuffer:
+.zeroEDLGate
+	beq	.zeroEDL
+	cmp	a, !MaxEchoDelay
+	beq	+
+	bcs	.modifyEchoDelay
++
+	call	SetEDLVarDSP		; Write the new delay.
+	
+	and	!NCKValue, #$3f
+	jmp	SetFLGFromNCKValue
+
+.zeroEDL
+	;Don't skip again until !MaxEchoDelay is reset.
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+.modifyEchoDelay
+.echoWriteBitClearLoc
+	clr1	!NCKValue.5
 		
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	and	a, #$0F
@@ -1023,28 +1042,6 @@ SubC_table2:
 .HFDTune
 	mov     !HTuneValues+x, a
 	ret
-	
-.reserveBuffer
-;	
-	
-..zeroEDLGate
-	beq	..zeroEDL
-	cmp	a, !MaxEchoDelay
-	beq	+
-	bcs	..modifyEchoDelay
-+
-	call	SetEDLVarDSP		; Write the new delay.
-	
-	and	!NCKValue, #$3f
-	jmp	SetFLGFromNCKValue
-
-..zeroEDL
-	;Don't skip again until !MaxEchoDelay is reset.
-	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-..modifyEchoDelay
-..echoWriteBitClearLoc
-	clr1	!NCKValue.5
-	jmp	ModifyEchoDelay
 	
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
