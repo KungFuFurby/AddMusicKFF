@@ -368,8 +368,7 @@ endif
 	beq	L_05CD
 	call	CheckForRemoteCodeType6
 	beq	L_05CD
-	mov	a, $48
-	call	KeyOffVoices
+	call	KeyOffCurrentVoice
 	tclr	$0162, a
 L_05CD:
 	ret
@@ -2558,6 +2557,7 @@ KeyOffVoiceWithCheck:
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
 endif
+KeyOffCurrentVoice:
 	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
