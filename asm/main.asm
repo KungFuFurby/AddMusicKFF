@@ -388,6 +388,7 @@ if !noSFX = !false
 endif
 	mov	a, !remoteCodeType+x
 	cmp	a, #$03
+if_rest_koffCheckGate:
 	beq	L_05CD
 	call	CheckForRemoteCodeType6
 	beq	L_05CD
