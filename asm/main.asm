@@ -2595,6 +2595,12 @@ L_1266:
 	mov	y, a
 	ret
 
+HotPatchVCMDFetchNextByteIfMinus:
+	bmi	GetCommandData
+	mov	x, $46
+	mov	a, #$00
+	ret
+
 	incsrc "Commands.asm"
 	
 ; vcmd DA: set instrument
