@@ -961,19 +961,20 @@ HotPatchVCMDByBitByte1:
 	;NOTE: For those of you that want to use extra bits, a template is
 	;provided below, commented out. You will find the corresponding
 	;collection nearby, also commented out.
-	;- $10 will contain all of the bits to process.
-	;- $11 will contain the number of bits remaining plus one (the
-	;  highest bit means fetch another byte: if this is not set, all
-	;  subsequent bits will be zero).
-	;- $12 is the number of bytes remaining to modify. Each byte
+	;- $10 will contain all of the bits to process in the current byte.
+	;- $11 is reserved to execute an indexed X fetch via a subroutine
+	;  call. The RET opcode is temporarily stored in $16 to do this,
+	;  then overwritten for byte storage reasons.
+	;- $12-$13 store the pointer to an array containing a pointer to the
+	;  storage set, followed by the number of bytes to write for each of
+	;  the seven bits to apply the hot patch (the highest bit means
+	;  fetch another byte: if this is not set, all subsequent bits will
+	;  be zero).
+	;- $14-$15 store the pointer to the storage set. Each byte
 	;  modified takes up a four-byte storage entry: two for the pointer,
 	;  one to use when the bit is cleared, and one to use when the bit
 	;  is set. A template will be found nearby that matches the label
 	;  name shown.
-	;- $13 is reserved to execute an indexed X fetch via a subroutine
-	;  call. The RET opcode is temporarily stored in $16 to do this,
-	;  then overwritten for byte storage reasons.
-	;- $14-$15 store the pointer to the storage set.
 	;- $16-$17 store the pointer that we will be writing a byte to.
 
 HotPatchVCMDByBitByte2:
@@ -1000,44 +1001,37 @@ HotPatchVCMDFetchNextByteIfMinus:
 	ret
 
 HotPatchVCMDByBitProcessByte:
-	mov	$11, #$07
-	mov	$13, #$F5 ;MOV A, !A+X opcode
-	movw	$14, ya
-	push	a
-	push	y
-	mov	$16, #$6F ;RET opcode
+	mov	$11, #$F5 ;MOV A, !A+X opcode
+	movw	$12, ya
+HotPatchVCMDByBitProcessByte_count:
+	mov	y, #$07
+	mov	$14, #$6F ;RET opcode
 	mov	x, #$00
-	call	$0013
+	call	$0011
 	mov	HotPatchVCMDByBitProcessByte_storagePtrLo+1, a
 	inc	x
-	call	$0013
-	mov	HotPatchVCMDByBitProcessByte_storagePtrHi+1, a
+	call	$0011
+	mov	$15, a
 -
-	mov	$16, #$6F ;RET opcode
+	mov	$14, #$6F ;RET opcode
 	lsr	$10
 	inc	x
-	call	$0013
-	mov	$12, a
+	call	$0011
+	push	y
+	mov	y, a
 	beq	+
 HotPatchVCMDByBitProcessByte_storagePtrLo:
 	mov	$14, #$00
-HotPatchVCMDByBitProcessByte_storagePtrHi:
-	mov	$15, #$00
 	call	HotPatchVCMDByBitProcessStorages
-	pop	y
-	pop	a
-	movw	$14, ya
-	push	a
-	push	y
 +
-	dbnz	$11, -
 	pop	y
-	pop	a
+	dbnz	y, -
 	ret
 
 HotPatchVCMDByBitProcessStorages:
 -
 	push	p
+	push	y
 	mov	y, #$00
 	mov	a, ($14)+y
 	mov	$16, a
@@ -1055,9 +1049,9 @@ HotPatchVCMDByBitProcessStorages:
 	addw	ya, $14
 	movw	$14, ya
 	mov	HotPatchVCMDByBitProcessByte_storagePtrLo+1, a
-	mov	HotPatchVCMDByBitProcessByte_storagePtrHi+1, y
+	pop	y
 	pop	p
-	dbnz	$12, -
+	dbnz	y, -
 	ret
 
 HotPatchVCMDByte0StorageSet:
