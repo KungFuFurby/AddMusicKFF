@@ -1764,15 +1764,11 @@ UnpauseMusic:
 	mov $f3, a		;/
 	bra .unsetMute
 
-EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$4E			;TCLR opcode
-	bra	+
-
-
 DisableYoshiDrums:				; And disable them.
-	mov	a, #$0E			;TSET opcode
-+
-	mov	HandleYoshiDrums_drumSet, a
+	clrc
+EnableYoshiDrums:				; Enable Yoshi drums.
+	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
+	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
 if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
 	call	HandleYoshiDrums
 	bra	ProcessAPU1SFX
