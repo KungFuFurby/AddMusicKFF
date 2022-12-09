@@ -1720,6 +1720,20 @@ endif
 
 ;
 
+if !noSFX = !false
+APU1CMDJumpArray:
+	dw	CheckAPU1SFXPriority	;01
+	dw	EnableYoshiDrums	;02
+	dw	DisableYoshiDrums	;03
+	dw	CheckAPU1SFXPriority	;04
+	dw	ForceSFXEchoOff		;05
+	dw	ForceSFXEchoOn		;06
+	dw	PlayPauseSFX		;07
+	dw	PlayUnpauseSFX		;08
+	dw	PlayUnpauseSilentSFX	;09
+APU1CMDJumpArrayEOF:
+endif
+
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	$5e, #$00
@@ -1764,17 +1778,20 @@ UnpauseMusic:
 	mov $f3, a		;/
 	bra .unsetMute
 
+;The cases here are different: carry is implied cleared if jump array is
+;used, and carry is implied set if a standard branch is used.
+if !noSFX = !false
+EnableYoshiDrums:				; Enable Yoshi drums.
+	setc
+DisableYoshiDrums:				; And disable them.
+else
 DisableYoshiDrums:				; And disable them.
 	clrc
 EnableYoshiDrums:				; Enable Yoshi drums.
+endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
 	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
-if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
-	call	HandleYoshiDrums
-	bra	ProcessAPU1SFX
-else
 	bra	HandleYoshiDrums
-endif
 
 L_099C:
 	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1810,50 +1827,42 @@ ForceSFXEchoOff:
 ForceSFXEchoOn:
 	mov	a, #$ff
 +	mov	!SFXEchoChannels, a
-if !useSFXSequenceFor1DFASFX = !false
-	call	EffectModifier
-	bra	ProcessAPU1SFX
-else
 	jmp	EffectModifier
 endif
-endif
+
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
+if !noSFX = !false
+	beq	ProcessAPU1SFX
+endif
 	cmp	a, #$ff
 	beq	L_099C
+if !noSFX = !true
+	cmp	a, #$08			; 08 unpauses music
+	beq	UnpauseMusic
+	cmp	a, #$07			; 07 pauses music
+	beq	PauseMusic
+	cmp 	a, #$09			; KevinM's edit:
+	beq	UnpauseMusic_silent	; 09 unpauses music, but with the silent sfx
 	cmp	a, #$02			; 02 = turn on Yoshi drums
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
-if !noSFX = !false
-	cmp	a, #$05			;
-	beq	ForceSFXEchoOff		;
-	cmp	a, #$06			;
-	beq	ForceSFXEchoOn		;
-endif
-	cmp	a, #$07			; 07 pauses music
-if !noSFX = !false
-	beq	PlayPauseSFX		;
-else
-	beq	PauseMusic
-endif
-	cmp	a, #$08			; 08 unpauses music
-if !noSFX = !false
-	beq	PlayUnpauseSFX
-else
-	beq	UnpauseMusic
-endif
-	cmp 	a, #$09			; KevinM's edit:
-if !noSFX = !false
-	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx
-else
-	beq	UnpauseMusic_silent
 endif
 if !noSFX = !false
-	cmp	a, #$01			; 01 = jump SFX
-	beq	CheckAPU1SFXPriority	;
-	cmp	a, #$04
-	beq	CheckAPU1SFXPriority
+	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
+	bcs	ProcessAPU1SFX
+if !useSFXSequenceFor1DFASFX = !false
+	mov	y, #ProcessAPU1SFX>>8&$ff
+	push	y
+	mov	y, #ProcessAPU1SFX&$ff
+	push	y
+endif
+	asl	a
+	mov	x, a
+	lsr	a
+	jmp	(APU1CMDJumpArray-2+x)
+
 ;
 ProcessAPU1SFX:
 if !useSFXSequenceFor1DFASFX = !false
@@ -1875,11 +1884,7 @@ PlayPauseSFX:
 	mov	$00, a
 -
 	mov	!ProtectSFX6, a
-if !useSFXSequenceFor1DFASFX = !false
-	bra	ProcessAPU1SFX
-else
 	ret
-endif
 
 PlayUnpauseSilentSFX:
 	mov	a, #$2C
@@ -1937,6 +1942,8 @@ else
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
 	mov	$05, a		;
+	pop	a		;Don't jump to ProcessAPU1SFX
+	pop	a		;
 	;cmp	$05, #$01
 	;bne	+
 	mov	a, #$34
