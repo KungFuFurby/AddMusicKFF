@@ -591,6 +591,17 @@ endif
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
+
+if !noSFX = !false
+ForceSFXEchoOff:
+	setc
+ForceSFXEchoOn:
+	mov	a, #$00
+	adc	a, #$ff
+	mov	!SFXEchoChannels, a
+	bra	EffectModifier
+endif
+
 SubC_table2_PitchMod:
 	mov     !MusicPModChannels, a	; \ This is for music.
 	bra	EffectModifier		; / Call the effect modifier routine.
@@ -1819,16 +1830,6 @@ endif
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
-
-if !noSFX = !false
-ForceSFXEchoOff:
-	mov	a, #$00
-	bra	+
-ForceSFXEchoOn:
-	mov	a, #$ff
-+	mov	!SFXEchoChannels, a
-	jmp	EffectModifier
-endif
 
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
