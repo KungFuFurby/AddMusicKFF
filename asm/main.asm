@@ -1470,21 +1470,78 @@ PSwitchNoteLengths:
 	db $0D, $0D, $0B, $09, $07	
 endif
 
-SFXTerminateVCMD:
-	db $00
+if !useSFXSequenceFor1DFASFX = !false
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
+	bcs	+
+	;Jump to ProcessAPU1SFX (saved in the stack)
+	ret
++
+
+	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
+L_0A14:
+	mov	$05, a		;
+	pop	a		;Don't jump to ProcessAPU1SFX
+	pop	a		;
+	;cmp	$05, #$01
+	;bne	+
+	mov	a, #$34
++
+	cmp	$05, #$04
+	bne	+
+	mov	a, #$1c
++
+	mov	$1c, a
+	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
+	
+	call	KeyOffVoices
+	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+if !PSwitchIsSFX = !true
+	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
+endif
+	mov	x, #(!1DFASFXChannel*2)
+endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
 	beq	+
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
-	mov	a, #SFXTerminateVCMD>>8
+	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
 +
 	ret
+
+SFXTerminateVCMD:
+	db $00
+
+if !useSFXSequenceFor1DFASFX = !true
+CheckAPU1SFXPriority:
+	mov	x, #(!1DFASFXChannel*2)
+	mov	y, #$01
+	mov	$10, #(1<<!1DFASFXChannel)
+	bra	ProcessSFXInput
 endif
+
+endif
+
+
 SpeedUpMusic:
 	mov	a, #$0a
 	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
@@ -1915,54 +1972,7 @@ PauseMusic:
 	;setting the FLG DSP register.
 	ret
 
-if !noSFX = !false	
-CheckAPU1SFXPriority:
-if !useSFXSequenceFor1DFASFX = !true
-	mov	x, #(!1DFASFXChannel*2)
-	mov	y, #$01
-	mov	$10, #(1<<!1DFASFXChannel)
-	jmp	ProcessSFXInput
-else
-	mov	y, a
-	;mov	y, #$00		;Default priority
-	cmp	a, #$01
-	bne	+
-	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
-	bra	.gotPriority
-+
-	;cmp	a, #$04
-	;bne	+
-	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
-	;bra	.gotPriority
-+
-
-.gotPriority
-	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcc	ProcessAPU1SFX
-
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
-L_0A14:
-	mov	$05, a		;
-	pop	a		;Don't jump to ProcessAPU1SFX
-	pop	a		;
-	;cmp	$05, #$01
-	;bne	+
-	mov	a, #$34
-+
-	cmp	$05, #$04
-	bne	+
-	mov	a, #$1c
-+
-	mov	$1c, a
-	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
-	
-	call	KeyOffVoices
-	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
-if !PSwitchIsSFX = !true
-	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
-endif
-	mov	x, #(!1DFASFXChannel*2)
-	jmp	SFXTerminateCh
+if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
 ; $01 = 01
 L_0A51:						;;;;;;;;/ Code change
 	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
@@ -2060,7 +2070,6 @@ Quick1DFAMonoVolDSPWritesWKON:
 	movw	$f2, ya
 	mov	a, #(1<<!1DFASFXChannel)
 	jmp	KeyOnVoices
-endif
 endif
 				; Call this routine to play the song currently in A.
 PlaySong:
