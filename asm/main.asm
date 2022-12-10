@@ -1891,7 +1891,14 @@ endif
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
 if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !false
 	beq	ProcessAPU1SFX
+else
+	bne	.hasCommand
+.terminate:
+	ret
+.hasCommand:
+endif
 endif
 	cmp	a, #$ff
 	beq	L_099C
@@ -1909,33 +1916,19 @@ if !noSFX = !true
 endif
 if !noSFX = !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
-	bcs	ProcessAPU1SFX
 if !useSFXSequenceFor1DFASFX = !false
+	bcs	ProcessAPU1SFX
 	mov	y, #ProcessAPU1SFX>>8&$ff
 	push	y
 	mov	y, #ProcessAPU1SFX&$ff
 	push	y
+else
+	bcs	.terminate
 endif
 	asl	a
 	mov	x, a
 	lsr	a
 	jmp	(APU1CMDJumpArray-2+x)
-
-;
-ProcessAPU1SFX:
-if !useSFXSequenceFor1DFASFX = !false
-	mov	a, $05		; 
-	cmp	a, #$01		; \ If the currently playing SFX is the jump SFX
-	beq	L_0A51		; / Then process that.
-	cmp	a, #$04		; Else, if it's the girder SFX, then do that stuff.
-	beq	L_0A11             ; (jmp $0b08)
-L_0A0D:
-	ret
-L_0A11:
-	jmp	L_0B08
-else
-	ret
-endif
 
 PlayPauseSFX:
 	mov	a, #$11
@@ -1973,6 +1966,14 @@ PauseMusic:
 	ret
 
 if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
+;
+ProcessAPU1SFX:
+	mov	a, $05		; 
+	cmp	a, #$04		; \ If the currently playing SFX is the girder SFX
+	beq	L_0B08		; / Then process that.
+	cmp	a, #$01 	; Else, if it's the jump SFX, then do that stuff.
+	bne	L_0AB0
+
 ; $01 = 01
 L_0A51:						;;;;;;;;/ Code change
 	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
