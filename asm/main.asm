@@ -2093,14 +2093,7 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
-	mov	a,#$00			; Clear various new addresses.
-	mov	y,#$08			; These weren't used before, so they weren't cleared before.
--					;
-	mov	$0160-1+y,a		;
-	;mov	$245A-1+y,a		; These were used in AMM for the special pulse wave BRR file.
-	;mov	$2463-1+y,a		; They can't be used now, since chances are music or something else is there now.
-	dbnz	y, -			; Plus, the BRR file would be in an unstable location.
-	mov	$46, a			;
+	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
 	call	HotPatchVCMDByBit	; The code will handle the rest.
@@ -2143,7 +2136,6 @@ L_0B6D:
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; Tremolo[ch] = 0
-	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 	
 	mov	!ArpNoteIndex+x, a
@@ -2198,6 +2190,7 @@ endif
 	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
 	mov	!ArpLength-1+y, a
 	mov	$0300-1+y, a
+	mov	$0160-1+y,a
 	dbnz	y, -
 	; MODIFIED CODE END
 	
