@@ -582,11 +582,10 @@ SubC_02:
 	ret
 
 SubC_1:
-	mov	a, $0161
-	eor	a, $48
-	mov	$0161,a
 	mov	a,$48
 	tclr	$0162, a
+	eor	a, $0161
+	mov	$0161,a
 	ret
 
 SubC_2:
