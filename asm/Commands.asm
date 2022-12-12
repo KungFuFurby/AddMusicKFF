@@ -379,11 +379,13 @@ label2:
 	bne   label3
 	mov   a, y
 label3:
-	mov   $01f0+x,a
-	mov   a,$01e0+x
+	setp
+	mov.b $01f0&$ff+x,a
+	mov.b a,$01e0&$ff+x
+	mov.b y,$01e1&$ff+x
+	clrp
 	mov   $30+x,a
-	mov   a,$01e1+x
-	mov   $31+x,a
+	mov   $31+x,y
 label4:
 	ret
 }	
