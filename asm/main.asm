@@ -1571,7 +1571,7 @@ if !noSFX = !false
 	
 if !PSwitchIsSFX = !true
 PSwitchSFX:
-	cmp	a, #$80
+	asl	a
 	bne	PlayPSwitchSFX
 StopPSwitchSFX:
 	mov	x, #$0e
@@ -1588,7 +1588,7 @@ StopPSwitchSFXSkipCh:
 	ret
 
 PlayPSwitchSFX:
-	push	a
+	push	p
 	mov	$03, #$81
 	mov	y, #$03
 	push	y
@@ -1609,9 +1609,8 @@ PlayPSwitchSFX:
 	mov	$10, #(1<<!PSwitchSFXCh2ID)
 	call	ProcessSFXInput
 
-	pop	a
-	and	a, #$40
-	bne	PlayPSwitchActivateSFX
+	pop	p
+	bmi	PlayPSwitchActivateSFX
 	ret
 
 PlayPSwitchActivateSFX:
