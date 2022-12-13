@@ -462,7 +462,6 @@ void assembleSPCDriver()
 	openTextFile("temp.txt", temptxt);
 	mainLoopPos = scanInt(temptxt, "MainLoopPos: ");
 	reuploadPos = scanInt(temptxt, "ReuploadPos: ");
-	SRCNTableCodePos = scanInt(temptxt, "SRCNTableCodePos: ");
 	noSFX = (temptxt.find("NoSFX is enabled") != -1);
 	if (sfxDump && noSFX) {
 		printWarning("The sound driver build does not support sound effects due to the !noSFX flag\r\nbeing enabled in asm/UserDefines.asm, yet you requested to dump SFX. There will\r\nbe no new SPC dumps of the sound effects since the data is not included by\r\ndefault, nor is the playback code for the sound effects.");
@@ -541,7 +540,7 @@ void loadMusicList()
 				highestGlobalSong = std::max(highestGlobalSong, index);
 			if (inLocals)
 				if (index <= highestGlobalSong)
-					printError("Error: Local song numbers must be lower than the largest global song number.", true);
+					printError("Error: Local song numbers must be greater than the largest global song number.", true);
 		}
 		else
 		{
@@ -634,9 +633,9 @@ void loadSampleList()
 		{
 			if (isspace(str[i]))
 			{
-				BankDefine *sg = new BankDefine;
+				std::unique_ptr<BankDefine> sg = std::make_unique<BankDefine>();
 				sg->name = groupName;
-				bankDefines.push_back(sg);
+				bankDefines.push_back(std::move(sg));
 				i++;
 				gettingGroupName = false;
 				continue;
@@ -655,7 +654,7 @@ void loadSampleList()
 				if (str[i] == '\"')
 				{
 					tempName.erase(tempName.begin(), tempName.begin() + 1);
-					bankDefines[bankDefines.size() - 1]->samples.push_back(new std::string(tempName));
+					bankDefines[bankDefines.size() - 1]->samples.push_back(std::make_unique<std::string>(tempName));
 					bankDefines[bankDefines.size() - 1]->importants.push_back(false);
 					tempName.clear();
 					i++;
@@ -1694,7 +1693,6 @@ void assembleSNESDriver2()
 	openTextFile("asm/SNES/patch.asm", patch);
 
 	insertValue(reuploadPos, 4, "!ExpARAMRet = ", patch);
-	insertValue(SRCNTableCodePos, 4, "!TabARAMRet = ", patch);
 	insertValue(mainLoopPos, 4, "!DefARAMRet = ", patch);
 	insertValue(songCount, 2, "!SongCount = ", patch);
 

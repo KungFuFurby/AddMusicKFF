@@ -217,6 +217,18 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!PSwitchStarRestart = !true
+
+;Default setting: !true (!false in AddmusicK 1.0.8 and earlier)
+;Vanilla SMW setting: !true
+;---------------
+; If you set this to true, then the P-switch and star global songs will 
+; restart whenever they're called again (i.e., by pressing another P-switch
+; or collecting another star).
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,

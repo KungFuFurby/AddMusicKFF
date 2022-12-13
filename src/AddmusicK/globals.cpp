@@ -23,7 +23,7 @@ SoundEffect soundEffectsDF9[256];
 SoundEffect soundEffectsDFC[256];
 SoundEffect *soundEffects[2] = {soundEffectsDF9, soundEffectsDFC};
 //std::vector<SampleGroup> sampleGroups;
-std::vector<BankDefine *> bankDefines;
+std::vector<std::unique_ptr<BankDefine>> bankDefines;
 std::map<File, int> sampleToIndex;
 
 bool convert = true;
@@ -49,7 +49,6 @@ int programPos;
 int programUploadPos;
 int mainLoopPos;
 int reuploadPos;
-int SRCNTableCodePos;
 int programSize;
 int highestGlobalSong;
 int totalSampleCount;
@@ -627,7 +626,7 @@ int getSample(const File &name, Music *music)
 	relativeDir += "/" + (std::string)name;
 
 	if (fileExists(relativeDir))
-		actualPath = relativeDir + (std::string)name;
+		actualPath = relativeDir;
 	else if (fileExists(absoluteDir))
 		actualPath = absoluteDir;
 	else
@@ -944,6 +943,10 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 							error("Could not parse integer for #amk.");
 						}
 						version = j;
+						if (version == 3)
+						{
+							error("Codec's AddmusicK Beta has not been implemented yet.");
+						}
 					}
 				}
 			}

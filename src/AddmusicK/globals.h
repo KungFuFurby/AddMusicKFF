@@ -24,7 +24,7 @@
 #define AMKMINOR 0
 #define AMKREVISION 8		// // //
 
-#define PARSER_VERSION 2			// Used to keep track of incompatible changes to the parser
+#define PARSER_VERSION 4			// Used to keep track of incompatible changes to the parser
 
 #define DATA_VERSION 0				// Used to keep track of incompatible changes to any and all compiled data, either to the SNES or to the PC
 
@@ -47,6 +47,7 @@ class SampleGroup;
 #include <vector>
 #include <fstream>
 #include <map>
+#include <memory>
 #include "Directory.h"
 #include "asardll.h"
 #include <sys/types.h>
@@ -60,7 +61,7 @@ extern Music musics[256];
 //extern Sample samples[256];
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];
-extern std::vector<BankDefine *> bankDefines;
+extern std::vector<std::unique_ptr<BankDefine>> bankDefines;
 
 extern std::map<File, int> sampleToIndex;
 
@@ -87,7 +88,6 @@ extern int programPos;
 extern int programUploadPos;
 extern int reuploadPos;
 extern int mainLoopPos;
-extern int SRCNTableCodePos;
 extern int programSize;
 extern int highestGlobalSong;
 //extern int totalSampleCount;
