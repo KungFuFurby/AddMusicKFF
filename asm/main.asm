@@ -3209,8 +3209,10 @@ L_10A1:
 	bne 	.noRemoteCode				; /
 
 .checkRemoteCodeTimeValue
-	mov	a, !remoteCodeTimeValue+x		; \
-	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
+	setp
+	mov.b	a, !remoteCodeTimeValue&$ff+x		; \
+	cmp	a, (X) ;$0100&$ff+x			; | Also branch if we're not ready to run said code yet.
+	clrp						; |
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
