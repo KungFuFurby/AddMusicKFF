@@ -162,16 +162,17 @@ org $008134			; Don't upload the overworld music bank.
 if read1($008176) == $5c
 	
 	org $00817C			; For LevelNMI.  Three fewer bytes placed three bytes later.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 elseif read1($008179) == $5c
 	org $00817D			; For PowerTool.  Four fewer bytes placed four bytes later.
-		BRA Skip
+		NOP : NOP
 else
 	org $008179			; Skip over the standard NMI audio port stuff.  We handle that ourselves now every loop.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 		NOP : NOP
 		NOP
 endif
+		BRA Skip
 YoshiDrumHijack:
 		;Identical to $02A763, except that Yoshi Drums are
 		;explicitly disabled if the conditions to turn them on are
@@ -196,8 +197,7 @@ NoYoshiDrum:
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP
-		;This hijack overwrites 23 of the 43 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
