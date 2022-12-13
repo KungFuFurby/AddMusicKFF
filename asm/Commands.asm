@@ -1052,9 +1052,9 @@ HotPatchPresetTable:
 	             ; having inconsistent parameter sizes for $80 and up
 	             ; and Addmusic405 failing to account for these.
 	db %10001000 ; 05 - AddmusicM
-	db %00000001 ;
-	db %10000000 ; 06 - carol's MORE.bin
 	db %00000000 ;
+	db %10000000 ; 06 - carol's MORE.bin
+	db %00000001 ;
 	db %10000000 ; 07 - Vanilla SMW
 	db %00000001 ;
 	; 08-7F - Reserved for future Addmusics (or any extra past ones)
