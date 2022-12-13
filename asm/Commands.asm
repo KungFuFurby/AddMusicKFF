@@ -379,11 +379,13 @@ label2:
 	bne   label3
 	mov   a, y
 label3:
-	mov   $01f0+x,a
-	mov   a,$01e0+x
+	setp
+	mov.b $01f0&$ff+x,a
+	mov.b a,$01e0&$ff+x
+	mov.b y,$01e1&$ff+x
+	clrp
 	mov   $30+x,a
-	mov   a,$01e1+x
-	mov   $31+x,a
+	mov   $31+x,y
 label4:
 	ret
 }	
@@ -474,7 +476,7 @@ cmdEF:					; Echo command 1 (channels, volume)
 L_0EEB: 
 	mov	$f2, #$2c            ; set echo vol L DSP from $62
 	mov	$f3, $62
-	mov	$f2, #$3c            ; set echo vol R DSP from $64 
+	set1	$f2.4                ; set echo vol R DSP from $64 
 	mov	$f3, $64          
 	ret
 }
@@ -517,55 +519,6 @@ cmdF1:					; Echo command 2 (delay, feedback, FIR)
 	adc	$f2,#$10		;
 	bpl	-			; set echo filter from table idx op3
 	bra	L_0EEB			; Set the echo volume.
-		
-ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
-	and	a, #$0F
-	push	a			; Save the requested delay.
-	beq	+
-	xcn	a			; Get the buffer address.
-	lsr	a
-	dec	a
-+
-	eor	a, #$FF
-	push	a
-
-	mov	$f2, #$6c
-	or	$f3, #$60
-
-	mov	$f2, #$7d
-	mov	a, $f3
-	and	a, #$0f
-	beq	+
-	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
-	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
-	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
-	mov	$14, #$00
-	mov	$15, a
--	dbnz	$14, -
-	dbnz	$15, -
-+
-	
-	pop	y			; \
-	mov	$f2, #$6d		; | Write the new buffer address.
-	mov	$f3, y			; / 
-	
-	pop	a
-	call	SetEDLVarDSP		; Write the new delay.
-	mov	!MaxEchoDelay, a
-	
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	+
-	mov	$14, #$00
-	mov	$15, y
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
-+	
-	jmp	SetFLGFromNCKValue
 
 SetEDLVarDSP:
 	mov	!EchoDelay, a		; \
@@ -615,7 +568,7 @@ SubC_table:
 	dw	SubC_9
 
 SubC_0:
-	eor     $6e, #$20			; 
+	not1    $6e.5				; 
 SubC_00:
 	call	HandleYoshiDrums		; Handle the Yoshi drums.
 	mov	a,#$01
@@ -630,17 +583,11 @@ SubC_02:
 	tclr	$0160, a
 	ret
 
-SubC_03:
-	eor	a,$0160
-	mov	$0160,a
-	ret
-
 SubC_1:
-	mov	a, $0161
-	eor	a, $48
-	mov	$0161,a
 	mov	a,$48
 	tclr	$0162, a
+	eor	a, $0161
+	mov	$0161,a
 	ret
 
 SubC_2:
@@ -651,10 +598,8 @@ SubC_5:
 	mov    a, #$00
 	mov    $0167, a
 	mov    $0166, a
-	mov	a,#$02
-	bra	SubC_03	
-
-	;ret
+	not1   $0160.1
+	ret
 	
 SubC_6:
 	eor	($6e), ($48)
@@ -662,6 +607,7 @@ SubC_6:
 	
 SubC_8:
 	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+cmdF5Ret:
 	ret	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -671,11 +617,10 @@ cmdF5:					; FIR Filter command.
 		movw  $f2, ya
 -		clrc
 		adc   $f2,#$10
-		bmi   +
+		bmi   cmdF5Ret
 		call  GetCommandData
 		mov   $f3, a
 		bra   -
-+		ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdF6:					; DSP Write command.
@@ -811,14 +756,6 @@ HotPatchVCMDByBitByteFetchLoop:
 	call	HotPatchVCMDFetchNextByteIfMinus
 	bmi	HotPatchVCMDByBitByteFetchLoop
 HotPatchVCMDByBitByteFetchLoopSkip:
-	ret
-
-HotPatchVCMDFetchNextByteIfMinus:
-	bpl	+
-	jmp	GetCommandData
-+
-	mov	x, $46
-	mov	a, #$00
 	ret
 
 HotPatchVCMDByBitProcessByte:
@@ -1135,28 +1072,6 @@ SubC_table2:
 .HFDTune
 	mov     !HTuneValues+x, a
 	ret
-	
-.reserveBuffer
-;	
-	
-..zeroEDLGate
-	beq	..zeroEDL
-	cmp	a, !MaxEchoDelay
-	beq	+
-	bcs	..modifyEchoDelay
-+
-	call	SetEDLVarDSP		; Write the new delay.
-	
-	and	!NCKValue, #$3f
-	jmp	SetFLGFromNCKValue
-
-..zeroEDL
-	;Don't skip again until !MaxEchoDelay is reset.
-	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-..modifyEchoDelay
-..echoWriteBitClearLoc
-	clr1	!NCKValue.5
-	jmp	ModifyEchoDelay
 	
 .gainRest
 	;$F4 $05 has been replaced. This function can be replicated by a
