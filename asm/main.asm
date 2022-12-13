@@ -1948,12 +1948,16 @@ if !noSFX = !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
 if !useSFXSequenceFor1DFASFX = !false
 	bcs	ProcessAPU1SFX
+	cmp	a, #$0a
+	beq	ProcessAPU1SFX
 	mov	y, #ProcessAPU1SFX>>8&$ff
 	push	y
 	mov	y, #ProcessAPU1SFX&$ff
 	push	y
 else
 	bcs	.terminate
+	cmp	a, #$0a
+	beq	.terminate
 endif
 	asl	a
 	mov	x, a
