@@ -444,29 +444,6 @@ RunRemoteCode2:
 	bra	RunRemoteCode_Exec
 }
 
-UseGainInstead:
-	setp
-	mov	$0170&$FF+x, y
-	clrp
-	mov	a, #$80
-	call	ORBackupSRCN
-if !noSFX = !false
-	call	TerminateIfSFXPlaying
-endif
-RestoreRemoteGain:
-	mov	a, $0170+x
-	mov	y, a
-	mov	a, x			; \
-	lsr	a			; | GAIN Register into a
-	xcn	a			; |
-	or	a, #$07			; /
-	movw	$f2, ya			; Write
-	dec	a			; \
-	dec	a			; | Clear ADSR bit to force GAIN.
-	mov	y, #$7f			; |
-	movw	$f2, ya			; /
-	ret
-
 CheckForRemoteCodeType6:
 	mov	a, #$06
 	cmp	a, !remoteCodeType2+x
@@ -495,8 +472,7 @@ if_rest_koffCheckGate:
 	beq	L_05CD
 	call	CheckForRemoteCodeType6
 	beq	L_05CD
-	mov	a, $48
-	call	KeyOffVoices
+	call	KeyOffCurrentVoice
 	tclr	$0162, a
 L_05CD:
 	ret
@@ -751,6 +727,17 @@ endif
 	movw	$10, ya            ; notenum to $10/11
 	ret
 }
+
+if !noSFX = !false
+ForceSFXEchoOff:
+	setc
+ForceSFXEchoOn:
+	mov	a, #$00
+	adc	a, #$ff
+	mov	!SFXEchoChannels, a
+	bra	EffectModifier
+endif
+
 SubC_table2_PitchMod:
 	mov     !MusicPModChannels, a	; \ This is for music.
 	bra	EffectModifier		; / Call the effect modifier routine.
@@ -989,7 +976,7 @@ RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restor
 .checkRemoteGainRestoration		; |
 	pop	p			; |
 	bpl	.doneRestoringNoPop	; | Fix remote gain.
-	jmp    RestoreRemoteGain	; /
+	bra    RestoreRemoteGain	; /
 .doneRestoring				;
 	pop	p			;
 .doneRestoringNoPop			;
@@ -1001,10 +988,32 @@ RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restor
 }
 
 SubC_9:
-	mov     x, $46				; \ 
-	mov	a, #$00				; | Turn the current instrument back on.
+	call	FetchVoiceXAndZeroA		; \ Turn the current instrument back on.
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
+
+UseGainInstead:
+	setp
+	mov	$0170&$FF+x, y
+	clrp
+	mov	a, #$80
+	call	ORBackupSRCN
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+RestoreRemoteGain:
+	mov	a, $0170+x
+	mov	y, a
+	mov	a, x			; \
+	lsr	a			; | GAIN Register into a
+	xcn	a			; |
+	or	a, #$07			; /
+	movw	$f2, ya			; Write
+	dec	a			; \
+	dec	a			; | Clear ADSR bit to force GAIN.
+	mov	y, #$7f			; |
+	movw	$f2, ya			; /
+	ret
 
 if !noSFX = !false
 HandleSFXVoice:
@@ -1090,14 +1099,15 @@ endif
 	mov	!ChSFXPtrs+1+x, a	; | Set the current pointer to the backup pointer,
 	mov	a, !ChSFXPtrBackup+x	; | Thus restarting this sound effect.
 	mov	!ChSFXPtrs+x, a		; /
+.braToGetMoreSFXData
 	bra	.getMoreSFXData
 	
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
-	push	a
-	mov	a, !InRest+x
-	pop	a
+	setp
+	mov	y, !InRest&$ff+x
+	clrp
 	beq	.keyOnNote
 	call	KeyOffVoices
 	bra	.setNoteLength
@@ -1157,7 +1167,7 @@ endif
 	call	GetNextSFXByte		; Get the parameter for the instrument command.
 	bmi	.noise			; If it's negative, then it's a noise command.
 	call	SetSFXInstrument	; No noise here!
-	jmp	.getMoreSFXData		; We're done here; get the next SFX command.
+	bra	.braToGetMoreSFXData	; We're done here; get the next SFX command.
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
 	or	(!SFXNoiseChannels), ($18)
@@ -1617,21 +1627,78 @@ PSwitchNoteLengths:
 	db $0D, $0D, $0B, $09, $07	
 endif
 
-SFXTerminateVCMD:
-	db $00
+if !useSFXSequenceFor1DFASFX = !false
+CheckAPU1SFXPriority:
+	mov	y, a
+	;mov	y, #$00		;Default priority
+	cmp	a, #$01
+	bne	+
+	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	bra	.gotPriority
++
+	;cmp	a, #$04
+	;bne	+
+	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	;bra	.gotPriority
++
+
+.gotPriority
+	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
+	bcs	+
+	;Jump to ProcessAPU1SFX (saved in the stack)
+	ret
++
+
+	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
+L_0A14:
+	mov	$05, a		;
+	pop	a		;Don't jump to ProcessAPU1SFX
+	pop	a		;
+	;cmp	$05, #$01
+	;bne	+
+	mov	a, #$34
++
+	cmp	$05, #$04
+	bne	+
+	mov	a, #$1c
++
+	mov	$1c, a
+	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
+	
+	call	KeyOffVoices
+	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
+if !PSwitchIsSFX = !true
+	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
+endif
+	mov	x, #(!1DFASFXChannel*2)
+endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
 	beq	+
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
-	mov	a, #SFXTerminateVCMD>>8
+	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
 +
 	ret
+
+SFXTerminateVCMD:
+	db $00
+
+if !useSFXSequenceFor1DFASFX = !true
+CheckAPU1SFXPriority:
+	mov	x, #(!1DFASFXChannel*2)
+	mov	y, #$01
+	mov	$10, #(1<<!1DFASFXChannel)
+	bra	ProcessSFXInput
 endif
+
+endif
+
+
 SpeedUpMusic:
 	mov	a, #$0a
 	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
@@ -1661,7 +1728,7 @@ if !noSFX = !false
 	
 if !PSwitchIsSFX = !true
 PSwitchSFX:
-	cmp	a, #$80
+	asl	a
 	bne	PlayPSwitchSFX
 StopPSwitchSFX:
 	mov	x, #$0e
@@ -1678,7 +1745,7 @@ StopPSwitchSFXSkipCh:
 	ret
 
 PlayPSwitchSFX:
-	push	a
+	push	p
 	mov	$03, #$81
 	mov	y, #$03
 	push	y
@@ -1699,9 +1766,8 @@ PlayPSwitchSFX:
 	mov	$10, #(1<<!PSwitchSFXCh2ID)
 	call	ProcessSFXInput
 
-	pop	a
-	and	a, #$40
-	bne	PlayPSwitchActivateSFX
+	pop	p
+	bmi	PlayPSwitchActivateSFX
 	ret
 
 PlayPSwitchActivateSFX:
@@ -1878,6 +1944,23 @@ endif
 
 ;
 
+if !noSFX = !false
+APU1CMDJumpArray:
+	dw	CheckAPU1SFXPriority	;01
+	dw	EnableYoshiDrums	;02
+	dw	DisableYoshiDrums	;03
+	dw	CheckAPU1SFXPriority	;04
+	dw	ForceSFXEchoOff		;05
+	dw	ForceSFXEchoOn		;06
+	dw	PlayPauseSFX		;07
+	dw	PlayUnpauseSFX		;08
+	dw	PlayUnpauseSilentSFX	;09
+	dw	MusicSFXEchoCarryOn	;0a
+	dw	MusicEchoCarryOn	;0b
+	dw	MusicEchoCarryOff	;0c
+APU1CMDJumpArrayEOF:
+endif
+
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	$5e, #$00
@@ -1918,9 +2001,24 @@ UnpauseMusic:
 	dec a
 	mov $f2, #$2c		;\
 	mov $f3, a		;| Mute echo.
-	mov $f2, #$3c		;|
+	set1 $f2.4		;|
 	mov $f3, a		;/
 	bra .unsetMute
+
+;The cases here are different: carry is implied cleared if jump array is
+;used, and carry is implied set if a standard branch is used.
+if !noSFX = !false
+EnableYoshiDrums:				; Enable Yoshi drums.
+	setc
+DisableYoshiDrums:				; And disable them.
+else
+DisableYoshiDrums:				; And disable them.
+	clrc
+EnableYoshiDrums:				; Enable Yoshi drums.
+endif
+	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
+	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
+	bra	HandleYoshiDrums
 
 L_099C:
 	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1950,43 +2048,18 @@ endif
 				; The stack is also cleared.
 	;ret
 
-DisableYoshiDrums:				; And disable them.
-	mov	a, #$0E			;TSET opcode
--
-	mov	HandleYoshiDrums_drumSet, a
-if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
-	call	HandleYoshiDrums
-	bra	ProcessAPU1SFX
-else
-	bra	HandleYoshiDrums
-endif
-
-EnableYoshiDrums:				; Enable Yoshi drums.
-	mov	a, #$4E			;TCLR opcode
-	bra	-
-
 if !noSFX = !false
 MusicSFXEchoCarryOn:
 	mov	a, #$00
 	mov	MusicToSFXEchoGate+1, a
-if !useSFXSequenceFor1DFASFX = !false
-	bra	ProcessAPU1SFX
-else
 	ret
-endif
-endif
 
-if !noSFX = !false
 PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
 -
 	mov	!ProtectSFX6, a
-if !useSFXSequenceFor1DFASFX = !false
-	bra	ProcessAPU1SFX
-else
 	ret
-endif
 
 PlayUnpauseSilentSFX:
 	mov	a, #$2C
@@ -1998,84 +2071,53 @@ PlayUnpauseSFX:
 	mov	a, #$00
 	;mov	$08, #$00
 	bra	-
-
-ForceSFXEchoOff:
-	mov	a, #$00
-	bra	+
-ForceSFXEchoOn:
-	mov	a, #$ff
-+	mov	!SFXEchoChannels, a
-	;Turn off music echo channels being copied to SFX echo channels
-	mov	a, #!MusicToSFXEchoGateDistance
-	mov	MusicToSFXEchoGate+1, a
-if !useSFXSequenceFor1DFASFX = !false
-	call	EffectModifier
-	bra	ProcessAPU1SFX
-else
-	jmp	EffectModifier
-endif
 endif
 
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
+if !noSFX = !false
+if !useSFXSequenceFor1DFASFX = !false
+	beq	ProcessAPU1SFX
+else
+	bne	.hasCommand
+.terminate:
+	ret
+.hasCommand:
+endif
+endif
 	cmp	a, #$ff
 	beq	L_099C
+if !noSFX = !true
+	cmp	a, #$08			; 08 unpauses music
+	beq	UnpauseMusic
+	cmp	a, #$07			; 07 pauses music
+	beq	PauseMusic
+	cmp 	a, #$09			; KevinM's edit:
+	beq	UnpauseMusic_silent	; 09 unpauses music, but with the silent sfx
 	cmp	a, #$02			; 02 = turn on Yoshi drums
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
-if !noSFX = !false
-	cmp	a, #$05			;
-	beq	ForceSFXEchoOff		;
-	cmp	a, #$06			;
-	beq	ForceSFXEchoOn		;
-endif
-	cmp	a, #$07			; 07 pauses music
-if !noSFX = !false
-	beq	PlayPauseSFX		;
-else
-	beq	PauseMusic
-endif
-	cmp	a, #$08			; 08 unpauses music
-if !noSFX = !false
-	beq	PlayUnpauseSFX
-else
-	beq	UnpauseMusic
-endif
-	cmp 	a, #$09			; KevinM's edit:
-if !noSFX = !false
-	beq	PlayUnpauseSilentSFX	; 09 unpauses music, but with the silent sfx
-else
-	beq	UnpauseMusic_silent
 endif
 if !noSFX = !false
-	cmp	a, #$0a
-	beq	MusicSFXEchoCarryOn
-endif
 	cmp	a, #$0b
 	beq	MusicEchoCarryOn
 	cmp	a, #$0c
 	beq	MusicEchoCarryOff
-if !noSFX = !false
-	cmp	a, #$01			; 01 = jump SFX
-	beq	CheckAPU1SFXPriority	;
-	cmp	a, #$04
-	beq	CheckAPU1SFXPriority
-;
-ProcessAPU1SFX:
+	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
 if !useSFXSequenceFor1DFASFX = !false
-	mov	a, $05		; 
-	cmp	a, #$01		; \ If the currently playing SFX is the jump SFX
-	beq	L_0A51		; / Then process that.
-	cmp	a, #$04		; Else, if it's the girder SFX, then do that stuff.
-	beq	L_0A11             ; (jmp $0b08)
-L_0A0D:
-	ret
-L_0A11:
-	jmp	L_0B08
+	bcs	ProcessAPU1SFX
+	mov	y, #ProcessAPU1SFX>>8&$ff
+	push	y
+	mov	y, #ProcessAPU1SFX&$ff
+	push	y
 else
-	ret
+	bcs	.terminate
 endif
+	asl	a
+	mov	x, a
+	lsr	a
+	jmp	(APU1CMDJumpArray-2+x)
 else
 	ret
 endif
@@ -2088,11 +2130,7 @@ MusicEchoCarryOff:
 	mov	a, #$00
 +
 	mov	MusicEchoChOnCarryGate+1, a
-if !useSFXSequenceFor1DFASFX = !false && !noSFX = !false
-	bra	ProcessAPU1SFX
-else
 	ret
-endif
 
 PauseMusic:
 	mov a, $0387		;\
@@ -2108,52 +2146,15 @@ PauseMusic:
 	;setting the FLG DSP register.
 	ret
 
-if !noSFX = !false	
-CheckAPU1SFXPriority:
-if !useSFXSequenceFor1DFASFX = !true
-	mov	x, #(!1DFASFXChannel*2)
-	mov	y, #$01
-	mov	$10, #(1<<!1DFASFXChannel)
-	jmp	ProcessSFXInput
-else
-	mov	y, a
-	;mov	y, #$00		;Default priority
-	cmp	a, #$01
-	bne	+
-	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
-	bra	.gotPriority
-+
-	;cmp	a, #$04
-	;bne	+
-	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
-	;bra	.gotPriority
-+
+if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
+;
+ProcessAPU1SFX:
+	mov	a, $05		; 
+	cmp	a, #$04		; \ If the currently playing SFX is the girder SFX
+	beq	L_0B08		; / Then process that.
+	cmp	a, #$01 	; Else, if it's the jump SFX, then do that stuff.
+	bne	L_0AB0
 
-.gotPriority
-	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcc	ProcessAPU1SFX
-
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
-L_0A14:
-	mov	$05, a		;
-	;cmp	$05, #$01
-	;bne	+
-	mov	a, #$34
-+
-	cmp	$05, #$04
-	bne	+
-	mov	a, #$1c
-+
-	mov	$1c, a
-	mov	a, #(1<<!1DFASFXChannel)	; \ Key off channel 7.
-	
-	call	KeyOffVoices
-	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
-if !PSwitchIsSFX = !true
-	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
-endif
-	mov	x, #(!1DFASFXChannel*2)
-	jmp	SFXTerminateCh
 ; $01 = 01
 L_0A51:						;;;;;;;;/ Code change
 	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
@@ -2252,7 +2253,6 @@ Quick1DFAMonoVolDSPWritesWKON:
 	mov	a, #(1<<!1DFASFXChannel)
 	jmp	KeyOnVoices
 endif
-endif
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -2329,7 +2329,6 @@ L_0B6D:
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; Tremolo[ch] = 0
-	mov	$0161+x, a	; Strong portamento/legato
 	mov	!HTuneValues+x, a	
 if !noVcmdFB = !false	
 	mov	!ArpNoteIndex+x, a
@@ -2796,9 +2795,9 @@ endif
 	;and     a, $47
 ; key on voices in A
 KeyOnVoices:
-	mov	$F2, #$5C
+	mov	$F2, #$5C	; Clear KOFF.
 	mov	$F3, #$00
-	mov	$F2, #$4C
+	clr1	$F2.4		; Set KON.
 	mov	$F3, a
 	tset	!PlayingVoices, a
 	ret
@@ -2839,6 +2838,7 @@ KeyOffVoiceWithCheck:
 if !noSFX = !false
 	call	TerminateIfSFXPlaying
 endif
+KeyOffCurrentVoice:
 	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
@@ -2847,6 +2847,74 @@ DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
 	mov	$f3, a	
 	ret
+
+SubC_table2_reserveBuffer:
+.zeroEDLGate
+	beq	.zeroEDL
+	cmp	a, !MaxEchoDelay
+	beq	+
+	bcs	.modifyEchoDelay
++
+	call	SetEDLVarDSP		; Write the new delay.
+	
+	and	!NCKValue, #$3f
+.jmpToSetFLGFromNCKValue:
+	bra	SetFLGFromNCKValue
+
+.zeroEDL
+	;Don't skip again until !MaxEchoDelay is reset.
+	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+.modifyEchoDelay
+.echoWriteBitClearLoc
+	clr1	!NCKValue.5
+		
+ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
+	and	a, #$0F
+	push	a			; Save the requested delay.
+	beq	+
+	xcn	a			; Get the buffer address.
+	lsr	a
+	dec	a
++
+	eor	a, #$FF
+	push	a
+
+	mov	$f2, #$6c
+	or	$f3, #$60
+
+	mov	$f2, #$7d
+	mov	a, $f3
+	and	a, #$0f
+	beq	+
+	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
+	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
+	mov	$14, #$00
+	mov	$15, a
+-	dbnz	$14, -
+	dbnz	$15, -
++
+	
+	pop	y			; \
+	clr1	$f2.4			; | Write the new buffer address.
+	mov	$f3, y			; / 
+	
+	pop	a
+	call	SetEDLVarDSP		; Write the new delay.
+	mov	!MaxEchoDelay, a
+	
+	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	mov	y, a
+	
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
+	bra	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
 	
 ; dispatch vcmd in A
 L_0D40:
@@ -2874,6 +2942,13 @@ L_1260:
 	inc	$31+x
 L_1266:
 	mov	y, a
+	ret
+
+HotPatchVCMDFetchNextByteIfMinus:
+	bmi	GetCommandData
+FetchVoiceXAndZeroA:
+	mov	x, $46
+	mov	a, #$00
 	ret
 
 	incsrc "Commands.asm"
@@ -3176,8 +3251,7 @@ L_10B2:							; |
 	ret
 +
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
-	bcs	+					; / So we have to key off in preparation
-	jmp	.L_10D1
+	bcc	.jmpToL_10D1				; / So we have to key off in preparation
 +
 	cmp	a, #$fb					; \ FB is a variable-length command.
 	bne	.normalCommand				; / So it has special handling.
@@ -3244,10 +3318,11 @@ L_10B2:							; |
 .addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
+.braToL_10B2
 	bra	L_10B2					; /
 
 .jmpToL_10D1
-	jmp	.L_10D1
+	bra	.L_10D1
 
 .subroutineCheck:							;
 	;Check for subroutine first before automatically setting a key off.
@@ -3329,7 +3404,7 @@ L_10B2:							; |
 	pop	a
 	movw	$14, ya
 .jmpToL_10B2_1:
-	jmp	L_10B2
+	bra	.braToL_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -3390,7 +3465,7 @@ L_10B2:							; |
 .loopSectionJumpFromScratchRAM:
 	movw	ya, $16
 	movw	$14, ya
-	bra	.jmpToL_10B2_1
+	bra	.jmpToL_10B2_2
 
 .loopSectionClearAndPassThrough:
 	clr1	$11.4		;Loop section is no longer active.
@@ -3416,7 +3491,7 @@ L_10B2:							; |
 .loopSectionEndPtrHi:
 	mov	$15, #$ff
 .jmpToL_10B2_2:
-	jmp	L_10B2
+	bra	.jmpToL_10B2_1
 
 .F4Command
 	incw	$14
@@ -3488,8 +3563,10 @@ L_10A1:
 	bne 	.noRemoteCode				; /
 
 .checkRemoteCodeTimeValue
-	mov	a, !remoteCodeTimeValue+x		; \
-	cmp	a, $0100+x				; | Also branch if we're not ready to run said code yet.
+	setp
+	mov.b	a, !remoteCodeTimeValue&$ff+x		; \
+	cmp	a, (X) ;$0100&$ff+x			; | Also branch if we're not ready to run said code yet.
+	clrp						; |
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
