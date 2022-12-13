@@ -476,7 +476,7 @@ cmdEF:					; Echo command 1 (channels, volume)
 L_0EEB: 
 	mov	$f2, #$2c            ; set echo vol L DSP from $62
 	mov	$f3, $62
-	mov	$f2, #$3c            ; set echo vol R DSP from $64 
+	set1	$f2.4                ; set echo vol R DSP from $64 
 	mov	$f3, $64          
 	ret
 }

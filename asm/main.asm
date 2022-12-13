@@ -1840,7 +1840,7 @@ UnpauseMusic:
 	dec a
 	mov $f2, #$2c		;\
 	mov $f3, a		;| Mute echo.
-	mov $f2, #$3c		;|
+	set1 $f2.4		;|
 	mov $f3, a		;/
 	bra .unsetMute
 
@@ -2521,9 +2521,9 @@ endif
 	;and     a, $47
 ; key on voices in A
 KeyOnVoices:
-	mov	$F2, #$5C
+	mov	$F2, #$5C	; Clear KOFF.
 	mov	$F3, #$00
-	mov	$F2, #$4C
+	clr1	$F2.4		; Set KON.
 	mov	$F3, a
 	tset	!PlayingVoices, a
 	ret
@@ -2621,7 +2621,7 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 +
 	
 	pop	y			; \
-	mov	$f2, #$6d		; | Write the new buffer address.
+	clr1	$f2.4			; | Write the new buffer address.
 	mov	$f3, y			; / 
 	
 	pop	a
