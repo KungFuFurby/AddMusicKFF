@@ -53,7 +53,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2022-09-29</h2>
+	<h2>Version 1.0.9 - 2022-12-13</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -107,7 +107,7 @@
 		<ul>
 		<li>"Restored the Tremolo Off and Pitch Envelope Off hex commands, the latter having never actually been enabled in Vanilla SMW. However, the slots occupied don't match Vanilla SMW's because they were overwritten: instead, they are the $FD and $FE commands, respectively." - KungFuFurby</li>
 		<li>"$FB command is now fully functional across all channels. Previously it wasn't working because of a failure to use indexing in the assembly code. In addition, a double key on bug was corrected, and some fine print regarding setting up notes past !WaitTime (unless their lengths are quicker than !WaitTime in the first place) was added on to avoid unintentional clicks (particularly with glissando)." - KungFuFurby</li>
-		<li>"Added a new hot patch system through two new hex commands in the $FA section: $FA $7F (for presets) and $FA $FE (for individual patch bits). This is specifically designed to both replicate playback differences from past Addmusics as well as add fixes to music playback that won't break playback of past music that rely on these bugs." - KungFuFurby</li>
+		<li>"Added a new hot patch system through two new hex commands in the $FA section: $FA $7F (for presets) and $FA $FE (for individual patch bits). This is specifically designed to both replicate playback differences from past Addmusics (and vanilla SMW) as well as add fixes to music playback that won't break playback of past music that rely on these bugs." - KungFuFurby</li>
 		<li>"You can now use remote gain directly using $FC $WW $01 $XX $YY, where $WW is the gain value to set on trigger, $XX is the event type, and $YY is the number of ticks when using types 1 and 2. Note that unlike AMK Beta, you have to handle the restoration manually for the next note, but unlike AMK Beta, any remote code event type can be used." - KungFuFurby</li>
 		<li>"Two new remote code events have been added on: 7 disables non-key on remote code events, while 8 disables key on remote code events." - KungFuFurby</li>
 		<li><b>WARNING: The following changes may affect playback of your songs (and require $FA $7F $01 at the beginning of your song to take effect, though you can also individual patches by bit with $FA $FE xx...):</b>
@@ -119,6 +119,7 @@
 			<li>"Echo writes are no longer enabled by default when initially setting up the echo buffer through the $FA $04 command (instead they are merely not modified). This most notably would affect the zero EDL case: if echo writes are not explicitly enabled beforehand, most commonly via the $F1 command, then there will no longer be an effect on the sound when using any echo-related DSP registers, because $FF00-$FF03 are no longer written to, which in turn allows extremely large songs to use that area without a fear of losing data." - KungFuFurby</li>
 			<li>"Fixed a bug where the $F3 command was failing to zero out the pitch base fractional multiplier. <em>This is enabled by default when using #amm due to AddmusicM not supporting fractional pitch base multipliers at the time.</em>" - KungFuFurby</li>
 			<li>"Fixed a bug where glissando was not disabling itself after one note: instead, it was doing so after two notes." - KungFuFurby</li>
+			<li>"Fixed a playback inconsistency with Addmusic405 songs where rests could skip keying off notes if they were not encountered during readahead." - KungFuFurby</li>
 		</ul>
 		</li>
 		</ul>
