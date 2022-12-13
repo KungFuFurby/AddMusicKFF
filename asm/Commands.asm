@@ -607,6 +607,7 @@ SubC_6:
 	
 SubC_8:
 	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+cmdF5Ret:
 	ret	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -616,11 +617,10 @@ cmdF5:					; FIR Filter command.
 		movw  $f2, ya
 -		clrc
 		adc   $f2,#$10
-		bmi   +
+		bmi   cmdF5Ret
 		call  GetCommandData
 		mov   $f3, a
 		bra   -
-+		ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdF6:					; DSP Write command.
