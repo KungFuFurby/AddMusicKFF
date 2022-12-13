@@ -830,8 +830,7 @@ RestoreInstrumentInformation:		; \ Call this with x = currentchannel*2 to restor
 }
 
 SubC_9:
-	mov     x, $46				; \ 
-	mov	a, #$00				; | Turn the current instrument back on.
+	call	FetchVoiceXAndZeroA		; \ Turn the current instrument back on.
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
 
@@ -2672,6 +2671,7 @@ L_1266:
 
 HotPatchVCMDFetchNextByteIfMinus:
 	bmi	GetCommandData
+FetchVoiceXAndZeroA:
 	mov	x, $46
 	mov	a, #$00
 	ret
