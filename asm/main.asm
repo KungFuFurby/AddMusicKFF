@@ -948,9 +948,9 @@ endif
 .playNote
 	call	NoteVCMD		; Loooooooong routine that starts playing the note in A on channel (X/2).
 	mov	a, $18
-	push	a
-	mov	a, !InRest+x
-	pop	a
+	setp
+	mov	y, !InRest&$ff+x
+	clrp
 	beq	.keyOnNote
 	call	KeyOffVoices
 	bra	.setNoteLength
