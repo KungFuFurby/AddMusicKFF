@@ -15,14 +15,10 @@
 incsrc "../UserDefines.asm"
 
 
-org $9724		; Fix the title music
-	db !Title
 org $94B3
 	db !RescueEgg
 org $96C7
 	db !Title
-org $009737
-	db !Bowser
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
@@ -137,24 +133,23 @@ org $0CA40C
 	db !YoshisAreHome
 org $0CA5C2
 	db !CastList
-	
-
-	
-	
+		
 org $009723
 	LDA.b !Welcome
-	STA.w $1DFB|!SA1Addr2
-	
-	
-	
-org $009734			; Skip over Bowser fight music stuff.
-	BNE $05
-	
-	
-	
-	
-	
-	
+	STA.w $0DDA|!SA1Addr2					
+	LDA.w $0DDA|!SA1Addr2	; 
+	NOP : NOP		; 
+	NOP : NOP		; 
+	LDY.w $0D9B|!SA1Addr2	; 
+	CPY.b #$C1		; 
+	BNE CODE_009738		; 
+	LDA.b !Bowser		; 
+CODE_009738:			;
+	STA.w $1DFB|!SA1Addr2	; 
+CODE_00973B:			;
+	NOP : NOP		;BRA Skip6
+	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
+Skip6:
 
 org $008134			; Don't upload the overworld music bank.
         RTS
@@ -229,22 +224,6 @@ org $00A0B3				;;; ditto
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
-
-org $009728					
-	LDA.w $0DDA|!SA1Addr2	; 
-	NOP : NOP		; 
-	NOP : NOP		; 
-	LDY.w $0D9B|!SA1Addr2	; 
-	CPY.b #$C1		; 
-	BNE CODE_009738		; 
-	LDA.b !Bowser		; 
-CODE_009738:			;
-	STA.w $1DFB|!SA1Addr2	; 
-CODE_00973B:			;
-BRA +				; 
-	NOP : NOP : NOP		; 
-+
-
 
 org $00A231				; Change how pausing works
 	LDY #$08
@@ -332,11 +311,6 @@ else
 	STA $1570,x             
 endif
 	RTS
-	
-org $00973B
-	NOP : NOP		;BRA Skip6
-	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
-Skip6:
 
 ; KevinM's edit: this is already skipped by the hex edit at $00A635	
 ;org $00A645			; Related to restoring the music upon level load.
