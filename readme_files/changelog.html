@@ -80,6 +80,8 @@
 		<li>"This version prevents garbage from randomly appearing during Submap transitions." - Barrels O' Fun</li>
 		<li>"This version adds the option to have the P-Switch and Starman themes retrigger when recollecting a star or pressing another P-Switch. The option is enabled by default because it replicates vanilla SMW's behavior, though it can be turned off to replicate its behavior on AddmusicK 1.0.8 and earlier." - JUMP Team, SimFan96, KevinM, Anas and KungFuFurby</li>
 		<li>"Fixed a bug when pressing a P-Switch as the star timer was running out would retrigger the Starman theme until the timer completely ran out, then ran the P-Switch theme normally." - JUMP Team, SimFan96, KevinM, Anas and KungFuFurby</li>
+		<li>"Fixed a bug where the Welcome song would not play in a new save file, and instead the default level music played." - KungFuFurby</li>
+		<li>"Merged several patches together in tweaks.asm to resolve a conflict between them. <b>The code modifications at $9723-$973F have been merged, which resulted in a few cuts due to a conflict: specifically, writing !Title to $9724 (overwritten by writing !Welcome to the same location) and skipping Bowser fight music at $9734 (overwritten by a BNE opcode to $9738 on a different patch)</b>" - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Built-In Original Songs
@@ -141,6 +143,7 @@
                 </li>
                 <li>"Added bug exploitation warnings for songs prior to #amk 4, specifically affecting the utilization of the $FC command, using o in a target note after using a $DD command, using notes that were too low in pitch, and using uppercase letter notes. This is because these are allowed to happen in prior parser versions, but due to the amount of time that has passed between when #amk 2 debuted (with the initial release of AddmusicK), other users may be unaware of these bugs occurring and may still be using a previous version of AddmusicK. In addition, the uppercase note problem is particularly irreconcilable because it is caused by an out of bounds bug, which can vary from build to build when manually compiled." - KungFuFurby</li>
                 <li>"Added warnings for using fractional tick lengths caused by either note length divisors, dotted notes or triplets. They were already present when dividing by a tempo ratio." - KungFuFurby</li>
+                <li>"Upgraded the manual note warning. Now it identifies duration/quantization bytes and the phrase end marker, the last one being potentially fatal to the song if the .txt file was mislabeled with the wrong parser." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SFX
