@@ -686,6 +686,7 @@ HotPatchPresetVCMD:
 	push	y
 	mov	y, $31+x
 	push	y
+	asl	a
 	clrc
 	adc	a, #HotPatchPresetTable&$FF
 	mov	$30+x, a
