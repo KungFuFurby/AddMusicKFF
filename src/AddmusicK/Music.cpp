@@ -2290,8 +2290,9 @@ void Music::parseNote()
 		int tempsize = j;	// If there's a pitch bend up ahead, we need to not optimize the last tie.
 		int temppos = pos;	//
 
-		if (j != 0 && (text[pos] == '^' || (i == 0xC7 && text[pos] == 'r')))
+		if (j != 0 && ((((songTargetProgram == 0 && targetAMKVersion != 0) || i == 0xC7) && text[pos] == '^') || (i == 0xC7 && text[pos] == 'r'))) {
 			pos++;
+		}
 
 		j += getNoteLength(getInt());
 		skipSpaces;
@@ -2307,7 +2308,7 @@ void Music::parseNote()
 		if (pos >= text.length())
 			break;
 
-	} while (text[pos] == '^' || (i == 0xC7 && text[pos] == 'r'));
+	} while ((((songTargetProgram == 0 && targetAMKVersion != 0) || i == 0xC7) && text[pos] == '^') || (i == 0xC7 && text[pos] == 'r'));
 
 	/*if (normalLoopInsideE6Loop)
 	tempLoopLength += j;
