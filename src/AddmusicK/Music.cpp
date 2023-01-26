@@ -1159,8 +1159,10 @@ void Music::parseLabelLoopCommand()
 
 		pos++;
 
-	updateQ[channel] = true;
-	updateQ[8] = true;
+	if (songTargetProgram == 0 && targetAMKVersion != 0) {
+		updateQ[channel] = true;
+		updateQ[8] = true;
+	}
 	prevNoteLength = -1;
 
 	if (text[pos] == '[')				// If this is a loop definition...
@@ -1198,9 +1200,12 @@ void Music::parseLabelLoopCommand()
 void Music::parseLoopCommand()
 {
 	pos++;
-	if (channel < 8)
-		updateQ[channel] = true;
-	updateQ[8] = true;
+	if (songTargetProgram == 0 && targetAMKVersion != 0) {
+		if (channel < 8) {
+			updateQ[channel] = true;
+		}
+		updateQ[8] = true;
+	}
 	prevNoteLength = -1;
 
 	if (text[pos] == '[')			// This is an $E6 loop.
@@ -1255,10 +1260,12 @@ void Music::parseLoopCommand()
 void Music::parseLoopEndCommand()
 {
 	pos++;
-	if (channel < 8)
-		updateQ[channel] = true;
-
-	updateQ[8] = true;
+	if (songTargetProgram == 0 && targetAMKVersion != 0) {
+		if (channel < 8) {
+			updateQ[channel] = true;
+		}
+		updateQ[8] = true;
+	}
 	prevNoteLength = -1;
 	if (text[pos] == ']')
 	{
@@ -1318,8 +1325,10 @@ void Music::parseStarLoopCommand()
 
 	if (channel == 8)  error("Nested loops are not allowed.")
 
+	if (songTargetProgram == 0 && targetAMKVersion != 0) {
 		updateQ[channel] = true;
-	updateQ[8] = true;
+		updateQ[8] = true;
+	}
 	prevNoteLength = -1;
 
 	i = getInt();
