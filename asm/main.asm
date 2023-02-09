@@ -602,6 +602,9 @@ ForceSFXEchoOn:
 	mov	a, #$00
 	adc	a, #$ff
 	mov	!SFXEchoChannels, a
+	;Turn off music echo channels being copied to SFX echo channels
+	mov	a, #!MusicToSFXEchoGateDistance
+	mov	MusicToSFXEchoGate+1, a
 	bra	EffectModifier
 endif
 
