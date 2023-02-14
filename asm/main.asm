@@ -594,6 +594,7 @@ endif
 }
 
 if !noSFX = !false
+;Carry is implied cleared here upon entry from the APU1 Command jump array.
 ForceSFXEchoOff:
 	setc
 ForceSFXEchoOn:
