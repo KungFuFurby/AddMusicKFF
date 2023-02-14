@@ -864,9 +864,8 @@ HandleSFXVoice:
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
 	clrp
-	beq	+	
-	jmp	.processSFXPitch
-+
+	bne	.processSFXPitch
+
 .getMoreSFXData
 	call	GetNextSFXByte		
 	bne	+			; If the current byte is zero, then end it.
@@ -905,14 +904,9 @@ endif
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
 .executeCode				; 
-	call	GetNextSFXByte		; \ 
-	mov	$14, a			; | Get the address of the code to execute and put it into $14w
-	call	GetNextSFXByte		; |
-	mov 	$15, a			; / 
-	push	x			; \ 
-	mov	x, #$00			; | Jump to that address
-	call	JumpToUploadLocation	; | (no "call (d+x)")
-	pop	x			; / 
+	push	x
+	call	FetchPtrFromSFXDataAndRET
+	pop	x
 	bra	.getMoreSFXData		;
 
 .noteOrCommand				; SFX commands!
@@ -1212,6 +1206,15 @@ NoiseSetVolLevelsNextCh:
 	inc	x
 	asl	$13
 	ret
+
+FetchPtrFromSFXDataAndRET:
+	call	GetNextSFXByte		; \ 
+	mov	y, a			; | Get the address of the code to execute and put it into the stack
+	call	GetNextSFXByte		; |
+	push	a			; |
+	push	y			; |
+	mov	x, #$00			; | Jump to that address
+	ret				; / (no "call (d)")
 
 SetSFXInstrument:
 	mov	y, #$09			; \ 
