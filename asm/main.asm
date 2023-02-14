@@ -1490,10 +1490,7 @@ CheckAPU1SFXPriority:
 
 .gotPriority
 	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcs	+
-	;Jump to ProcessAPU1SFX (saved in the stack)
-	ret
-+
+	bcc	SFXTerminateCh_ret ;Jump to ProcessAPU1SFX (saved in the stack)
 
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
@@ -1521,14 +1518,14 @@ endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	beq	+
+	beq	.ret
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
-+
+.ret
 	ret
 
 SFXTerminateVCMD:
