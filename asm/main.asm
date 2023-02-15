@@ -2102,12 +2102,12 @@ if !noSFX = !true
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
-endif
-if !noSFX = !false
 	cmp	a, #$0b
 	beq	MusicEchoCarryOn
 	cmp	a, #$0c
 	beq	MusicEchoCarryOff
+endif
+if !noSFX = !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
 if !useSFXSequenceFor1DFASFX = !false
 	bcs	ProcessAPU1SFX
