@@ -900,6 +900,7 @@ HotPatchVCMDByBitByte0:
 	pop	p
 HotPatchVCMDByBitByte1:
 	call	HotPatchVCMDFetchNextByteIfMinus
+	mov	$10, a
 	push	p
 	mov	A, #HotPatchVCMDByte1StorageSet&$FF
 	mov	Y, #(HotPatchVCMDByte1StorageSet>>8)&$FF
@@ -927,6 +928,7 @@ HotPatchVCMDByBitByte1:
 
 HotPatchVCMDByBitByte2:
 	;call	HotPatchVCMDFetchNextByteIfMinus
+	;mov	$10, a
 	;push	p
 	;mov	A, #HotPatchVCMDByte2StorageSet&$FF
 	;mov	Y, #(HotPatchVCMDByte2StorageSet>>8)&$FF

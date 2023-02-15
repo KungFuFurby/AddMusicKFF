@@ -729,6 +729,7 @@ endif
 }
 
 if !noSFX = !false
+;Carry is implied cleared here upon entry from the APU1 Command jump array.
 ForceSFXEchoOff:
 	setc
 ForceSFXEchoOn:
@@ -1024,9 +1025,8 @@ HandleSFXVoice:
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
 	clrp
-	beq	+	
-	jmp	.processSFXPitch
-+
+	bne	.processSFXPitch
+
 .getMoreSFXData
 	call	GetNextSFXByte		
 	bne	+			; If the current byte is zero, then end it.
@@ -1065,14 +1065,9 @@ endif
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
 .executeCode				; 
-	call	GetNextSFXByte		; \ 
-	mov	$14, a			; | Get the address of the code to execute and put it into $14w
-	call	GetNextSFXByte		; |
-	mov 	$15, a			; / 
-	push	x			; \ 
-	mov	x, #$00			; | Jump to that address
-	call	JumpToUploadLocation	; | (no "call (d+x)")
-	pop	x			; / 
+	push	x
+	call	FetchPtrFromSFXDataAndRET
+	pop	x
 	bra	.getMoreSFXData		;
 
 .noteOrCommand				; SFX commands!
@@ -1373,6 +1368,15 @@ NoiseSetVolLevelsNextCh:
 	asl	$13
 	ret
 
+FetchPtrFromSFXDataAndRET:
+	call	GetNextSFXByte		; \ 
+	mov	y, a			; | Get the address of the code to execute and put it into the stack
+	call	GetNextSFXByte		; |
+	push	a			; |
+	push	y			; |
+	mov	x, #$00			; | Jump to that address
+	ret				; / (no "call (d)")
+
 SetSFXInstrument:
 	mov	y, #$09			; \ 
 	mul	ya			; | Set up the instrument table for SFX
@@ -1647,10 +1651,7 @@ CheckAPU1SFXPriority:
 
 .gotPriority
 	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcs	+
-	;Jump to ProcessAPU1SFX (saved in the stack)
-	ret
-+
+	bcc	SFXTerminateCh_ret ;Jump to ProcessAPU1SFX (saved in the stack)
 
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
@@ -1678,14 +1679,14 @@ endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	beq	+
+	beq	.ret
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
-+
+.ret
 	ret
 
 SFXTerminateVCMD:
