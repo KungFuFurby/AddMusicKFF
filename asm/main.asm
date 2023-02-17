@@ -3588,20 +3588,20 @@ endif
 	mov	x, #$cf		; Reset the stack pointer.
 	mov	sp, x
 	
-	mov	x, #$00
+	mov	x, a
 	mov	$01, x
 	
-	mov	!NCKValue, #$20
-	call	SetFLGFromNCKValue
-	
 	mov	y, #$10
-	mov	a, #$00
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
 if !PSwitchIsSFX = !true
-	mov	$1b, #$00
-endif	
+	mov	$1b, a
+endif
+
+	mov	!NCKValue, #$20
+	call	SetFLGFromNCKValue
+
 JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address	
 
