@@ -329,10 +329,9 @@ Square_getSpecialWavePtr:
 	;This reserves $14-$15 for the pointer to the special wave
 	mov   $15, #$00
 	mov   a, $0163
-	asl   a
-	rol   $15
-	asl   a
-	rol   $15
+	mov   y, #$04
+	mul   ya
+	mov   $15, y
 	inc   a
 	inc   a
 	mov   y, a
