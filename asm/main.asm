@@ -356,10 +356,9 @@ Square_getSpecialWavePtr:
 	;This reserves $14-$15 for the pointer to the special wave
 	mov   $15, #$00
 	mov   a, $0163
-	asl   a
-	rol   $15
-	asl   a
-	rol   $15
+	mov   y, #$04
+	mul   ya
+	mov   $15, y
 	inc   a
 	inc   a
 	mov   y, a
@@ -3969,11 +3968,12 @@ endif
 if !PSwitchIsSFX = !true
 	mov	$1b, #$00
 endif	
+
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
-JumpToUploadLocation:
+
 	jmp	($0014+x)		; Jump to address
 
 	incsrc "InstrumentData.asm"
