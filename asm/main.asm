@@ -2326,6 +2326,7 @@ L_0B6D:
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
+	mov	!SurroundSound+x, a
 	mov	$0280+x, a
 	mov	$02d1+x, a         ; Tuning[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
@@ -3574,7 +3575,7 @@ L_10A1:
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
 if !noVcmdFB = !false
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 endif
 	bcc	.noRemoteCode				; /
 	
@@ -3586,7 +3587,7 @@ endif
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
 if !noVcmdFB = !false
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 endif
 	bcc	+
 	call	KeyOffVoiceWithCheck 
@@ -3954,20 +3955,19 @@ endif
 	mov	x, #$cf		; Reset the stack pointer.
 	mov	sp, x
 	
-	mov	x, #$00
+	mov	x, a
 	mov	$01, x
 	
-	mov	!NCKValue, #$20
-	call	SetFLGFromNCKValue
-	
 	mov	y, #$10
-	mov	a, #$00
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
 if !PSwitchIsSFX = !true
-	mov	$1b, #$00
-endif	
+	mov	$1b, a
+endif
+
+	mov	!NCKValue, #$20
+	call	SetFLGFromNCKValue
 
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
