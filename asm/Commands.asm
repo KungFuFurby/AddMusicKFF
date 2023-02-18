@@ -703,6 +703,7 @@ HotPatchPresetVCMD:
 	push	y
 	mov	y, $31+x
 	push	y
+	asl	a
 	clrc
 	adc	a, #HotPatchPresetTable&$FF
 	mov	$30+x, a
@@ -735,6 +736,7 @@ HotPatchVCMDByBitByte0:
 	pop	p
 HotPatchVCMDByBitByte1:
 	call	HotPatchVCMDFetchNextByteIfMinus
+	mov	$10, a
 	push	p
 	mov	A, #HotPatchVCMDByte1StorageSet&$FF
 	mov	Y, #(HotPatchVCMDByte1StorageSet>>8)&$FF
@@ -762,6 +764,7 @@ HotPatchVCMDByBitByte1:
 
 HotPatchVCMDByBitByte2:
 	;call	HotPatchVCMDFetchNextByteIfMinus
+	;mov	$10, a
 	;push	p
 	;mov	A, #HotPatchVCMDByte2StorageSet&$FF
 	;mov	Y, #(HotPatchVCMDByte2StorageSet>>8)&$FF
@@ -1069,9 +1072,9 @@ HotPatchPresetTable:
 	             ; having inconsistent parameter sizes for $80 and up
 	             ; and Addmusic405 failing to account for these.
 	db %10001000 ; 05 - AddmusicM
-	db %00000001 ;
-	db %10000000 ; 06 - carol's MORE.bin
 	db %00000000 ;
+	db %10000000 ; 06 - carol's MORE.bin
+	db %00000001 ;
 	db %10000000 ; 07 - Vanilla SMW
 	db %00000001 ;
 	; 08-7F - Reserved for future Addmusics (or any extra past ones)
