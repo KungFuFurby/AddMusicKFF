@@ -15,14 +15,10 @@
 incsrc "../UserDefines.asm"
 
 
-org $9724		; Fix the title music
-	db !Title
 org $94B3
 	db !RescueEgg
 org $96C7
 	db !Title
-org $009737
-	db !Bowser
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
@@ -137,24 +133,23 @@ org $0CA40C
 	db !YoshisAreHome
 org $0CA5C2
 	db !CastList
-	
-
-	
-	
+		
 org $009723
 	LDA.b !Welcome
-	STA.w $1DFB|!SA1Addr2
-	
-	
-	
-org $009734			; Skip over Bowser fight music stuff.
-	BNE $05
-	
-	
-	
-	
-	
-	
+	STA.w $0DDA|!SA1Addr2					
+	LDA.w $0DDA|!SA1Addr2	; 
+	NOP : NOP		; 
+	NOP : NOP		; 
+	LDY.w $0D9B|!SA1Addr2	; 
+	CPY.b #$C1		; 
+	BNE CODE_009738		; 
+	LDA.b !Bowser		; 
+CODE_009738:			;
+	STA.w $1DFB|!SA1Addr2	; 
+CODE_00973B:			;
+	NOP : NOP		;BRA Skip6
+	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
+Skip6:
 
 org $008134			; Don't upload the overworld music bank.
         RTS
@@ -162,16 +157,17 @@ org $008134			; Don't upload the overworld music bank.
 if read1($008176) == $5c
 	
 	org $00817C			; For LevelNMI.  Three fewer bytes placed three bytes later.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 elseif read1($008179) == $5c
 	org $00817D			; For PowerTool.  Four fewer bytes placed four bytes later.
-		BRA Skip
+		NOP : NOP
 else
 	org $008179			; Skip over the standard NMI audio port stuff.  We handle that ourselves now every loop.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 		NOP : NOP
 		NOP
 endif
+		BRA Skip
 YoshiDrumHijack:
 		;Identical to $02A763, except that Yoshi Drums are
 		;explicitly disabled if the conditions to turn them on are
@@ -196,8 +192,7 @@ NoYoshiDrum:
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP
-		;This hijack overwrites 23 of the 43 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
@@ -229,22 +224,6 @@ org $00A0B3				;;; ditto
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
-
-org $009728					
-	LDA.w $0DDA|!SA1Addr2	; 
-	NOP : NOP		; 
-	NOP : NOP		; 
-	LDY.w $0D9B|!SA1Addr2	; 
-	CPY.b #$C1		; 
-	BNE CODE_009738		; 
-	LDA.b !Bowser		; 
-CODE_009738:			;
-	STA.w $1DFB|!SA1Addr2	; 
-CODE_00973B:			;
-BRA +				; 
-	NOP : NOP : NOP		; 
-+
-
 
 org $00A231				; Change how pausing works
 	LDY #$08
@@ -332,11 +311,6 @@ else
 	STA $1570,x             
 endif
 	RTS
-	
-org $00973B
-	NOP : NOP		;BRA Skip6
-	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
-Skip6:
 
 ; KevinM's edit: this is already skipped by the hex edit at $00A635	
 ;org $00A645			; Related to restoring the music upon level load.

@@ -86,14 +86,14 @@
 	<tr>
 		<td>v</td>
 		<td>Volume</td>
-		<td>Sets the volume for the currently playing channel.  Valid values are 0 to 255.</td>
-		<td>v240</td>
+		<td>Sets the volume for the currently playing channel.  Valid values are 0 to 255.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>v24,240</td>
 	</tr>
 	<tr>
 		<td>w</td>
 		<td>Global volume</td>
-		<td>Sets the volume for the entire song.  Valid values are 0 to 255.</td>
-		<td>w200</td>
+		<td>Sets the volume for the entire song.  Valid values are 0 to 255.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>w24,200</td>
 	</tr>
 	<tr>
 		<td>y</td>
@@ -110,13 +110,13 @@
 	<tr>
 		<td>t</td>
 		<td>Tempo</td>
-		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4.  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.</td>
-		<td>t40</td>
+		<td>How quickly the song should play.  To convert from BPM to this, multiply the BPM by 0.4 (or if you want higher precision, multiply by 8192, then divide by 20025).  Please be aware that the higher the tempo is, the more likely your song is to experience slowdown.  In general, tempos below t60 should be safe.  Keep in mind that if t60 seems too slow, you can halve your note lengths to simulate doubling the tempo.  If you specify an extra argument, the command fades to the value, with the first value representing the duration. The duration is measured as is if = was placed next to a note (thus, by the number of ticks).</td>
+		<td>t24,40</td>
 	</tr>
 	<tr>
 		<td>p</td>
 		<td>Vibrato</td>
-		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured in the same manner as notes (1 is the length of a whole note, etc.)</td>
+		<td>Pulsate the pitch over a period of time.  There may be either two or three arguments to this command, separated by commas.  If there are two arguments, then the first is the rate (speed) and the second is the extent (amplitude).  If there are three values, then the first is the duration of the delay before the vibrato starts, the second is the rate, and the third is the extent.  The delay and rate are measured as if = was placed next to a note (thus, by the number of ticks).</td>
 		<td>p24,12,8 p12,8</td>
 	</tr>
 	<tr>
@@ -197,6 +197,12 @@
 				-2: Identical to -1, but it doesn't trigger on arpeggio-triggered notes.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>
+	</tr>
+	<tr>
+		<td>(!!)</td>
+		<td>Stop remote code</td>
+		<td>Disables a remote code event by number. Note that currently they're technically split into "key on" (by using -1) and "non-key on" types (any other number), with 0 disabling both, since currently they don't all run at the same time.</td>
+		<td>(!!-1) (!!0) (!!3)</td>
 	</tr>
 	<tr>
 		<td>[[ ]]</td>
@@ -327,6 +333,20 @@ to overcome this.
 		<td>noloop</td>
 		<td>Lets AddmusicK know that this song should only play once and not loop one it is finished.</td>
 	</tr>
+	<tr>
+		<td>amk109hotpatch</td>
+		<td>Activates a series of optional hot patches that were created for AddmusicK 1.0.9 to repair some playback quirks, but were not activated by default to avoid breaking older ports. The complete list of patches applied are as following:
+		<ul>
+			<li>Glissando only runs for one note instead of two (as it previously mistakenly did).</li>
+			<li>Echo writes are not enabled if the echo delay is set to zero and echo is otherwise not used. For extremely large songs, this prevents $FF00-$FF03 from being overwritten, giving you an extra 256 bytes to work with.</li>
+			<li>$F3 command previously failed to zero out the fractional pitch base due to the code not being added on when ported from AddmusicM (which did not have this kind of feature) to AddmusicK.</li>
+			<li>$FA $02 (Semitone tune) is not ignored by the $DD command for its target note.</li>
+			<li>Readahead looks inside loops and superloops.</li>
+			<li>When setting up an instrument (and for other commands that recycle the instrument setup code via using the updated backup table, such as $FA $01 (GAIN)), GAIN is written to first, then the ADSR voice DSP registers.</li>
+			<li>Arpeggio notes will not play during rests.</li>
+		</ul>
+		</td>
+	</tr>
 	</table>
 	
 	<br>
@@ -388,7 +408,40 @@ to overcome this.
 
 <br><br><h3>#amk</h3>
 	Specifies which AddmusicK "song parser" this song was designed for.  It is inserted automatically by AddmusicK to the bottom of every song if that song does not already contain it or an alternative (such as #am4 or #amm).  The equals sign should be followed by an integer value.  The "correct" value to use will only change if future features are added AddmusicK that make older song files incompatible with new ones, so that these older files may be identified and parsed correctly.  Because this command is inserted automatically, you should not need to worry about it.  As with the preprocessor directives, this should be the first and only thing on any line it's on.  Finally, #am4 and #amm override #amk in all circumstances, with no warnings, even if they come before #amk.
-	
+
+<br><br>The latest parser version is currently 4. This is a changelog between parser versions (as well as a brief explanation of their original source):
+
+	<h4>#amk=1</h4>
+	This is the original parser version used in AddmusicK Beta.
+
+	<h4>#amk 2</h4>
+	This was used in AddmusicK versions 1.0 to 1.0.8.
+	<ul>
+	<li>Anticipation gain ($FA $05 command) and remote gain ($FC) were replaced with remote code (!), which debuts in this parser version.</li>
+	<li>Added #option directives.</li>
+	<li>Velocity table defaults to N-SPC instead of Super Mario World. These directives, although still valid, are de-facto rendered redundant:
+		<ul>
+		<li>#nspcvtable</li>
+		<li>#louder</li>
+		</ul>
+	</li>
+	</ul>
+
+	<h4>#amk 3</h4>
+	This was used in Codec's AddmusicK Beta. <i>Implementation of this parser version is incomplete (and thus is currently not supported): all of the changes listed below are the ones that have been implemented and are accessible through #amk 4.</i>
+	<ul>
+	<li>Added remote command reset syntax via (!!0), (!!-1), (!!1), etc.</li>
+	<li>Added fade support to the v (volume), t (tempo) and w (global volume) MML commands.</li>
+	</ul>
+
+	<h4>#amk 4</h4>
+	This is the latest parser version to be released for AddmusicK 1.0.9. It doesn't directly incorporate all of #amk 3 due to not yet having all of the extra hex commands to completely implement them: it only has remote code reset and fade support for v, t and w, the former being included as a side effect of the restoration of remote and anticipation gain as part of the update for AddmusicK 1.0.9.
+	<ul>
+	<li>Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music.</li>
+	<li>Fixed a bug where #halvetempo and #option dividetempo were not dividing the tempo ratio at all because they were immediately returning. Multiplication was working fine, though. Note that if the tempo ratio is 1, this will still immediately return since it is redundant.</li>
+	<li>A new option was added: #option amk109hotpatch</li>
+	</ul>
+
 <br><br><br>Note that all "special" commands are case insensitive.
 	
 	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
