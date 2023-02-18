@@ -619,6 +619,7 @@ endif
 }
 
 if !noSFX = !false
+;Carry is implied cleared here upon entry from the APU1 Command jump array.
 ForceSFXEchoOff:
 	setc
 ForceSFXEchoOn:
@@ -889,9 +890,8 @@ HandleSFXVoice:
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
 	clrp
-	beq	+	
-	jmp	.processSFXPitch
-+
+	bne	.processSFXPitch
+
 .getMoreSFXData
 	call	GetNextSFXByte		
 	bne	+			; If the current byte is zero, then end it.
@@ -930,14 +930,9 @@ endif
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
 .executeCode				; 
-	call	GetNextSFXByte		; \ 
-	mov	$14, a			; | Get the address of the code to execute and put it into $14w
-	call	GetNextSFXByte		; |
-	mov 	$15, a			; / 
-	push	x			; \ 
-	mov	x, #$00			; | Jump to that address
-	call	JumpToUploadLocation	; | (no "call (d+x)")
-	pop	x			; / 
+	push	x
+	call	FetchPtrFromSFXDataAndRET
+	pop	x
 	bra	.getMoreSFXData		;
 
 .noteOrCommand				; SFX commands!
@@ -1238,6 +1233,15 @@ NoiseSetVolLevelsNextCh:
 	asl	$13
 	ret
 
+FetchPtrFromSFXDataAndRET:
+	call	GetNextSFXByte		; \ 
+	mov	y, a			; | Get the address of the code to execute and put it into the stack
+	call	GetNextSFXByte		; |
+	push	a			; |
+	push	y			; |
+	mov	x, #$00			; | Jump to that address
+	ret				; / (no "call (d)")
+
 SetSFXInstrument:
 	mov	y, #$09			; \ 
 	mul	ya			; | Set up the instrument table for SFX
@@ -1512,10 +1516,7 @@ CheckAPU1SFXPriority:
 
 .gotPriority
 	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcs	+
-	;Jump to ProcessAPU1SFX (saved in the stack)
-	ret
-+
+	bcc	SFXTerminateCh_ret ;Jump to ProcessAPU1SFX (saved in the stack)
 
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
@@ -1543,14 +1544,14 @@ endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	beq	+
+	beq	.ret
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
-+
+.ret
 	ret
 
 SFXTerminateVCMD:
@@ -2155,6 +2156,7 @@ L_0B6D:
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
+	mov	!SurroundSound+x, a
 	mov	$0280+x, a
 	mov	$02d1+x, a         ; Tuning[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
@@ -3254,7 +3256,7 @@ L_10A1:
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
 if !noVcmdFB = !false
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 endif
 	bcc	.noRemoteCode				; /
 	
@@ -3266,7 +3268,7 @@ endif
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
 if !noVcmdFB = !false
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 endif
 	bcc	+
 	call	KeyOffVoiceWithCheck 
@@ -3627,20 +3629,20 @@ endif
 	mov	x, #$cf		; Reset the stack pointer.
 	mov	sp, x
 	
-	mov	x, #$00
+	mov	x, a
 	mov	$01, x
 	
-	mov	!NCKValue, #$20
-	call	SetFLGFromNCKValue
-	
 	mov	y, #$10
-	mov	a, #$00
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
 if !PSwitchIsSFX = !true
-	mov	$1b, #$00
-endif	
+	mov	$1b, a
+endif
+
+	mov	!NCKValue, #$20
+	call	SetFLGFromNCKValue
+
 JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address	
 
