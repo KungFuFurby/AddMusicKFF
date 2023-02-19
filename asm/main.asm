@@ -2624,8 +2624,8 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 +
 	
 	pop	y			; \
-	clr1	$f2.4			; | Write the new buffer address.
-	mov	$f3, y			; / 
+	mov	a, #$6d			; | Write the new buffer address.
+	movw	$f2, ya			; / 
 	
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
