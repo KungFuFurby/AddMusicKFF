@@ -2610,10 +2610,10 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f2, #$6c
 	or	$f3, #$60
 
-	mov	$f2, #$7d
-	mov	a, $f3
+	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
+	mov	$f2, #$7d
 	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
