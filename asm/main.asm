@@ -2618,9 +2618,11 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
-	movw	$14, ya
+	movw	$14, ya			; Consume at least eight cycles per iteration. 
 -
-	dbnz	$15, -
+	nop				; This is because the echo buffer writes four bytes per sample (or 32 cycles in this case).
+	nop				; NOP is 2 cycles.
+	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
 	dbnz	$14, -
 +
 	
