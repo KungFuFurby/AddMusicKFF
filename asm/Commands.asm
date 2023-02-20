@@ -594,6 +594,13 @@ SubC_2:
 	eor	!WaitTime, #$03
 	ret
 
+SubC_table2_SquareFormatClearSRCN:
+	mov	$0163, a
+	mov	a, #$F0 ;BEQ opcode
+	mov	SquareGate, a ;Special wave will now be initialized
+	mov	a, #$3F ;CALL opcode
+	mov	SubC_4Gate,a
+
 SubC_4:
 SubC_4Gate:
 	ret ;Will be turned into a call opcode
@@ -1117,14 +1124,6 @@ SubC_table2:
 .oldFA_com
 	mov	$0165,a
 	ret
-
-.SquareFormatClearSRCN
-	mov	$0163, a
-	mov	a, #$F0 ;BEQ opcode
-	mov	SquareGate, a ;Special wave will now be initialized
-	mov	a, #$3F ;CALL opcode
-	mov	SubC_4Gate,a
-	jmp	SubC_4
 
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
