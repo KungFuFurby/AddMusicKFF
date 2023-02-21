@@ -748,14 +748,6 @@ SyncInc_ret:
 	clrp
 	ret
 
-
-SubC_1D:
-if !noSFX = !false
-	call	TerminateIfSFXPlaying
-endif
-	mov	a, $48
-	jmp	KeyOnVoices
-
 SubC_21:
 	;WARNING: This loop break is only compatible with the E9 VCMD!
 	mov	x, $46
