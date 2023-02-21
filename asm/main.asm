@@ -2540,6 +2540,13 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
+SubC_1D:
+if !noSFX = !false
+	call	TerminateIfSFXPlaying
+endif
+	mov	a, $48
+	bra	KeyOnVoices
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
 {
