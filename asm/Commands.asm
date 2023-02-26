@@ -402,6 +402,9 @@ cmdE9:					; Loop
 	push  a
 	call  GetCommandDataFast
 	mov   $c0+x, a           ; repeat counter = op3
+	setc
+	sbc   a, #$96
+	bcs   ConditionalLoops
 	mov   a, $30+x
 	mov   $03e0+x, a
 	mov   a, $31+x
@@ -413,6 +416,94 @@ cmdE9:					; Loop
 	mov   $30+x, a
 	mov   $03f0+x, a         ; set vptr/3F0/1+X to op1/2
 	ret
+ConditionTable:
+	dw Condition0
+	dw Condition1
+	dw Condition2
+	dw Condition3
+	dw Condition4
+	dw Condition5
+	dw Condition6
+	dw Condition7
+ConditionalLoops:				;conditional loops are actually infinite loops that break their loop when a flag is set.
+	asl a
+	push x
+	mov x, a
+	jmp (Conditiontable+x)
+
+Condition0:
+	mov a, !Flag
+	and a, #$01
+	beq looping
+	pop a
+	pop a
+	ret
+Condition1:
+	mov a, !Flag
+	and a, #$02
+	beq looping
+	pop a
+	pop a
+	ret
+Condition2:
+	mov a, !Flag
+	and a, #$04
+	beq looping
+	pop a
+	pop a
+	ret
+Condition3:
+	mov a, !Flag
+	and a, #$08
+	bne looping
+	pop a
+	pop a
+	ret
+Condition4:
+	mov a, !Flag
+	and a, #$10
+	beq looping
+	pop a
+	pop a
+	ret
+Condition5:
+	mov a, !Flag
+	and a, #$20
+	beq looping
+	pop a
+	pop a
+	ret
+Condition6:
+	mov a, !Flag
+	and a, #$40
+	beq looping
+	pop a
+	pop a
+	ret
+Condition7:
+	mov a, !Flag
+	and a, #$80
+	beq looping
+	pop a
+	pop a
+	ret
+looping:
+	mov   a, $30+x
+	mov   $03e0+x, a
+	bcc +
+	mov   a, $31+x
+	mov   $03e1+x, a         ; save current vptr in 3E0/1+X
+-	pop   a
+	mov   $31+x, a
+	mov   $03f1+x, a
+	pop   a
+	mov   $30+x, a
+	mov   $03f0+x, a         ; set vptr/3F0/1+X to op1/2
+	ret
++	mov a, $31+x
+	dec a
+	mov $03e1+x, a
+	bra -
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEA:					; Fade the vibrato
@@ -719,6 +810,7 @@ HotPatchVCMDByBitByte0:
 	pop	p
 HotPatchVCMDByBitByte1:
 	call	HotPatchVCMDFetchNextByteIfMinus
+	mov	$10, a
 	push	p
 	mov	A, #HotPatchVCMDByte1StorageSet&$FF
 	mov	Y, #(HotPatchVCMDByte1StorageSet>>8)&$FF
@@ -746,6 +838,7 @@ HotPatchVCMDByBitByte1:
 
 HotPatchVCMDByBitByte2:
 	;call	HotPatchVCMDFetchNextByteIfMinus
+	;mov	$10, a
 	;push	p
 	;mov	A, #HotPatchVCMDByte2StorageSet&$FF
 	;mov	Y, #(HotPatchVCMDByte2StorageSet>>8)&$FF
