@@ -416,6 +416,7 @@ cmdE9:					; Loop
 	mov   $30+x, a
 	mov   $03f0+x, a         ; set vptr/3F0/1+X to op1/2
 	ret
+	
 ConditionTable:
 	dw Condition0
 	dw Condition1
@@ -425,11 +426,12 @@ ConditionTable:
 	dw Condition5
 	dw Condition6
 	dw Condition7
+
 ConditionalLoops:				;conditional loops are actually infinite loops that break their loop when a flag is set.
 	asl a
 	push x
 	mov x, a
-	jmp (Conditiontable+x)
+	jmp (ConditionTable+x)
 
 Condition0:
 	mov a, !Flag
