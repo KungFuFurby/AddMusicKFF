@@ -488,6 +488,7 @@ Condition7:
 	pop a
 	ret
 looping:
+	pop   x
 	mov   a, $30+x
 	mov   $03e0+x, a
 	bcc +

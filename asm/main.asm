@@ -63,6 +63,8 @@ incsrc "UserDefines.asm"
 ; $0211+x: The volume part of the qXX command.
 ; $0387: Amount the tempo should be increased by (used by the "time is running out!" sound effect to speed up the music).
 
+; $0386 used by !Flag for conditional looping
+
 ; $48: Bitwise indicator of the current channel being processed.
 ; $5C: Used to indicate that a volume needs to be updated (long routine, so it's only done when necessary).
 ; $0166: 4 bytes; used as the output byte to send to the 5A22.  Originally AMM only used 2 of these, we can use all 4 for whatever we like.
@@ -137,6 +139,8 @@ incsrc "UserDefines.asm"
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
+
+!Flag = $0386
 
 arch spc700-raw
 org $000000
@@ -1901,6 +1905,7 @@ endif
 endif
 	cmp	a, #$ff
 	beq	L_099C
+	cmp a, #$
 if !noSFX = !true
 	cmp	a, #$08			; 08 unpauses music
 	beq	UnpauseMusic
@@ -1913,6 +1918,16 @@ if !noSFX = !true
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
 endif
+	push a
+	cmp a, #$80
+	bpl SkipConditional
+	setc
+	sbc a, #$80
+	mov x, a
+	mov a, (ConditionalTable+x)
+	and !Flag, a
+SkipConditional:
+	pop a 
 if !noSFX = !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
 if !useSFXSequenceFor1DFASFX = !false
@@ -1928,6 +1943,9 @@ endif
 	mov	x, a
 	lsr	a
 	jmp	(APU1CMDJumpArray-2+x)
+
+ConditionalTable:
+db #$01,#$02,#$04,#$08,#$10,#$20,#$40,#$80
 
 PlayPauseSFX:
 	mov	a, #$11
