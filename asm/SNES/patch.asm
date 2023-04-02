@@ -303,9 +303,19 @@ endif
 	CMP #$12+1			; | | But if we're coming back from the p-switch or starman musics AND we're loading a new level, then we might need to reload the song as well.
 	BCC ++				; | / ;;; can't be bad to allow everything below
 	LDA !MusicMir			; |
+	CMP !MusicBackup
+	BEQ PlayDirectLocal
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
 	JMP SPCNormal			; |
+
+PlayDirectLocal:
+	STA !CurrentSong
+	STA !MusicBackup
+	LDA !GlobalMusicCount+1
+	STA !MusicReg
+	jmp End
+
 ++					; /
 	LDA !MusicMir
 	STA !CurrentSong
