@@ -310,7 +310,6 @@ endif
 	LDA !MusicMir
 	STA !CurrentSong
 	STA !MusicBackup
-	STA $0DDA|!SA1Addr2
 	
 ;	LDA $0100|!SA1Addr2
 ;	CMP #$0F
