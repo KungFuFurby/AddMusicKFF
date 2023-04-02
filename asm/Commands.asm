@@ -611,6 +611,10 @@ SubC_table:
 	dw	SubC_21
 	dw	SubC_22
 	dw	SubC_23
+	dw	$0000
+	dw	SubC_25
+	dw	SubC_26
+	dw	SubC_27
 
 SubC_0:
 	not1    $6e.5				; 
@@ -722,6 +726,7 @@ SyncInc_ret:
 	ret
 
 SubC_21:
+	call	TerminateIfLoopBreakDisabled
 	;WARNING: This loop break is only compatible with the E9 VCMD!
 	mov	x, $46
 	mov	y, $c0+x
@@ -745,6 +750,7 @@ TerminateIfE6LoopCountNot1:
 	ret
 
 SubC_23:
+	call	TerminateIfLoopBreakDisabled
 	;WARNING: This loop break is only compatible with the E6 VCMD!
 	call	TerminateIfE6LoopCountNot1
 	;Terminate the loop counter for the E9 VCMD.
@@ -753,6 +759,7 @@ SubC_23:
 	bra	SubC_22_23_E6JumpToEnd
 
 SubC_22:
+	call	TerminateIfLoopBreakDisabled
 	;WARNING: This loop break is only compatible with the E6 VCMD!
 	call	TerminateIfE6LoopCountNot1
 SubC_22_23_E6JumpToEnd:
@@ -760,6 +767,32 @@ SubC_22_23_E6JumpToEnd:
 	mov	$30+x, a
 	mov	a, $0181+x
 	mov	$31+x, a
+	ret
+
+TerminateIfLoopBreakDisabled:
+	mov	a, $48
+	and	a, $038c
+	bne	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
+SubC_25:
+	mov	a, $48
+	eor	a, $038c
+	mov	$038c, a
+	ret
+
+SubC_26:
+	mov	a, $48
+	tset	$038c, a
+	ret
+
+SubC_27:
+	mov	a, $48
+	tclr	$038c, a
 cmdF5Ret:
 	ret
 }

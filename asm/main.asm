@@ -2109,9 +2109,12 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
-	mov	$46, #$00		;
+	mov	a,#$ff
+	mov	$038c,a
+	inc	a
+	mov	$46, a			;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
-	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	mov	$31, a			; This uses a little pointer trick to read a zero immediately. 
 	call	HotPatchVCMDByBit	; The code will handle the rest.
 
 	mov	!WaitTime, #$02		;
@@ -2966,10 +2969,16 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 	;        (and return address not initialized outside of readahead)
 	;$11.4 - Loop section active
 	;$11.3 - Subroutine exited
+	;$11.2 - Loop break enabled
 	;$12/$13 - Return address (if subroutine)
 	;$14/$15 - Current track pointer
 	;$16/$17 - Return address (if loop section)
 	mov	$11, #$00
+	mov	a, $48
+	and	a, $038c
+	beq	+
+	set1	$11.2	;Loop break has been enabled.
++
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
@@ -3220,10 +3229,6 @@ L_10B2:							; |
 	bra	.jmpToL_10B2_1
 
 .loopSectionBreak:
-	mov	a, $01f0+x
-	dec	a
-	;$01 means that the loop section has been entered and terminated.
-	bne	.jmpToL_10B2_1
 	bbs5	$11, .loopSectionBreakEnteredFromReadahead
 	mov	$14, #$0181&$FF
 	bra	.setupJumpToIndirect01
@@ -3254,22 +3259,54 @@ L_10B2:							; |
 +
 	cmp	a, #$21
 	bne	+
+	bbc2	$11, .F4Command_skip
+.subroutineBreakCheck:
 	mov	y, $c0+x
 	dbnz	y, .F4Command_skip
 	jmp	.subroutineCheck
 +
 	cmp	a, #$22
-	beq	.loopSectionBreak
+	bne	+
+	bbc2	$11, .F4Command_skip
+.loopSectionBreakCheck:
+	mov	a, $01f0+x
+	dec	a
+	;$01 means that the loop section has been entered and terminated.
+	bne	.F4Command_skip
+	bra	.loopSectionBreak
 +
 	cmp	a, #$23
 	bne	+
+	bbc2	$11, .F4Command_skip
+.loopSectionSubroutineBreakCheck:
+	mov	y, $c0+x
+	dbnz	y, .F4Command_skip
 	clr1	$11.6		;Subroutine loop is no longer active.
-	bra	.loopSectionBreak
+	bra	.loopSectionBreakCheck
 +
+	cmp	a, #$25
+	bne	+
+	not1	$11.2		;Toggle loop break.
+	bra	.F4Command_skip
++
+
+	cmp	a, #$26
+	bne	+
+	set1	$11.2		;Loop break has been enabled.
+	bra	.F4Command_skip
++
+
+	cmp	a, #$27
+	bne	+
+	clr1	$11.2		;Loop break has been disabled.
+	;bra	.F4Command_skip
++
+
 .skipLoopChecksF4:
 .F4Command_skip
 	incw	$14
 	bra	.jmpToL_10B2_2
+
 }
 
 TerminateOnLegatoEnable:
