@@ -10,11 +10,7 @@
 #version at this time unless you're using Wine or some other emulation
 #layer)
 
-UNAME := $(shell uname -s)
-
-$(info $UNAME is $(UNAME))
-
-ifneq (,$(findstring MSYS,$(UNAME)))
+ifeq ($(OS),Windows_NT)
 #Windows setting (made for MinGW, though in hindsight this may be a bad call)...
 	CXX = x86_64-w64-mingw32-g++
 else
@@ -26,7 +22,7 @@ CXXFLAGS = -Wall -pedantic -std=c++17 -Os
 #with libboost (this specifically targets MacPorts inclusions)
 #CXXFLAGS += -I/opt/local/include
 
-ifneq (,$(findstring MSYS,$(UNAME)))
+ifeq ($(OS),Windows_NT)
 #Windows setting...
 	LDFLAGS = -static -static-libgcc -static-libstdc++ -s
 else
