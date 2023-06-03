@@ -2237,9 +2237,11 @@ void Music::parseNote()
 
 		if (i < 0x80)
 		{
-			if (songTargetProgram == 0 && targetAMKVersion < 4 && lowNoteWarning) {
-				printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
-				lowNoteWarning = false; 
+			if (songTargetProgram == 0 && targetAMKVersion < 4) {
+				if (lowNoteWarning) {
+					printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+					lowNoteWarning = false; 
+				}
 			}
 			else {
 				error("Note's pitch was too low.");
