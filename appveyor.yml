@@ -51,41 +51,33 @@ configuration: Release
 
 after_build:
   - ps: .\zip_script.ps1
+
+environment:
+  ATARISMWC_AUTH_KEY:
+    secure: ICQTZ2g57iFL9GBHQmy4gl7bGvdVBSQ/r6n1pbs+4xA=
   
 deploy:
-  - provider: FTP
+  - provider: Webhook
     on:
       branch: master
-    protocol: sftp
-    host: www.atarismwc.com
-    folder: html/amkff_releases/
-    username: pi
-    password:
-      secure: N90u+68BQTm8IHH9p3O78A==
-  - provider: FTP
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
     on:
       branch: bleeding-edge
-    protocol: sftp
-    host: www.atarismwc.com
-    folder: html/amkff_releases/
-    username: pi
-    password:
-      secure: N90u+68BQTm8IHH9p3O78A==
-  - provider: FTP
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
     on:
       branch: AddmusicK1.0.9
-    protocol: sftp
-    host: www.atarismwc.com
-    folder: html/amkff_releases/
-    username: pi
-    password:
-      secure: N90u+68BQTm8IHH9p3O78A==
-  - provider: FTP
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
     on:
       branch: AddmusicK1.0.9bleeding-edge
-    protocol: sftp
-    host: www.atarismwc.com
-    folder: html/amkff_releases/
-    username: pi
-    password:
-      secure: N90u+68BQTm8IHH9p3O78A==
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
