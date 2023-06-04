@@ -178,7 +178,7 @@ YoshiDrumHijack:
 		BEQ NoYoshiDrum
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
-		JSL $00FC7A
+		JSL $00FC7A|!Bank
 		PLB
 		RTL
 NoYoshiDrum:
