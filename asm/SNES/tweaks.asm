@@ -40,7 +40,7 @@ if !PSwitchIsSFX = !true
 +
 else
 	BEQ +
-	LDX.B !PSwitch
+	LDX.B #!PSwitch
 +
 endif
 
@@ -66,7 +66,7 @@ if !PSwitchIsSFX = !true
 Skip10:
 else
 Skip10:
-	LDA.B !PSwitch
+	LDA.B #!PSwitch
 	STA $1DFB|!SA1Addr2
 endif
 
@@ -87,7 +87,7 @@ if !PSwitchIsSFX = !true
 	LDA.b #$C0
 	STA $1DFC|!SA1Addr2
 else
-	LDA.b !PSwitch
+	LDA.b #!PSwitch
 	STA $1DFB|!SA1Addr2
 endif
 
@@ -135,7 +135,7 @@ org $0CA5C2
 	db !CastList
 		
 org $009723
-	LDA.b !Welcome
+	LDA.b #!Welcome
 	STA.w $0DDA|!SA1Addr2					
 	LDA.w $0DDA|!SA1Addr2	; 
 	NOP : NOP		; 
@@ -143,7 +143,7 @@ org $009723
 	LDY.w $0D9B|!SA1Addr2	; 
 	CPY.b #$C1		; 
 	BNE CODE_009738		; 
-	LDA.b !Bowser		; 
+	LDA.b #!Bowser		; 
 CODE_009738:			;
 	STA.w $1DFB|!SA1Addr2	; 
 CODE_00973B:			;
@@ -178,7 +178,7 @@ YoshiDrumHijack:
 		BEQ NoYoshiDrum
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
-		JSL $00FC7A
+		JSL $00FC7A|!Bank
 		PLB
 		RTL
 NoYoshiDrum:
@@ -342,7 +342,7 @@ Skip9:
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
 	;STA $0DDA|!SA1Addr2
-	LDA !Starman
+	LDA #!Starman
 	STA $1DFB|!SA1Addr2
 	RTL
 	
@@ -366,7 +366,7 @@ org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP
 	
 org $0093C0
-LDA.b !NintPresents
+LDA.b #!NintPresents
 STA $1DFB|!SA1Addr2
 
 
