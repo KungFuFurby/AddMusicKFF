@@ -637,14 +637,18 @@ HandleSpecialSongs:
 	BEQ ++
 	CMP #!Keyhole
 	BEQ ++
+if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
 	ORA $190C|!SA1Addr2
 	BNE .powMusic
+endif
+if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
 	BCS .starMusic
 	BEQ .restoreFromStarMusic
+endif
 ++
 	RTS
 	
@@ -655,6 +659,7 @@ HandleSpecialSongs:
 	STZ $1490|!SA1Addr2
 	RTS
 	
+if !PSwitch != $00
 .powMusic
 	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
 	ora $1434|!SA1Addr2		;| (keyhole)
@@ -664,9 +669,11 @@ HandleSpecialSongs:
 if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
+if !Starman != $00
 	lda $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	cmp #$1E
 	bcs .starMusic			;;; just play the star music
+endif
 if !PSwitchIsSFX = !false
 	lda !MusicMir
 	cmp #!PSwitch
@@ -680,25 +687,31 @@ endif
 	rts
 
 if !PSwitchIsSFX = !false
+if !PSwitch != $00
 +	LDA #!PSwitch
 	STA !MusicMir
+endif
 ++	RTS
 endif
 
 else
+if !Starman != $00
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	CMP #$1E
 	BCS .starMusic			;;; just play the star music
 endif
+endif
 
-if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
+if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
 	LDA #!PSwitch
 	STA !MusicMir
 endif
 ++
 	RTS
+endif
 	
 .starMusic
+if !Starman != $00
 if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
@@ -722,6 +735,7 @@ endif
 	STA !MusicMir
 +
 	RTS
+endif
 
 if !PSwitchStarRestart == !true
 SkipPowStar:
