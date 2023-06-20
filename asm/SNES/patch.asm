@@ -220,7 +220,7 @@ endif
 if !PSwitchStarRestart == !true
 +	lda #$01
 	sta !Trick
-	lda !Tricker
+	lda #!Tricker
 	sta !MusicReg
 	bra End
 endif
@@ -239,43 +239,43 @@ ChangeMusic:
 	
 ;	LDA !MusicMir
 if !PSwitchIsSFX = !false
-;	CMP !PSwitch
+;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
-;	CMP !Starman
+;	CMP #!Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
 ;	
 ;.doExtraChecks			; We can't allow the p-switch or starman songs to play during the level clear themes.
 	LDA !CurrentSong
-	CMP !StageClear
+	CMP #!StageClear
 	BEQ LevelEndMusicChange
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ LevelEndMusicChange
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ LevelEndMusicChange
-	CMP !BossClear		;;; this one too
+	CMP #!BossClear		;;; this one too
 	BNE Okay
 	
 LevelEndMusicChange:
 	LDA !MusicMir
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ Okay
-	CMP !SwitchPalace	;;; bonus game fix
+	CMP #!SwitchPalace	;;; bonus game fix
 	BEQ Okay
-	CMP !Miss		;;; sure why not
+	CMP #!Miss		;;; sure why not
 	BEQ Okay
-	CMP !RescueEgg
+	CMP #!RescueEgg
 	BEQ Okay		; Yep
-	CMP !StaffRoll	; Added credits check
+	CMP #!StaffRoll	; Added credits check
 	BEQ Okay
 	LDA $0100|!SA1Addr2		
 	CMP #$10			
 	BCC Okay
 	;;; LDA !CurrentSong	;;; this is why we got here in first place, seems redundant
-	;;; CMP !StageClear
+	;;; CMP #!StageClear
 	;;; BEQ EndWithCancel
-	;;; CMP !IrisOut
+	;;; CMP #!IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
 if !PSwitchStarRestart == !false
@@ -294,10 +294,10 @@ Okay:
 	
 	LDA !CurrentSong		; \ 
 if !PSwitchIsSFX = !false
-	CMP !PSwitch			; |
+	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
-	CMP !Starman			; |
+	CMP #!Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
 	;;;BRA ++			; |
 +					; |
@@ -318,9 +318,9 @@ endif
 ;	CMP #$0F
 ;	BCC .forceMusicToPlay
 ;	LDA !CurrentSong
-;	CMP !StageClear
+;	CMP #!StageClear
 ;	BEQ EndWithCancel
-;	CMP !IrisOut
+;	CMP #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
 
@@ -625,17 +625,17 @@ HandleSpecialSongs:
 	CMP #$0F
 	BEQ +
 	LDA !MusicMir
-	CMP !Miss
+	CMP #!Miss
 	BEQ +
-	CMP !GameOver
+	CMP #!GameOver
 	BEQ +
-	CMP !StageClear		;;; more checks here should help
+	CMP #!StageClear	;;; more checks here should help
 	BEQ ++
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ ++
-	CMP !BossClear
+	CMP #!BossClear
 	BEQ ++
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ ++
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
@@ -669,10 +669,10 @@ if !PSwitchStarRestart == !true
 	bcs .starMusic			;;; just play the star music
 if !PSwitchIsSFX = !false
 	lda !MusicMir
-	cmp !PSwitch
+	cmp #!PSwitch
 	beq ++
 	lda !CurrentSong
-	cmp !PSwitch
+	cmp #!PSwitch
 	bne +
 endif
 
@@ -680,7 +680,7 @@ endif
 	rts
 
 if !PSwitchIsSFX = !false
-+	LDA !PSwitch
++	LDA #!PSwitch
 	STA !MusicMir
 ++	RTS
 endif
@@ -692,7 +692,7 @@ else
 endif
 
 if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
-	LDA !PSwitch
+	LDA #!PSwitch
 	STA !MusicMir
 endif
 ++
@@ -703,16 +703,16 @@ if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
 	lda !MusicMir
-	cmp !Starman
+	cmp #!Starman
 	beq ++
 	lda !CurrentSong
-	cmp !Starman
+	cmp #!Starman
 	bne +
 	stz !MusicMir
 	rts
 endif
 
-+	LDA !Starman
++	LDA #!Starman
 	STA !MusicMir
 ++	RTS
 
@@ -726,13 +726,13 @@ endif
 if !PSwitchStarRestart == !true
 SkipPowStar:
 	lda !CurrentSong
-	cmp !StageClear
+	cmp #!StageClear
 	beq +
-	cmp !IrisOut
+	cmp #!IrisOut
 	beq +
-	cmp !BossClear
+	cmp #!BossClear
 	beq +
-	cmp !Keyhole
+	cmp #!Keyhole
 	beq +
 	clc
 +	rts
