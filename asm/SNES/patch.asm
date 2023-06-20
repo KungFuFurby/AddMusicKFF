@@ -291,14 +291,18 @@ Okay:
 
 	CMP #$FF			; \ #$FF is fade.
 	BEQ Fade			; /
-	
+
+if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX = !false && !PSwitch != $00
 	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
+if !Starman != $00
 	CMP #!Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
+endif
+endif
 	;;;BRA ++			; |
 +					; |
 	LDA $0100|!SA1Addr2		; | \
@@ -629,6 +633,7 @@ HandleSpecialSongs:
 	BEQ +
 	CMP #!GameOver
 	BEQ +
+if !PSwitch != $00 || !Starman != $00
 	CMP #!StageClear	;;; more checks here should help
 	BEQ ++
 	CMP #!IrisOut
@@ -637,6 +642,7 @@ HandleSpecialSongs:
 	BEQ ++
 	CMP #!Keyhole
 	BEQ ++
+endif
 if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
