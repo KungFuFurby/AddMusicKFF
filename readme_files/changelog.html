@@ -77,11 +77,13 @@
 		<ul>
 		<li>"Fixed a bug where the Yoshi Drums were not being disabled when Mario teleports into a room without Yoshi without disembarking first through a cutscene or otherwise. <b>This does add a new hijack at $02A763  in the ROM in order to do this, though, so be careful...</b>" - KungFuFurby</li>
 		<li>"Fixed an issue with non-standard stage/boss clear fanfares when the P-Switch/Starman theme is active." - KevinM</li>
+		<li>"Fixed a bug where setting the P-Switch and/or Starman song IDs to zero would result in the song ID being zeroed out on every frame, preventing user code from modifying the song ID while a P-Switch and/or Star is going off." - KevinM</li>
 		<li>"This version prevents garbage from randomly appearing during Submap transitions." - Barrels O' Fun</li>
 		<li>"This version adds the option to have the P-Switch and Starman themes retrigger when recollecting a star or pressing another P-Switch. The option is enabled by default because it replicates vanilla SMW's behavior, though it can be turned off to replicate its behavior on AddmusicK 1.0.8 and earlier." - JUMP Team, SimFan96, KevinM, Anas and KungFuFurby</li>
 		<li>"Fixed a bug when pressing a P-Switch as the star timer was running out would retrigger the Starman theme until the timer completely ran out, then ran the P-Switch theme normally." - JUMP Team, SimFan96, KevinM, Anas and KungFuFurby</li>
 		<li>"Fixed a bug where the Welcome song would not play in a new save file, and instead the default level music played." - KungFuFurby</li>
 		<li>"Merged several patches together in tweaks.asm to resolve a conflict between them. <b>The code modifications at $9723-$973F have been merged, which resulted in a few cuts due to a conflict: specifically, writing !Title to $9724 (overwritten by writing !Welcome to the same location) and skipping Bowser fight music at $9734 (overwritten by a BNE opcode to $9738 on a different patch)</b>" - KungFuFurby</li>
+		<li>"Added some fastrom-related speedups for explicit JML/JSls when not using the SA-1." - KevinM</li>
 		</ul>
 	</li>
 	<li>Built-In Original Songs
@@ -167,6 +169,7 @@
 	<li>SPC & ROM Compilation
 		<ul>
 		<li>"All user-redefinable variables now have a new home in asm/UserDefines.asm. This allows both SNES-side and SPC-side code to share defines put here." - KungFuFurby</li>
+		<li>"All user-redefinable variables no longer use the # character in them for easier use in conditional logic. This is instead handled in the ASM files themselves." - KungFuFurby</li>
 		<li>"Added the ability to filter out sound effects and the playback code through !noSFX in asm/UserDefines.asm." - KungFuFurby</li>
 		<li>"Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's." - KungFuFurby</li>
 		<li>"Made sample filtering more consistent between SPCs and ROMs by factoring in the user individually picking samples from sample groups (and thus inheriting their important flags), as well as having all user-defined samples be important." - KungFuFurby</li>
