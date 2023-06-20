@@ -19,10 +19,12 @@ if !UsingSA1
 	sa1rom
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
+	!Bank     = $000000
 else
 	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
+	!Bank     = $800000
 endif
 
 
@@ -174,7 +176,7 @@ endif
 	PLP
 
 
-	JML $00806B		; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
+	JML $00806B|!Bank	; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
 
 NoMusic:
 	LDA #$00
