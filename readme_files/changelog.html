@@ -53,13 +53,14 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2023-07-07</h2>
+	<h2>Version 1.0.9 - 2023-07-11</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
 		<ul>
 		<li>"Upgraded to Visual Studio 2019." - Atari 2.0</li>
-		<li>"The asar version has been updated from 1.33b to 1.81. The code has also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - Atari 2.0 and KungFuFurby</li>
+		<li>"The asar version has been updated from 1.33b to 1.81. The code and DLL integrations have also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - Atari 2.0 and KungFuFurby</li>
+		<li>"Fixed a bug where the DLL file would never be used because asar was being called before the lookup would occur."- Atari 2.0</li>
 		<li>"This version makes AddmusicK's core compiler cross-platform." - HertzDevil and nyanpasu64</li>
 		</ul>
 	</li>
