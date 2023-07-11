@@ -58,6 +58,10 @@ int main(int argc, char* argv[]) try		// // //
 	std::cout << "AddmusicKFF Fork by KungFuFurby" << std::endl;
 	std::cout << "Protip: Be sure to read the readme! If there's an error or something doesn't\nseem right, it may have your answer!\n\n" << std::endl;
 
+    if (asar_init() == false)
+        useAsarDLL = false;
+    else
+        useAsarDLL = true;
 
 	std::vector<std::string> arguments;
 
@@ -164,12 +168,6 @@ int main(int argc, char* argv[]) try		// // //
 			std::getline(std::cin, ROMName.filePath);
 			puts("\n\n");
 		}
-
-		if (asar_init() == false)
-			useAsarDLL = false;
-		else
-			useAsarDLL = true;
-
 
 
 		std::string tempROMName = ROMName.cStr();
