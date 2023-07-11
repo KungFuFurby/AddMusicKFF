@@ -82,7 +82,7 @@ inline static bool setfunction(void* target, FARPROC fn)
 
 	inline static void * getlib(void)
 	{
-		const char * names[]={"./libasar"EXTENSION, "libasar", NULL};
+		const char * names[]={"./libasar" EXTENSION, "libasar", NULL};
 		for (int i=0;names[i];i++)
 		{
 			void * rval=dlopen(names[i], RTLD_LAZY);
