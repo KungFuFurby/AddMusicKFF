@@ -3070,6 +3070,16 @@ void Music::pointersFirstPass()
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
+		for (i = 0; i < mySamples.size()-1; i++)
+		{
+			for (j = i+1; j < mySamples.size(); j++)
+			{
+			if ((mySamples[i] == mySamples[j]) && mySamples[i] != emptySampleIndex)
+				{
+					mySamples[j] = emptySampleIndex;
+				}
+			}
+		}
 
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)
