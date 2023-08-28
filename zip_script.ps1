@@ -10,4 +10,6 @@ del src\AM405Remover\Release -Recurse
 del src\AMKGUI\obj -Recurse
 del src\Release -Recurse
 7z a src.zip src
-7z a AMKFF_latest.zip 1DF9 1DFC asm music readme_files samples SPCs stats Visualizations Addmusic_list.txt "Addmusic_sample groups.txt" "Addmusic_sound effects.txt" addmusicMRemover.pl readme.html src.zip *.exe Makefile
+mkdir AddmusicKFF
+move 1DF9, 1DFC, asm, music, readme_files, samples, SPCs, stats, Visualizations, Addmusic_list.txt, "Addmusic_sample groups.txt", "Addmusic_sound effects.txt", addmusicMRemover.pl, readme.html, src.zip, *.exe, Makefile AddmusicKFF
+7z a AMKFF_latest.zip AddmusicKFF
