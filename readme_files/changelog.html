@@ -53,7 +53,7 @@
 	<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
 	</ul>
-	<h2>Version 1.0.9 - 2023-07-11</h2>
+	<h2>Version 1.0.9 - 2023-08-28</h2>
 	This changelog is organized a little bit differently because of the massive number of modifications made to it.
 	<ul>
 	<li>Overall
@@ -175,6 +175,7 @@
 		<li>"Added the ability to filter out sound effects and the playback code through !noSFX in asm/UserDefines.asm." - KungFuFurby</li>
 		<li>"Global songs' echo delay values now act as the minimum echo buffer size to allocate a local song's, and therefore are now tracked to prevent memory overflows caused by a global song's echo buffer being too large, as opposed to a local song's." - KungFuFurby</li>
 		<li>"Made sample filtering more consistent between SPCs and ROMs by factoring in the user individually picking samples from sample groups (and thus inheriting their important flags), as well as having all user-defined samples be important." - KungFuFurby</li>
+		<li>"Fixed a bug where duplicate samples were being loaded in the same song when the important marker was set, causing the filesize of the song to increase." - KungFuFurby</li>
 		<li>"Fixed a serious bug where mixing .bnk and .brr files between songs was causing the entire ROM to fail to include the soundtrack due to an exception occurring." - KungFuFurby</li>
 		<li>"Fixed a false positive in detecting AddmusicM when the filesize of the sound driver + sound effects was $xx52 bytes. Now the entire RATS tag is scanned to avoid this situation." - KungFuFurby</li>
 		<li>"SPC files no longer have a one-byte stack underflow when being generated." - KungFuFurby</li>
