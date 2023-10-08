@@ -208,6 +208,67 @@
 		</ul>
 	</li>
 	</ul>
+	<h2>AddmusicKFF Fork - 2023-10-07</h2>
+	<ul>
+	<li>Music MML Parser
+		<ul>
+		<li><b>There is partial support for parser version 3 from Codec's AddmusicK Beta. The following features are implemented here (note that the hex command IDs specified here are auto-converted to their AddmusicK equivalents):</b>
+			<ul>
+				<li>"Added tremolo off through the $F4 $0A hex command." - 6646</li>
+				<li>"Added pitch envelope off through the $F4 $0B hex command." - 6646</li>
+				<li>"Added resetting all remote code vents through the $F4 $0C hex command." - 6646</li>
+				<li>"Added resetting all key on remote code vents through the $F4 $0D hex command." - 6646</li>
+				<li>"Added resetting all non-key on remote code vents through the $F4 $0E hex command." - 6646</li>
+				<li>"Added loop breaks through the $F4 $10 hex command. You can also use : to directly call a loop break." - 6646</li>
+			</ul>
+		</li>
+		</ul>
+	</li>
+	<li>Music Hex Commands
+		<ul>
+		<li>"Added the ability to explicitly switch back to the SMW Velocity Table through the $F4 $0A hex command." - KungFuFurby</li>
+		<li>"Added the ability to explicitly switch on and off the Yoshi Drums for a channel through the $F4 $0C and $F4 $0D hex commands."- KungFuFurby</li>
+		<li>"Added the ability to explicitly switch on and off echo for a channel through the $F4 $0E and $F4 $0F hex commands."- KungFuFurby</li>
+		<li>"Added the ability to explicitly toggle, switch on and off pitch modulation for a channel through the $F4 $10 and $F4 $11 hex commands."- KungFuFurby</li>
+		<li>"Added the ability to explicitly switch on and off legato for a channel through the $F4 $12 and $F4 $13 hex commands."- KungFuFurby</li>
+		<li>"Added the ability to explicitly switch on and off light staccato for a channel through the $F4 $14 and $F4 $15 hex commands."- KungFuFurby</li>
+		<li>"Added a bunch of SNES sync controls through the $F4 $16-$1C hex commands."- KungFuFurby</li>
+		<li>"Added the ability to set the SNES Sync clock dividers through the $FA $12 hex command."- KungFuFurby</li>
+		<li>"Added the ability to force a key on or a key off through the $F4 $1D and $F4 $1E hex commands."- KungFuFurby</li>
+		<li>"Added the ability to write to the current voice's DSP register through the $FA $08-$0F hex commands."- KungFuFurby</li>
+		<li>"Added shorthand hex commands for recalling loops (with single and multi variants) through the $F4 $20 and $FA $13 hex commands."- KungFuFurby</li>
+		<li>"Added loop breaks and superloop breaks through the $F4 $21-$23 hex commands. They can also be toggled, enabled, or disabled through the $F4 $25-$27 hex commands." - KungFuFurby</li>
+		<li>"Added the -2 remote code event type. It is identical to -1, except it doesn't run on arpeggio-triggered notes." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"<b>(EXPERIMENTAL)</b> Added the ability to filter out hex command code. So far, only arpeggio ($FB hex command) is supported through a user define: there are some safety problems that could result in trying to go further and forgetting that they are already in place, causing accidental crashes in the process." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"<b>(EXPERIMENTAL)</b> Upgraded the overall pitch range on the notes when trying to access them through transposition. Note that there may be hardware or precision limitations." - KungFuFurby</li>
+		<li>"Corrected a conflict where the fade command would conflict with the $E0 and $E1 hex commands." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700 <-> SNES Communication
+		<ul>
+		<li>"Added the ability to match SFX echo channels to the music's through the $0A $1DFA command." - KungFuFurby</li>
+		<li>"Added the ability carry enabled echo channels for music between global and local songs (but not between two different local songs) via the $0B and $0C $1DFA commands to enable or disable them." - KungFuFurby</li>
+		<li>"Added the ability carry enabled echo channels for SFX between global and local songs (but not between two different local songs) via the $0D and $0E $1DFA commands to enable or disable them." - KungFuFurby</li>
+		<li>"Added the ability to fade the volume to any value instead of just zero through the $80-$FF $1DFB commands. It is backward compatible with the original $FF $1DFB command. <b>WARNING: May introduce conflicts on the SNES side if more than 127 songs are defined. The lower IDs for the fades will instead be reserved for song slots.</b>" - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Historical Addmusic Adaptations
+		<ul>
+		<li>"Restored the special pulse wave from AddmusicM, as well as the corresponding hex commands that originally controlled it. The $FA hex command was moved to the $FA $07 hex command in the process due to being overwritten, and a new one was created, the $FA $10 hex command, that is automatically generated to assign a VxSRCN ID to the special pulse wave due to the memory location no longer being stable. A special BRR file was also created so that the special pulse wave can be automatically brought out as needed." - KungFuFurby</li>
+		<li>"Restored the sample pack from AddmusicM. The sample groups #AMMS01, #AMMS02, #AMMS03 and #AMMKisoPCM were added on" - KungFuFurby</li>
+		<li>"Corrected a bug where quantization/velocity bytes were being auto-created at the start of a loop where they shouldn't be in Addmusic405 and AddmusicM songs." - KungFuFurby</li>
+		<li>"Corrected a bug where quantization was interfering with ties and rests because they were not merged in Addmusic405 and AddmusicM." - KungFuFurby</li>
+		</ul>
+	</li>
+	</ul>
 
 	<br><br>
 	
