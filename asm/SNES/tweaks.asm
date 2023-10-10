@@ -136,7 +136,11 @@ org $0CA5C2
 		
 org $009723
 	LDA.b #!Welcome
+if !WelcomeSongTrigger = !true
 	STA.w $0DDA|!SA1Addr2					
+else
+	STZ.w $1DFB|!SA1Addr2
+endif
 	LDA.w $0DDA|!SA1Addr2	; 
 	NOP : NOP		; 
 	NOP : NOP		; 
