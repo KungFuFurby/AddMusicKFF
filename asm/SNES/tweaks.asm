@@ -142,7 +142,11 @@ org $009723
 	NOP : NOP		; 
 	LDY.w $0D9B|!SA1Addr2	; 
 	CPY.b #$C1		; 
+if !BowserSongTrigger = !true
 	BNE CODE_009738		; 
+else
+	BRA CODE_009738		; 
+endif
 	LDA.b #!Bowser		; 
 CODE_009738:			;
 	STA.w $1DFB|!SA1Addr2	; 

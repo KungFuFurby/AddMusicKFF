@@ -229,6 +229,17 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!BowserSongTrigger = !false
+
+;Default setting: !false
+;Vanilla SMW setting: !true
+;---------------
+; When set to true, the !Bowser song overwrites the default level song on
+; load during the Bowser fight.
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,
