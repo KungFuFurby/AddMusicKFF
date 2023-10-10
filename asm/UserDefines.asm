@@ -251,6 +251,7 @@ includeonce
 !GhostHouse	= $10
 !Castle		= $11
 !SwitchPalace	= $12
+!CastleDestructionFanfare = $13
 !Welcome	= $13
 !RescueEgg	= $14
 !Title		= $15

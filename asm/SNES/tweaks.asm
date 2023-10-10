@@ -22,7 +22,7 @@ org $96C7
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
-    db !Welcome	
+	db !CastleDestructionFanfare	
 org $00C526
 	db !BonusEnd
 org $00C9BD
