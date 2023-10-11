@@ -136,7 +136,7 @@ org $0CA5C2
 		
 org $009723
 	LDA.b #!Welcome
-if !WelcomeSongTrigger = !true
+if !WelcomeSongOverride = !true
 	STA.w $0DDA|!SA1Addr2					
 else
 	STZ.w $1DFB|!SA1Addr2
@@ -146,7 +146,7 @@ endif
 	NOP : NOP		; 
 	LDY.w $0D9B|!SA1Addr2	; 
 	CPY.b #$C1		; 
-if !BowserSongTrigger = !true
+if !BowserSongOverride = !true
 	BNE CODE_009738		; 
 else
 	BRA CODE_009738		; 
