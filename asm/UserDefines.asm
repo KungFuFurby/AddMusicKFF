@@ -230,23 +230,23 @@ includeonce
 
 ;=======================================
 ;---------------
-!BowserSongTrigger = !false
+!BowserSongOverride = !false
 
 ;Default setting: !false
 ;Vanilla SMW setting: !true
 ;---------------
-; When set to true, the !Bowser song overwrites the default level song on
+; When set to true, the !Bowser song overrides the default level song on
 ; load during the Bowser fight.
 ;=======================================
 
 ;=======================================
 ;---------------
-!WelcomeSongTrigger = !false
+!WelcomeSongOverride = !false
 
 ;Default setting: !false
 ;Vanilla SMW setting: !true
 ;---------------
-; When set to true, the !Welcome song overwrites the default level song on
+; When set to true, the !Welcome song overrides the default level song on
 ; load during the intro level after loading a new file.
 ;=======================================
 
