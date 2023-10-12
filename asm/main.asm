@@ -1380,19 +1380,24 @@ FetchPtrFromSFXDataAndRET:
 SetSFXInstrument:
 	mov	y, #$09			; \ 
 	mul	ya			; | Set up the instrument table for SFX
-	mov	x, a			; |
+	mov	$14, #SFXInstrumentTable ; |
+	mov	$15, #SFXInstrumentTable>>8 ; |
+	addw	ya, $14			; |
+	movw	$14, ya			; |
+	mov	y, #$00			; |
 	mov	a, $46			; | \
 	xcn	a			; | | Get the correct DSP register "base" into y.
 	lsr	a			; | |
-	mov	y, a			; | /
-	mov	$12, #$08		; / 9 bytes of instrument data.
+	mov	x, a			; / /
 -					; \
-	mov	a, SFXInstrumentTable+x	; |
-	call	DSPWrite		; | Loop that sets various DSP registers.
+	mov	a, ($14)+y		; |
+	mov	$f2, x			; | Loop that sets various DSP registers.
+	mov	$f3, a			; |
 	inc	x			; |
 	inc	y			; |
-	dbnz	$12, -    		; / 
-	mov	a, SFXInstrumentTable+x ; \
+	cmp	y, #$08			; | 9 bytes of instrument data.
+	bcc	-  	  		; / 
+	mov	a, ($14)+y		; \
 	mov	x, $46			; | Set pitch base multiplier.
 	mov	$0210+x, a		; /
 	mov	a, #$00			; \ Disable sub-tuning
