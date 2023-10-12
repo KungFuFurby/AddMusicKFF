@@ -1,218 +1,150 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
-	<title>Hex Command Reference - AddmusicK Readme</title>
-	<link href="readme.css" type="text/css" rel="stylesheet">
-	<script>
-	var attack = 4, decay = 2, sustain = 5, release = 9;
-	var scale = 128;
-	var CLOCKS = [
-		  0, 2048, 1536, 1280, 1024, 768, 640, 512, 
-		384,  320,  256,  192,  160, 128,  96,  80, 
-		 64,   48,   40,   32,   24,  20,  16,  12, 
-		 10,    8,    6,    5,    4,   3,   2,   1,
-	];
-	var ADSR_WIDTH = 800;
-	var ADSR_HEIGHT = 400;
-
-	function init()
-	{
-		setAttack(attack);
-		setDecay(decay);
-		setSustain(sustain);
-		setRelease(release);
-
-		for (var j = 0; j < 0x10; j++)
-			document.getElementById("a" + j).innerHTML = getAttackTime(j).toFixed(3);
-	}
-
-	function setAttack(id)
-	{
-		attack = id;
-		draw();
-		highlightCell("a", id);
-	}
-
-	function setDecay(id)
-	{
-		decay = id;
-		draw();
-		highlightCell("d", id);
-	}
-
-	function setSustain(id)
-	{
-		sustain = id;
-		draw();
-		highlightCell("s", id);
-
-		for (var j = 0; j < 0x08; j++)
-			document.getElementById("d" + j).innerHTML = getDecayTime(j).toFixed(3);
-		for (var j = 0; j < 0x20; j++)
-			document.getElementById("r" + j).innerHTML = getReleaseTime(j).toFixed(3);
-	}
-
-	function setRelease(id)
-	{
-		release = id;
-		draw();
-		highlightCell("r", id);
-	}
-
-	function getAttackTime(id)
-	{
-		return id == 31 ? 0 : CLOCKS[id * 2 + 1] * 64 / 32000;
-	}
-
-	function getDecayTime(id)
-	{
-		return CLOCKS[id * 2 + 0x10] * [440, 312, 227, 163, 112, 69, 32, 0][sustain] / 32000;
-	}
-
-	function getSustainLevel()
-	{
-		return (sustain + 1) / 8;
-	}
-
-	function getReleaseTime(id)
-	{
-		return id == 0 ? Infinity : CLOCKS[id] * [255, 383, 469, 533, 584, 626, 663, 695][sustain] / 32000;
-	}
-
-	function makeEnvelopeADSR()
-	{
-		var t = 0;
-		var z = 0;
-		var env = [[t, z]];
-		while (z < 0x7FF)
-			env.push([t += CLOCKS[attack * 2 + 1], z += Math.min(attack == 0x1F ? 0x400 : 0x20, 0x7FF - z)]);
-		while (z >= 0x100 * (sustain + 1))
-			env.push([t += CLOCKS[decay * 2 + 0x10], (--z, z -= z >> 8)]);
-		if (release != 0)
-			while (z > 0)
-				env.push([t += CLOCKS[release], (--z, z -= z >> 8)]);
-
-		return env;
-	}
-
-	function zoomOut(s)
-	{
-		scale /= 2;
-		draw();
-	}
-
-	function zoomIn()
-	{
-		scale *= 2;
-		draw();
-	}
-
-	function highlightCell(kind, id)
-	{
-		var lim = {a: 0x10, d: 0x8, s: 0x8, r: 0x20}[kind];
-		for (var j = 0; j < lim; j++)
-		{
-			document.getElementById(kind + j).style.backgroundColor="transparent";
-			document.getElementById(kind + j).style.color="#FFFFFF";
-		}
-		document.getElementById(kind + id).style.backgroundColor="#00FF00";
-		document.getElementById(kind + id).style.color="#000000";
-	}
-
-	function roundPrec(num, dec)
-	{
-		return Math.round(num * Math.pow(10, dec)) / Math.pow(10, dec);
-	}
-
-	function strpad(str, width)
-	{
-		if (str.length < width)
-		{
-			var newstr = "";
-			for (var i = str.length; i < width; i++)
-				newstr += "0";
-			str = newstr + str;
-		}
-		return str;
-	}
-
-	function draw()
-	{
-		var c = document.getElementById("ADSRCanvas");
-		c.width = ADSR_WIDTH;
-		var ctx = c.getContext("2d");
-		ctx.fillStyle = "rgb(255, 255, 255)";
-		ctx.fillRect(0, 0, ADSR_WIDTH, ADSR_HEIGHT);
-
-		//var scale = 800.0 / (getAttackTime(attack) + getDecayTime(decay) +
-		//	(release != 0 ? getReleaseTime(release) : 38));
-
-		var env = makeEnvelopeADSR();
-		var e0 = env.shift();
-
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = 10;
-		ctx.beginPath();
-		ctx.moveTo(scale * e0[0] / 32000, ADSR_HEIGHT * (1 - e0[1] / 0x7FF));
-		for (var e of env)
-			ctx.lineTo(scale * e[0] / 32000, ADSR_HEIGHT * (1 - e[1] / 0x7FF));
-		var e1 = env.pop();
-		if (release == 0)
-			ctx.lineTo(ADSR_WIDTH, ADSR_HEIGHT * (1 - e1[1] / 0x7FF));
-		else
-			ctx.lineTo(scale * e1[0] / 32000, ADSR_HEIGHT + ctx.lineWidth);
-		ctx.stroke();
-
-		ctx.lineWidth = 1;
-		ctx.font = "12px Arial";
-
-		for (var i = 0; i <= ADSR_WIDTH; i += 32)
-		{
-			if (i == 0)
-				ctx.textAlign = "left";
-			else if (i == ADSR_WIDTH)
-				ctx.textAlign = "right";
-			else
-				ctx.textAlign = "center";
-			ctx.beginPath();
-			ctx.moveTo(i, 400);
-			ctx.lineTo(i, 390);
-			ctx.stroke();
-			ctx.fillStyle = "Black";
-			ctx.fillText(roundPrec(i/scale, 2).toString(), i, 370, 24);
-		}
-
-		var t1 = getAttackTime(attack);
-		var t2 = t1 + getDecayTime(decay);
-
-		ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
-		ctx.beginPath();
-		ctx.moveTo(scale * t1, 0);
-		ctx.lineTo(scale * t1, ADSR_HEIGHT);
-		ctx.moveTo(scale * t2, ADSR_HEIGHT * (1 - getSustainLevel()));
-		ctx.lineTo(scale * t2, ADSR_HEIGHT);
-		for (var i = 1; i <= 7; ++i) {
-			ctx.moveTo(0, i / 8 * ADSR_HEIGHT);
-			ctx.lineTo(ADSR_WIDTH, i / 8 * ADSR_HEIGHT);
-		}
-		ctx.stroke();
-
-		document.getElementById("ADSRLabel").innerHTML =
-			"For the ADSR command:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$ED $" +
-			strpad((decay * 16 + attack).toString(16).toUpperCase(), 2) + " $" + strpad((sustain * 32 + release).toString(16).toUpperCase(), 2) +
-			"<br /><br />For the instrument syntax: \"SampleName.brr\" $" +
-			strpad(((decay * 16 | 0x80) + attack).toString(16).toUpperCase(), 2) + " $" + strpad((sustain * 32 + release).toString(16).toUpperCase(), 2) + " $00 $XX $xx";
-	}
-
-</script>
-
+<title>Hex Command Reference - AddmusicK Readme</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="readme.css" type="text/css" rel="stylesheet">
 </head>
-<body text="#FFFFFF" onload="init();">
-	<h1>Hex Command Reference</h1><br><br>
-	<h2>Standard commands:</h2>
-	The following is a list of all available hex commands that may be used in a song.  In all cases, the parameters are listed in the order in which they are to be used after the initial command.  If a parameter is a number, then that parameter must be the specified constant instead of being variable.
-	
-<table border="3" class="hex">
+<script src="asdr.js" type="text/javascript"></script>
+<style>
+#ADSRCanvas {
+	display: block;
+	border:1px solid #d3d3d3;
+	margin: 0 auto;
+	width: 100%;
+	height: auto;
+	max-width: 800px;
+}
+
+.nullRegister
+{
+	text-align:center;
+	position:relative;
+	min-height:5em;
+	min-width:12em;
+	height:100%;
+	opacity: 0.2;
+}
+
+.channelRegister
+{
+	background-color:rgb(197, 217, 241);
+	color:black;
+	text-align:center;
+	position:relative;
+	min-width:12em;
+	min-height:5em;
+	font-style:italic;
+}
+
+.channelRegisterReadOnly
+{
+	background-color:rgb(216, 228, 188);
+	color:black;
+	text-align:center;
+	position:relative;
+	min-width:12em;
+	min-height:5em;
+	font-style:italic;
+}
+
+.generalPurposeRegister
+{
+	background-color:rgb(241, 220, 219);
+	color:black;
+	text-align:center;
+	position:relative;
+	min-width:12em;
+	min-height:5em;
+}
+
+.channelBitRegister
+{
+	background-color:rgb(150, 54, 52);
+	color:white;
+	text-align:center;
+	position:relative;
+	min-width:12em;
+	min-height:5em;
+}
+
+.generalPurposeRegisterReadOnly
+{
+	background-color:rgb(118, 147, 60);
+	color:white;
+	text-align:center;
+	position:relative;
+	min-width:12em;
+	min-height:5em;
+}
+
+.registerInfo
+{
+	font-family:monospace;
+	text-align:center;
+	position:absolute;
+	top:10%;
+	text-decoration:underline;
+	min-width:12em;
+}
+
+.registerDescription {
+	position:absolute;
+	bottom: 10%;
+	text-align:center;
+	min-width:12em;
+	font-style:italic;
+}
+
+.registerTable {
+	border-collapse: initial;
+}
+
+.registerTable td {
+	padding: 0 !important;
+}
+
+.registerTable>tbody>tr>td {
+	position:relative;
+	font-size:12px;
+}
+
+.registerTableContainer {
+	width:100%;
+	overflow:auto;
+	border-width: 1px;
+	border-right-width:2px;
+	border-color:rgb(97, 97, 97);
+	border-style:solid;
+}
+</style>
+<body onload="init();">
+<h1>Hex Command Reference</h1>
+<h2>Contents</h2>
+<ol>
+<li><a href="#standard-commands">Standard Commands</a></li>
+<li><a href="#historical-commands">Historical Commands</a></li>
+<ul>
+	<li><a href="#Addmusic404">Addmusic 4.04</a></li>
+	<li><a href="#carol-more-bin">carol's MORE.bin</a></li>
+	<li><a href="#Addmusic405">Addmusic 4.05</a></li>
+	<li><a href="#AddmusicM">AddmusicM</a></li>
+	<li><a href="#AddmusicK-beta">AddmusicK Beta</a></li>
+</ul>
+<li><a href="#parameter-reference">Parameter Reference</a></li>
+<ul>
+	<li><a href="#NoteInfo">Note Info</a></li>
+	<li><a href="#LengthInfo">Length Info</a></li>
+	<li><a href="#ADSRInfo">ASDR Info</a></li>
+</ul>
+<li><a href="#dsp-register-reference">DSP Register Reference</a></li>
+</ol>
+<hr>
+<h2 id="standard-commands">Standard Commands<a href="#" class="go-to-top"></a></h2>
+<p>The following is a list of all available hex commands that may be used in a song. In all cases, the parameters are listed in the order in which they are to be used after the initial command. If a parameter is a number, then that parameter must be the specified constant instead of being variable.</p>
+
+<table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Source</th>
@@ -226,16 +158,16 @@
 		<td>Instrument<br></td>
 		<td>Sets the instrument for the current channel.<br></td>
 		<td>$XX<br></td>
-		<td>Instrument to set to.  Default limit is $00 to $12.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+		<td>Instrument to set to. Default limit is $00 to $12.<br></td>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$DB<br></td>
 		<td>Vanilla<br></td>
 		<td>Pan<br></td>
 		<td>Sets the panning for the current channel.<br></td>
 		<td>$XX <br></td>
-		<td>Panning value.  Must be between $00 and $13.  $0A is centered. Note that setting the highest two bits will enable surround sound.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+		<td>Panning value. Must be between $00 and $13. $0A is centered. Note that setting the highest two bits will enable surround sound.<br></td>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$DC<br></td>
 		<td rowspan="2">Vanilla<br></td>
@@ -247,7 +179,7 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Final panning value<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$DD</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -263,7 +195,7 @@
 	<tr>
 		<td>$ZZ</td>
 		<td><a href="#NoteInfo">Note</a></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$DE</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -279,13 +211,13 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Amplitude<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$DF<br></td>
 		<td>Vanilla<br></td>
 		<td>Vibrato off<br></td>
 		<td colspan="3">Turns off vibrato.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E0</td>
 		<td>Vanilla<br></td>
@@ -293,7 +225,7 @@
 		<td>Sets the song's global volume<br></td>
 		<td>$XX<br></td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$E1</td>
 		<td rowspan="2">Vanilla<br></td>
@@ -305,7 +237,7 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E2<br></td>
 		<td>Vanilla<br></td>
@@ -313,7 +245,7 @@
 		<td>Sets the tempo to the specified value<br></td>
 		<td>$XX<br></td>
 		<td>Tempo<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$E3</td>
 		<td rowspan="2">Vanilla<br></td>
@@ -325,7 +257,7 @@
 	<tr>
 		<td>$YY</td>
 		<td>Value<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E4</td>
 		<td>Vanilla<br></td>
@@ -333,10 +265,10 @@
 		<td>Transposes all instruments by the value<br></td>
 		<td>$XX<br></td>
 		<td>Transposition<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$E5</td>
-		<td rowspan="3">Vanilla<br>(was only functional in carol's MORE.bin, Addmusic405 and AddmusicK because of a memory location bug in the original)<br></td>
+		<td rowspan="3">Vanilla<br>(was only functional in carol's MORE.bin, Addmusic 4.05 and AddmusicK because of a memory location bug in the original)<br></td>
 		<td rowspan="3">Tremolo<br></td>
 		<td rowspan="3">Enables tremolo for the current channel<br></td>
 		<td>$XX<br></td>
@@ -349,7 +281,7 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Amplitude<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E6</td>
 		<td>carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
@@ -357,7 +289,7 @@
 		<td>Sets the starting point for a subloop<br></td>
 		<td>$00</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E6</td>
 		<td>carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
@@ -365,7 +297,7 @@
 		<td>Sets the ending point for a subloop<br></td>
 		<td>$XX<br></td>
 		<td>Loop count<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E7</td>
 		<td>Vanilla<br></td>
@@ -373,7 +305,7 @@
 		<td>Sets the volume for the current channel<br></td>
 		<td>$XX<br></td>
 		<td>Volume <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$E8</td>
 		<td rowspan="2">Vanilla<br></td>
@@ -385,7 +317,7 @@
 	<tr>
 		<td>$YY</td>
 		<td>Volume<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$E9</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -401,7 +333,7 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Loop count <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$EA</td>
 		<td>Vanilla<br></td>
@@ -409,7 +341,7 @@
 		<td>Fades to the amplitude specified by $DE over the specified period of time.<br></td>
 		<td>$XX<br></td>
 		<td><a href="#LengthInfo">Duration</a><br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$EB</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -425,7 +357,7 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Semitone difference<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$EC</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -441,19 +373,19 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Semitone difference<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
 		<td rowspan="2">carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
 		<td rowspan="2">ADSR<br></td>
-		<td rowspan="2">Enables a custom ADSR on the current channel. $DA must not be be &gt; $7F.  See <a href="#ADSRInfo">here</a> for more information.<br></td>
+		<td rowspan="2">Enables a custom ADSR on the current channel. $DA must not be be &gt; $7F. See <a href="#ADSRInfo">here</a> for more information.<br></td>
 		<td>$DA<br></td>
 		<td>Decay (3 bits), attack (7 bits); %0dddaaaa<br></td>
 	</tr>
 	<tr>
 		<td>$SR</td>
 		<td>Sustain (3 bits), Release (5 bits); %sssrrrrr<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
 		<td rowspan="2">carol's MORE.bin<br>(was also present in AddmusicM)<br></td>
@@ -465,7 +397,7 @@
 	<tr>
 		<td>$YY</td>
 		<td>GAIN<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$EE</td>
 		<td>Vanilla<br></td>
@@ -473,7 +405,7 @@
 		<td>Sets the pitch modifier for this channel.<br></td>
 		<td>$XX<br></td>
 		<td>Tuning<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$EF</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -489,13 +421,13 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Echo volume, right<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F0</td>
 		<td>Vanilla<br></td>
 		<td>Echo off<br></td>
 		<td colspan="3">Turns off echo<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$F1</td>
 		<td rowspan="3">Vanilla<br></td>
@@ -511,7 +443,7 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>FIR filter to use. See the echofilter tables in main.asm for more details, but for 99% of the userbase, $01 is "on" and $00 is "off".<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$F2<br></td>
 		<td rowspan="3">Vanilla<br></td>
@@ -527,7 +459,7 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Final echo volume for right speaker<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$F3</td>
 		<td rowspan="2">AddmusicM<br></td>
@@ -539,7 +471,7 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Multiplication pitch<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4<br></td>
 		<td>AddmusicM<br></td>
@@ -547,23 +479,23 @@
 		<td>Enables yoshi drums on channel #5 <br></td>
 		<td>$00<br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4</td>
 		<td>AddmusicM<br></td>
 		<td>Legato <br></td>
-		<td>Toggle legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning).  Note that when turning off legato, you must do so in the middle of the last note to use this effect, instead of in between notes.</td>
+		<td>Toggle legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning). Note that when turning off legato, you must do so in the middle of the last note to use this effect, instead of in between notes.</td>
 		<td>$01</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4</td>
 		<td>AddmusicM<br></td>
 		<td>Light staccato</td>
-		<td>Toggle light staccato (notes will be played with less of a delay between).  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.</td>
+		<td>Toggle light staccato (notes will be played with less of a delay between). Please be aware that this command is "global"; i.e. it applies to all channels. If you would like to fine-tune the amount of time between notes, you can use the q command.</td>
 		<td>$02</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicM<br></td>
@@ -571,7 +503,7 @@
 		<td>Toggles the echo for this channel <br></td>
 		<td>$03 <br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicM<br></td>
@@ -579,7 +511,7 @@
 		<td>Sends the current song's position to the output registers. <br></td>
 		<td>$05 <br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
@@ -587,7 +519,7 @@
 		<td>Enables yoshi drums on the current channel <br></td>
 		<td>$06 <br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
@@ -595,7 +527,7 @@
 		<td>Disables the tempo hike caused by the "time is running out!" sound effect. Use this on songs that should never be affected by this, such as the course clear music, game over music, etc. <br></td>
 		<td>$07 <br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
@@ -603,15 +535,15 @@
 		<td>Switch the velocity table to use. By default, a song will use SMW's velocity table, which is rather quiet. Use this to use the standard n-spc velocity table instead, which is a bit louder. The alternative to this command is "#louder" when using older versions of AddmusicK (older than parser version 2). Otherwise it's enabled by default.<br></td>
 		<td>$08</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
 		<td>Restore instrument<br></td>
-		<td>Restores all the <b>instrument</b> settings for the current channel.  It's the same thing as just calling the currently playing instrument. It does work on custom instruments.<br></td>
+		<td>Restores all the <b>instrument</b> settings for the current channel. It's the same thing as just calling the currently playing instrument. It does work on custom instruments.<br></td>
 		<td>$09</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	    <tr>
         <td rowspan="8">$F5 <br></td>
 	<td rowspan="8">AddmusicM<br></td>
@@ -647,7 +579,7 @@
 	<tr>
 		<td>$X7<br></td>
 		<td>Coefficient 8 <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$F6</td>
 		<td rowspan="2">AddmusicM<br></td>
@@ -659,7 +591,7 @@
 	<tr>
 		<td>$YY<br></td>
 		<td>Value to write <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$F8</td>
 		<td>AddmusicM<br></td>
@@ -667,19 +599,19 @@
 		<td>Enables noise for the current channel. Using an instrument that does not use noise will disable it. <br></td>
 		<td>$XX<br></td>
 		<td>"Pitch" of the noise. <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$F9</td>
 		<td rowspan="2">AddmusicM<br></td>
 		<td rowspan="2">Data send<br></td>
-		<td rowspan="2">Sends two bytes of data to the SNES.  See asm/SNES/patch.asm for more info.<br></td>
+		<td rowspan="2">Sends two bytes of data to the SNES. See asm/SNES/patch.asm for more info.<br></td>
 		<td>$XX<br></td>
 		<td>The first byte to send.</td>
 	</tr>
 	<tr>
 		<td>$YY<br></td>
 		<td>The second byte to send.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK<br></td>
@@ -691,7 +623,7 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>Which channels to enable pitch modulation on, bitwise (7654321-). Channel 0 cannot have pitch modulation. <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK<br></td>
@@ -703,10 +635,10 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The GAIN value to use<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
-		<td rowspan="2">AddmusicK<br>(relocated from $ED $81 in Addmusic405)<br></td>
+		<td rowspan="2">AddmusicK<br>(relocated from $ED $81 in Addmusic 4.05)<br></td>
 		<td rowspan="2">Semitone tune </td>
 		<td rowspan="2">Tunes the current channel by the specified number of semitones </td>
 		<td>$02<br></td>
@@ -715,32 +647,32 @@
 	<tr>
 		<td>$XX</td>
 		<td>Number of semitones to tune by<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">Amplify <br></td>
-		<td rowspan="2">Multiplies the volume of the current channel by this value + 1. 0 will not modify the volume, whereas FF will (just shy of) double it. Be warned of clipping, however, as SMW's engine was not built to assume high volumes.  In other words, don't use this to make your song louder; use it if a specific instrument or something is already playing at max volume and still isn't loud enough.<br></td>
+		<td rowspan="2">Multiplies the volume of the current channel by this value + 1. 0 will not modify the volume, whereas FF will (just shy of) double it. Be warned of clipping, however, as SMW's engine was not built to assume high volumes. In other words, don't use this to make your song louder; use it if a specific instrument or something is already playing at max volume and still isn't loud enough.<br></td>
 		<td>$03</td>
 		<td></td>
 	</tr>
 	<tr>
 		<td>$XX<br></td>
 		<td>Value to multiply the volume by<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK<br></td>
 		<td rowspan="2">Echo buffer reserve<br></td>
-		<td rowspan="2">You do not need to use this command manually. In fact, you probably shouldn't.  This is inserted at the beginning of every song by the program, and doesn't have much use otherwise. Its sole purpose is to reserve an echo buffer large enough for the song's longest echo delay.  This is to prevent the normal echo command from having to do it itself, which is a time-consuming operation that would cause a pause in the middle of the song.  Note that if hex command validation is turned off, this command will not be inserted.<br></td>
+		<td rowspan="2">You do not need to use this command manually. In fact, you probably shouldn't. This is inserted at the beginning of every song by the program, and doesn't have much use otherwise. Its sole purpose is to reserve an echo buffer large enough for the song's longest echo delay. This is to prevent the normal echo command from having to do it itself, which is a time-consuming operation that would cause a pause in the middle of the song. Note that if hex command validation is turned off, this command will not be inserted.<br></td>
 		<td>$04</td>
 		<td></td>
 	</tr>
 	<tr>
 		<td>$XX<br></td>
 		<td>The largest echo buffer you plan to use<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
-<tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
+<tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK 1.0.9<br></td>
@@ -750,8 +682,8 @@
 		<li>$00 - AddmusicK 1.0.8 and earlier (not counting Beta)</li>
 		<li>$01 - AddmusicK 1.0.9</li>
 		<li>$02 - AddmusicK Beta</li>
-		<li>$03 - Romi's Addmusic404</li>
-		<li>$04 - Addmusic405</li>
+		<li>$03 - Romi's Addmusic 4.04</li>
+		<li>$04 - Addmusic 4.05</li>
 		<li>$05 - AddmusicM</li>
 		<li>$06 - carol's MORE.bin</li>
 		<li>$07 - Vanilla SMW</li>
@@ -765,7 +697,7 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>Preset ID<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$FA</td>
 		<td rowspan="2">AddmusicK 1.0.9<br></td>
@@ -801,13 +733,13 @@
 	<tr>
 		<td>$...<br></td>
 		<td>Bits to set. An extra byte is defined for each byte that the highest bit is set on.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
-<tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
+<tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$FB<br></td>
 		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Arpeggio</td>
-		<td rowspan="3">Specifies an arpeggio. Each note after this will play with a specified pattern.  Note that this command and its subcommands <i>are</i> compatible with the $F4 $01 command, and in fact combining the two is recommended for certain circumstances.<br></td>
+		<td rowspan="3">Specifies an arpeggio. Each note after this will play with a specified pattern. Note that this command and its subcommands <i>are</i> compatible with the $F4 $01 command, and in fact combining the two is recommended for certain circumstances.<br></td>
 		<td>$XX</td>
 		<td>Number of notes in the sequence (must be less than $80). If this is 0, then arpeggio is turned off.<br></td>
 	</tr>
@@ -818,7 +750,7 @@
 	<tr>
 		<td>$...<br></td>
 		<td>The sequence of notes. Each byte is the change in pitch from the currently playing note. For example, $FF 00 would alternate between playing one semitone below the current note and the current note itself. A value of $80 at any point indicates a loop point; the sequence will restart there instead of the beginning if one is specified. <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$FB</td>
 		<td rowspan="3">AddmusicK<br></td>
@@ -834,12 +766,12 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>The change of pitch between the currently playing note and the trilled note. <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$FB</td>
 		<td rowspan="3">AddmusicK<br></td>
 		<td rowspan="3">Glissando <br></td>
-		<td rowspan="3">If glissando is turned on, then the current note will be rekeyed at increasingly higher/lower pitches. Analogous to sliding your hand down a keyboard.  Unlike the other two subcommands, this one's effect is turned off after one note.<br></td>
+		<td rowspan="3">If glissando is turned on, then the current note will be rekeyed at increasingly higher/lower pitches. Analogous to sliding your hand down a keyboard. Unlike the other two subcommands, this one's effect is turned off after one note.<br></td>
 		<td>$81<br></td>
 		<td></td>
 	</tr>
@@ -850,8 +782,8 @@
 	<tr>
 		<td>$ZZ<br></td>
 		<td>The number of semitones to step up or down by for each new note <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
-	
+	</tr><tr><td colspan="6"> </td></tr>
+
 	<tr>
 		<td rowspan="4">$FC</td>
 		<td rowspan="4">AddmusicK<br></td>
@@ -871,12 +803,12 @@
 	<tr>
 		<td>$ZZ</td>
 		<td><a href="#LengthInfo">How long to wait when using wait types 1 or 2.</a> Note that a value of $00 is treated as $0100<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="4">$FC</td>
 		<td rowspan="4">AddmusicK 1.0.9<br></td>
 		<td rowspan="4">Remote Gain</td>
-		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.<br><br>For the sake of reference, for songs labeled #amk 1, this command is essentially a more customizable version of remote gain and anticipation gain (though in both cases you need a -1 event type to automate instrument restoration unless you want to do something else), with remote gain previously using type 2 and anticipation gain using type 3.</td>
+		<td rowspan="4">See the corresponding entry in the syntax reference section for more information.For the sake of reference, for songs labeled #amk 1, this command is essentially a more customizable version of remote gain and anticipation gain (though in both cases you need a -1 event type to automate instrument restoration unless you want to do something else), with remote gain previously using type 2 and anticipation gain using type 3.</td>
 		<td>$WW<br></td>
 		<td>GAIN value to set on trigger.</td>
 	</tr>
@@ -903,15 +835,15 @@
 		<td>AddmusicK 1.0.9<br>(relocated from $ED in Vanilla, which was never functional due to a missing pointer reference)<br></td>
 		<td>Pitch Envelope Off<br></td>
 		<td colspan="3">Turns off pitch envelope.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 </table>
 
-	<h2>Historical commands:</h2>
-	These are hex commands from past Addmusic versions that have been relocated or removed from AddmusicK.
+<h2 id="historical-commands">Historical Commands</h2>
+<p>These are hex commands from past Addmusic versions that have been relocated or removed from AddmusicK.</p>
 
-	<h3>Vanilla SMW</h3>
-The highest command ID supported was $F2.
-<table border="3" class="hex">
+<br><h3>Vanilla SMW<a href="#" class="go-to-top"></a></h3>
+<p>The highest command ID supported was $F2.</p>
+<table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -921,7 +853,7 @@ The highest command ID supported was $F2.
 	</tr>
 	<tr>
 		<td rowspan="3">$E5</td>
-		<td rowspan="3">N/A<br>(Became functional in carol's MORE.bin, Addmusic405 and AddmusicK)</td>
+		<td rowspan="3">N/A<br>(Became functional in carol's MORE.bin, Addmusic 4.05 and AddmusicK)</td>
 		<td rowspan="3">Tremolo<br></td>
 		<td rowspan="3">Enables tremolo for the current channel. Due to an incorrect memory location reference, this command was de-facto not functional.<br></td>
 		<td>$XX<br></td>
@@ -934,24 +866,24 @@ The highest command ID supported was $F2.
 	<tr>
 		<td>$ZZ<br></td>
 		<td>Amplitude<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E6</td>
 		<td>$FD</td>
 		<td>Tremolo Off<br></td>
 		<td colspan="3">Disables tremolo for the current channel. Due to an incorrect memory location reference, this command was de-facto not functional.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$ED</td>
 		<td>$FE</td>
 		<td>Pitch Envelope Off<br></td>
 		<td colspan="3">Turns off pitch envelope. The code did exist, but the pointer itself did not exist, therefore this command was never functional.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 </table>
 
-	<h3>Addmusic404 (by Romi)</h3>
-With the exception of the hex command below, this was nearly identical to Vanilla SMW, and thus Addmusic404 inherits the upper command ID limit of $F2.
-<table table border="3" class="hex">
+<br><h3 id="Addmusic404">Addmusic 4.04 (by Romi)<a href="#" class="go-to-top"></a></h3>
+<p>With the exception of the hex command below, this was nearly identical to Vanilla SMW, and thus Addmusic 4.04 inherits the upper command ID limit of $F2.</p>
+<table table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -970,14 +902,14 @@ With the exception of the hex command below, this was nearly identical to Vanill
 	<tr>
 		<td>$SR</td>
 		<td>Sustain (3 bits), Release (5 bits); %sssrrrrr<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 </table>
 
-	<h3>carol's MORE.bin</h3>
-The highest command ID supported was $F2.
-Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6: if the song ID specified is below $20, then they execute their default command code instead of using custom ones.
-<table table border="3" class="hex">
+<br><h3 id="carol-more-bin">carol's MORE.bin<a href="#" class="go-to-top"></a></h3>
+<p>The highest command ID supported was $F2.</p>
+<p>Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6: if the song ID specified is below $20, then they execute their default command code instead of using custom ones.</p>
+<table table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -989,10 +921,10 @@ Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6:
 		<td>$E4</td>
 		<td>N/A<br>($F4 $02 is the closest approximation, but this toggles light staccato rather than enables it, and $E4 $01 added to this enables the side effect of doing this)</td>
 		<td>Light staccato<br></td>
-		<td>Enable light staccato (notes will be played with less of a delay between). As a side effect, also sets global transposition to 1 semitone.  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
+		<td>Enable light staccato (notes will be played with less of a delay between). As a side effect, also sets global transposition to 1 semitone. Please be aware that this command is "global"; i.e. it applies to all channels. If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
 		<td>$AA</td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$E5</td>
 		<td rowspan="2">$F3<br>(with an expanded sample ID range)</td>
@@ -1004,20 +936,20 @@ Note that there are checks for song IDs $20 and up for hex commands $E5 and $E6:
 	<tr>
 		<td>$YY<br></td>
 		<td>Multiplication pitch<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$E6</td>
 		<td>$FD</td>
 		<td>Tremolo Off<br></td>
 		<td colspan="3">Disables tremolo for the current channel. Only available on song IDs $00-$1F: for $20 and up, it becomes the Subloop command, which works just like AddmusicK's.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 </table>
 
-	<h3>Addmusic405 (by HuFlungDu)</h3>
+<br><h3 id="Addmusic405">Addmusic 4.05 (by HuFlungDu)<a href="#" class="go-to-top"></a></h3>
 The highest command ID supported was $F2.
-Contains the majority of carol's MORE.bin except for the repeat section ($E6) command (which was previously limited to song IDs $20 and up) and ADSR ($ED command), which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
+<p>Contains the majority of carol's MORE.bin except for the repeat section ($E6) command (which was previously limited to song IDs $20 and up) and ADSR ($ED command), which is instead from Romi's Addmusic (Addmusic 4.04), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).</p>
 
-<table border="3" class="hex">
+<table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -1040,7 +972,7 @@ Contains the majority of carol's MORE.bin except for the repeat section ($E6) co
 	<tr>
 		<td>$YY<br></td>
 		<td>Value to write <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="2">$ED</td>
 		<td rowspan="2">$FA $02</td>
@@ -1052,7 +984,7 @@ Contains the majority of carol's MORE.bin except for the repeat section ($E6) co
 	<tr>
 		<td>$XX</td>
 		<td>Number of semitones to tune by<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="6">$ED</td>
 		<td rowspan="6">N/A<br>(Technically the code, or at least of the $F7 command which writes one byte at at time, still exists. However, it is not compiled by default.)</td>
@@ -1080,7 +1012,7 @@ Contains the majority of carol's MORE.bin except for the repeat section ($E6) co
 	<tr>
 		<td>$BB</td>
 		<td>Data byte(s). The size of this parameter is $AAZZ bytes, unlike the others, which are only one byte.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="6">$ED</td>
 		<td rowspan="6">N/A<br>(Was not reimplemented into AddmusicK)</td>
@@ -1108,14 +1040,14 @@ Contains the majority of carol's MORE.bin except for the repeat section ($E6) co
 	<tr>
 		<td>$BB</td>
 		<td>Data byte(s). The size of this parameter is $AAZZ bytes, unlike the others, which are only one byte.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 </table>
 
-	<h3>AddmusicM</h3>
-The highest command ID supported was $FA.
-Contains the majority of carol's MORE.bin except for global transposition ($E4 command) due to sending staccato to its own command slot and not checking for $20 as a song ID due to sending set sample to its own command slot ($F3 command) and overwriting tremolo off with repeat section ($E6 command).
+<br><h3 id="AddmusicM">AddmusicM<a href="#" class="go-to-top"></a></h3>
+<p>The highest command ID supported was $FA.</p>
+<p>Contains the majority of carol's MORE.bin except for global transposition ($E4 command) due to sending staccato to its own command slot and not checking for $20 as a song ID due to sending set sample to its own command slot ($F3 command) and overwriting tremolo off with repeat section ($E6 command).</p>
 
-<table border="3" class="hex">
+<table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -1130,7 +1062,7 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
 		<td>$04 <br></td>
 		<td></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td rowspan="3">$F7 <br></td>
 		<td rowspan="3">N/A<br>(Technically it still exists, but it is not compiled by default)</td>
@@ -1146,7 +1078,7 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 	<tr>
 		<td>$ZZ</td>
 		<td>Data byte to write.<br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 	<tr>
 		<td>$FA <br></td>
 		<td>N/A<br>(Was not reimplemented into AddmusicK)</td>
@@ -1154,12 +1086,12 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 		<td>Sets the oscillation speed of the special pulse wave. The speed is not relative to the music's tempo: instead, the oscillation is on its own tempo value independent of the music.</td>
 		<td>$XX<br></td>
 		<td>The oscillation speed of the pulse wave to use <br></td>
-	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	</tr><tr><td colspan="6"> </td></tr>
 </table>
 
-	<h3>AddmusicK Beta</h3>
-The highest command ID supported was $FC.
-<table border="3" class="hex">
+<br><h3 id="AddmusicK-beta">AddmusicK Beta<a href="#" class="go-to-top"></a></h3>
+<p>The highest command ID supported was $FC.</p>
+<table class="hex">
 	<tr>
 		<th>Command</th>
 		<th>Relocated to</th>
@@ -1170,7 +1102,7 @@ The highest command ID supported was $FC.
 	<tr>
 		<td rowspan="2">$FA <br></td>
 		<td rowspan="2">$FC $XX $01 $03 $00<br>
-along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)<br><br>
+along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)
 The instrument restoration cannot be fully replicated at this time if the $ED, $F3 and/or $FA $02 commands were used, as the restoration would be done from the backup table, for which there is currently no hex command to do so: instead one would just use the last set of $ED, $F3 and/or $FA $02 commands used to manually do so.<br>
 This method is not compatible with running Remote Gain at the same time: songs automatically converted from AddmusicK Beta use a special reserved remote code type (in this command's case, 5, and it is designed to run in unison with 6, which takes up a slot normally used for -1 remote code events, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.</td>
 		<td rowspan="2">Anticipation Gain<br></td>
@@ -1185,8 +1117,8 @@ This method is not compatible with running Remote Gain at the same time: songs a
 	<tr>
 		<td rowspan="2">$FC <br></td>
 		<td rowspan="2">$FC $YY $01 $02 $XX<br>
-along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)<br><br>
-The instrument restoration cannot be fully replicated at this time if the $ED, $F3 and/or $FA $02 commands were used, as the restoration would be done from the backup table, for which there is currently no hex command to do so: instead one would just use the last set of $ED, $F3 and/or $FA $02 commands used to manually do so.<br>
+Along with a type -1 remote code call containing $F4 $09 (if the ADSR/GAIN/SRCN was not previously modified)
+The instrument restoration cannot be fully replicated at this time if the $ED, $F3 and/or $FA $02 commands were used, as the restoration would be done from the backup table, for which there is currently no hex command to do so: instead one would just use the last set of $ED, $F3 and/or $FA $02 commands used to manually do so.<br><br>
 This method is not compatible with running Anticipation Gain at the same time: songs automatically converted from AddmusicK beta use a special reserved remote code type (in this command's case, 6, and yes, for those of you looking at the source, this does use the slot normally taken up by a -1 remote code in order to run in unison with the remote code type 5 event, hence the new remote code types, which is why 5 and 6 are reserved and shouldn't be used for modern AddmusicK songs) so that the two can run at the same time with automatic instrument restoration.</td>
 		<td rowspan="2">Remote Gain<br></td>
 		<td rowspan="2">Sets the GAIN value of a voice some time before a note ends.</td>
@@ -1197,15 +1129,15 @@ This method is not compatible with running Anticipation Gain at the same time: s
 		<td>$YY</td>
 		<td>GAIN<br></td>
 	</tr>
-<tr><td colspan="6">&nbsp;</td></tr>
+<tr><td colspan="6"> </td></tr>
 </table>
 
-<br><br><h2>Parameter reference</h2>
-<h3><a id="NoteInfo">Note</a></h3>
-For use with the $DD command.  Note that for instrument @2, you must subtract 5 from the value in this table.  For @9, add 5. For @10, add 6. For @12, subtract 5. For @15, add 8.  If you need pitches higher or lower than this, use the multiplier/submultiplier instrument bytes.<br><br>
-Note that you may use a normal note (such as g, f+, o2c, >a-, etc.) instead for this parameter.
-<br><br>
-<table border="1">
+<h2 id="parameter-reference">Parameter Reference</h2>
+<h3><a id="NoteInfo">Note Info</a><a href="#" class="go-to-top"></a></h3>
+<p>For use with the $DD command. Note that for instrument @2, you must subtract 5 from the value in this table. For @9, add 5. For @10, add 6. For @12, subtract 5. For @15, add 8. If you need pitches higher or lower than this, use the multiplier/submultiplier instrument bytes.</p>
+<p>Note that you may use a normal note (such as g, f+, o2c, >a-, etc.) instead for this parameter.</p>
+
+<table style="font-family: monospace;font-size: larger;">
     <tr>
         <th></th>
         <th>c<br></th>
@@ -1312,10 +1244,9 @@ Note that you may use a normal note (such as g, f+, o2c, >a-, etc.) instead for 
         <td></td>
     </tr>
 </table>
-<br><br><h3><a id="LengthInfo">Length</a></h3>
-For any parameter that requests a length of time (duration, delay, etc.), use this table as reference.
-<br><br>
-<table border="1">
+<br><h3><a id="LengthInfo">Length Info</a><a href="#" class="go-to-top"></a></h3>
+<p>For any parameter that requests a length of time (duration, delay, etc.), use this table as reference.</p>
+<table
     <tr>
         <td>$C0<br></td>
         <td>Whole note<br></td>
@@ -1373,15 +1304,16 @@ For any parameter that requests a length of time (duration, delay, etc.), use th
         <td>64<sup>th</sup> triplet<br></td>
     </tr>
 </table>
+<p>Any value in between these may be used as well. For example, $48 is equal to a quarter note tied to an eighth note.</p>
 
-<br>Any value in between these may be used as well.  For example, $48 is equal to a quarter note tied to an eighth note.
-	
-	<br><br><h3><a id="ADSRInfo">ADSR</a></h3>
-	Click on a value in the table to modify the graph.
-
-<table>
-<tr><td>
-<table border="1" style = "font-size:12px;">
+<br><h3><a id="ADSRInfo">ADSR</a><a href="#" class="go-to-top"></a></h3>
+<center><table id="ADSRLabel"></table></center><br>
+<canvas id="ADSRCanvas" width="800" height="400">Your browser does not support HTML canvases.</canvas>
+<center><p><small>Time (seconds)</small></p></center>
+<center><p>Zoom: <a class="button" onclick="zoomIn();">➕</a> <a class="button" onclick="zoomOut();">➖</a></p></center>
+<br>
+<center><p>Click on a value in the table to modify the data above.</p></center>
+<table style="font-family: monospace;margin: 0 auto;" class="">
     <tr>
         <td>Value</td>
         <td>Attack (seconds)<br></td>
@@ -1614,20 +1546,12 @@ For any parameter that requests a length of time (duration, delay, etc.), use th
     	<td id="r31" onclick="setRelease(31);"></td>
     </tr>
 </table>
-</td><td>
-<div id="ADSRLabel" style="font-family:'Lucida Console', Monaco, monospace;"></div><br>
-<canvas id="ADSRCanvas" width="800" height="400" style="border:1px solid #d3d3d3;">
-Your browser does not support canvases. The author recommends actually using a competent browser.</canvas>
-<br>
-<div style="text-align:center; font-size:10px;">Time (seconds)<br><br></div>
-<table border="1" style="margin: 0px auto; "><tr><td onclick="zoomIn();">Zoom in</td><td onclick="zoomOut();">Zoom out</td></tr></table>
-</td></tr></table>
 
 
-<br><br><h2>DSP Register Reference</h2>
+<h2 id="dsp-register-reference">DSP Register Reference<a href="#" class="go-to-top"></a></h2>
 
 <div class="registerTableContainer" style="text-align:center">
-<table border="1" class="registerTable">
+<table class="registerTable">
     <tr>
         <td></td>
         <td>$x0</td>
@@ -1661,78 +1585,78 @@ Your browser does not support canvases. The author recommends actually using a c
         <td rowspan="8" class="channelRegisterReadOnly">Current sample value</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$0C&nbsp;rw&nbsp;MVOLL</div><div class="registerDescription">Left channel master volume</div></div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$0D&nbsp;rw&nbsp;EFB</div><div class="registerDescription">Echo feedback</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$0C rw MVOLL</div><div class="registerDescription">Left channel master volume</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$0D rw EFB</div><div class="registerDescription">Echo feedback</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$0F&nbsp;rw&nbsp;FIR0</div><div class="registerDescription">FIR coefficient 0</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$0F rw FIR0</div><div class="registerDescription">FIR coefficient 0</div></div></td>
     </tr>
     <tr>
         <td>$1x</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$1C&nbsp;rw&nbsp;MVOLR</div><div class="registerDescription">Right channel master volume</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$1C rw MVOLR</div><div class="registerDescription">Right channel master volume</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$1F&nbsp;rw&nbsp;FIR1</div><div class="registerDescription">FIR coefficient 1</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$1F rw FIR1</div><div class="registerDescription">FIR coefficient 1</div></div></td>
     </tr>
     <tr>
         <td>$2x</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$2C&nbsp;rw&nbsp;EVOLL</div><div class="registerDescription">Left channel echo</div></div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$2D&nbsp;rw&nbsp;PMON</div><div class="registerDescription">Pitch modulation enable</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$2C rw EVOLL</div><div class="registerDescription">Left channel echo</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$2D rw PMON</div><div class="registerDescription">Pitch modulation enable</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$2F&nbsp;rw&nbsp;FIR2</div><div class="registerDescription">FIR coefficient 2</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$2F rw FIR2</div><div class="registerDescription">FIR coefficient 2</div></div></td>
     </tr>
     <tr>
         <td>$3x</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$3C&nbsp;rw&nbsp;EVOLR</div><div class="registerDescription">Right channel echo</div></div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$3D&nbsp;rw&nbsp;NON</div><div class="registerDescription">Noise enable</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$3C rw EVOLR</div><div class="registerDescription">Right channel echo</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$3D rw NON</div><div class="registerDescription">Noise enable</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$3F&nbsp;rw&nbsp;FIR3</div><div class="registerDescription">FIR coefficient 3</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$3F rw FIR3</div><div class="registerDescription">FIR coefficient 3</div></div></td>
     </tr>
     <tr>
         <td>$4x</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$4C&nbsp;rw&nbsp;KON</div><div class="registerDescription">Key on for all voices</div></div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$4D&nbsp;rw&nbsp;EON</div><div class="registerDescription">Echo enable</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$4C rw KON</div><div class="registerDescription">Key on for all voices</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$4D rw EON</div><div class="registerDescription">Echo enable</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$4F&nbsp;rw&nbsp;FIR4</div><div class="registerDescription">FIR coefficient 4</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$4F rw FIR4</div><div class="registerDescription">FIR coefficient 4</div></div></td>
     </tr>
     <tr>
         <td>$5x</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$5C&nbsp;rw&nbsp;KOFF</div><div class="registerDescription">Key off for all voices</div></div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$5D&nbsp;rw&nbsp;DIR</div><div class="registerDescription">Sample table address</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$5C rw KOFF</div><div class="registerDescription">Key off for all voices</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$5D rw DIR</div><div class="registerDescription">Sample table address</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$5F&nbsp;rw&nbsp;FIR5</div><div class="registerDescription">FIR coefficient 5</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$5F rw FIR5</div><div class="registerDescription">FIR coefficient 5</div></div></td>
     </tr>
     <tr>
         <td>$x6</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$6C&nbsp;rw&nbsp;FLG</div><div class="registerDescription">Reset, mute, echo-reset, noise clock</div></div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$6D&nbsp;rw&nbsp;ESA</div><div class="registerDescription">Echo buffer address</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$6C rw FLG</div><div class="registerDescription">Reset, mute, echo-reset, noise clock</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$6D rw ESA</div><div class="registerDescription">Echo buffer address</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$6F&nbsp;rw&nbsp;FIR6</div><div class="registerDescription">FIR coefficient 6</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$6F rw FIR6</div><div class="registerDescription">FIR coefficient 6</div></div></td>
     </tr>
     <tr>
         <td>$x7</td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">			$7C&nbsp;rw&nbsp;ENDX</div><div class="registerDescription">Voice end flags</div></div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$7C&nbsp;rw&nbsp;EDL</div><div class="registerDescription">Echo delay</div></div></td>
+        <td rowspan="1"><div class="channelBitRegister"><div class="registerInfo">$7C rw ENDX</div><div class="registerDescription">Voice end flags</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$7C rw EDL</div><div class="registerDescription">Echo delay</div></div></td>
         <td rowspan="1"><div class="nullRegister">(null)</div></td>
-        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">			$7F&nbsp;rw&nbsp;FIR7</div><div class="registerDescription">FIR coefficient 7</div></div></td>
+        <td rowspan="1"><div class="generalPurposeRegister"><div class="registerInfo">$7F rw FIR7</div><div class="registerDescription">FIR coefficient 7</div></div></td>
     </tr>
 </table>
 </div>
 
-	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
-	
+<a class="go-home" href="../readme.html">Return to the Main Page</a>
+
 </body>
 </html>

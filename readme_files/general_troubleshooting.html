@@ -1,0 +1,117 @@
+<html>
+<head>
+<title>Troubleshooting - AddmusicK Readme</title>
+<link href="readme.css" type="text/css" rel="stylesheet">
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<h1>Troubleshooting</h1>
+<p>The following are several common problems encountered by users when using AddmusicK to insert music into their hacks. Almost all of them are avoidable or solveable.</p>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#made-for-addmusic405">Music Was Made For Addmusic 4.05</a></li>
+<li><a href="#addmusicm-songs">Music Was Made For AddmusicM</a></li>
+<li><a href="#echo-buffer-exceeded">Echo buffer exceeded total space in ARAM</a></li>
+<li><a href="#tempoimmunity">Music Stays Sped Up After Death</a></li>
+<li><a href="#overworld-music">Overworld Songs Are Mixed Up</a></li>
+<li><a href="#sound-effect-echos">Sound Effects Aren't Echoing</a></li>
+<li><a href="#halvetempo">Unexpected Slowdown in Song</a></li>
+</ul>
+
+<hr><h2 id="made-for-addmusic405">Music Was Made For Addmusic 4.05<a href="#" class="go-to-top"></a></h2>
+<p>To convert a song made for Addmusic 4.05 to be useable by AddmusicK, do the following:</p>
+<ol>
+<li>Open up your song's text file, and add <code>#am4</code> at the top of the file, on its own line. This indicates to AddmusicK that the song's data follows Addmusic 4.05's syntax.</li>
+<li>If the song has custom samples, add the following under <code>#am4</code>:
+<pre>
+#samples
+{
+	"&lt;name&gt;.bnk"
+}</pre>
+where <code>&lt;name&gtl.bnk</code> is the name of the .bnk file that was included with the song. This instructs AddmusicK to load the proper sample set for the song.
+</li>
+<li>Save the file.</li>
+</ol>
+
+<hr><h2 id="addmusicm-songs">Music Was Made For AddmusicM<a href="#" class="go-to-top"></a></h2>
+<p>Converting an AddmusicM song to be usable by AddmusicK requires some extra steps:</p>
+<ol>
+<li>Open up your song's text file and type <code>#amm</code> at the top of the file on its own line. This indicates to AddmusicK that the song's data follows AddmusicM's syntax.</li>
+<li>Look for a line or lines that consist of <code>s</code>, followed by a sequence of numbers broken up by underscores. So for example, <code>sD0_21_23_25_2B_46_61_67_74_81_C4_C5_C6_C7_C8_FF</code>.<!-- iykyk what port this is from lmao--> In AddmusicM syntax, this is a list of sample definitions, as based on the sample numbers in <code>blist.txt</code>.</li>
+<li>At the top of the file, add the following text:
+<pre>
+#samples
+{
+	#default
+	#AMM
+}</pre>
+This will load SMW's samples, as well as whatever is in the #AMM sample group. The song's custom samples still need to be specificed. Under <code>#AMM</code>, add one line for each number in the s command, except for the first and last (i.e. the one prefaced with <code>s</code>, and FF). On each line, add the full filename of one sample, surrounded by <code>"</code>, following the order of the IDs in the <code>s</code> command. See below for an example.</li>
+
+<li>Delete the <code>sXX</code> line. This line is no longer needed, as the <code>#samples</code> tag is its AddmusicK equivalent.</li>
+<li>Copy the sample files (probably in a folder named "brr" or "samples") into AddmusicK's <code>samples</code> folder. This is where AddmusicK looks for samples, so it will be able to find and insert them alongside the song.</li>
+</ol>
+
+<h3>Let's look at an example:</h3>
+<p>Suppose you have an AMM music file with a line <code>s09_10_11_14_12_FF</code>, and that the song's <code>blist.txt</code> file looks like this:</p>
+<pre>
+10  Trumpet.brr
+11  Strings.brr
+12  Bass.brr
+13  Snare.brr
+14  Cymbal.brr
+15  Organ.brr
+16  Choir.brr</pre>
+<p>Following the procedure outlined above, the corresponding <code>#samples</code> definition for this music file would end up looking like this:</p>
+<pre>
+#samples
+{
+	#default
+	#AMM
+	"Trumpet.brr"
+	"Strings.brr"
+	"Cymbal.brr"
+	"Bass.brr"
+}</pre>
+<hr><h2 id="echo-buffer-exceeded">Echo buffer exceeded total space in ARAM<a href="#" class="go-to-top"></a></h2>
+<p>This error indicates that there is no longer any ARAM space available. See <a href="general_advanced_use.html#global-vs-local">here</a> for a more in-depth explanation of ARAM.</p>
+
+<p>In short, ARAM is the memory space that contains the music engine, all global songs' note data, all sound effects, the currently-loaded song's note data, the currently-loaded song's samples, and echo data. The "Echo buffer exceeded total space in ARAM" error means that there isn't enough ARAM available to host all of these things. In practice, this usually amounts to one of the following:
+<ul>
+<li>The total size of all the loaded samples for the current song is too big. This has several workarounds:
+<ul><li>Replacing some loaded samples with smaller, more compressed versions. Options include changing <code>#default</code> to <code>#optimized</code>, or manually downsampling some or all of song's included BRR files. Do note that the latter option is a lot of technical work, and that the song may sound different.</li>
+<li>Removing unused vanilla SMW samples from the song (i.e. replacing them with "EMPTY.brr" in the sample group). This may conflict with some sound effects.</li></ul></li>
+<li>The echo delay for the current song is too high. The workaround for this is locating any <code>$F1 $XX $YY $ZZ</code> commands, and lowering the value for <code>$XX</code>.</li>
+<li>You've replaced global songs in such a way that the total size of their note data is bigger than that of vanilla SMW's songs. There's no real workaround for this besides using different, smaller songs, or removing unused global songs entirely.</li>
+</ul></p>
+
+<p>Barring this, it is also possible to remove parts of the music engine to increase ARAM space for every song (explained in the <a href="general_advanced_use.html">advanced section</a>), but this is generally not advisable unless you know what you're doing.</p>
+
+<hr><h2 id="tempoimmunity">Global Song Speeds Up With Timer<a href="#" class="go-to-top"></a></h2>
+<p>When the timer drops below 100 seconds, the tempo of a playing song, whether global or local, will speed up, as in the vanilla game. However, you may not want all music (for example, goal or game over music) to speed up with the timer.</p>
+<p>To ensure a song doesn't speed up with the timer, open its text file, and add <code>#option tempoimmunity</code> to the top of the music text file.</p>
+
+<hr><h2 id="overworld-music">Mixed-Up Vanilla Songs<a href="#" class="go-to-top"></a></h2>
+<p>AddmusicK's song IDs are different from vanilla SMW's, and so some vanilla songs may play in the wrong place after running the program. To fix this, simply review and adjust where you want each song to play in Lunar Magic.</p>
+
+<hr><h2 id="sound-effect-echos">Sound Effects Aren't Echoing<a href="#" class="go-to-top"></a></h2>
+<p>By default AddmusicK disables echo for sound effects. To turn echo on, here is what you do:</p>
+<ol>
+<li>Download UberASM Tool from SMWCentral's <a href="http://www.smwcentral.net/?p=section&s=tools" target="_blank">Tools</a> section.</li>
+<li>In the "level" folder, create a new file "enable_sound_effects.asm" (but you can call it whatever you wish).</li>
+<li>Copy and paste the following bit of code into the empty file and save it.
+<pre>
+init:
+	LDA #$06 : STA $1DFA|!addr
+	RTL
+</pre>
+</li>
+<li>Update UberASM Tool's list.txt to specify the level you would like to enable SFX Echo on, e.g. <code>105 enable_sound_effects.asm</code>.</li>
+<li>Run UberASM Tool to apply the level asm to your hack.</li>
+</ol>
+<p>If you already have a level with UberASM, you can simply add <code>LDA #$06 : STA $1DFA|!addr</code> to it's init routine.</p>
+
+<a class="go-home" href="../readme.html">Return to the Main Page</a>
+</body>
+</html>
