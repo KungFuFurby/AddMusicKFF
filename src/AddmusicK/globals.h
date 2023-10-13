@@ -22,9 +22,9 @@
 
 #define AMKVERSION 1
 #define AMKMINOR 0
-#define AMKREVISION 8		// // //
+#define AMKREVISION 10		// // //
 
-#define PARSER_VERSION 2			// Used to keep track of incompatible changes to the parser
+#define PARSER_VERSION 4			// Used to keep track of incompatible changes to the parser
 
 #define DATA_VERSION 0				// Used to keep track of incompatible changes to any and all compiled data, either to the SNES or to the PC
 
@@ -47,6 +47,7 @@ class SampleGroup;
 #include <vector>
 #include <fstream>
 #include <map>
+#include <memory>
 #include "Directory.h"
 #include "asardll.h"
 #include <sys/types.h>
@@ -60,7 +61,7 @@ extern Music musics[256];
 //extern Sample samples[256];
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];
-extern std::vector<BankDefine *> bankDefines;
+extern std::vector<std::unique_ptr<BankDefine>> bankDefines;
 
 extern std::map<File, int> sampleToIndex;
 
@@ -81,12 +82,12 @@ extern bool forceNoContinuePrompt;
 extern bool sfxDump;
 extern bool visualizeSongs;
 extern bool redirectStandardStreams;
+extern bool noSFX;
 
 extern int programPos;
 extern int programUploadPos;
 extern int reuploadPos;
 extern int mainLoopPos;
-extern int SRCNTableCodePos;
 extern int programSize;
 extern int highestGlobalSong;
 //extern int totalSampleCount;
@@ -146,9 +147,10 @@ int SNESToPC(int addr);
 int PCToSNES(int addr);
 
 int clearRATS(int PCaddr);
+bool findRATS(int addr);
 
 void addSample(const File &fileName, Music *music, bool important);
-void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint = 0);
+void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint = 0, bool isBNK = false);
 void addSampleGroup(const File &fileName, Music *music);
 void addSampleBank(const File &fileName, Music *music);
 

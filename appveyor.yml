@@ -1,38 +1,69 @@
-version: 1.0.8.{build}
+version: 1.0.10.{build}
 
 for:
   -
     branches:
+      only:
+        - master
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AMKFF_latest.zip
+  -
+    branches:
+      only:
+        - bleeding-edge
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AMKFF_latestbeta.zip
+  -
+    branches:
+      only:
+        - AddmusicK1.0.9
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AddmusicK1.0.9_latestRC.zip
+  -
+    branches:
       except:
         - master
+        - bleeding-edge
     only_commits:
       files:
         - src/
         - .appveyor.yml
-    build:
-      verbosity: minimal
-  -
-    branches:
-      only:
-        - master
-    build:
-      verbosity: minimal
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AMKFF_testbuild.zip
 
 configuration: Release
 
 after_build:
   - ps: .\zip_script.ps1
-  
-artifacts:
-  - path: AMKFF_latest.zip
+
+environment:
+  ATARISMWC_AUTH_KEY:
+    secure: ICQTZ2g57iFL9GBHQmy4gl7bGvdVBSQ/r6n1pbs+4xA=
   
 deploy:
-  provider: FTP
-  on:
-    branch: master
-  protocol: sftp
-  host: www.atarismwc.com
-  folder: html/amkff_releases/
-  username: pi
-  password:
-    secure: N90u+68BQTm8IHH9p3O78A==
+  - provider: Webhook
+    on:
+      branch: master
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
+    on:
+      branch: bleeding-edge
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
+    on:
+      branch: AddmusicK1.0.9
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10

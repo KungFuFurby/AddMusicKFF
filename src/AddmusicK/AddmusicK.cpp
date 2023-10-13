@@ -53,10 +53,14 @@ int main(int argc, char* argv[]) try		// // //
 {
 	std::clock_t startTime = clock();
 
-	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " by Kipernal" << std::endl;
+	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " Alpha by Kipernal" << std::endl;
 	std::cout << "Parser version " << PARSER_VERSION << std::endl << std::endl;
 	std::cout << "Protip: Be sure to read the readme! If there's an error or something doesn't\nseem right, it may have your answer!\n\n" << std::endl;
 
+    if (asar_init() == false)
+        useAsarDLL = false;
+    else
+        useAsarDLL = true;
 
 	std::vector<std::string> arguments;
 
@@ -110,12 +114,13 @@ int main(int argc, char* argv[]) try		// // //
 			optimizeSampleUsage = false;
 		else if (arguments[i] == "-s")
 			allowSA1 = false;
-		else if (arguments[i] == "-dumpsfx")
+		else if ((arguments[i] == "-dumpsfx") || (arguments[i] == "-sfxdump"))
 			sfxDump = true;
 		else if (arguments[i] == "-visualize")
 			visualizeSongs = true;
-		else if (arguments[i] == "-g")
-			forceSPCGeneration = true;
+		//else if (arguments[i] == "-g")
+			//Removed because it was de-facto never functional due to the code this relied on being dummied out.
+			//forceSPCGeneration = true;
 		else if (arguments[i] == "-noblock")
 			forceNoContinuePrompt = true;
 		else if (arguments[i] == "-streamredirect")
@@ -144,7 +149,7 @@ int main(int argc, char* argv[]) try		// // //
 				printf("Unknown argument \"%s\".", arguments[i].c_str());
 			}
 
-			puts("Options:\n\t-e: Turn off echo buffer checking.\n\t-c: Force off conversion from Addmusic 4.05 and AddmusicM\n\t-b: Do not attempt to save music data in bank 0x40 and above.\n\t-v: Turn verbosity on.  More information will be displayed using this.\n\t-a: Make free space finding more aggressive.\n\t-d: Turn off duplicate sample checking.\n\t-h: Turn off hex command validation.\n\t-p: Create a patch, but do not patch it to the ROM.\n\n\t-norom: Only generate SPC files, no ROM required.\t-?: Display this message.\n\n");
+			puts("Options:\n\t-e: Turn off echo buffer checking.\n\t-c: Force off conversion from Addmusic 4.05 and AddmusicM\n\t-b: Do not attempt to save music data in bank 0x40 and above.\n\t-v: Turn verbosity on.  More information will be displayed using this.\n\t-a: Make free space finding more aggressive.\n\t-d: Turn off duplicate sample checking.\n\t-h: Turn off hex command validation.\n\t-p: Create a patch, but do not patch it to the ROM.\n\t-norom: Only generate SPC files, no ROM required.\n\t-?: Display this message.\n\n");
 
 			if (arguments[i] != "-?")
 			{
@@ -162,12 +167,6 @@ int main(int argc, char* argv[]) try		// // //
 			std::getline(std::cin, ROMName.filePath);
 			puts("\n\n");
 		}
-
-		if (asar_init() == false)
-			useAsarDLL = false;
-		else
-			useAsarDLL = true;
-
 
 
 		std::string tempROMName = ROMName.cStr();
@@ -210,30 +209,37 @@ int main(int argc, char* argv[]) try		// // //
 	loadMusicList();
 	loadSFXList();
 
-	checkMainTimeStamps();
+	//checkMainTimeStamps();
 
 	assembleSNESDriver();		// We need this for the upload position, where the SPC file's PC starts.  Luckily, this function is very short.
 
-	if (recompileMain || forceSPCGeneration)
-	{
-		assembleSPCDriver();
-		compileSFX();
-		compileGlobalData();
-	}
+	//if (recompileMain || forceSPCGeneration)
+	//{
+	assembleSPCDriver();
+	compileSFX();
+	compileGlobalData();
+	//}
 
 	if (justSPCsPlease)
 	{
-		for (int i = highestGlobalSong+1; i < 256; i++)
+		// We start loading CLI songs from highestGlobalSong + 1. If no global songs are
+		// present, highestGlobalSong = 0 and we start loading songs from slot 1. We
+		// leave slot 0 empty, to match the SNES driver which treats song 0 as a NOP rather
+		// than a song number, with the song ID also being unsendable and unplayable on the
+		// SPC under its raw ID because that also acts as a NOP.
+		int firstLocalSong = highestGlobalSong + 1;
+
+		// Unset local songs loaded from Addmusic_list.txt.
+		for (int i = firstLocalSong; i < 256; i++)
 			musics[i].exists = false;
 
-
+		// Load local songs from command-line arguments.
 		for (int i = 0; i < textFilesToCompile.size(); i++)
 		{
-			if (highestGlobalSong + i >= 256)
+			if (firstLocalSong + i >= 256)
 				printError("Error: The total number of requested music files to compile exceeded 255.", true);
-			musics[highestGlobalSong + 1 + i].exists = true;
-			musics[highestGlobalSong + 1 + i].name = textFilesToCompile[i];
-			openTextFile((std::string("music/") + musics[i + highestGlobalSong].name), musics[i + highestGlobalSong].text);
+			musics[firstLocalSong + i].exists = true;
+			musics[firstLocalSong + i].name = textFilesToCompile[i];
 		}
 	}
 
@@ -454,7 +460,11 @@ void assembleSPCDriver()
 	openTextFile("temp.txt", temptxt);
 	mainLoopPos = scanInt(temptxt, "MainLoopPos: ");
 	reuploadPos = scanInt(temptxt, "ReuploadPos: ");
-	SRCNTableCodePos = scanInt(temptxt, "SRCNTableCodePos: ");
+	noSFX = (temptxt.find("NoSFX is enabled") != -1);
+	if (sfxDump && noSFX) {
+		printWarning("The sound driver build does not support sound effects due to the !noSFX flag\r\nbeing enabled in asm/UserDefines.asm, yet you requested to dump SFX. There will\r\nbe no new SPC dumps of the sound effects since the data is not included by\r\ndefault, nor is the playback code for the sound effects.");
+		sfxDump = false;
+	}
 
 	remove("temp.log");
 
@@ -528,7 +538,7 @@ void loadMusicList()
 				highestGlobalSong = std::max(highestGlobalSong, index);
 			if (inLocals)
 				if (index <= highestGlobalSong)
-					printError("Error: Local song numbers must be lower than the largest global song number.", true);
+					printError("Error: Local song numbers must be greater than the largest global song number.", true);
 		}
 		else
 		{
@@ -621,9 +631,9 @@ void loadSampleList()
 		{
 			if (isspace(str[i]))
 			{
-				BankDefine *sg = new BankDefine;
+				std::unique_ptr<BankDefine> sg = std::make_unique<BankDefine>();
 				sg->name = groupName;
-				bankDefines.push_back(sg);
+				bankDefines.push_back(std::move(sg));
 				i++;
 				gettingGroupName = false;
 				continue;
@@ -642,7 +652,7 @@ void loadSampleList()
 				if (str[i] == '\"')
 				{
 					tempName.erase(tempName.begin(), tempName.begin() + 1);
-					bankDefines[bankDefines.size() - 1]->samples.push_back(new std::string(tempName));
+					bankDefines[bankDefines.size() - 1]->samples.push_back(std::make_unique<std::string>(tempName));
 					bankDefines[bankDefines.size() - 1]->importants.push_back(false);
 					tempName.clear();
 					i++;
@@ -1022,7 +1032,15 @@ void compileGlobalData()
 
 	programSize = getFileSize("asm/main.bin");
 
-	std::cout << "Total size of main program + all sound effects: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
+	std::string totalSizeStr;
+	if (noSFX) {
+		std::cout << "!noSFX is enabled in asm/UserDefines.asm, sound effects are not included" << std::endl;
+		totalSizeStr = "Total size of main program: 0x";
+	}
+	else {
+		totalSizeStr = "Total size of main program + all sound effects: 0x";
+	}
+	std::cout << totalSizeStr << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << programSize  << std::dec << std::endl;
 
 }
 
@@ -1033,16 +1051,23 @@ void compileMusic()
 
 	int totalSamplecount = 0;
 	int totalSize = 0;
+	int maxGlobalEchoBufferSize = 0;
 	for (int i = 0; i < 256; i++)
 	{
 		if (musics[i].exists)
 		{
-			if (!(i <= highestGlobalSong && !recompileMain))
-			{
-				musics[i].index = i;
-				musics[i].compile();
-				totalSamplecount += musics[i].mySamples.size();
+			//if (!(i <= highestGlobalSong && !recompileMain))
+			//{
+			musics[i].index = i;
+			if (i > highestGlobalSong) {
+				musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
 			}
+			musics[i].compile();
+			if (i <= highestGlobalSong) {
+				maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+			}
+			totalSamplecount += musics[i].mySamples.size();
+			//}
 		}
 	}
 
@@ -1321,26 +1346,26 @@ void fixMusicPointers()
 		}
 	}
 
-	if (recompileMain)
-	{
-		std::string patch;
-		openTextFile("asm/tempmain.asm", patch);
+	//if (recompileMain)
+	//{
+	std::string patch;
+	openTextFile("asm/tempmain.asm", patch);
 
-		patch += globalPointers.str() + "\n" + incbins.str();
+	patch += globalPointers.str() + "\n" + incbins.str();
 
-		writeTextFile("asm/tempmain.asm", patch);
+	writeTextFile("asm/tempmain.asm", patch);
 
-		if (verbose)
-			std::cout << "Compiling main SPC program, final pass." << std::endl;
+	if (verbose)
+		std::cout << "Compiling main SPC program, final pass." << std::endl;
 
-		//removeFile("asm/SNES/bin/main.bin");
+	//removeFile("asm/SNES/bin/main.bin");
 
-		//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
+	//execute("asar asm/tempmain.asm asm/SNES/bin/main.bin 2> temp.log > temp.txt");
 
-		//if (fileExists("temp.log"))
-		if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
-			printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
-	}
+	//if (fileExists("temp.log"))
+	if (!asarCompileToBIN("asm/tempmain.asm", "asm/SNES/bin/main.bin"))
+		printError("asar reported an error while assembling asm/main.asm. Refer to temp.log for\ndetails.\n", true);
+	//}
 
 	programSize = getFileSize("asm/SNES/bin/main.bin");
 
@@ -1428,7 +1453,7 @@ void generateSPCs()
 	int SPCsGenerated = 0;
 
 	bool forceAll = false;
-
+	/*
 	time_t recentMod = 0;			// If any main program modifications were made, we need to update all SPCs.
 	for (int i = 1; i <= highestGlobalSong; i++)
 		recentMod = std::max(recentMod, getTimeStamp((File)("music/" + musics[i].name)));
@@ -1452,7 +1477,7 @@ void generateSPCs()
 		if (soundEffects[1][i].exists)
 			recentMod = std::max(recentMod, getTimeStamp((File)((std::string)"1DFC/" + soundEffects[1][i].getEffectiveName())));
 	}
-
+	*/
 	int mode = 0;		// 0 = dump music, 1 = dump SFX1, 2 = dump SFX2
 	int maxMode = 0;
 	if (sfxDump == true) maxMode = 2;
@@ -1504,8 +1529,15 @@ void generateSPCs()
 
 
 				int backupIndex = i;
-				if (mode != 0)
-					i = highestGlobalSong + 1;		// While dumping SFX, pretend that the current song is the lowest local song
+				if (mode != 0) {
+					i = highestGlobalSong + 1;
+					for (int j = highestGlobalSong+1; j < 256; j++) {
+						if (musics[j].exists) {
+							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+							break;
+						}
+					}
+				}
 
 				if (mode == 0)
 				{
@@ -1557,8 +1589,8 @@ void generateSPCs()
 				SPC[0xAF] = '0';
 				SPC[0xB0] = '0';
 
-				SPC[0x25] = programUploadPos & 0xFF;	// Set the PC to the main loop.
-				SPC[0x26] = programUploadPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
+				SPC[0x25] = mainLoopPos & 0xFF;	// Set the PC to the main loop.
+				SPC[0x26] = mainLoopPos >> 8;	// The values of the registers (besides stack which is in the file) don't matter.  They're 0 in the base file.
 
 				i = backupIndex;
 
@@ -1659,7 +1691,6 @@ void assembleSNESDriver2()
 	openTextFile("asm/SNES/patch.asm", patch);
 
 	insertValue(reuploadPos, 4, "!ExpARAMRet = ", patch);
-	insertValue(SRCNTableCodePos, 4, "!TabARAMRet = ", patch);
 	insertValue(mainLoopPos, 4, "!DefARAMRet = ", patch);
 	insertValue(songCount, 2, "!SongCount = ", patch);
 
@@ -1953,7 +1984,7 @@ void tryToCleanAM4Data()
 
 void tryToCleanAMMData()
 {
-	if ((rom.size() % 0x8000 != 0 && rom[0x078200] == 0x53) || (rom.size() % 0x8000 == 0 && rom[0x078000] == 0x53))		// Since RATS tags only need to be in banks 0x10+, a tag here signals AMM usage.
+	if ((rom.size() % 0x8000 != 0 && findRATS(0x078200)) || (rom.size() % 0x8000 == 0 && findRATS(0x078000)))		// Since RATS tags only need to be in banks 0x10+, a tag here signals AMM usage.
 	{
 		if (rom.size() % 0x8000 == 0)
 			printError("AddmusicM ROMs can only be cleaned if they have a header. This does not\napply to any other aspect of the program.", true);
@@ -1974,7 +2005,7 @@ void checkMainTimeStamps()			// Disabled for now, as this only works if the ROM 
 	return;
 
 
-
+	/*
 	if (!fileExists("asm/SNES/bin/main.bin"))
 	{
 		goto recompile;				// Laziness!
@@ -2021,6 +2052,7 @@ recompile:
 	{
 		recompileMain = false;
 	}
+	*/
 }
 
 void generatePNGs()
@@ -2049,11 +2081,11 @@ void generatePNGs()
 			unsigned char b = 0;
 			unsigned char a = 255;
 
-			if (i >= 0 && i < programUploadPos)
+			if (i >= 0 && i < programPos)
 			{
 				r = 255;
 			}
-			else if (i >= programUploadPos && i < programPos + programSize)
+			else if (i >= programPos && i < programPos + programSize)
 			{
 				r = 255;
 				g = 255;

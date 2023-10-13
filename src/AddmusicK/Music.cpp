@@ -45,6 +45,7 @@ static bool doesntLoop;
 static bool triplet;
 static bool inPitchSlide;
 static bool passedIntro[8];
+static bool passedNote[8];
 
 static bool ignoreTuning[9];	// Used for AM4 compatibility.  Until an instrument is explicitly declared on a channel, it must not use tuning.
 
@@ -61,13 +62,14 @@ static const int instrToSample[30] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x07, 0x08,
 
 static const int hexLengths[] = { 2, 2, 3, 4, 4, 1,
 2, 3, 2, 3, 2, 4, 2, 2, 3, 4, 2, 4, 4, 3, 2, 4,
-1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5 };
+1, 4, 4, 3, 2, 9, 3, 4, 2, 3, 3, 2, 5, 1, 1 };
 static int transposeMap[256];
 //static bool htranspose[256];
 static int hTranspose;
 static bool usingHTranspose;
 static int hexLeft = 0;
 static int currentHex = 0;
+static int currentHexSub = -1;
 
 //static int tempLoopLength;		// How long the current [ ] loop is.
 //static int e6LoopLength;		// How long the current $E6 loop is.
@@ -87,6 +89,15 @@ static bool tempoDefined;
 
 static bool sortReplacements;
 static bool manualNoteWarning;
+static bool manualDurQuantWarning;
+static bool manualPhraseEndWarning;
+static bool nonNativeHexWarning;
+static bool nonNativeCmdWarning;
+static bool caseNoteWarning;
+static bool octaveForDDWarning;
+static bool remoteGainWarning;
+static bool fractionNoteLengthWarning;
+static bool lowNoteWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -162,6 +173,8 @@ Music::Music()
 	spaceForPointersAndInstrs = 0;
 	exists = false;
 	echoBufferSize = 0;
+	echoBufferAllocVCMDIsSet = false;
+	hasEchoBufferCommand = false;
 	noteParamaterByteCount = 0;
 
 	//if (validateHex)		// Allow space for the buffer reservation header.
@@ -174,6 +187,15 @@ void Music::init()
 	prevChannel = 0;
 	openTextFile((std::string)"music/" + name, text);
 	manualNoteWarning = true;
+	manualDurQuantWarning = true;
+	manualPhraseEndWarning = true;
+	nonNativeHexWarning = true;
+	nonNativeCmdWarning = true;
+	octaveForDDWarning = true;
+	caseNoteWarning = true;
+	remoteGainWarning = true;
+	fractionNoteLengthWarning = true;
+	lowNoteWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -211,7 +233,7 @@ void Music::init()
 	channel = 0;
 	octave = 4;
 	prevNoteLength = -1;
-	defaultNoteLength = 8;
+	defaultNoteLength = 192/8;
 
 	prevLoop = -1;
 	i = 0;
@@ -224,6 +246,7 @@ void Music::init()
 		noMusic[z][0] = false;
 		noMusic[z][1] = false;
 		passedIntro[z] = false;
+		passedNote[z] = false;
 		phrasePointers[z][0] = 0;
 		phrasePointers[z][1] = 0;
 	}
@@ -338,7 +361,7 @@ void Music::init()
 			return;
 		}
 
-#if PARSER_VERSION != 2
+#if PARSER_VERSION != 4
 #error You forgot to update the #amk syntax.  Aren't you glad you at least remembered to put in this warning?
 #endif
 		/*			targetAMKVersion = 0;
@@ -356,28 +379,27 @@ void Music::init()
 
 	pos = 0;
 
+	//If any channel markers exist, set the channel number to the earliest channel found.
+	if (text.find("#0") != -1)
+		channel = 0, prevChannel = 0;
+	else if (text.find("#1") != -1)
+		channel = 1, prevChannel = 1;
+	else if (text.find("#2") != -1)
+		channel = 2, prevChannel = 2;
+	else if (text.find("#3") != -1)
+		channel = 3, prevChannel = 3;
+	else if (text.find("#4") != -1)
+		channel = 4, prevChannel = 4;
+	else if (text.find("#5") != -1)
+		channel = 5, prevChannel = 5;
+	else if (text.find("#6") != -1)
+		channel = 6, prevChannel = 6;
+	else if (text.find("#7") != -1)
+		channel = 7, prevChannel = 7;
+
 	if (validateHex && index > highestGlobalSong)			// We can't just insert this at the end due to looping complications and such.
 	{
-		int resizeSize = 3;
-		if (targetAMKVersion > 1)
-			resizeSize += 3;
-
-		if (text.find("#0") != -1)
-			data[0].resize(resizeSize), resizedChannel = 0;
-		else if (text.find("#1") != -1)
-			data[1].resize(resizeSize), resizedChannel = 1;
-		else if (text.find("#2") != -1)
-			data[2].resize(resizeSize), resizedChannel = 2;
-		else if (text.find("#3") != -1)
-			data[3].resize(resizeSize), resizedChannel = 3;
-		else if (text.find("#4") != -1)
-			data[4].resize(resizeSize), resizedChannel = 4;
-		else if (text.find("#5") != -1)
-			data[5].resize(resizeSize), resizedChannel = 5;
-		else if (text.find("#6") != -1)
-			data[6].resize(resizeSize), resizedChannel = 6;
-		else if (text.find("#7") != -1)
-			data[7].resize(resizeSize), resizedChannel = 7;
+		resizedChannel = channel;
 	}
 	else
 		resizedChannel = -1;
@@ -408,10 +430,7 @@ void Music::compile()
 		{
 			if (currentHex == 0xE6 && songTargetProgram == 1)
 			{
-				data[channel][data[channel].size() - 1] = 0xE5;
-				append(0);
-				append(0);
-				append(0);
+				data[channel][data[channel].size() - 1] = 0xFD;
 				hexLeft = 0;
 			}
 			else
@@ -559,7 +578,7 @@ void Music::parseLDirective()
 {
 	pos++;
 	i = getInt();
-	if (i == -1 && text[pos] == '=')
+	if (i == -1 && text[pos] == '=' && targetAMKVersion >= 4)
 	{
 		pos++;
 		i = getInt();
@@ -572,29 +591,86 @@ void Music::parseLDirective()
 	}
 	else if (i == -1) error("Error parsing \"l\" directive.")
 	else if (i < 1 || i > 192) error("Illegal value for \"l\" directive.")
-	else {defaultNoteLength = 192 / i;}
-	defaultNoteLength = getNoteLengthModifier(defaultNoteLength);
+	else {
+		if (192 % i != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: A default note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
+		defaultNoteLength = 192 / i;
+	}
+	if (targetAMKVersion >= 4) {
+		defaultNoteLength = getNoteLengthModifier(defaultNoteLength, false);
+	}
 }
 void Music::parseGlobalVolumeCommand()
 {
-	pos++;
-	i = getInt();
-	if (i == -1) error("Error parsing global volume (\"w\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"w\") command.")
+	int duration = -1;
+	int volume = -1;
 
+	pos++;
+	volume = getInt();
+	if (volume == -1) error("Error parsing global volume (\"w\") command.");
+
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing global volume (\"w\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for global volume (\"w\") command.");
+
+	if (duration == -1) {
 		append(0xE0);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for global volume (\"w\") command.");
+		append(0xE1);
+		append(divideByTempoRatio(duration, false));
+		append(volume);
+	}
 }
 void Music::parseVolumeCommand()
 {
+	int duration = -1;
+	int volume = -1;
+
 	pos++;
-	i = getInt();
+	volume = getInt();
+	if (volume == -1) error("Error parsing volume (\"v\") command.");
 
-	if (i == -1) error("Error parsing volume (\"v\") command.")
-	if (i < 0 || i > 255) error("Illegal value for global volume (\"v\") command.")
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = volume;
+		
+				volume = getInt();
+				if (volume == -1) error("Error parsing volume (\"v\") command.");
+			}
+	}
+	if (volume < 0 || volume > 255) error("Illegal value for volume (\"v\") command.");
 
+	if (duration == -1) {
 		append(0xE7);
-	append(i);
+		append(volume);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for volume (\"v\") command.");
+		append(0xE8);
+		append(divideByTempoRatio(duration, false));
+		append(volume);
+	}
 }
 void Music::parseQuantizationCommand()
 {
@@ -669,7 +745,7 @@ void Music::parseIntroDirective()
 	pos++;
 	phrasePointers[channel][1] = data[channel].size();
 	prevNoteLength = -1;
-	hasIntro = true;
+	passedIntro[channel] = true;
 	introLength = channelLengths[channel];
 }
 void Music::parseT()
@@ -682,32 +758,57 @@ void Music::parseT()
 }
 void Music::parseTempoCommand()
 {
-	i = getInt();
+	int duration = -1;
+	int ltempo = -1;
 
-	if (i == -1) error("Error parsing tempo (\"t\") command.")
-	if (i <= 0 || i > 255) error("Illegal value for tempo (\"t\") command.")
+	ltempo = getInt();
+	if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
 
-	i = divideByTempoRatio(i, false);
-
-	if (i == 0)
-		error("Tempo has been zeroed out by #halvetempo")
-
-		tempo = i;
-	tempoDefined = true;
-
-	if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
-	{
-		guessLength = false;
+	if (targetAMKVersion >= 3) {
+		skipSpaces;
+		if (text[pos] == ',')
+			{
+				pos++;
+				skipSpaces;
+		
+				duration = ltempo;
+		
+				ltempo = getInt();
+				if (ltempo == -1) error("Error parsing tempo (\"t\") command.");
+			}
 	}
-	else
-	{
-		tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+	
+	if (ltempo < 0 || ltempo > 255) error("Illegal value for tempo (\"t\") command.");
+	
+	tempo = divideByTempoRatio(ltempo, false);
+	
+	if (tempo == 0) {
+		error("Tempo has been zeroed out by #halvetempo");
+		tempo = ltempo;
 	}
 
+	if (duration == -1) {
+		tempoDefined = true;
 
-	append(0xE2);
-	append(tempo);
+		if (channel == 8 || inE6Loop)								// Not even going to try to figure out tempo changes inside loops.  Maybe in the future.
+		{
+			guessLength = false;
+		}
+		else
+		{
+			tempoChanges.push_back(std::pair<double, int>(channelLengths[channel], tempo));
+		}
 
+		append(0xE2);
+		append(tempo);
+	}
+	else {
+		if (duration < 0 || duration > 255) error("Illegal value for tempo (\"t\") command.");
+		guessLength = false;		// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
+		append(0xE3);
+		append(divideByTempoRatio(duration, false));
+		append(tempo);
+	}
 }
 void Music::parseTransposeDirective()
 {
@@ -802,11 +903,13 @@ void Music::parseInstrumentCommand()
 	if (optimizeSampleUsage)
 		usedSamples[instrToSample[i]] = true;
 
-	//hTranspose = 0;
-	//usingHTranspose = false;
 	instrument[channel] = i;
 	//if (htranspose[i] == true)
-	//transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	if (songTargetProgram == 2 && i < 19) {
+		hTranspose = 0;
+		usingHTranspose = false;
+		transposeMap[instrument[channel]] = ::tmpTrans[instrument[channel]];
+	}
 }
 
 void Music::parseOpenParenCommand()
@@ -909,6 +1012,55 @@ void Music::parseLabelLoopCommand()
 
 		if (channelDefined == true)						// A channel's been defined, we're parsing a remote
 		{
+			if (targetAMKVersion >= 3 && text[pos] == '!')			//if it was actually !! instead of just !
+			{
+				pos++;
+				//--------------------------------------
+				// Reset RemoteCommand
+				//--------------------------------------
+				try
+				{
+					i = getIntWithNegative();
+				}
+				catch (...)
+				{
+					error("Error parsing remote code reset. Remember that remote code cannot be defined within a channel.");
+				}
+				skipSpaces;
+
+				if (text[pos] != ')')
+					error("Error parsing remote reset.")
+					pos++;
+
+				switch (i)
+				{
+				case 0:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					break;
+				case -1:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					break;
+				default:
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					break;
+				}
+				return;
+			}
+			//--------------------------------------
+			// Call RemoteCommand
+			//--------------------------------------
 			//bool negative = false;
 			i = getInt();
 			if (i == -1) error("Error parsing remote code setup.")
@@ -1530,22 +1682,40 @@ void Music::parseHexCommand()
 		{
 			//validateTremolo = true;
 			currentHex = i;
+			if (i > 0xF2 && songTargetProgram == 1 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+				nonNativeHexWarning = false;
+			}
+			if (i > 0xFA && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
 			if (i < 0xDA)
 			{
-				if (manualNoteWarning)
+				if (targetAMKVersion == 0)
 				{
-					if (targetAMKVersion == 0)
+					if (manualNoteWarning && i >= 0x80)
 					{
-						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing.", name, line);
+						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing or that the wrong one was used.", name, line);
 						manualNoteWarning = false;
 					}
-					else
+					else if (manualDurQuantWarning && i > 0x00)
 					{
-						error("Unknown hex command.");
+						printWarning("Warning: A hex command was found that will act as a duration or a quantization\nand velocity byte instead of a special effect. If this is a song you're using\nfrom someone else, you can most likely ignore this message, though it may\nindicate that a necessary #amm or #am4 is missing or that the wrong one was\nused.", name, line);
+						manualDurQuantWarning = false;
+					}
+					else if (manualPhraseEndWarning && i == 0x00)
+					{
+						printWarning("WARNING: A hex command was found that will act as a phrase end marker instead of\na special effect, which more likely than not will mean your song will\nprematurely terminate. This may indicate that a necessary #amm or #am4 is\nmissing, or it could mean that the wrong one was used.", name, line);
+						manualPhraseEndWarning = false;
 					}
 				}
+				else
+				{
+					error("Unknown hex command.");
+				}
 			}
-			else if (i > 0xFC)
+			else if (i > 0xFE)
 			{
 				error("Unknown hex command.");
 			}
@@ -1581,75 +1751,17 @@ void Music::parseHexCommand()
 			else if (i == 0xFC && targetAMKVersion == 1)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
-					// Add in a "restore instrument" remote call.
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
 
-
-
 				usingFC[channelToCheck] = true;
-
-				// If we're just using the FC command and not the FA command as well,
-				if (usingFA[channelToCheck] == false)
-				{
-
-					// Then add the "restore instrument command"
-					remoteGainConversion.push_back(std::vector<uint8_t>());
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xF4);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x09);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0xFF);
-					append(0x00);
-
-					// Then add in the first part of a "apply gain before a note ends" call.
-					currentHex = 0xFC;
-					hexLeft = 2;
-					remoteGainConversion.push_back(std::vector<uint8_t>());
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0x02);
-
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-
-					// We won't know the gain and delays until later.
-				}
-				else
-				{
-					// Then add in the first part of a "2 3 combination" call.
-					// Theoretically we could go back and change the previous type to 5.
-					// But that's annoying if the commands are separated, so maybe some other time.
-					// Shh.  Don't tell anyone.
-
-					currentHex = 0xFC;
-					hexLeft = 2;
-					remoteGainConversion.push_back(std::vector<uint8_t>());
-					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
-					append(0x00);
-					append(0x00);
-					append(0x05);
-					//append(lastFAGainValue[channelToCheck]);
-
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-				}
-
-
+				currentHex = 0xFC;
+				hexLeft = 2;
+				// We won't know the gain and delays until later, so don't generate anything else for now.
 				return;
-			}
-			else if (targetAMKVersion > 1 && currentHex == 0xFC)
-			{
-				error("$FC has been replaced with remote code in #amk 2 and above.")
 			}
 			else
 			{
@@ -1657,10 +1769,50 @@ void Music::parseHexCommand()
 				if (currentHex == 0xE3)
 					guessLength = false;						// NOPE.  Nope nope nope nope nope nope nope nope nope nope.
 			}
+			if (targetAMKVersion > 1 && targetAMKVersion < 4 && currentHex == 0xFC && remoteGainWarning)
+			{
+				printWarning("WARNING: Utilization of the $FC hex command results in an error in AddmusicK 1.0.8 or lower because it was initially replaced with remote code for #amk 2.\nIf you are using this for remote gain, please make sure you're using it like this as it takes five bytes instead of two because of the ability to customize the event type:\n$FC $xx $01 $yy $zz", name, line);
+				remoteGainWarning = false;
+			}
 		}
 		else
 		{
 			hexLeft -= 1;
+			
+			if (hexLeft == 0 && currentHex == 0xF4 && i >= 0x07 && songTargetProgram == 2 && nonNativeHexWarning) {
+				printWarning("WARNING: A hex command was used which is not native to AddMusicM.\nDid you mean: #amk 1", name, line);
+				nonNativeHexWarning = false;
+			}
+			
+			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
+			{
+				hexLeft = 0;
+				error("This histortical AddmusicM hex command has not yet been implemented into AddmusicK.");
+			}
+			
+			if (hexLeft == 1 && currentHex == 0xFA)
+			{
+				currentHexSub = i;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x7F)
+			{
+				//Hot patches require that the $FA $04 VCMD be generated afterwards, not prior.
+				//This is because of a bit that handles a special case when the buffer size is set to zero.
+				markEchoBufferAllocVCMD();
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0xFE)
+			{
+				if (i >= 0x80) {
+					//Hot patch by bit VCMD has extra bytes if the highest bit is set.
+					hexLeft++;
+				}
+				else {
+					markEchoBufferAllocVCMD();
+				}	
+			}
+			
 			// If we're on the last hex value for $E5 and this isn't an AMK song, then do some special stuff regarding tremolo.
 			// AMK doesn't use $E5 for the tremolo command or sample loading, so it has to emulate them.
 			if (hexLeft == 2 && currentHex == 0xE5 && songTargetProgram == 1/*validateTremolo*/)
@@ -1710,84 +1862,21 @@ void Music::parseHexCommand()
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
 
 
-				if (i == 0)							// If i is zero, we have to undo a bunch of stuff.
+				if (i == 0)
 				{
-					if (usingFA[channelToCheck] == false)			// But only if this is a "pure" FC command.
-					{
-
-						remoteGainConversion.pop_back();
-						remoteGainConversion.pop_back();
-						remoteGainPositions[channel].pop_back();
-						remoteGainPositions[channel].pop_back();
-
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-
-
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x00);
-						append(0x00);
-					}
-					else
-					{
-
-						// If we're using FA and FC, then we need to "restore" the FA data.
-
-						// Same as the other "get rid of stuff", but without the "restore instrument" call.
-						remoteGainConversion.pop_back();
-						remoteGainPositions[channel].pop_back();
-
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-						data[channel].pop_back();
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x03);
-						append(0x00);
-					}
-
-					// Either way, FC gets turned off.
 					usingFC[channelToCheck] = false;
-
-					//remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-					//remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
+					lastFCDelayValue[channelToCheck] = i;
 				}
 				else
 				{
 					i = divideByTempoRatio(i, false);
 					lastFCDelayValue[channelToCheck] = i;
-					append(i);
 				}
 
 				return;
@@ -1795,105 +1884,65 @@ void Music::parseHexCommand()
 			else if (hexLeft == 0 && currentHex == 0xFC && targetAMKVersion == 1)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
-				if (remoteGainConversion[remoteGainConversion.size() - 1].size() > 0)			// If the size was zero, then it has no data anyway.  Used for the 0 event type.
-				{											// Only saves two bytes, though.
-					int channelToCheck;
-					if (channel == 9)
-						channelToCheck = prevChannel;
-					else
-						channelToCheck = channel;
-
-					lastFCGainValue[channelToCheck] = i;
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-					remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
+				int channelToCheck;
+				if (channel == 8)
+					channelToCheck = prevChannel;
+				else
+					channelToCheck = channel;
+				lastFCGainValue[channelToCheck] = i;
+				if (i != 0 && lastFCDelayValue[channelToCheck] != 0) {
+					//Create a type 5 remote code type event.
+					//This remote code event is specifically reserved to replicate the remote gain as a type 2-like remote code event, but it also comes with built-in instrument restoration.
+					append(0xFC);
+					append(i);
+					append(0x01);
+					append(0x05);
+					append(lastFCDelayValue[channelToCheck]);
+				}
+				else {
+					//There are two ways remote gain won't fire and will instead be canceled: if the timer is zero (meaning it is impossible to trigger in the first place) or if the gain value itself is zero.
+					//We will create a type 7 remote code event to stop the type 5 remote code event (and all other non-"key on" events).
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
 				}
 				return;
 			}
 
 			// More code conversion.
-			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && data[channel][data[channel].size() - 1] == 0x05)
+			if (hexLeft == 0 && currentHex == 0xFA && targetAMKVersion == 1 && currentHexSub == 0x05)
 			{
 				//if (tempoRatio != 1) error("#halvetempo cannot be used on AMK 1 songs that use the $FA $05 or old $FC command.")
 				data[channel].pop_back();					// Remove the last two bytes
 				data[channel].pop_back();					// (i.e. the $FA $05)
 
 				int channelToCheck;
-				if (channel == 9)
+				if (channel == 8)
 					channelToCheck = prevChannel;
 				else
 					channelToCheck = channel;
 
 				if (i != 0)
 				{
-
-
-					// Check if this channel is using FA and FC combined...
-					if (usingFC[channelToCheck] == false)
-					{
-
-						// Then add in a "restore instrument" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xF4);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x09);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
-
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0xFF);
-						append(0x00);
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x03);
-						append(0x00);
-					}
-					else
-					{
-						// Otherwise, add in a "2 5 combination" command.
-
-
-						// Then add the "set gain" remote call.
-						remoteGainConversion.push_back(std::vector<uint8_t>());
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0xFA);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x01);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(i);
-						remoteGainConversion[remoteGainConversion.size() - 1].push_back(0x00);
-
-						// And finally the remote call data.
-						append(0xFC);
-						remoteGainPositions[channel].push_back(data[channel].size());
-						append(0x00);
-						append(0x00);
-						append(0x05);
-						append(lastFCDelayValue[channelToCheck]);
-						//append(0x00);
-					}
-
-					// Either way, we're using FA now.
+					// We will be using a type 6 remote code event: this is a special reserved type 3-like remote code event that works in conjunction with type 5 (normally only "key on" events get this honor), and also has built-in instrument restoration.
+					append(0xFC);
+					append(i);
+					append(0x01);
+					append(0x06);
+					append(0x00);
 					usingFA[channelToCheck] = true;
 
 				}
 				else
 				{
-					remoteGainConversion.push_back(std::vector<uint8_t>());
+					//Create a type 8 remote code event.
+					//This remote code event will stop type 6 remote code events. It also stops "key on" remote code events, and only "key on" remote code events.
 					append(0xFC);
-					remoteGainPositions[channel].push_back(data[channel].size());
 					append(0x00);
 					append(0x00);
-					append(0x00);
+					append(0x08);
 					append(0x00);
 
 					usingFA[channelToCheck] = false;
@@ -1911,6 +1960,7 @@ void Music::parseHexCommand()
 			if (hexLeft == 2 && currentHex == 0xF1)
 			{
 				echoBufferSize = std::max(echoBufferSize, i);
+				hasEchoBufferCommand = true;
 			}
 
 			if (currentHex == 0xDA && songTargetProgram == 1)			// If this was the instrument command
@@ -1957,6 +2007,10 @@ void Music::parseHexCommand()
 					skipSpaces;
 					if (text[pos] == 'o')
 					{
+						if (targetAMKVersion < 4 && octaveForDDWarning) {
+							printWarning("WARNING: Using o after reading $DD will freeze on hex validation for AddmusicK 1.0.8 and lower!", name, line);
+							octaveForDDWarning = false;
+						}
 						pos++;
 						getInt();
 					}
@@ -2041,9 +2095,34 @@ void Music::parseHexCommand()
 	}
 	append(i);
 }
+
+void Music::markEchoBufferAllocVCMD()
+{
+	if (!echoBufferAllocVCMDIsSet && resizedChannel != -1 && channel != 8 && channel == resizedChannel && !passedNote[channel] && !hasEchoBufferCommand && !passedIntro[channel])
+		{
+			//Mark the location to generate the echo buffer allocation VCMD.
+			//This won't be performed if this is located past a note or a loop marker, since being
+			//past a note means a note will key on prior to the song initializing properly and being
+			//past a loop marker will mean the VCMD will retrigger, which may or may not end well.
+			echoBufferAllocVCMDIsSet = true;
+			echoBufferAllocVCMDLoc = data[channel].size()+1;
+			echoBufferAllocVCMDChannel = channel;
+		}
+}
+
 void Music::parseNote()
 {
-	j = text[pos];
+	if (isupper(text[pos]) && targetAMKVersion < 4 && caseNoteWarning){
+		printWarning("WARNING: Upper case letters will not translate correctly on AddmusicK 1.0.8 or lower! Your build may have different results!", name, line);
+		caseNoteWarning = false;
+	}
+	if (channel != 8) {
+		passedNote[channel] = true;
+	}
+	else {
+		passedNote[prevChannel] = true;
+	}
+	j = tolower(text[pos]);
 	pos++;
 
 	if (inRemoteDefinition)
@@ -2069,11 +2148,18 @@ void Music::parseNote()
 				i -= transposeMap[instrument[channel]];
 		}
 
-
-		if (i < 0)
+		if (i < 0x80)
 		{
-			error("Note's pitch was too low.")
+			if (songTargetProgram == 0 && targetAMKVersion < 4) {
+				if (lowNoteWarning) {
+					printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+					lowNoteWarning = false; 
+				}
+			}
+			else {
+				error("Note's pitch was too low.");
 				i = 0xC7;
+			}
 		}
 		else if (i >= 0xC6)
 		{
@@ -2083,7 +2169,7 @@ void Music::parseNote()
 		{
 			i = 0xD0 + (instrument[channel] - 21);
 
-			if ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false)	// If this is not a SFX channel,
+			if (songTargetProgram != 0 || ((channel == 6 || channel == 7 || (channel == 8 && (prevChannel == 6 || prevChannel == 7))) == false))	// If this is not a SFX channel,
 				instrument[channel] = 0xFF;										// Then don't force the drum pitch on every note.
 		}
 	}
@@ -2125,7 +2211,7 @@ void Music::parseNote()
 		j += getNoteLength(getInt());
 		skipSpaces;
 
-		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0) && okayToRewind)
+		if ((strncmp(text.c_str() + pos, "$DD", 3) == 0 || strncmp(text.c_str() + pos, "$dd", 3) == 0 || (songTargetProgram != 0 && strncmp(text.c_str() + pos, "&", 1) == 0)) && okayToRewind)
 		{
 			j = tempsize;		//
 			pos = temppos;		// "Rewind" so we forcibly place a tie before the bend.
@@ -2197,6 +2283,10 @@ void Music::parseNote()
 }
 void Music::parseHDirective()
 {
+	if (songTargetProgram == 1 && nonNativeCmdWarning) {
+		printWarning("WARNING: A command was used which is not native to AddMusic405.\nDid you mean: #amm", name, line);
+		nonNativeCmdWarning = false;
+	}
 	pos++;
 	//bool negative = false;
 
@@ -2292,6 +2382,16 @@ void Music::parseOptionDirective()
 
 		if (tempoRatio < 0)
 			error("#halvetempo has been used too many times...what are you even doing?")
+	}
+	else if (targetAMKVersion >= 4 && strnicmp(text.c_str() + pos, "amk109hotpatch", 14) == 0 && isspace(text[pos + 14]))
+	{
+		pos += 14;
+		append(0xFA);
+		append(0x7F);
+		append(0x01);
+		markEchoBufferAllocVCMD();
+		//Prevent an off by one error (normally this is offset by one due to the last hex parameter byte being added after it), but for the #option itself, we shouldn't do this).
+		echoBufferAllocVCMDLoc--;
 	}
 	else
 	{
@@ -2613,7 +2713,7 @@ void Music::parseSampleDefinitions()
 			if (extension == ".bnk")
 				addSampleBank(tempstr, this);
 			else if (extension == ".brr")
-				addSample(tempstr, this, false);
+				addSample(tempstr, this, true);
 			else
 				fatalError("The filename for the sample was invalid.  Only \".brr\" and \".bnk\" are allowed.")
 
@@ -2760,7 +2860,6 @@ int Music::getHex(bool anyLength)
 
 	while (pos < text.size())
 	{
-		if (d >= 2 && songTargetProgram == 1) break;
 		if (d >= 2 && anyLength == false)
 			break;
 
@@ -2806,24 +2905,44 @@ int Music::getNoteLength(int i)
 		{
 			printError("Error parsing note", false, name, line);
 		}
-		//return i;
+		if (targetAMKVersion < 4)
+		{
+			return i;
+		}
 		//if (i < 1) still = false; else return i;
 	}
 
 	//if (still)
 	//{
 	else if (i < 1 || i > 192) i = defaultNoteLength;
-	else i = 192 / i;
+	else {
+		if (192 % i != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: A note length was used that is not divisible by 192 ticks, and thus results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
+		i = 192 / i;
+	}
 
-	return getNoteLengthModifier(i);
+	return getNoteLengthModifier(i, true);
 }
 
-int Music::getNoteLengthModifier(int i) {
+int Music::getNoteLengthModifier(int i , bool allowTriplet) {
 	int frac = i;
 
 	int times = 0;
 	while (pos < text.size() && text[pos] == '.')
 	{
+		if (frac % 2 != 0 && fractionNoteLengthWarning) {
+			if (times != 0) {
+				char buffer[255];
+				sprintf(buffer, "%i", times+1);
+				printWarning((std::string)"WARNING: Adding " + buffer + " dots to this note results in a fractional tick value.", name, line);
+			}
+			else {
+				printWarning("WARNING: Adding a dot to this note results in a fractional tick value.", name, line);
+			}
+			fractionNoteLengthWarning = false;
+		}
 		frac = frac / 2;
 		i += frac;
 		pos++;
@@ -2831,8 +2950,13 @@ int Music::getNoteLengthModifier(int i) {
 		if (times == 2 && songTargetProgram == 1) break;	// AM4 only allows two dots for whatever reason.
 	}
 	//}
-	if (triplet)
+	if (triplet && allowTriplet) {
+		if (i % 3 != 0 && fractionNoteLengthWarning) {
+			printWarning("WARNING: Putting this note in a triplet results in a fractional tick value.", name, line);
+			fractionNoteLengthWarning = false;
+		}
 		i = (int)floor(((double)i * 2.0 / 3.0) + 0.5);
+	}
 	return i;
 }
 
@@ -2852,38 +2976,67 @@ void Music::pointersFirstPass()
 	if (data[0].size() == 0 && data[1].size() == 0 && data[2].size() == 0 && data[3].size() == 0 && data[4].size() == 0 && data[5].size() == 0 && data[6].size() == 0 && data[7].size() == 0)
 		error("This song contained no musical data!")
 
-
-	if (targetAMKVersion == 1)			// Handle more conversion of the old $FC command to remote call.
-	{
-		for (channel = 0; channel < 9; channel++)
-		{
-			for (unsigned int z = 0; z < remoteGainPositions[channel].size(); z++)
-			{
-				size_t dataIndex = remoteGainPositions[channel][z];
-				loopLocations[channel].push_back(remoteGainPositions[channel][z]);
-
-				data[channel][dataIndex] = data[8].size() & 0xFF;
-				data[channel][dataIndex + 1] = data[8].size() >> 8;
-
-				for (unsigned int y = 0; y < remoteGainConversion[z].size(); y++)
-				{
-					data[8].push_back(remoteGainConversion[z][y]);
-				}
-			}
-		}
-
-	}
-
 	if (resizedChannel != -1)
 	{
-		data[resizedChannel][0] = 0xFA;
-		data[resizedChannel][1] = 0x04;
-		data[resizedChannel][2] = echoBufferSize;
+		int z = 0;
 		if (targetAMKVersion > 1)
 		{
-			data[resizedChannel][3] = 0xFA;
-			data[resizedChannel][4] = 0x06;
-			data[resizedChannel][5] = 0x01;
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x01);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x06);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		if (targetAMKVersion == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x02);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 1)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (songTargetProgram == 2)
+		{
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x05);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x7F);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
+			//Just put the VCMD in its default place: no need to move it around.
+			//In particular, the $F1 command means that echo writes have been enabled, meaning the special case is irrelevant.
+			data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else
+		{
+			//Generate the echo buffer allocation command after the hot patch VCMD, but before all echo VCMDs and notes.
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, echoBufferSize);
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, 0x04);
+			data[echoBufferAllocVCMDChannel].insert(data[echoBufferAllocVCMDChannel].begin()+echoBufferAllocVCMDLoc+3, 0xFA);
+			//The channel this command is inserted into gets its pointers recalibrated.
+			for (int a = 0; a < loopLocations[echoBufferAllocVCMDChannel].size(); a++) {
+				loopLocations[echoBufferAllocVCMDChannel][a] += 3;
+			}
+			for (int a = 0; a <= 1; a++) {
+				phrasePointers[echoBufferAllocVCMDChannel][a] += 3;
+			}
+		}
+		//All pointers that were previously output must be recalibrated for the channel.
+		//This specifically involves phrase pointers, loop locations and remote gain positions.
+		//Why isn't this done sooner? Because we don't know whether some of these are even going to be in there in the first place.
+		for (int a = 0; a < loopLocations[resizedChannel].size(); a++) {
+			loopLocations[resizedChannel][a] += z;
+		}
+		for (int a = 0; a <= 1; a++) {
+			phrasePointers[resizedChannel][a] += z;
 		}
 	}
 
@@ -2917,6 +3070,16 @@ void Music::pointersFirstPass()
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
+		for (i = 0; i < mySamples.size()-1; i++)
+		{
+			for (j = i+1; j < mySamples.size(); j++)
+			{
+			if ((mySamples[i] == mySamples[j]) && mySamples[i] != emptySampleIndex)
+				{
+					mySamples[j] = emptySampleIndex;
+				}
+			}
+		}
 
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)
@@ -3499,14 +3662,24 @@ void Music::addNoteLength(double ticks)
 
 int Music::divideByTempoRatio(int value, bool fractionIsError)
 {
-	return value;
+	if (targetAMKVersion < 4 || tempoRatio == 1) {
+		return value;
+	}
 	int temp = value / tempoRatio;
-	if (temp * tempoRatio != value)
+	if (value % tempoRatio != 0)
 	{
-		if (fractionIsError)
-			printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+		if (fractionIsError) {
+			if (fractionNoteLengthWarning) {
+				printError("Using the tempo ratio on this value would result in a fractional value.", false, name, line);
+			}
+			else {
+				printError("Attempted to use a tempo ratio on a value that was already going to output a fractional value.", false, name, line);
+			}
+		}
 		else
+		{
 			printWarning("The tempo ratio resulted in a fractional value.", name, line);
+		}
 	}
 
 	return temp;

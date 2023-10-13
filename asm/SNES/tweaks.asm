@@ -12,61 +12,13 @@
 !true = 1
 !false = 0
 
+incsrc "../UserDefines.asm"
 
 
-!JumpSFXOn1DFC = !true			; Change this to !false to move the jump sound effect to 1DFA.
-				
-!Miss		= #$01			; If you've changed list.txt and plan on using the original SMW songs
-!GameOver	= #$02			; change these constants to whatever they are in list.txt
-!BossClear	= #$03			; For example, if you changed the "Stage Clear" music to be number 9,
-!StageClear	= #$04			; Then you'd change "!StageClear = #$04" to "!StageClear = #$09".
-!Starman	= #$05
-!PSwitch	= #$06
-!Keyhole	= #$07
-!IrisOut	= #$08
-!BonusEnd	= #$09
-!Piano		= #$0A
-!HereWeGo	= #$0B
-!Water		= #$0C
-!Bowser		= #$0D
-!Boss		= #$0E
-!Cave		= #$0F
-!GhostHouse	= #$10
-!Castle		= #$11
-!SwitchPalace	= #$12
-!Welcome	= #$13
-!RescueEgg	= #$14
-!Title		= #$15
-!VoBAppears	= #$16
-!Overworld	= #$17
-!YoshisIsland	= #$18
-!VanillaDome	= #$19
-!StarRoad	= #$1A
-!ForestOfIllusion = #$1B
-!ValleyOfBowser	= #$1C
-!SpecialWorld	= #$1D
-!NintPresents   = #$1E		; Note that this is a song, not a sound effect!
-
-!Bowser2	= #$1F		;
-!Bowser3	= #$20
-!BowserDefeated = #$21
-!BowserIntrlude = #$22
-!BowserZoomIn	= #$23
-!BowserZoomOut	= #$24
-!PrincessSaved	= #$25
-!StaffRoll	= #$26
-!YoshisAreHome	= #$27
-!CastList	= #$28
-
-
-org $9724		; Fix the title music
-	db !Title
 org $94B3
 	db !RescueEgg
 org $96C7
 	db !Title
-org $009737
-	db !Bowser
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
@@ -77,16 +29,47 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-org $00E304
-	db !PSwitch
+
+org $00E301
+if !PSwitchIsSFX = !true
+;;; Don't factor in the P-Switch and directional coin timers. Instead, only
+;;; use the star power timer. This is because the P-Switch music is now
+;;; a SFX instance playing with the actual level music.
+	BRA +
+	NOP #2
++
+else
+	BEQ +
+	LDX.B #!PSwitch
++
+endif
+
 org $00EEC3
 	db !StageClear
 org $00F60B
 	db !Miss
 org $018784
 	db !BossClear
-org $01AB08
-	db !PSwitch
+
+org $01AAFD
+if !PSwitchIsSFX = !true
+	LDA.B #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.B #$0B
+	STA $1DF9|!SA1Addr2
+endif
+	BRA Skip10 : NOP
+	NOP : NOP
+if !PSwitchIsSFX = !true
+	NOP #5
+Skip10:
+else
+Skip10:
+	LDA.B #!PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $01C0F0
 	db !StageClear
 org $01C586
@@ -97,8 +80,17 @@ org $01E216
 	db !Keyhole
 org $01FB2E
 	db !BossClear
-org $028968
-	db !PSwitch
+org $028967
+if !PSwitchIsSFX = !true
+;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
+;;; NOTE: This overwrites the $0B that was just stored there!
+	LDA.b #$C0
+	STA $1DFC|!SA1Addr2
+else
+	LDA.b #!PSwitch
+	STA $1DFB|!SA1Addr2
+endif
+
 org $03809D
 	db !BossClear
 org $0398E7
@@ -141,24 +133,23 @@ org $0CA40C
 	db !YoshisAreHome
 org $0CA5C2
 	db !CastList
-	
-
-	
-	
+		
 org $009723
-	LDA.b !Welcome
-	STA.w $1DFB|!SA1Addr2
-	
-	
-	
-org $009734			; Skip over Bowser fight music stuff.
-	BNE $05
-	
-	
-	
-	
-	
-	
+	LDA.b #!Welcome
+	STA.w $0DDA|!SA1Addr2					
+	LDA.w $0DDA|!SA1Addr2	; 
+	NOP : NOP		; 
+	NOP : NOP		; 
+	LDY.w $0D9B|!SA1Addr2	; 
+	CPY.b #$C1		; 
+	BNE CODE_009738		; 
+	LDA.b #!Bowser		; 
+CODE_009738:			;
+	STA.w $1DFB|!SA1Addr2	; 
+CODE_00973B:			;
+	NOP : NOP		;BRA Skip6
+	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
+Skip6:
 
 org $008134			; Don't upload the overworld music bank.
         RTS
@@ -166,64 +157,58 @@ org $008134			; Don't upload the overworld music bank.
 if read1($008176) == $5c
 	
 	org $00817C			; For LevelNMI.  Three fewer bytes placed three bytes later.
-		BRA Skip : NOP
-		NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-	Skip:
-
 elseif read1($008179) == $5c
 	org $00817D			; For PowerTool.  Four fewer bytes placed four bytes later.
-		BRA Skip : NOP
 		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-	Skip:
 else
 	org $008179			; Skip over the standard NMI audio port stuff.  We handle that ourselves now every loop.
-		BRA Skip : NOP
-		NOP : NOP
-		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-	Skip:
+		NOP
 endif
+		BRA Skip
+YoshiDrumHijack:
+		;Identical to $02A763, except that Yoshi Drums are
+		;explicitly disabled if the conditions to turn them on are
+		;not met while transitioning into the room.
+		;This ensures that they are not running if Mario enters a
+		;room without Yoshi, but did not disembark prior to that.
+		LDA $0DC1|!SA1Addr2
+		BEQ NoYoshiDrum
+		LDA $1B9B|!SA1Addr2
+		BNE NoYoshiDrum
+		JSL $00FC7A|!Bank
+		PLB
+		RTL
+NoYoshiDrum:
+		LDA #$03
+		STA $1DFA|!SA1Addr2
+		PLB
+		RTL
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP : NOP
+		;NOP : NOP
+	Skip:
+
+org $02A763
+		JML YoshiDrumHijack
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
+		NOP : NOP : NOP
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
@@ -239,22 +224,6 @@ org $00A0B3				;;; ditto
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
-
-org $009728					
-	LDA.w $0DDA|!SA1Addr2	; 
-	NOP : NOP		; 
-	NOP : NOP		; 
-	LDY.w $0D9B|!SA1Addr2	; 
-	CPY.b #$C1		; 
-	BNE CODE_009738		; 
-	LDA.b !Bowser		; 
-CODE_009738:			;
-	STA.w $1DFB|!SA1Addr2	; 
-CODE_00973B:			;
-BRA +				; 
-	NOP : NOP : NOP		; 
-+
-
 
 org $00A231				; Change how pausing works
 	LDY #$08
@@ -288,8 +257,16 @@ org $00A286
 	jmp StartSelectSfx
 
 org $00C53E
+if !PSwitchIsSFX = !true
+;;; Don't factor in the previous level music.
+	LDA.b #$80
+	NOP
+	NOP : NOP
+
+else
 	LDA !MusicBackup
 	NOP	: NOP
+endif
 
 ;org $00C53E
 	
@@ -300,6 +277,13 @@ org $00C53E
 ;org $00C54C
 ;	BRA Skip4 : NOP
 ;	Skip4:
+
+org $00C54C
+if !PSwitchIsSFX = !true
+	STA $1DFC|!SA1Addr2
+else
+	STA $1DFB|!SA1Addr2
+endif
 	
 org $02E277		;;; fix for the directional coins (more like code restore)
 	LDA $14AD|!SA1Addr2
@@ -327,11 +311,6 @@ else
 	STA $1570,x             
 endif
 	RTS
-	
-org $00973B
-	NOP : NOP		;BRA Skip6
-	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
-Skip6:
 
 ; KevinM's edit: this is already skipped by the hex edit at $00A635	
 ;org $00A645			; Related to restoring the music upon level load.
@@ -360,15 +339,10 @@ org $00E2EE
 	;NOP
 Skip9:
 
-org $01AB02
-	BRA Skip10 : NOP
-	NOP : NOP
-Skip10:
-
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
 	;STA $0DDA|!SA1Addr2
-	LDA !Starman
+	LDA #!Starman
 	STA $1DFB|!SA1Addr2
 	RTL
 	
@@ -392,7 +366,7 @@ org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP
 	
 org $0093C0
-LDA.b !NintPresents
+LDA.b #!NintPresents
 STA $1DFB|!SA1Addr2
 
 
@@ -416,7 +390,7 @@ OWMusicHijack:
 
 
 
-; Remap the jump SFX to $1DFA or $1DFC.
+; Remap the jump SFX to $1DF9 or $1DFC.
 if !JumpSFXOn1DFC == !true
 	org $00D65E
 	LDA #$35
@@ -425,7 +399,7 @@ if !JumpSFXOn1DFC == !true
 	org $00DBA5
 	LDA #$35
 	STA $1DFC|!SA1Addr2
-else
+elseif !JumpSFXOn1DF9 == !true
 	org $00D65E
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
@@ -433,20 +407,54 @@ else
 	org $00DBA5
 	LDA #$2B
 	STA $1DF9|!SA1Addr2
+else
+	org $00D65E
+	LDA #$01
+	STA $1DFA|!SA1Addr2
+
+	org $00DBA5
+	LDA #$01
+	STA $1DFA|!SA1Addr2
 endif
 
 ; Remap the grinder SFX too.
-org $01D745
-LDA #$1A
-STA $1DF9|!SA1Addr2
+if !GrinderSFXOn1DFC == !true
+	org $01D745
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $01DB70
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $01DB70
+	LDA #$36
+	STA $1DFC|!SA1Addr2
 
-org $0392B8
-LDA #$1A
-STA $1DF9|!SA1Addr2
+	org $0392B8
+	LDA #$36
+	STA $1DFC|!SA1Addr2
+elseif !GrinderSFXOn1DF9 == !true
+	org $01D745
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $01DB70
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+
+	org $0392B8
+	LDA #$2D
+	STA $1DF9|!SA1Addr2
+else
+	org $01D745
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $01DB70
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+
+	org $0392B8
+	LDA #$04
+	STA $1DFA|!SA1Addr2
+endif
 
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD

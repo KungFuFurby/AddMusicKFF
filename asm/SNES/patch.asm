@@ -1,5 +1,5 @@
-
-lorom
+;Don't stop program due to changing the mapper multiple times.
+warnings disable W1029
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -19,10 +19,12 @@ if !UsingSA1
 	sa1rom
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
+	!Bank     = $000000
 else
-	fastrom
+	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
+	!Bank     = $800000
 endif
 
 
@@ -47,6 +49,9 @@ endif
 !SampleCount		= !FreeRAM+$09
 !SRCNTableBuffer	= !FreeRAM+$0A
 
+!Trick   = !FreeRAM+$08
+!Tricker = !BonusEnd
+
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
 ; Normally you shouldn't need to change this.
 ;
@@ -63,7 +68,7 @@ endif
 ; FREERAM+$0009: Used as a buffer for the sample pointer/loop table.  Could be up to 1024 bytes long, but this is unlikely (4 bytes per sample; do the math).
 
 ; 1DFB: Use this to request a song to play (more or less default behavior).
-; 1DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
+; 0DDA: Song to play once star/P-switch runs out.  If $FF, don't restore.
 
 ; Special status byte details:
 
@@ -94,9 +99,8 @@ endif
 !MusicBackup = $0DDA|!SA1Addr2
 
 
-!DefARAMRet = $044E	; This is the address that the SPC will jump to after uploading a block of data normally.
+!DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
-!TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
 !SongCount = $00	; How many songs exist.  Used by the fading routine; changed automatically.
 
@@ -128,6 +132,15 @@ MainLabel:
 	PHB
 	PHK
 	PLB
+if !PSwitchStarRestart == !true
+	lda !Trick
+	beq +
+	lda !CurrentSong
+	sta !MusicReg
+	lda #$00
+	sta !Trick
++
+endif
 	JSR HandleSpecialSongs
 	REP #$20
 	LDA !SFX1DF9Reg
@@ -149,14 +162,21 @@ MainLabel:
 	BEQ NoMusic
 	CMP !CurrentSong
 	BNE ChangeMusic
+if !PSwitchStarRestart == !true
+	cmp !GlobalMusicCount+1
+	bcc ChangeMusic
+endif
 
 End:	
+if !PSwitchStarRestart == !true	
+	stz !MusicMir
+endif
 	CLI
 	PLB
 	PLP
 
 
-	JML $00806B		; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
+	JML $00806B|!Bank	; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
 
 NoMusic:
 	LDA #$00
@@ -188,9 +208,22 @@ PlayDirect:
 ;	STA !CurrentSong
 ;	BRA End
 
+if !PSwitchStarRestart == !true
+	cmp !CurrentSong
+	beq +
+endif
+
 	STA !MusicReg
 	STA !CurrentSong
 	BRA End
+
+if !PSwitchStarRestart == !true
++	lda #$01
+	sta !Trick
+	lda #!Tricker
+	sta !MusicReg
+	bra End
+endif
 
 	
 ChangeMusic:
@@ -205,45 +238,49 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
-;	CMP !PSwitch
+if !PSwitchIsSFX = !false
+;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
-;	CMP !Starman
+endif
+;	CMP #!Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
 ;	
 ;.doExtraChecks			; We can't allow the p-switch or starman songs to play during the level clear themes.
 	LDA !CurrentSong
-	CMP !StageClear
+	CMP #!StageClear
 	BEQ LevelEndMusicChange
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ LevelEndMusicChange
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ LevelEndMusicChange
-	CMP !BossClear		;;; this one too
+	CMP #!BossClear		;;; this one too
 	BNE Okay
 	
 LevelEndMusicChange:
 	LDA !MusicMir
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ Okay
-	CMP !SwitchPalace	;;; bonus game fix
+	CMP #!SwitchPalace	;;; bonus game fix
 	BEQ Okay
-	CMP !Miss		;;; sure why not
+	CMP #!Miss		;;; sure why not
 	BEQ Okay
-	CMP !RescueEgg
+	CMP #!RescueEgg
 	BEQ Okay		; Yep
-	CMP !StaffRoll	; Added credits check
+	CMP #!StaffRoll	; Added credits check
 	BEQ Okay
 	LDA $0100|!SA1Addr2		
 	CMP #$10			
 	BCC Okay
 	;;; LDA !CurrentSong	;;; this is why we got here in first place, seems redundant
-	;;; CMP !StageClear
+	;;; CMP #!StageClear
 	;;; BEQ EndWithCancel
-	;;; CMP !IrisOut
+	;;; CMP #!IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
+if !PSwitchStarRestart == !false
 	STZ !MusicMir
+endif
 	BRA End
 	
 Okay:
@@ -254,18 +291,26 @@ Okay:
 
 	CMP #$FF			; \ #$FF is fade.
 	BEQ Fade			; /
-	
+
+if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-	CMP !PSwitch			; |
+if !PSwitchIsSFX = !false && !PSwitch != $00
+	CMP #!PSwitch			; |
 	BEQ +				; |
-	CMP !Starman			; |
+endif
+if !Starman != $00
+	CMP #!Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
+endif
+endif
 	;;;BRA ++			; |
 +					; |
 	LDA $0100|!SA1Addr2		; | \
 	CMP #$12+1			; | | But if we're coming back from the p-switch or starman musics AND we're loading a new level, then we might need to reload the song as well.
 	BCC ++				; | / ;;; can't be bad to allow everything below
 	LDA !MusicMir			; |
+	CMP !MusicBackup		; |
+	BNE ++				; |
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
 	JMP SPCNormal			; |
@@ -273,15 +318,14 @@ Okay:
 	LDA !MusicMir
 	STA !CurrentSong
 	STA !MusicBackup
-	STA $0DDA|!SA1Addr2
 	
 ;	LDA $0100|!SA1Addr2
 ;	CMP #$0F
 ;	BCC .forceMusicToPlay
 ;	LDA !CurrentSong
-;	CMP !StageClear
+;	CMP #!StageClear
 ;	BEQ EndWithCancel
-;	CMP !IrisOut
+;	CMP #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
 
@@ -332,6 +376,13 @@ Okay:
 
 	LDA #$FF		; Send this as early as possible
 	STA $2141		;
+
+	LDA $0100|!SA1Addr2	;\     Check Gamemode.
+    	CMP #$0E		; | If on the Overworld,
+	BNE +			; |    
+	WAI			;/     then wait for an interrupt to prevent garbage during Submap transitions.
+    
++
 	
 	SEI
 	
@@ -510,29 +561,33 @@ NoMoreSamples:
 	ASL				; |
 	ASL				; |
 	STA $05				; |
-	LDA #!TabARAMRet		; | Jump in ARAM to the DIR set routine.
-	STA $03				; |
 	LDA.w #!SRCNTableBuffer		; |
 	STA $00				; | Upload the ARAM SRCN table.
 	SEP #$20			; |
 	LDA.b #!SRCNTableBuffer>>16	; |
 	STA $02				; |
 	JSL UploadSPCDataDynamic	; /
-	
+
+	LDA $08				; \
+	STA $0C				; | Set the DIR DSP register.
+	LDA #$5D ;DIR DSP register	; | We will save the writes to make to direct pages $0B-$0C.
+	STA $0B				; | 
+	STZ $02				; | 
+	REP #$20			; |
+	TDC				; | In case of non-zero direct page register...
+	CLC				; | 
+	ADC #$000B			; | 
+	STA $00				; | 
+	LDA #$0002			; | 
+	STA $05				; | 
+	LDA #$00F2 ;DSPADDR		; | 
+	STA $07				; | 
+	LDA #!DefARAMRet		; |
+	STA $03				; |
+	JSL UploadSPCDataDynamic	; /
+	SEP #$20
 	NOP #11				; Needed to waste time. 10817b
 					; On ZSNES it works with only 4 NOPs because...ZSNES.
-					
-	REP #$20
-	LDA #!DefARAMRet
-	STA $2142
-	SEP #$20
-	LDA $08
-	STA $2141
-	LDA #$CC
-	STA $2140
-	LDA $08
--	CMP $2141			; Wait for the SPC to echo the value back before continuing.
-	BNE -
 	JMP SkipSPCNormal
 	
 					; Time to get the SPC out of its loop.
@@ -575,26 +630,32 @@ HandleSpecialSongs:
 	CMP #$0F
 	BEQ +
 	LDA !MusicMir
-	CMP !Miss
+	CMP #!Miss
 	BEQ +
-	CMP !GameOver
+	CMP #!GameOver
 	BEQ +
-	CMP !StageClear		;;; more checks here should help
+if !PSwitch != $00 || !Starman != $00
+	CMP #!StageClear	;;; more checks here should help
 	BEQ ++
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ ++
-	CMP !BossClear
+	CMP #!BossClear
 	BEQ ++
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ ++
+endif
+if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
 	ORA $190C|!SA1Addr2
 	BNE .powMusic
+endif
+if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
 	BCS .starMusic
 	BEQ .restoreFromStarMusic
+endif
 ++
 	RTS
 	
@@ -605,25 +666,98 @@ HandleSpecialSongs:
 	STZ $1490|!SA1Addr2
 	RTS
 	
+if !PSwitch != $00
 .powMusic
-	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
-	BNE .starMusic			;;; just play the star music
-	LDA !PSwitch
+	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
+	ora $1434|!SA1Addr2		;| (keyhole)
+	ora $14AB|!SA1Addr2		;| (bonus game)
+	bne ++					;/ This prevents an issue with non-standard goal songs.
+
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+if !Starman != $00
+	lda $1490|!SA1Addr2		; If both P-switch and starman music should be playing
+	cmp #$1E
+	bcs .starMusic			;;; just play the star music
+endif
+if !PSwitchIsSFX = !false
+	lda !MusicMir
+	cmp #!PSwitch
+	beq ++
+	lda !CurrentSong
+	cmp #!PSwitch
+	bne +
+endif
+
+	stz !MusicMir
+	rts
+
+if !PSwitchIsSFX = !false
+if !PSwitch != $00
++	LDA #!PSwitch
 	STA !MusicMir
-+
+endif
+++	RTS
+endif
+
+else
+if !Starman != $00
+	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
+	CMP #$1E
+	BCS .starMusic			;;; just play the star music
+endif
+endif
+
+if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+	LDA #!PSwitch
+	STA !MusicMir
+endif
+++
 	RTS
+endif
 	
 .starMusic
-	LDA !Starman
+if !Starman != $00
+if !PSwitchStarRestart == !true
+	jsr SkipPowStar
+	bcs ++
+	lda !MusicMir
+	cmp #!Starman
+	beq ++
+	lda !CurrentSong
+	cmp #!Starman
+	bne +
+	stz !MusicMir
+	rts
+endif
+
++	LDA #!Starman
 	STA !MusicMir
-+
-	RTS
+++	RTS
+
 	
 .restoreFromStarMusic
 	LDA !MusicBackup
 	STA !MusicMir
 +
 	RTS
+endif
+
+if !PSwitchStarRestart == !true
+SkipPowStar:
+	lda !CurrentSong
+	cmp #!StageClear
+	beq +
+	cmp #!IrisOut
+	beq +
+	cmp #!BossClear
+	beq +
+	cmp #!Keyhole
+	beq +
+	clc
++	rts
+endif
 	
 pushpc
 
