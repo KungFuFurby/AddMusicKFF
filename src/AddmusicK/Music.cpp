@@ -2150,9 +2150,11 @@ void Music::parseNote()
 
 		if (i < 0x80)
 		{
-			if (songTargetProgram == 0 && targetAMKVersion < 4 && lowNoteWarning) {
-				printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
-				lowNoteWarning = false; 
+			if (songTargetProgram == 0 && targetAMKVersion < 4) {
+				if (lowNoteWarning) {
+					printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+					lowNoteWarning = false; 
+				}
 			}
 			else {
 				error("Note's pitch was too low.");
@@ -3068,6 +3070,16 @@ void Music::pointersFirstPass()
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
+		for (i = 0; i < mySamples.size()-1; i++)
+		{
+			for (j = i+1; j < mySamples.size(); j++)
+			{
+			if ((mySamples[i] == mySamples[j]) && mySamples[i] != emptySampleIndex)
+				{
+					mySamples[j] = emptySampleIndex;
+				}
+			}
+		}
 
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)

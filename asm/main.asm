@@ -1489,12 +1489,12 @@ CheckAPU1SFXPriority:
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
 	bne	+
-	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	mov	y, #!JumpSFX1DFAPriority	;Priority for jump SFX
 	bra	.gotPriority
 +
 	;cmp	a, #$04
 	;bne	+
-	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	mov	y, #!GirderSFX1DFAPriority	;Priority for girder SFX
 	;bra	.gotPriority
 +
 
@@ -1736,6 +1736,7 @@ endif
 
 .checkAPU1SFX
 if !useSFXSequenceFor1DFASFX = !false
+	bbc!1DFASFXChannel	$10, .sfxAllocAllowed
 	;Check and see if APU1 SFX is playing there via detecting $1D.
 	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
 	;but $1D has a voice bit set.
@@ -2622,22 +2623,25 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f2, #$6c
 	or	$f3, #$60
 
-	mov	$f2, #$7d
-	mov	a, $f3
+	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
-	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f2, #$7d
+	mov	y, #$00
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
-	mov	$14, #$00
-	mov	$15, a
--	dbnz	$14, -
-	dbnz	$15, -
+	movw	$14, ya			; Consume at least eight cycles per iteration. 
+-
+	nop				; This is because the echo buffer writes four bytes per sample (or 32 cycles in this case).
+	nop				; NOP is 2 cycles.
+	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
+	dbnz	$14, -
 +
 	
 	pop	y			; \
-	clr1	$f2.4			; | Write the new buffer address.
-	mov	$f3, y			; / 
+	mov	a, #$6d			; | Write the new buffer address.
+	movw	$f2, ya			; / 
 	
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
