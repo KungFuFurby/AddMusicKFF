@@ -1229,14 +1229,11 @@ endif
 .restBranchGate					;  |
 	beq	+				;  |
 +						;  | Default state of this branch gate is open.
-	push	a				;  |
-	mov	a, NormalNote_runningArpGate+1	;  | If runningArp was set outside
-	eor	a, #!runningArpGateOnJumpDistance;  | of this routine, then remote
-	mov	NormalNote_runningArpGate+1, a	;  | code event -2 should be able to
-	pop	a				;  | fire.
+						;  | If runningArp was set outside of this routine, then
+	not1	NormalNote_runningArpGate&$1fff.5 ;  | remote code event -2 should be able to fire.
 	call	NoteVCMD			;  |
-	mov	a, #!runningArpGateOnJumpDistance ;  |
-	mov	NormalNote_runningArpGate+1, a	; /
+	setc					;  | Close the gate again.
+	mov1	NormalNote_runningArpGate&$1fff.5, c ; /
 	
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
 	or	($47), ($48)		; / Set this voice to be keyed on.
