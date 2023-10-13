@@ -543,8 +543,8 @@
 	<tr>
 		<td>$F4<br></td>
 		<td>AddmusicM<br></td>
-		<td>Yoshi drums <br></td>
-		<td>Enables yoshi drums on channel #5 <br></td>
+		<td>Yoshi Drums Toggle<br>(Ch #5)<br></td>
+		<td>Toggles yoshi drums on channel #5 <br></td>
 		<td>$00<br></td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
@@ -574,17 +574,17 @@
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
-		<td>AddmusicM<br></td>
-		<td>SNES sync <br></td>
-		<td>Sends the current song's position to the output registers. <br></td>
+		<td>AddmusicK<br></td>
+		<td>SNES Sync Toggle<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and toggles incrementing the counter per tick and sending it to the output registers. <br></td>
 		<td>$05 <br></td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
 		<td>$F4 <br></td>
 		<td>AddmusicK<br></td>
-		<td>Yoshi drums <br></td>
-		<td>Enables yoshi drums on the current channel <br></td>
+		<td>Yoshi Drums Toggle<br></td>
+		<td>Toggles yoshi drums on the current channel <br></td>
 		<td>$06 <br></td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
@@ -612,7 +612,231 @@
 		<td>$09</td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
-	    <tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SMW Velocity Table<br></td>
+		<td>Switch the velocity table to use. Normally not needed unless you want to switch back in the middle of a song.<br></td>
+		<td>$0A</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Pitch Modulation Toggle<br></td>
+		<td>Toggles the pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$0B</td>
+		<td></td>
+	</tr><tr><td colspan="5">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Yoshi Drums On<br></td>
+		<td>Enables yoshi drums on the current channel<br></td>
+		<td>$0C</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Yoshi Drums Off<br></td>
+		<td>Disables yoshi drums on the current channel<br></td>
+		<td>$0D</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Echo On<br></td>
+		<td>Enable echo for this channel <br></td>
+		<td>$0E <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Echo Off<br></td>
+		<td>Disables echo for this channel <br></td>
+		<td>$0F <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Pitch Modulation On<br></td>
+		<td>Enables pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$10</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Pitch Modulation Off<br></td>
+		<td>Disables pitch modulation for this channel. Channel 0 cannot have pitch modulation.<br></td>
+		<td>$11</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Legato On<br></td>
+		<td>Enables legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning). <br></td>
+		<td>$12 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Legato Off<br></td>
+		<td>Disables legato (notes will be played with no break between. This also means that samples will not be rekeyed, so new notes will not start the sample playing from the beginning). Note that when turning off legato, you must do so in the middle of the last note to use this effect, instead of in between notes.<br></td>
+		<td>$13 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Light Staccato On<br></td>
+		<td>Enables light staccato (notes will be played with less of a delay between).  Please be aware that this command is "global"; i.e. it applies to all channels.  If you would like to fine-tune the amount of time between notes, you can use the q command.<br></td>
+		<td>$14</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Light Staccato Off<br></td>
+		<td>Disables light staccato.<br></td>
+		<td>$15</td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br>(relocated from $F4 $05 in AddmusicM)<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
+		<td>SNES Sync Toggle <br>(No Reset)<br></td>
+		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first. <br></td>
+		<td>$16 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync On<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and enables incrementing the counter per tick and sending it to the output registers. <br></td>
+		<td>$17 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync Off<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) and disables incrementing the counter per tick and sending it to the output registers. <br></td>
+		<td>$18 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync Resume<br></td>
+		<td>Starts the 16-bit tick counter (representing the song's position) without resetting it. <br></td>
+		<td>$19 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync Pause<br></td>
+		<td>Stops the 16-bit tick counter (representing the song's position) without resetting it. <br></td>
+		<td>$1A <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync Reset<br></td>
+		<td>Resets the 16-bit tick counter (representing the song's position) without enabling or disabling incrementing the counter per tick and sending it to the output registers.<br></td>
+		<td>$1B <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>SNES Sync Increment<br></td>
+		<td>Increments the 16-bit tick counter and sends it to the output registers. <br></td>
+		<td>$1C <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Force Key On<br></td>
+		<td>Forces the channel to be keyed on regardless of legato or any other setting that would affect when the note is keyed on, unless a SFX is playing on the channnel. This risks causing clicks if done without a prior key off, or if the note was planned on being keyed on anyways.<br></td>
+		<td>$1D <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Force Key Off<br></td>
+		<td>Forces the channel to be keyed off regardless of legato or any other setting that would affect when the note is keyed off, unless a SFX is playing on the channnel. <br></td>
+		<td>$1E <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Single Loop Recall<br></td>
+		<td>Calls the last $E9 loop called for one more loop.<br></td>
+		<td>$20 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Loop Break<br></td>
+		<td>Breaks out of an $E9 loop when it is on its last loop.<br></td>
+		<td>$21 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop.<br></td>
+		<td>$22 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Superloop Break + Terminate Loop<br></td>
+		<td>Breaks out of an $E6 loop when it is on its last loop. Additionally, terminates an $E9 loop by zeroing out its counter to avoid problems when looping the entire song. This is a special edge case handler for when you use a loop within a superloop and put the break inside the loop.<br></td>
+		<td>$23 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Toggle Loop Break<br></td>
+		<td>Toggles whether or not loop break commands will activate on their last loops for the channel.<br></td>
+		<td>$25 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Enable Loop Break<br></td>
+		<td>Enables loop break commands for the channel.<br></td>
+		<td>$26 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>New<br></td>
+		<td>Disable Loop Break<br></td>
+		<td>Disables loop break commands for the channel. This means they will be passed through until enabled again.<br></td>
+		<td>$27 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
         <td rowspan="8">$F5 <br></td>
 	<td rowspan="8">AddmusicM<br></td>
         <td rowspan="8">FIR filter <br></td>
@@ -739,6 +963,41 @@
 	<tr>
 		<td>$XX<br></td>
 		<td>The largest echo buffer you plan to use<br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">Voice DSP Write </td>
+		<td rowspan="2">Write a value directly to the DSP register corresponding to the current voice </td>
+		<td>$0X<br></td>
+		<td>$X is the lower three bits plus $8 ($8-$F) of the DSP register ID for the current voice to write to.</td>
+	</tr><tr>
+		<td>$YY<br></td>
+		<td>Value to write <br></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">SNES Sync Clock Divider<br></td>
+		<td rowspan="2">Increments the high byte of the sync counter after a certain number of ticks. Zero is the default, making the counter act like a 16-bit word.<br></td>
+		<td>$12</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>The number of ticks before incrementing the high byte. $00 = 256 ticks.</td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td rowspan="2">$FA</td>
+		<td rowspan="2">New<br></td>
+		<td rowspan="2">Multi-Loop Recall<br></td>
+		<td rowspan="2">Calls the last $E9 loop called for another series of loops.<br></td>
+		<td>$13</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td>$XX<br></td>
+		<td>Loop count</td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 <tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
@@ -1129,6 +1388,14 @@ Contains the majority of carol's MORE.bin except for global transposition ($E4 c
 		<td>Reset Special Pulse Wave<br></td>
 		<td>Resets the special pulse wave back into a square wave. Does not reset the oscillation position.</td>
 		<td>$04 <br></td>
+		<td></td>
+	</tr><tr><td colspan="6">&nbsp;</td></tr>
+	<tr>
+		<td>$F4 <br></td>
+		<td>$F4 $16<br>(Add $FA $12 $C0 to the beginning of the song to replicate AddmusicM's clock divider behavior)</td>
+		<td>SNES Sync Toggle <br>(No Reset)<br></td>
+		<td>Toggles incrementing the 16-bit tick counter (representing the song's position) per tick and sending it to the output registers without resetting it first.<br>The upper 8 bits of the counter increment every 192 ticks instead of every 256 ticks.<br></td>
+		<td>$05 <br></td>
 		<td></td>
 	</tr><tr><td colspan="6">&nbsp;</td></tr>
 	<tr>
