@@ -154,7 +154,6 @@ endmacro
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
-!runningArpGateOnJumpDistance = NormalNote_runRemoteCodeKON-NormalNote_runningArpGate-2
 !MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
 !MusicEchoChOnCarryGateDistance = MusicEchoChOnSkipClear-MusicEchoChOnCarryGate-2
 
@@ -526,7 +525,7 @@ endif
 
 if !noVcmdFB = !false
 .runningArpGate
-	bra	.runRemoteCodeKON
+	bmi	.runRemoteCodeKON
 
 	cmp	a, #$fe
 	beq	.noRemoteCode
@@ -2308,8 +2307,11 @@ L_0B5A:
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
 if !noVcmdFB = !false
-	mov	a, #!runningArpGateOnJumpDistance
-	mov	NormalNote_runningArpGate+1, a	;Close runningArp gate.
+	;Carry is cleared due to an ASL opcode previously. We want to close
+	;the gate by setting it to a BMI opcode, so the SETC opcode is
+	;required here.
+	setc
+	mov1	NormalNote_runningArpGate&$1fff.5, c ;Close runningArp gate.
 endif
 	mov	a,#$ff
 	mov	$038c,a
@@ -2667,9 +2669,11 @@ if !noVcmdFB = !false
 	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.	
 	mov	a, #$01			; | But we do have to restart the timer so that it will work correctly (and start right now).
 	mov	!ArpTimeLeft+x, a	; /
-	dec	a
-	mov	NormalNote_runningArpGate+1, a	; Have this trigger remote code type -2.
-	dec	a
+	;Carry is cleared due to a BCS opcode not firing previously, and all
+	;other opcodes not messing with the carry up to this point. We want
+	;to open a gate by turning it into a BPL opcode.
+	mov1	NormalNote_runningArpGate&$1fff.5, c ; Have this trigger remote code type -2.
+	mov	a, #$ff
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
 	mov	a, !ArpType+x		; \
