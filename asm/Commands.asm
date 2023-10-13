@@ -560,7 +560,7 @@ SubC_table:
 	dw	SubC_1
 	dw	SubC_2
 	dw	SubC_3
-	dw	$0000
+	dw	SubC_4
 	dw	SubC_5
 	dw	SubC_6
 	dw	SubC_7
@@ -592,6 +592,30 @@ SubC_1:
 
 SubC_2:
 	eor	!WaitTime, #$03
+	ret
+
+SubC_table2_SquareFormatClearSRCN:
+	mov	$0163, a
+	mov	a, #$F0 ;BEQ opcode
+	mov	SquareGate, a ;Special wave will now be initialized
+	mov	a, #$3F ;CALL opcode
+	mov	SubC_4Gate,a
+
+SubC_4:
+SubC_4Gate:
+	ret ;Will be turned into a call opcode
+	dw	Square_getSpecialWavePtr
+	movw	ya, $14
+	movw	$16, ya
+	clrc
+	adc	$16,#$09
+	adc	$17,#$00
+	mov	a,#$00
+	mov	y,#$08
+SubC_4l:
+	mov	($14)+y,a
+	mov	($16)+y,a
+	dbnz	y, SubC_4l
 	ret
 	
 SubC_5:
@@ -1071,6 +1095,16 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
+	dw	.oldFA_com		; 07
+	dw	$0000			; 08
+	dw	$0000			; 09
+	dw	$0000			; 0A
+	dw	$0000			; 0B
+	dw	$0000			; 0C
+	dw	$0000			; 0D
+	dw	$0000			; 0E
+	dw	$0000			; 0F
+	dw	.SquareFormatClearSRCN	; 10
 	
 .HFDTune
 	mov     !HTuneValues+x, a
@@ -1087,6 +1121,10 @@ SubC_table2:
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
+.oldFA_com
+	mov	$0165,a
+	ret
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.

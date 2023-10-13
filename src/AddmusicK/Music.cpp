@@ -1786,8 +1786,11 @@ void Music::parseHexCommand()
 			
 			if (hexLeft == 1 && currentHex == 0xFA && songTargetProgram == 2)
 			{
+				//AddmusicM used $FA solely for the special pulse wave width command.
+				//This VCMD ID was overwritten by a collection of VCMDs, so we need to add a sub-VCMD ID.
 				hexLeft = 0;
-				error("This histortical AddmusicM hex command has not yet been implemented into AddmusicK.");
+				append(0x07);
+				append(i);
 			}
 			
 			if (hexLeft == 1 && currentHex == 0xFA)
@@ -2979,6 +2982,20 @@ void Music::pointersFirstPass()
 	if (resizedChannel != -1)
 	{
 		int z = 0;
+		int specialWaveSampleIndex = ::getSample("SPECIALWAVE.brr", this);
+		if (specialWaveSampleIndex != -1) {
+			for (int a = 0; a < mySamples.size(); a++)
+			{
+				if (mySamples[a] == specialWaveSampleIndex)
+				{
+					data[resizedChannel].insert(data[resizedChannel].begin(), a);
+					data[resizedChannel].insert(data[resizedChannel].begin(), 0x10);
+					data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+					z += 3;
+					break;
+				}
+			}
+		}
 		if (targetAMKVersion > 1)
 		{
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0x01);
