@@ -89,6 +89,8 @@ static bool tempoDefined;
 
 static bool sortReplacements;
 static bool manualNoteWarning;
+static bool manualDurQuantWarning;
+static bool manualPhraseEndWarning;
 static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
 static bool caseNoteWarning;
@@ -185,6 +187,8 @@ void Music::init()
 	prevChannel = 0;
 	openTextFile((std::string)"music/" + name, text);
 	manualNoteWarning = true;
+	manualDurQuantWarning = true;
+	manualPhraseEndWarning = true;
 	nonNativeHexWarning = true;
 	nonNativeCmdWarning = true;
 	octaveForDDWarning = true;
@@ -1688,17 +1692,27 @@ void Music::parseHexCommand()
 			}
 			if (i < 0xDA)
 			{
-				if (manualNoteWarning)
+				if (targetAMKVersion == 0)
 				{
-					if (targetAMKVersion == 0)
+					if (manualNoteWarning && i >= 0x80)
 					{
-						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing.", name, line);
+						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing or that the wrong one was used.", name, line);
 						manualNoteWarning = false;
 					}
-					else
+					else if (manualDurQuantWarning && i > 0x00)
 					{
-						error("Unknown hex command.");
+						printWarning("Warning: A hex command was found that will act as a duration or a quantization\nand velocity byte instead of a special effect. If this is a song you're using\nfrom someone else, you can most likely ignore this message, though it may\nindicate that a necessary #amm or #am4 is missing or that the wrong one was\nused.", name, line);
+						manualDurQuantWarning = false;
 					}
+					else if (manualPhraseEndWarning && i == 0x00)
+					{
+						printWarning("WARNING: A hex command was found that will act as a phrase end marker instead of\na special effect, which more likely than not will mean your song will\nprematurely terminate. This may indicate that a necessary #amm or #am4 is\nmissing, or it could mean that the wrong one was used.", name, line);
+						manualPhraseEndWarning = false;
+					}
+				}
+				else
+				{
+					error("Unknown hex command.");
 				}
 			}
 			else if (i > 0xFE)
@@ -2136,9 +2150,11 @@ void Music::parseNote()
 
 		if (i < 0x80)
 		{
-			if (songTargetProgram == 0 && targetAMKVersion < 4 && lowNoteWarning) {
-				printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
-				lowNoteWarning = false; 
+			if (songTargetProgram == 0 && targetAMKVersion < 4) {
+				if (lowNoteWarning) {
+					printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+					lowNoteWarning = false; 
+				}
 			}
 			else {
 				error("Note's pitch was too low.");
@@ -3054,6 +3070,16 @@ void Music::pointersFirstPass()
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
+		for (i = 0; i < mySamples.size()-1; i++)
+		{
+			for (j = i+1; j < mySamples.size(); j++)
+			{
+			if ((mySamples[i] == mySamples[j]) && mySamples[i] != emptySampleIndex)
+				{
+					mySamples[j] = emptySampleIndex;
+				}
+			}
+		}
 
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)
