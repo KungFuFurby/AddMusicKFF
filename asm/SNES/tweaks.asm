@@ -184,7 +184,6 @@ YoshiDrumHijack:
 NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
-		PLB
 		RTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
@@ -192,7 +191,8 @@ NoYoshiDrum:
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		NOP
+		;This hijack overwrites 22 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
@@ -200,15 +200,18 @@ NoYoshiDrum:
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
-		;NOP : NOP
+		;NOP
 	Skip:
 
 org $02A763
-		JML YoshiDrumHijack
+		JSL YoshiDrumHijack
+		BRA YoshiDrumHijackPLBRTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
+		NOP : NOP
+YoshiDrumHijackPLBRTL:
+		PLB
+		RTL
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
