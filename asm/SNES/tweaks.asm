@@ -22,7 +22,7 @@ org $96C7
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
-    db !Welcome	
+	db !CastleDestructionFanfare	
 org $00C526
 	db !BonusEnd
 org $00C9BD
@@ -136,13 +136,21 @@ org $0CA5C2
 		
 org $009723
 	LDA.b #!Welcome
+if !WelcomeSongOverride = !true
 	STA.w $0DDA|!SA1Addr2					
+else
+	STZ.w $1DFB|!SA1Addr2
+endif
 	LDA.w $0DDA|!SA1Addr2	; 
 	NOP : NOP		; 
 	NOP : NOP		; 
 	LDY.w $0D9B|!SA1Addr2	; 
 	CPY.b #$C1		; 
+if !BowserSongOverride = !true
 	BNE CODE_009738		; 
+else
+	BRA CODE_009738		; 
+endif
 	LDA.b #!Bowser		; 
 CODE_009738:			;
 	STA.w $1DFB|!SA1Addr2	; 
@@ -184,7 +192,6 @@ YoshiDrumHijack:
 NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
-		PLB
 		RTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
@@ -192,7 +199,8 @@ NoYoshiDrum:
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		NOP
+		;This hijack overwrites 22 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
@@ -200,15 +208,18 @@ NoYoshiDrum:
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
-		;NOP : NOP
+		;NOP
 	Skip:
 
 org $02A763
-		JML YoshiDrumHijack
+		JSL YoshiDrumHijack
+		BRA YoshiDrumHijackPLBRTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
+		NOP : NOP
+YoshiDrumHijackPLBRTL:
+		PLB
+		RTL
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
