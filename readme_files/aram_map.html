@@ -91,13 +91,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$1A</td>
 				<td>Voice bits whose VxVOL DSP registers were cleared due to using noise and their noise frequency not matching the one currently in use.</td>
 				<td>!noSFX = false</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$1B</td>
 				<td>Voice bits indicating which voices the P-Switch as SFX are being used for.</td>
 				<td>!noSFX = false<br>!PSwitchIsSFX = true</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$1C</td>
@@ -116,13 +116,13 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td><u>When !noiseFrequencyMatchChecks = false</u><br>Noise frequency of the SFX instance with the highest priority.<br>
 <u>When !noiseFrequencyMatchChecks = true</u><br>Voice ID times 2 of the SFX instance with the highest priority.</td>
 				<td>!noSFX = false</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$1F</td>
 				<td>Highest priority of the SFX instance that is using noise.</td>
 				<td>!noSFX = false</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$20-$2F</td>
@@ -444,7 +444,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$91, $93, $95, $97, $99, $9B, $9D, $9F</td>
 				<td>Pitch slide delay in music tempo ticks, one byte per voice. Shared by both music and SFX.</td>
 				<td>N/A</td>
-				<td>New<br>(dates back to Vanilla, but was only properly implemented for music)</td>
+				<td>AddmusicK 1.0.9<br>(dates back to Vanilla, but was only properly implemented for music)</td>
 			</tr>
 			<tr>
 				<td>$A0, $A2, $A4, $A6, $A8, $AA, $AC, $AE</td>
@@ -486,7 +486,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$D0-$DF</td>
 				<td>Stores the VxVOL DSP register values of voices using noise that have had their volumes zeroed out due to not using the frequency currently being used. One word per voice.</td>
 				<td>!noSFX = false</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$E0-$EF</td>
@@ -538,7 +538,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0160 bit 0 (%???????y)</td>
 				<td>Used to indicate whether any voices have been reserved for Yoshi Drums.</td>
 				<td>N/A</td>
-				<td>New<br>(Dates back to AddmusicM, but was used to indicate Yoshi Drums on #5. This was not properly adapted when ported over to AddmusicK, which supported multiple channels containing Yoshi Drums and de facto abandoned this bit's original usage, but it has been updated to reflect the correct indicator)</td>
+				<td>AddmusicK 1.0.9<br>(Dates back to AddmusicM, but was used to indicate Yoshi Drums on #5. This was not properly adapted when ported over to AddmusicK, which supported multiple channels containing Yoshi Drums and de facto abandoned this bit's original usage, but it has been updated to reflect the correct indicator)</td>
 			</tr>
 			<tr>
 				<td>$0160 bit 1 (%??????x?)</td>
@@ -594,7 +594,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0170, $0172, $0174, $0176, $0178, $017A, $017C, $017E</td>
 				<td>Backup remote gain values, in case they are overwritten by SFX. One byte per voice.</td>
 				<td>N/A</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$0171, $0173, $0175, $0177, $0179, $017B, $017D, $017F</td>
@@ -654,7 +654,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$01F1, $01F3, $01F5, $01F7, $01F9, $01FB, $01FD, $01FF</td>
 				<td>Noise frequency for each SFX, one byte per voice.</td>
 				<td>!noSFX = false<br>!noiseFrequencySFXInstanceResolution = true</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$0200, $0202, $0204, $0206, $0208, $020A, $020C, $020E</td>
@@ -684,19 +684,19 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E</td>
 				<td>Contains various flags for various purposes, stored as %xy??????. One byte per voice.<br>See below for a list of bits whose usages don't match the latest version.</td>
 				<td>N/A</td>
-				<td>New<br>(At least one of the bits dates back to AddmusicK representing the entire byte, but was moved)</td>
+				<td>AddmusicK 1.0.9<br>(At least one of the bits dates back to AddmusicK representing the entire byte, but was moved)</td>
 			</tr>
 			<tr>
 				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E bit 6 (%?y??????)</td>
 				<td>Flag indicating that instrument data has been modified, and thus must be restored via the backup tables at $0130-$015F. One byte per voice.</td>
 				<td>N/A</td>
-				<td>New<br>(was also in AddmusicK representing the entire byte)</td>
+				<td>AddmusicK 1.0.9<br>(was also in AddmusicK representing the entire byte)</td>
 			</tr>
 			<tr>
 				<td>$0220, $0222, $0224, $0226, $0228, $022A, $022C, $022E bit 7 (%x???????)</td>
 				<td>Flag indicating that remote gain has been used, and thus must be restored via the backup tables at $0170, $0172, $0174, $0176, $0178, $017A, $017C, $017E. One byte per voice.</td>
 				<td>N/A</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$0221, $0223, $0225, $0227, $0229, $022B, $022D, $022F</td>
@@ -992,7 +992,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0389</td>
 				<td>Noise frequency for the music.</td>
 				<td>!noSFX = false</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$038A</td>
@@ -1054,7 +1054,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$03D0, $03D2, $03D4, $03D6, $03D8, $03DA, $03DC, $03DE</td>
 				<td>Remote code type ID for negative event IDs (on note start), one byte per voice.</td>
 				<td>N/A</td>
-				<td>New</td>
+				<td>AddmusicK 1.0.9</td>
 			</tr>
 			<tr>
 				<td>$03D1, $03D3, $03D5, $03D7, $03D9, $03DB, $03DD, $03DF</td>
