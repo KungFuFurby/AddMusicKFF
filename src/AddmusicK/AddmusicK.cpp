@@ -1326,6 +1326,14 @@ void fixMusicPointers()
 				}
 				musics[i].spaceInfo.importantSampleCount = importantSampleCount;
 
+				int endOfSongAndSampleDataPos = checkPos;
+				
+				if (checkPos > 0x10000)
+				{
+					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					quit(1);
+				}
+
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
 				//musics[i].spaceInfo.echoBufferStartPos = checkPos;
@@ -1349,7 +1357,7 @@ void fixMusicPointers()
 
 				if (checkPos > 0x10000)
 				{
-					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << " bytes." << std::dec << std::endl;
 					quit(1);
 				}
 			}

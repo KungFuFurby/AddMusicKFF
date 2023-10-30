@@ -208,7 +208,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.10 - 2023-10-22</h2>
+	<h2>Version 1.0.10 - 2023-10-29</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -221,6 +221,7 @@
 	<li>SPC & ROM Compilation
 		<ul>
 		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
+		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>
