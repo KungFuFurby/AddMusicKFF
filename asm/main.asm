@@ -1976,6 +1976,7 @@ if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
 ProcessAPU1SFX:
 	mov	x, #(!1DFASFXChannel*2)
 	mov	$46, x
+	mov	$48, #$00	; Let NoteVCMD know that this is SFX code.
 	mov	a, $05		; 
 	cmp	a, #$04		; \ If the currently playing SFX is the girder SFX
 	beq	L_0B08		; / Then process that.
@@ -1984,8 +1985,6 @@ ProcessAPU1SFX:
 
 ; $01 = 01
 L_0A51:						;;;;;;;;/ Code change
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-
 L_0A56:
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
@@ -2037,7 +2036,6 @@ L_0AB0:
 
 ; $01 = 04 && $05 != 01
 L_0B08:
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	dbnz	$1c, L_0AF2
 	bra	RestoreInstrumentFromAPU1SFX
 
