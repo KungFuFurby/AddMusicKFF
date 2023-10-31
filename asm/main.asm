@@ -1839,17 +1839,17 @@ UnpauseMusic:
 	jmp SetFLGFromNCKValue
 
 .silent:	
-	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
+	mov a, #$01		;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-
-	mov $f2, #$5c		; \ Key off voices
-	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
 	dec a
 	mov $f2, #$2c		;\
 	mov $f3, a		;| Mute echo.
 	set1 $f2.4		;|
 	mov $f3, a		;/
+
+	dec a			; \ Key off voices
+	call KeyOffVoicesNoPlayingVoicesClear	; / (so the music doesn't restart playing when using start+select)
 	bra .unsetMute
 
 ;The cases here are different: carry is implied cleared if jump array is
@@ -2576,6 +2576,7 @@ KeyOffCurrentVoice:
 	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
+KeyOffVoicesNoPlayingVoicesClear:
 	mov	y, #$5c
 DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
