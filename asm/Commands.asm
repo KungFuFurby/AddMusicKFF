@@ -281,12 +281,17 @@ cmdDF:					; Vibrato off (vibrato on goes straight into this, so be wary.)
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_table2_manualVTable:
+	mov	!SecondVTable, a	; \ Argument is which table we're using
+SetAllVolChangeFlag:
+	mov	$5c, #$ff		; / Mark all channels as needing a volume refresh
+	ret				; /
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE0:					; Change the master volume
 {
 	mov   !MasterVolume, a
 	mov   $56, #$00
-	mov   $5c, #$ff          ; all vol chgd
-	ret
+	bra   SetAllVolChangeFlag          ; all vol chgd
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE1:					; Fade the master volume
@@ -1077,11 +1082,6 @@ SubC_table2:
 	;type 3 remote code command.
 	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
 	;ret
-	
-.manualVTable
-	mov	!SecondVTable, a	; \ Argument is which table we're using
-	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
-	ret				; /
 	
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
