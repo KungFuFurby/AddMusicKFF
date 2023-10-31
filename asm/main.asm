@@ -615,13 +615,12 @@ SubC_3:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF8:					; Noise command.
 {
-Noiz:
-		or	(!MusicNoiseChannels), ($48)
 if !noSFX = !false
-		and	a, #$1f
-		mov	$0389, a
+		call	Noiz
 		cmp	!SFXNoiseChannels, #$00
 		bne	+
+else
+		or	(!MusicNoiseChannels), ($48)
 endif
 		call	ModifyNoise
 +	
@@ -674,6 +673,12 @@ endif
 
 }
 if !noSFX = !false
+Noiz:
+	and	a, #$1f
+	mov	$0389, a
+	or	(!MusicNoiseChannels), ($48)
+	ret
+
 macro RestoreVolLevelsPostNoise()
 	mov	a, $d0+x
 	mov	$f3, a
