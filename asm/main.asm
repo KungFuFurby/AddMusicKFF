@@ -2643,9 +2643,8 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	
 	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	$14, #$00
-	mov	$15, y
 	mov	a, #$00
+	movw	$14, ya
 	mov	y, a
 	
 -	mov	($14)+y, a		; clear the whole echo buffer
