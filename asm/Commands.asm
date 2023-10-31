@@ -686,6 +686,7 @@ HotPatchPresetVCMD:
 	push	y
 	mov	y, $31+x
 	push	y
+	asl	a
 	clrc
 	adc	a, #HotPatchPresetTable&$FF
 	mov	$30+x, a
@@ -712,59 +713,45 @@ HotPatchVCMDByBit:
 HotPatchVCMDByBitByte0:
 	mov	$10, a
 	push	p
-	mov	$11, #$07
-	mov	x, #$00
-	mov	a, HotPatchVCMDByte0StorageSet+x
-	mov	$14, a
-	inc	x
-	mov	a, HotPatchVCMDByte0StorageSet+x
-	mov	$15, a
--
-	lsr	$10
-	inc	x
-	mov	a, HotPatchVCMDByte0StorageSet+x
-	mov	$12, a
-	beq	+
-	call	HotPatchVCMDByBitProcessStorages
-+
-	dbnz	$11, -
+	mov	A, #HotPatchVCMDByte0StorageSet&$FF
+	mov	Y, #(HotPatchVCMDByte0StorageSet>>8)&$FF
+	call	HotPatchVCMDByBitProcessByte
+	pop	p
+HotPatchVCMDByBitByte1:
+	call	HotPatchVCMDFetchNextByteIfMinus
+	mov	$10, a
+	push	p
+	mov	A, #HotPatchVCMDByte1StorageSet&$FF
+	mov	Y, #(HotPatchVCMDByte1StorageSet>>8)&$FF
+	call	HotPatchVCMDByBitProcessByte
 	pop	p
 
 	;NOTE: For those of you that want to use extra bits, a template is
 	;provided below, commented out. You will find the corresponding
 	;collection nearby, also commented out.
-	;- $10 will contain all of the bits to process.
-	;- $11 will contain the number of bits remaining plus one (the
-	;  highest bit means fetch another byte: if this is not set, all
-	;  subsequent bits will be zero).
-	;- $12 is the number of bytes remaining to modify. Each byte
+	;- $10 will contain all of the bits to process in the current byte.
+	;- $11 is reserved to execute an indexed X fetch via a subroutine
+	;  call. The RET opcode is temporarily stored in $16 to do this,
+	;  then overwritten for byte storage reasons.
+	;- $12-$13 store the pointer to an array containing a pointer to the
+	;  storage set, followed by the number of bytes to write for each of
+	;  the seven bits to apply the hot patch (the highest bit means
+	;  fetch another byte: if this is not set, all subsequent bits will
+	;  be zero).
+	;- $14-$15 store the pointer to the storage set. Each byte
 	;  modified takes up a four-byte storage entry: two for the pointer,
 	;  one to use when the bit is cleared, and one to use when the bit
 	;  is set. A template will be found nearby that matches the label
 	;  name shown.
-	;- $14-$15 store the pointer to the storage set.
 	;- $16-$17 store the pointer that we will be writing a byte to.
 
-HotPatchVCMDByBitByte1:
+HotPatchVCMDByBitByte2:
 	;call	HotPatchVCMDFetchNextByteIfMinus
 	;mov	$10, a
 	;push	p
-	;mov	$11, #$07
-	;mov	x, #$00
-	;mov	a, HotPatchVCMDByte1StorageSet+x
-	;mov	$14, a
-	;inc	x
-	;mov	a, HotPatchVCMDByte1StorageSet+x
-	;mov	$15, a
--
-	;lsr	$10
-	;inc	x
-	;mov	a, HotPatchVCMDByte1StorageSet+x
-	;mov	$12, a
-	;beq	+
-	;call	HotPatchVCMDByBitProcessStorages
-+
-	;dbnz	$11, -
+	;mov	A, #HotPatchVCMDByte2StorageSet&$FF
+	;mov	Y, #(HotPatchVCMDByte2StorageSet>>8)&$FF
+	;call	HotPatchVCMDByBitProcessByte
 	;pop	p
 
 HotPatchVCMDByBitByteFetchLoop:
@@ -774,9 +761,38 @@ HotPatchVCMDByBitByteFetchLoop:
 HotPatchVCMDByBitByteFetchLoopSkip:
 	ret
 
+HotPatchVCMDByBitProcessByte:
+	mov	$11, #$F5 ;MOV A, !A+X opcode
+	movw	$12, ya
+HotPatchVCMDByBitProcessByte_count:
+	mov	y, #$07
+	mov	$14, #$6F ;RET opcode
+	mov	x, #$00
+	call	$0011
+	mov	HotPatchVCMDByBitProcessByte_storagePtrLo+1, a
+	inc	x
+	call	$0011
+	mov	$15, a
+-
+	mov	$14, #$6F ;RET opcode
+	lsr	$10
+	inc	x
+	call	$0011
+	push	y
+	mov	y, a
+	beq	+
+HotPatchVCMDByBitProcessByte_storagePtrLo:
+	mov	$14, #$00
+	call	HotPatchVCMDByBitProcessStorages
++
+	pop	y
+	dbnz	y, -
+	ret
+
 HotPatchVCMDByBitProcessStorages:
 -
 	push	p
+	push	y
 	mov	y, #$00
 	mov	a, ($14)+y
 	mov	$16, a
@@ -793,8 +809,10 @@ HotPatchVCMDByBitProcessStorages:
 	mov	a, #$04
 	addw	ya, $14
 	movw	$14, ya
+	mov	HotPatchVCMDByBitProcessByte_storagePtrLo+1, a
+	pop	y
 	pop	p
-	dbnz	$12, -
+	dbnz	y, -
 	ret
 
 HotPatchVCMDByte0StorageSet:
@@ -888,44 +906,120 @@ HotPatchVCMDByte0Bit6Storages:
 HotPatchVCMDByte0Bit6StoragesEOF:
 
 HotPatchVCMDByte1StorageSet:
-	;dw	HotPatchVCMDByte1Bit0Storages
-	;db	(HotPatchVCMDByte1Bit0StoragesEOF-HotPatchVCMDByte1Bit0Storages)/4
-	;db	(HotPatchVCMDByte1Bit1StoragesEOF-HotPatchVCMDByte1Bit1Storages)/4
-	;db	(HotPatchVCMDByte1Bit2StoragesEOF-HotPatchVCMDByte1Bit2Storages)/4
-	;db	(HotPatchVCMDByte1Bit3StoragesEOF-HotPatchVCMDByte1Bit3Storages)/4
-	;db	(HotPatchVCMDByte1Bit4StoragesEOF-HotPatchVCMDByte1Bit4Storages)/4
-	;db	(HotPatchVCMDByte1Bit5StoragesEOF-HotPatchVCMDByte1Bit5Storages)/4
-	;db	(HotPatchVCMDByte1Bit6StoragesEOF-HotPatchVCMDByte1Bit6Storages)/4
+	dw	HotPatchVCMDByte1Bit0Storages
+	db	(HotPatchVCMDByte1Bit0StoragesEOF-HotPatchVCMDByte1Bit0Storages)/4
+	db	(HotPatchVCMDByte1Bit1StoragesEOF-HotPatchVCMDByte1Bit1Storages)/4
+	db	(HotPatchVCMDByte1Bit2StoragesEOF-HotPatchVCMDByte1Bit2Storages)/4
+	db	(HotPatchVCMDByte1Bit3StoragesEOF-HotPatchVCMDByte1Bit3Storages)/4
+	db	(HotPatchVCMDByte1Bit4StoragesEOF-HotPatchVCMDByte1Bit4Storages)/4
+	db	(HotPatchVCMDByte1Bit5StoragesEOF-HotPatchVCMDByte1Bit5Storages)/4
+	db	(HotPatchVCMDByte1Bit6StoragesEOF-HotPatchVCMDByte1Bit6Storages)/4
 
 HotPatchVCMDByte1Bit0Storages:
+	;Byte 1 Bit 0 Clear - Rests are forcibly keyed off when read
+	;Byte 1 Bit 0 Set - Rests are only keyed off if encountered in readahead
+	dw	if_rest_koffCheckGate
+	db	$F0 ;BEQ opcode
+	db	$2F ;BRA opcode
+HotPatchVCMDByte1Bit0StoragesEOF:
+
+HotPatchVCMDByte1Bit1Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit1StoragesEOF:
+
+HotPatchVCMDByte1Bit2Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit2StoragesEOF:
+
+HotPatchVCMDByte1Bit3Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit3StoragesEOF:
+
+HotPatchVCMDByte1Bit4Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit4StoragesEOF:
+
+HotPatchVCMDByte1Bit5Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit5StoragesEOF:
+
+HotPatchVCMDByte1Bit6Storages:
+	;This bit is not yet defined.
+HotPatchVCMDByte1Bit6StoragesEOF:
+
+HotPatchVCMDByte2StorageSet:
+	;dw	HotPatchVCMDByte2Bit0Storages
+	;db	(HotPatchVCMDByte2Bit0StoragesEOF-HotPatchVCMDByte2Bit0Storages)/4
+	;db	(HotPatchVCMDByte2Bit1StoragesEOF-HotPatchVCMDByte2Bit1Storages)/4
+	;db	(HotPatchVCMDByte2Bit2StoragesEOF-HotPatchVCMDByte2Bit2Storages)/4
+	;db	(HotPatchVCMDByte2Bit3StoragesEOF-HotPatchVCMDByte2Bit3Storages)/4
+	;db	(HotPatchVCMDByte2Bit4StoragesEOF-HotPatchVCMDByte2Bit4Storages)/4
+	;db	(HotPatchVCMDByte2Bit5StoragesEOF-HotPatchVCMDByte2Bit5Storages)/4
+	;db	(HotPatchVCMDByte2Bit6StoragesEOF-HotPatchVCMDByte2Bit6Storages)/4
+
+HotPatchVCMDByte2Bit0Storages:
 	;dw memory location here
 	;db byte to write when bit is cleared here
 	;db byte to write when bit is set here
 	;repeat as many times as you want prior to the EOF label
 	;then proceed to the next bit
-HotPatchVCMDByte1Bit0StoragesEOF:
+HotPatchVCMDByte2Bit0StoragesEOF:
 
-HotPatchVCMDByte1Bit1Storages:
-HotPatchVCMDByte1Bit1StoragesEOF:
+HotPatchVCMDByte2Bit1Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit1StoragesEOF:
 
-HotPatchVCMDByte1Bit2Storages:
-HotPatchVCMDByte1Bit2StoragesEOF:
+HotPatchVCMDByte2Bit2Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit2StoragesEOF:
 
-HotPatchVCMDByte1Bit3Storages:
-HotPatchVCMDByte1Bit3StoragesEOF:
+HotPatchVCMDByte2Bit3Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit3StoragesEOF:
 
-HotPatchVCMDByte1Bit4Storages:
-HotPatchVCMDByte1Bit4StoragesEOF:
+HotPatchVCMDByte2Bit4Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit4StoragesEOF:
 
-HotPatchVCMDByte1Bit5Storages:
-HotPatchVCMDByte1Bit5StoragesEOF:
+HotPatchVCMDByte2Bit5Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit5StoragesEOF:
 
-HotPatchVCMDByte1Bit6Storages:
-HotPatchVCMDByte1Bit6StoragesEOF:
+HotPatchVCMDByte2Bit6Storages:
+	;dw memory location here
+	;db byte to write when bit is cleared here
+	;db byte to write when bit is set here
+	;repeat as many times as you want prior to the EOF label
+	;then proceed to the next bit
+HotPatchVCMDByte2Bit6StoragesEOF:
 
 HotPatchPresetTable:
+	;All presets are specified as two bytes for indexing and
+	;divisibility reasons. This means the highest byte is set on the
+	;first byte.
+	  ;First byte is specified as...
 	  ;%!xyzabcd
-	  ;%! - New byte specified (shouldn't be found in the presets for now)
+	  ;%! - New byte specified
 	   ;%x - When using arpeggio, glissando disables itself after one base note
 	    ;%y - Echo writes are disabled when EDL is zero on initial playback of local song
 	     ;%z - $F3 VCMD zeroes out pitch base fractional multiplier
@@ -933,19 +1027,40 @@ HotPatchPresetTable:
                ;%b - Readahead looks inside subroutines and loop sections
 	        ;%c - ADSR/GAIN write orders are flipped during instrument setup
 	         ;%d - Arpeggio doesn't play during rests
-	db %00000000 ; 00 - AddmusicK1.0.8 and earlier (not counting Beta)
-	             ; %??0?000? also replicate Vanilla SMW's behavior
-	db %01111111 ; 01 - AddmusicK1.0.9
-	db %00000000 ; 02 - AddmusicK Beta
-	db %00000000 ; 03 - Romi's Addmusic404
-	db %00000000 ; 04 - Addmusic405
+
+	  ;Second byte is specified as...
+	  ;%!xyzabcd
+	  ;%! - New byte specified
+	   ;%x - Reserved for playback adjustment for other Addmusics
+	    ;%y - Reserved for playback adjustment for other Addmusics
+	     ;%z - Reserved for playback adjustment for other Addmusics
+	      ;%a - Reserved for playback adjustment for other Addmusics
+	       ;%b - Reserved for playback adjustment for other Addmusics
+	        ;%c - Reserved for playback adjustment for other Addmusics
+	         ;%d - Rests are only keyed off if encountered in readahead
+
+	db %10000000 ; 00 - AddmusicK1.0.8 and earlier (not counting Beta)
+	             ; %??0?000? also replicates Vanilla SMW's behavior
+	db %00000000 ; %???????1 also replicates Vanilla SMW's behavior
+	db %11111111 ; 01 - AddmusicK1.0.9
+	db %00000000 ;
+	db %10000000 ; 02 - AddmusicK Beta
+	db %00000000 ;
+	db %10000000 ; 03 - Romi's Addmusic404
+	db %00000001 ;
+	db %10000000 ; 04 - Addmusic405
+	db %00000001 ;
 	             ; NOTE: Although it's not implemented yet, there are
                      ; readahead-related differences due to the $ED VCMD
 	             ; having inconsistent parameter sizes for $80 and up
 	             ; and Addmusic405 failing to account for these.
-	db %00001000 ; 05 - AddmusicM
-	db %00000000 ; 06 - carol's MORE.bin
-	; 07-7F - Reserved for future Addmusics (or any extra past ones)
+	db %10001000 ; 05 - AddmusicM
+	db %00000000 ;
+	db %10000000 ; 06 - carol's MORE.bin
+	db %00000001 ;
+	db %10000000 ; 07 - Vanilla SMW
+	db %00000001 ;
+	; 08-7F - Reserved for future Addmusics (or any extra past ones)
 	; 80-FF - See HotPatchPresetVCMDUserPatch (doesn't use the bit table)
 
 SubC_table2:
