@@ -229,7 +229,7 @@ L_0573:
 ;- Read $FD more often (only needed if we overflow from 15 to 0) and
 ;  reserve a memory location for this purpose.
 	bcs   SoundTickOn
-	cmp   y, #$00
+	mov   a, y
 	beq   L_058D
 	
 SoundTickOn:
