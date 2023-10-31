@@ -1974,6 +1974,8 @@ PauseMusic:
 if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
 ;
 ProcessAPU1SFX:
+	mov	x, #(!1DFASFXChannel*2)
+	mov	$46, x
 	mov	a, $05		; 
 	cmp	a, #$04		; \ If the currently playing SFX is the girder SFX
 	beq	L_0B08		; / Then process that.
@@ -1990,8 +1992,7 @@ RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
 	mov	$05, a
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
-	mov	x, #(!1DFASFXChannel*2)
+	mov	!ChSFXPriority+x, a
 	jmp	RestoreInstrumentInformation
 
 L_0A38:
@@ -2003,8 +2004,6 @@ L_0A38:
 ; executes when.
 	cmp	$1c, #$2a
 	bne	L_0A99
-	mov	x, #(!1DFASFXChannel*2)
-	mov	$46, x
 	mov	y, #$00
 	mov	$91+x, y
 	mov	y, #$12
@@ -2014,7 +2013,6 @@ L_0A38:
 	bra	L_0A99
 
 L_0A68:
-	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$08
 	call	SetSFXInstrument
 	mov	a, #$b2
@@ -2030,7 +2028,6 @@ L_0A68:
 L_0A99:
 	call	SFX1DFAKOFFCheck
 L_0AA5:
-	mov	x, #(!1DFASFXChannel*2)
 	mov	a, $90+x
 	beq	L_0AB0
 	call	L_09CD
@@ -2053,7 +2050,6 @@ L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$07
 	call	SetSFXInstrument
 	mov	a, #$a4
