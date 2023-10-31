@@ -1709,7 +1709,7 @@ endif
 	mov	a, ($14)+y
 	cmp	a, #$E0
 	beq	.getSFXPriority
-	mov	a, #$00
+	mov	a, y
 	bra	.sfxPriorityCheck
 .getSFXPriority
 	incw	$14
