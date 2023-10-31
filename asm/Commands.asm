@@ -135,13 +135,13 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
-	bpl	+
 if !noSFX = !false
-	and	a, #$1f
-	mov	$0389, a
-endif
-	or	(!MusicNoiseChannels), ($48)
+	bpl	+
+	call	Noiz
 	bra	++
+else
+	bmi	++
+endif
 +
 	mov	($10)+y, a		; (save it in the backup table)
 ++
@@ -177,12 +177,8 @@ endif
 	bra	.DSPWriteDirectionGate1
 
 .noiseInstrument
-if !noSFX = !false
-	cmp	!SFXNoiseChannels, #$00
-	bne	.DSPWriteDirectionGate1
-endif	
 	push	y
-	call	ModifyNoise
+	call	cmdF8
 	pop	y
 .DSPWriteDirectionGate1
 	bra	.incXY
@@ -288,12 +284,17 @@ cmdDF:					; Vibrato off (vibrato on goes straight into this, so be wary.)
 	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+SubC_table2_manualVTable:
+	mov	!SecondVTable, a	; \ Argument is which table we're using
+SetAllVolChangeFlag:
+	mov	$5c, #$ff		; / Mark all channels as needing a volume refresh
+	ret				; /
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE0:					; Change the master volume
 {
 	mov   !MasterVolume, a
 	mov   $56, #$00
-	mov   $5c, #$ff          ; all vol chgd
-	ret
+	bra   SetAllVolChangeFlag          ; all vol chgd
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE1:					; Fade the master volume
@@ -1321,11 +1322,6 @@ SubC_table2:
 	;mov	!RestGAINReplacement+x, a ; There is no memory location allocated for this at the moment.
 	;ret
 	
-.manualVTable
-	mov	!SecondVTable, a	; \ Argument is which table we're using
-	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
-	ret				; /
-	
 .oldFA_com
 	mov	$0165,a
 	ret
@@ -1350,7 +1346,6 @@ SubC_table2:
 .SyncClockDivider
 	mov	$016c, a
 	ret
-
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.

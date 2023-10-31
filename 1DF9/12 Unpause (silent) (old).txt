@@ -7,15 +7,15 @@ $E0 $FF #jsr changePause
 	
 	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
 	mov !PauseMusic, a	;/
-	
-	mov $f2, #$5c		; \ Key off voices
-	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
 
 	dec a
 	mov $f2, #$2c		;\
 	mov $f3, a		;| Mute echo.
-	mov $f2, #$3c		;|
+	set1 $f2.4		;|
 	mov $f3, a		;/
+
+	dec a			; \ Key off voices
+	call KeyOffVoicesNoPlayingVoicesClear	; / (so the music doesn't restart playing when using start+select)
 
 	clr1 !NCKValue.6		; Unset the mute flag.
 	jmp SetFLGFromNCKValue
