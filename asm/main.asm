@@ -227,8 +227,8 @@ SquareGate:
 ;However, it has been upgraded.
 		addw	ya,$016a&$FF
 		movw	$016a&$FF,ya
-		cmp	$016b&$FF, #$00
 		clrp
+		mov	a, y
 		beq	Sq_ret
 ;Original used fixed memory location references (and sample ID $09).
 ;However, this isn't possible on AMK, so off we go to get the special wave's
