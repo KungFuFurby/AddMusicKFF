@@ -187,28 +187,16 @@ YoshiDrumHijack:
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
 		JSL $00FC7A|!Bank
-		PLB
 		RTL
 NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
 		RTL
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP
-		;This hijack overwrites 22 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP
+		;Just write a bunch of NOPs up until we reach $0081AA.
+		;We automate this using a padding operation.
+warnpc $0081AA
+padbyte $EA
+pad $0081AA
 	Skip:
 
 org $02A763
@@ -247,20 +235,14 @@ org $00A635
 ; KevinM's edit: use this small freed up space for the start+select sfx
 StartSelectSfx:
 	sta $0100|!SA1Addr2 	; Overwritten code
-	lda #$09 				;\ Play sfx
+	lda #$09 		;\ Play sfx
 	sta $1DFA|!SA1Addr2 	;/
-	jmp $A289 				; Return back
-	;NOP : NOP : NOP  		;\
-	;NOP : NOP : NOP 		;| We used 11 bytes for the routine
-	;NOP : NOP 				;| so 11 less NOPs needed.
-	;NOP : NOP : NOP 		;/
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
+	jmp $A289 		; Return back
+	;Just write a bunch of NOPs up until we reach $00A654.
+	;We automate this using a padding operation.
+warnpc $00A654
+padbyte $EA
+pad $00A654
 Skip2:
 
 ; KevinM's edit: jump to code that plays sfx on start+select
