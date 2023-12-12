@@ -179,7 +179,6 @@ YoshiDrumHijack:
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
 		JSL $00FC7A|!Bank
-		PLB
 		RTL
 NoYoshiDrum:
 		LDA #$03
@@ -191,8 +190,8 @@ NoYoshiDrum:
 		NOP : NOP : NOP
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP
-		;This hijack overwrites 22 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
+		NOP : NOP
+		;This hijack overwrites 20 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
 		;NOP : NOP : NOP
