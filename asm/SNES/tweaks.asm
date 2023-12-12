@@ -184,22 +184,10 @@ NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
 		RTL
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		;This hijack overwrites 20 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP
+		;Just write a bunch of NOPs up until we reach $0081AA.
+		;We automate this using a padding operation.
+padbyte $EA
+pad $0081AA
 	Skip:
 
 org $02A763
