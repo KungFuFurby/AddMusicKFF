@@ -259,6 +259,7 @@
 		<li>"<b>(EXPERIMENTAL)</b> Added the ability to filter out hex command code. So far, only arpeggio ($FB hex command) is supported through a user define: there are some safety problems that could result in trying to go further and forgetting that they are already in place, causing accidental crashes in the process." - KungFuFurby</li>
 		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
 		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
+		<li>"Added full 8MB SA-1 memory mapping support." - Lord Ruby and PSI Ninja</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM

@@ -198,9 +198,18 @@ int main(int argc, char* argv[]) try		// // //
 			printError("Error: Your ROM is too small. Save a level in Lunar Magic or expand it with\nLunar Expand, then try again.", true);
 
 		if (rom[SNESToPC(0xFFD5)] == 0x23 && allowSA1)
+		{
 			usingSA1 = true;
+			if (rom[SNESToPC(0xFFD7)] == 0xD)
+				fullSA1 = true;
+			else
+				fullSA1 = false;
+		}
 		else
+		{
 			usingSA1 = false;
+			fullSA1 = false;
+		}
 
 
 		cleanROM();
