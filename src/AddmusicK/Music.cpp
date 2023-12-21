@@ -89,6 +89,8 @@ static bool tempoDefined;
 
 static bool sortReplacements;
 static bool manualNoteWarning;
+static bool manualDurQuantWarning;
+static bool manualPhraseEndWarning;
 static bool nonNativeHexWarning;
 static bool nonNativeCmdWarning;
 static bool caseNoteWarning;
@@ -96,6 +98,7 @@ static bool octaveForDDWarning;
 static bool remoteGainWarning;
 static bool fractionNoteLengthWarning;
 static bool lowNoteWarning;
+static bool FIRTableWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -185,6 +188,8 @@ void Music::init()
 	prevChannel = 0;
 	openTextFile((std::string)"music/" + name, text);
 	manualNoteWarning = true;
+	manualDurQuantWarning = true;
+	manualPhraseEndWarning = true;
 	nonNativeHexWarning = true;
 	nonNativeCmdWarning = true;
 	octaveForDDWarning = true;
@@ -192,6 +197,7 @@ void Music::init()
 	remoteGainWarning = true;
 	fractionNoteLengthWarning = true;
 	lowNoteWarning = true;
+	FIRTableWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -1688,17 +1694,27 @@ void Music::parseHexCommand()
 			}
 			if (i < 0xDA)
 			{
-				if (manualNoteWarning)
+				if (targetAMKVersion == 0)
 				{
-					if (targetAMKVersion == 0)
+					if (manualNoteWarning && i >= 0x80)
 					{
-						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing.", name, line);
+						printWarning("Warning: A hex command was found that will act as a note instead of a special\neffect. If this is a song you're using from someone else, you can most likely\nignore this message, though it may indicate that a necessary #amm or #am4 is\nmissing or that the wrong one was used.", name, line);
 						manualNoteWarning = false;
 					}
-					else
+					else if (manualDurQuantWarning && i > 0x00)
 					{
-						error("Unknown hex command.");
+						printWarning("Warning: A hex command was found that will act as a duration or a quantization\nand velocity byte instead of a special effect. If this is a song you're using\nfrom someone else, you can most likely ignore this message, though it may\nindicate that a necessary #amm or #am4 is missing or that the wrong one was\nused.", name, line);
+						manualDurQuantWarning = false;
 					}
+					else if (manualPhraseEndWarning && i == 0x00)
+					{
+						printWarning("WARNING: A hex command was found that will act as a phrase end marker instead of\na special effect, which more likely than not will mean your song will\nprematurely terminate. This may indicate that a necessary #amm or #am4 is\nmissing, or it could mean that the wrong one was used.", name, line);
+						manualPhraseEndWarning = false;
+					}
+				}
+				else
+				{
+					error("Unknown hex command.");
 				}
 			}
 			else if (i > 0xFE)
@@ -1826,13 +1842,21 @@ void Music::parseHexCommand()
 				error("$FA $05 in #amk 2 or above has been replaced with remote code.")
 
 			// Print error for AM4 songs that attempt to use an invalid FIR filter.  They both A) won't sound like their originals and B) may crash the DSP (or for whatever reason that causes SPCPlayer to go silent with them).
-			if (hexLeft == 0 && currentHex == 0xF1 && songTargetProgram == 1)
+			if (hexLeft == 0 && currentHex == 0xF1)
 			{
 				if (i > 1)
 				{
-					char buffer[255];
-					sprintf(buffer, "$%02X", i);
-					error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.")
+					if (songTargetProgram == 1) {
+						char buffer[255];
+						sprintf(buffer, "$%02X", i);
+						error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.");
+					}
+					else if (FIRTableWarning) {
+						FIRTableWarning = false;
+						char buffer[255];
+						sprintf(buffer, "WARNING: $%02X", i);
+						printWarning(buffer + (std::string)" is a non-standard FIR table ID, and results in an out-of-bounds read. Only $00 and $01 are guaranteed to sound consistent. Please use the $F5 hex command for custom FIR coefficents.", name, line);
+					}
 				}
 			}
 
@@ -2136,9 +2160,11 @@ void Music::parseNote()
 
 		if (i < 0x80)
 		{
-			if (songTargetProgram == 0 && targetAMKVersion < 4 && lowNoteWarning) {
-				printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
-				lowNoteWarning = false; 
+			if (songTargetProgram == 0 && targetAMKVersion < 4) {
+				if (lowNoteWarning) {
+					printWarning("WARNING: This older AddmusicK song outputs an invalid note byte (its pitch is too low)! It may not be audible in the song!", name, line);
+					lowNoteWarning = false; 
+				}
 			}
 			else {
 				error("Note's pitch was too low.");
@@ -3053,7 +3079,6 @@ void Music::pointersFirstPass()
 			addSample("EMPTY.brr", this, true);
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
-
 
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)
