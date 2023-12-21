@@ -19,10 +19,12 @@ if !UsingSA1
 	sa1rom
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
+	!Bank     = $000000
 else
 	lorom
 	!SA1Addr1 = $0000
 	!SA1Addr2 = $0000
+	!Bank     = $800000
 endif
 
 
@@ -99,7 +101,6 @@ endif
 
 !DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
-!TabARAMRet = $0400	; This is the address that the SPC will jump to after uploading samples.  It changes the sample table address to its correct location in ARAM.
 			; All of these are changed automatically.
 !SongCount = $00	; How many songs exist.  Used by the fading routine; changed automatically.
 
@@ -175,7 +176,7 @@ endif
 	PLP
 
 
-	JML $00806B		; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
+	JML $00806B|!Bank	; Return.  TODO: Detect if the ROM is using the Wait Replace patch.
 
 NoMusic:
 	LDA #$00
@@ -219,7 +220,7 @@ endif
 if !PSwitchStarRestart == !true
 +	lda #$01
 	sta !Trick
-	lda !Tricker
+	lda #!Tricker
 	sta !MusicReg
 	bra End
 endif
@@ -238,43 +239,43 @@ ChangeMusic:
 	
 ;	LDA !MusicMir
 if !PSwitchIsSFX = !false
-;	CMP !PSwitch
+;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
-;	CMP !Starman
+;	CMP #!Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
 ;	
 ;.doExtraChecks			; We can't allow the p-switch or starman songs to play during the level clear themes.
 	LDA !CurrentSong
-	CMP !StageClear
+	CMP #!StageClear
 	BEQ LevelEndMusicChange
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ LevelEndMusicChange
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ LevelEndMusicChange
-	CMP !BossClear		;;; this one too
+	CMP #!BossClear		;;; this one too
 	BNE Okay
 	
 LevelEndMusicChange:
 	LDA !MusicMir
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ Okay
-	CMP !SwitchPalace	;;; bonus game fix
+	CMP #!SwitchPalace	;;; bonus game fix
 	BEQ Okay
-	CMP !Miss		;;; sure why not
+	CMP #!Miss		;;; sure why not
 	BEQ Okay
-	CMP !RescueEgg
+	CMP #!RescueEgg
 	BEQ Okay		; Yep
-	CMP !StaffRoll	; Added credits check
+	CMP #!StaffRoll	; Added credits check
 	BEQ Okay
 	LDA $0100|!SA1Addr2		
 	CMP #$10			
 	BCC Okay
 	;;; LDA !CurrentSong	;;; this is why we got here in first place, seems redundant
-	;;; CMP !StageClear
+	;;; CMP #!StageClear
 	;;; BEQ EndWithCancel
-	;;; CMP !IrisOut
+	;;; CMP #!IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
 if !PSwitchStarRestart == !false
@@ -290,20 +291,26 @@ Okay:
 
 	CMP #$FF			; \ #$FF is fade.
 	BEQ Fade			; /
-	
+
+if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-if !PSwitchIsSFX = !false
-	CMP !PSwitch			; |
+if !PSwitchIsSFX = !false && !PSwitch != $00
+	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
-	CMP !Starman			; |
+if !Starman != $00
+	CMP #!Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
+endif
+endif
 	;;;BRA ++			; |
 +					; |
 	LDA $0100|!SA1Addr2		; | \
 	CMP #$12+1			; | | But if we're coming back from the p-switch or starman musics AND we're loading a new level, then we might need to reload the song as well.
 	BCC ++				; | / ;;; can't be bad to allow everything below
 	LDA !MusicMir			; |
+	CMP !MusicBackup		; |
+	BNE ++				; |
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
 	JMP SPCNormal			; |
@@ -311,15 +318,14 @@ endif
 	LDA !MusicMir
 	STA !CurrentSong
 	STA !MusicBackup
-	STA $0DDA|!SA1Addr2
 	
 ;	LDA $0100|!SA1Addr2
 ;	CMP #$0F
 ;	BCC .forceMusicToPlay
 ;	LDA !CurrentSong
-;	CMP !StageClear
+;	CMP #!StageClear
 ;	BEQ EndWithCancel
-;	CMP !IrisOut
+;	CMP #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
 
@@ -462,12 +468,10 @@ NoAdd:	STA $09			; /
 	LDA [$0D]			; Get the number of samples
 	STA !SampleCount
 	
-	STA $0B				; $0A is used as a copy because CPX $XXXXXX doesn't exist.
-	STZ $0C				; Zero out $0B because we'll be in 16-bit mode for a while.
-	
 	REP #$20
 	AND #$00FF
 	ASL
+	STA $0B				; $0B is used as a copy because CPX $XXXXXX doesn't exist.
 	ASL
 	CLC
 	ADC $09				; $09 contains the location of the ARAM SRCN table (positions and loop positions).
@@ -476,30 +480,44 @@ NoAdd:	STA $09			; /
 	REP #$30
 	LDX #$0000			; Clear out x and y.
 	LDY #$0000
-	DEC $0D				; Needed because we INC $0D twice.
+	INC $0D				; Point $0D to the sample ID collection.
 	
 .loop
-	CPX $0B				; 108100
+	CPY $0B				; 108100
 	BEQ NoMoreSamples
-	PHX				; We use x for indexing as well; push it.
-	
-	
-	TXA				; \
-	ASL				; |
+	PHY				; We use y for indexing as well; push it.
+
+	TYA				; \
 	ASL				; | Get index for the SRCN buffer table
-	TAX				; | and save it in Y.
-	TAY				; |
-	INY : INY			; /
-	
-	LDA $07
-	STA !SRCNTableBuffer,x
-			
-	INC $0D				; $0D is the current position in the table.
-	INC $0D				;
-	
-	LDA [$0D]			; Get the next sample
+	TAX				; / and save it in X.
+
+	LDA [$0D], y			; Get the next sample
 	STA $00
-	
+					; Check for duplicate samples.
+.duplicateCheckLoop
+	DEY
+	DEY
+	BMI .notDuplicateSample
+	CMP [$0D], y
+	BNE .duplicateCheckLoop
+					; Duplicate sample detected!
+					; Copy the corresponding SRCN buffer table entry over, and do no further loading.				
+	STX $00				; X contains the current SRCN buffer table ID. Store it.
+	TYA				; Y contains the duplicate SRCN buffer table ID divided by 2.
+	ASL
+	TAX
+	TAY				;Save duplicate SRCN buffer table ID in Y.
+	LDA !SRCNTableBuffer,x
+	LDX $00				;Reload current SRCN buffer table ID in X.
+	STA !SRCNTableBuffer,x
+	TYX				;Reload duplicate SRCN buffer table ID from Y to X.
+	LDA !SRCNTableBuffer+2,x
+	LDX $00				;Reload current SRCN buffer table ID in X.
+	STA !SRCNTableBuffer+2,x
+	BRA .nextSample			;We're done.
+
+.notDuplicateSample
+	TXY
 					; A contains the sample number
 
 	ASL				; \ A contains the sample loop position table index
@@ -508,8 +526,9 @@ NoAdd:	STA $09			; /
 	CLC				; |
 	ADC $07				; | A contains this sample's loop position relative to its position in ARAM. 
 	TYX				; | Copy y (the SRCN buffer table index) to x.
-	STA !SRCNTableBuffer,x		; / Store the loop position to the SRCN table buffer.
-
+	STA !SRCNTableBuffer+2,x	; | Store the loop position to the SRCN table buffer.
+	LDA $07				; | Copy the start position of the sample.
+	STA !SRCNTableBuffer,x		; / Store the start position to the SRCN table buffer.
 	
 	LDA $00				; \
 	ASL				; |
@@ -543,8 +562,10 @@ NoAdd:	STA $09			; /
 	CLC
 	ADC $05
 	STA $07
-	PLX
-	INX
+.nextSample
+	PLY
+	INY
+	INY
 	BRA .loop
 NoMoreSamples:
 					; $108166
@@ -553,31 +574,34 @@ NoMoreSamples:
 	STA $07				; |
 	LDA $0B				; |
 	ASL				; |
-	ASL				; |
 	STA $05				; |
-	LDA #!TabARAMRet		; | Jump in ARAM to the DIR set routine.
-	STA $03				; |
 	LDA.w #!SRCNTableBuffer		; |
 	STA $00				; | Upload the ARAM SRCN table.
 	SEP #$20			; |
 	LDA.b #!SRCNTableBuffer>>16	; |
 	STA $02				; |
 	JSL UploadSPCDataDynamic	; /
-	
+
+	LDA $08				; \
+	STA $0C				; | Set the DIR DSP register.
+	LDA #$5D ;DIR DSP register	; | We will save the writes to make to direct pages $0B-$0C.
+	STA $0B				; | 
+	STZ $02				; | 
+	REP #$20			; |
+	TDC				; | In case of non-zero direct page register...
+	CLC				; | 
+	ADC #$000B			; | 
+	STA $00				; | 
+	LDA #$0002			; | 
+	STA $05				; | 
+	LDA #$00F2 ;DSPADDR		; | 
+	STA $07				; | 
+	LDA #!DefARAMRet		; |
+	STA $03				; |
+	JSL UploadSPCDataDynamic	; /
+	SEP #$20
 	NOP #11				; Needed to waste time. 10817b
 					; On ZSNES it works with only 4 NOPs because...ZSNES.
-					
-	REP #$20
-	LDA #!DefARAMRet
-	STA $2142
-	SEP #$20
-	LDA $08
-	STA $2141
-	LDA #$CC
-	STA $2140
-	LDA $08
--	CMP $2141			; Wait for the SPC to echo the value back before continuing.
-	BNE -
 	JMP SkipSPCNormal
 	
 					; Time to get the SPC out of its loop.
@@ -620,26 +644,32 @@ HandleSpecialSongs:
 	CMP #$0F
 	BEQ +
 	LDA !MusicMir
-	CMP !Miss
+	CMP #!Miss
 	BEQ +
-	CMP !GameOver
+	CMP #!GameOver
 	BEQ +
-	CMP !StageClear		;;; more checks here should help
+if !PSwitch != $00 || !Starman != $00
+	CMP #!StageClear	;;; more checks here should help
 	BEQ ++
-	CMP !IrisOut
+	CMP #!IrisOut
 	BEQ ++
-	CMP !BossClear
+	CMP #!BossClear
 	BEQ ++
-	CMP !Keyhole
+	CMP #!Keyhole
 	BEQ ++
+endif
+if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
 	ORA $190C|!SA1Addr2
 	BNE .powMusic
+endif
+if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
 	BCS .starMusic
 	BEQ .restoreFromStarMusic
+endif
 ++
 	RTS
 	
@@ -650,6 +680,7 @@ HandleSpecialSongs:
 	STZ $1490|!SA1Addr2
 	RTS
 	
+if !PSwitch != $00
 .powMusic
 	lda $1493|!SA1Addr2		;\ KevinM's edit: don't set the song at level end (goal/sphere/boss)
 	ora $1434|!SA1Addr2		;| (keyhole)
@@ -659,15 +690,17 @@ HandleSpecialSongs:
 if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
+if !Starman != $00
 	lda $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	cmp #$1E
 	bcs .starMusic			;;; just play the star music
+endif
 if !PSwitchIsSFX = !false
 	lda !MusicMir
-	cmp !PSwitch
+	cmp #!PSwitch
 	beq ++
 	lda !CurrentSong
-	cmp !PSwitch
+	cmp #!PSwitch
 	bne +
 endif
 
@@ -675,39 +708,45 @@ endif
 	rts
 
 if !PSwitchIsSFX = !false
-+	LDA !PSwitch
+if !PSwitch != $00
++	LDA #!PSwitch
 	STA !MusicMir
+endif
 ++	RTS
 endif
 
 else
+if !Starman != $00
 	LDA $1490|!SA1Addr2		; If both P-switch and starman music should be playing
 	CMP #$1E
 	BCS .starMusic			;;; just play the star music
 endif
+endif
 
-if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false
-	LDA !PSwitch
+if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+	LDA #!PSwitch
 	STA !MusicMir
 endif
 ++
 	RTS
+endif
 	
 .starMusic
+if !Starman != $00
 if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
 	lda !MusicMir
-	cmp !Starman
+	cmp #!Starman
 	beq ++
 	lda !CurrentSong
-	cmp !Starman
+	cmp #!Starman
 	bne +
 	stz !MusicMir
 	rts
 endif
 
-+	LDA !Starman
++	LDA #!Starman
 	STA !MusicMir
 ++	RTS
 
@@ -717,17 +756,18 @@ endif
 	STA !MusicMir
 +
 	RTS
+endif
 
 if !PSwitchStarRestart == !true
 SkipPowStar:
 	lda !CurrentSong
-	cmp !StageClear
+	cmp #!StageClear
 	beq +
-	cmp !IrisOut
+	cmp #!IrisOut
 	beq +
-	cmp !BossClear
+	cmp #!BossClear
 	beq +
-	cmp !Keyhole
+	cmp #!Keyhole
 	beq +
 	clc
 +	rts
