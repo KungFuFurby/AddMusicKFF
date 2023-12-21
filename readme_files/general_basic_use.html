@@ -18,7 +18,8 @@
 	<li><a href="#WhyAreThereTwoIdenticalOverworldMusicTablesAnyway">The overworld songs are mixed up! The "Welcome to Dinosaur Land" music isn't playing!</a></li>
 	<li><a href="#ItAlwaysBuggedMeWhenSkyLevelsSoundedLikeTheyTakePlaceInACaveBecauseOfTheSongTheyUsed">My sound effects aren't echoing correctly!</a></li>
 	<li><a href="#StickToSlowerTemposGuys">This song seems to be slowing down randomly...</a></li>
-	<li><a href="#AhBackwardsCompatibilityAlwaysAFavoriteOfProgrammersEverywhere">Converting older hacks</a></li></ol>
+	<li><a href="#AhBackwardsCompatibilityAlwaysAFavoriteOfProgrammersEverywhere">Converting older hacks</a></li>
+	<li><a href="#TheQuickerBatcherConverter">Using AM4Batch.exe and AMMBatch.exe</a></li></ol>
 	
 	
 	<br><br><hr><br><br>
@@ -174,7 +175,14 @@ levelinit106:<br>
 	No extra steps should be necessary in order to convert hacks that currently use AM4 or AMM; just run the program like normal.  However, it is <i><b>highly</b></i> recommended that you make a backup before attempting this!<br>
 	<br>
 	Note, however, that you will need to either redownload your old songs or convert them manually.  AM4Batch.exe and AMMBatch.exe may help if you decide to go with the latter, as they will automatically add the correct #am4 or #amm identifiers (though you will still need to add the #samples command).
-	
+
+	<br><br><h2><a id="TheQuickerBatcherConverter">Using AM4Batch.exe and AMMBatch.exe</a></h2>
+	Both of these are command line programs that append #am4 or #amm to unconverted .txt files.
+	<br><br>
+	The only arguments you need to provide are a list of .txt files to append #am4 or #amm to. The program will skip over files that already have either these markers or #amk in them, so you shouldn't worry too much about accidentally putting in two markers in there.
+	<br><br>
+	Please make sure you don't mix up the two when either using the batch programs or appending #am4 and #amm manually: using the wrong one, worst case scenario, can cause a misinterpretation in either the hex commands or the MML syntax that in turn can cause the conversion to either fail outright, output a non-functional SPC file, or even crash the SPC side when it is played in-game.
+
 	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
 </body>
 </html>

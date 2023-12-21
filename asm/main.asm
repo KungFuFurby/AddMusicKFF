@@ -594,6 +594,7 @@ endif
 }
 
 if !noSFX = !false
+;Carry is implied cleared here upon entry from the APU1 Command jump array.
 ForceSFXEchoOff:
 	setc
 ForceSFXEchoOn:
@@ -864,9 +865,8 @@ HandleSFXVoice:
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
 	clrp
-	beq	+	
-	jmp	.processSFXPitch
-+
+	bne	.processSFXPitch
+
 .getMoreSFXData
 	call	GetNextSFXByte		
 	bne	+			; If the current byte is zero, then end it.
@@ -905,14 +905,9 @@ endif
 	bra	.noteOrCommand		; At this point, we must have gotten a command/note.  Assume that it is, even if it's not.
 	
 .executeCode				; 
-	call	GetNextSFXByte		; \ 
-	mov	$14, a			; | Get the address of the code to execute and put it into $14w
-	call	GetNextSFXByte		; |
-	mov 	$15, a			; / 
-	push	x			; \ 
-	mov	x, #$00			; | Jump to that address
-	call	JumpToUploadLocation	; | (no "call (d+x)")
-	pop	x			; / 
+	push	x
+	call	FetchPtrFromSFXDataAndRET
+	pop	x
 	bra	.getMoreSFXData		;
 
 .noteOrCommand				; SFX commands!
@@ -1213,6 +1208,15 @@ NoiseSetVolLevelsNextCh:
 	asl	$13
 	ret
 
+FetchPtrFromSFXDataAndRET:
+	call	GetNextSFXByte		; \ 
+	mov	y, a			; | Get the address of the code to execute and put it into the stack
+	call	GetNextSFXByte		; |
+	push	a			; |
+	push	y			; |
+	mov	x, #$00			; | Jump to that address
+	ret				; / (no "call (d)")
+
 SetSFXInstrument:
 	mov	y, #$09			; \ 
 	mul	ya			; | Set up the instrument table for SFX
@@ -1476,21 +1480,18 @@ CheckAPU1SFXPriority:
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
 	bne	+
-	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	mov	y, #!JumpSFX1DFAPriority	;Priority for jump SFX
 	bra	.gotPriority
 +
 	;cmp	a, #$04
 	;bne	+
-	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	mov	y, #!GirderSFX1DFAPriority	;Priority for girder SFX
 	;bra	.gotPriority
 +
 
 .gotPriority
 	cmp	y, !ChSFXPriority+(!1DFASFXChannel*2)
-	bcs	+
-	;Jump to ProcessAPU1SFX (saved in the stack)
-	ret
-+
+	bcc	SFXTerminateCh_ret ;Jump to ProcessAPU1SFX (saved in the stack)
 
 	mov	!ChSFXPriority+(!1DFASFXChannel*2), y
 L_0A14:
@@ -1518,14 +1519,14 @@ endif
 
 SFXTerminateCh:
 	mov	a, !ChSFXPtrs+1+x
-	beq	+
+	beq	.ret
 	mov	a, #SFXTerminateVCMD&$ff
 	mov	!ChSFXPtrs+x, a
 	mov	a, #SFXTerminateVCMD>>8&$ff
 	mov	!ChSFXPtrs+1+x, a
 	mov	a, #$03
 	mov	!ChSFXNoteTimer+x, a
-+
+.ret
 	ret
 
 SFXTerminateVCMD:
@@ -1726,6 +1727,7 @@ endif
 
 .checkAPU1SFX
 if !useSFXSequenceFor1DFASFX = !false
+	bbc!1DFASFXChannel	$10, .sfxAllocAllowed
 	;Check and see if APU1 SFX is playing there via detecting $1D.
 	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
 	;but $1D has a voice bit set.
@@ -2130,6 +2132,7 @@ L_0B6D:
 	mov	a, #$ff
 	mov	!Volume+x, a         ; Volume[ch] = #$FF
 	inc	a
+	mov	!SurroundSound+x, a
 	mov	$0280+x, a
 	mov	$02d1+x, a         ; Tuning[ch] = 0
 	mov	!PanFadeDuration+x, a           ; PanFade[ch] = 0
@@ -2608,22 +2611,25 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f2, #$6c
 	or	$f3, #$60
 
-	mov	$f2, #$7d
-	mov	a, $f3
+	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
-	mov	$f3, #$00		; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f2, #$7d
+	mov	y, #$00
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
-	mov	$14, #$00
-	mov	$15, a
--	dbnz	$14, -
-	dbnz	$15, -
+	movw	$14, ya			; Consume at least eight cycles per iteration. 
+-
+	nop				; This is because the echo buffer writes four bytes per sample (or 32 cycles in this case).
+	nop				; NOP is 2 cycles.
+	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
+	dbnz	$14, -
 +
 	
 	pop	y			; \
-	clr1	$f2.4			; | Write the new buffer address.
-	mov	$f3, y			; / 
+	mov	a, #$6d			; | Write the new buffer address.
+	movw	$f2, ya			; / 
 	
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
@@ -3217,7 +3223,7 @@ L_10A1:
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3227,7 +3233,7 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
-	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +
@@ -3587,20 +3593,20 @@ endif
 	mov	x, #$cf		; Reset the stack pointer.
 	mov	sp, x
 	
-	mov	x, #$00
+	mov	x, a
 	mov	$01, x
 	
-	mov	!NCKValue, #$20
-	call	SetFLGFromNCKValue
-	
 	mov	y, #$10
-	mov	a, #$00
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
 if !PSwitchIsSFX = !true
-	mov	$1b, #$00
-endif	
+	mov	$1b, a
+endif
+
+	mov	!NCKValue, #$20
+	call	SetFLGFromNCKValue
+
 JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address	
 
