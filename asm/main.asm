@@ -130,6 +130,8 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+!MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -601,6 +603,9 @@ ForceSFXEchoOn:
 	mov	a, #$00
 	adc	a, #$ff
 	mov	!SFXEchoChannels, a
+	;Turn off music echo channels being copied to SFX echo channels
+	mov	a, #!MusicToSFXEchoGateDistance
+	mov	MusicToSFXEchoGate+1, a
 	bra	EffectModifier
 endif
 
@@ -628,7 +633,13 @@ endif
 }
 
 EffectModifier:				; Call this whenever either $1d or the various echo, noise, or pitch modulation addresses are modified.
-{	
+{		
+if !noSFX = !false
+MusicToSFXEchoGate:
+	bra	MusicToSFXEchoNoCopy
+	mov	!SFXEchoChannels, !MusicEchoChannels
+MusicToSFXEchoNoCopy:
+endif
 	push	x
 	mov	x, #!MusicPModChannels
 	mov	$f2, #$1d		; The DSP register for pitch modulation minus #$10.
@@ -1800,6 +1811,7 @@ APU1CMDJumpArray:
 	dw	PlayPauseSFX		;07
 	dw	PlayUnpauseSFX		;08
 	dw	PlayUnpauseSilentSFX	;09
+	dw	MusicSFXEchoCarryOn	;0a
 APU1CMDJumpArrayEOF:
 endif
 
@@ -1861,6 +1873,13 @@ endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
 	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
 	bra	HandleYoshiDrums
+
+if !noSFX = !false
+MusicSFXEchoCarryOn:
+	mov	a, #$00
+	mov	MusicToSFXEchoGate+1, a
+	ret
+endif
 
 L_099C:
 	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
