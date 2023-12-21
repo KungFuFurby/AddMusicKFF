@@ -20,7 +20,7 @@
 	t55
 	r=84
 	; $15F4 / $3B37
-	@4 t56 y10
+	@4 t56
 	VCMD_VIBRATO_ON $23 $14 $20
 	q3c o5 f4 f4 d16 r16 f4 d16 r16
 	q6c f8 q2b d8 c8 q6c f2 d16 r16
@@ -59,10 +59,10 @@
 	@4 y10 q4b o2 l8
 	frfrd+rd+rdrdrc+rc+rcrr2defrcrfrfr
 
-#3	r=84
+#3	r=85
 
 	; $15F4 / $3AAC
-	@5 y15 r192
+	@5 y15
 	(2)[q49 o5 l24 a^^arc]8
 	a+2 r2
 	(2)2 a^^r8 l8 ar
