@@ -16,18 +16,18 @@
 #option TempoImmunity
 #option NoLoop
 
-#0	r=84
+#0	r=84^8
 
 	; $139C / $2C2E
 	VCMD_ECHO_OFF
 	@4 t45
 	VCMD_VIBRATO_ON $23 $13 $30
-	y10 q4c ^8 o5 a16 a16
+	q4c o5 a16 a16
 	q3c a8 q5c a8 f8 c8
-	q4c d16 r16 r16 f16 f2 ^4
+	q4c d16 r16 r16 f16 f4.|^4.
 	r8 c16 c16 q3c c8 f8
 	VCMD_TEMPO_FADE $30 $26
-	q5c f12 > c12 c12 q6d < a2 l4 ^
+	q5c f12 > c12 c12 q6d < a4.|^4.
 
 
 
@@ -44,10 +44,10 @@ VCMD_ECHO_OFF
 	; $139C / $2C68
 	@4
 	VCMD_VIBRATO_ON $23 $14 $30
-	y10 q4c ^8 o5 d16 d16
+	y10 q4c r8 o5 d16 d16
 	q3c d8 q5c d8 < a+8 f8
-	q4c a16 r16 r16 a+16 a+2 ^4 r8 g16 g16
-	q3c g8 a+8 q5c a+12 > g12 g12 e2 ^4
+	q4c a16 r16 r16 a+16 a+4.|^4. r8 g16 g16
+	q3c g8 a+8 q5c a+12 > g12 g12 e4.|^4.
 
 #2	@2 y20
 	VCMD_PAN_FADE $54 $00
@@ -60,25 +60,25 @@ VCMD_ECHO_OFF
 	; $139C / $2C9A
 	@4
 	VCMD_VIBRATO_ON $23 $13 $30
-	y10 q4c ^8 o4 a+16 a+16
+	y10 q4c r8 o4 a+16 a+16
 	q3c a+8 q5c a+8 f8 d8
-	q4c f16 r16 r16 f16 f2 ^4 r8 d+16 d+16
-	q3c d+8 g8 q5c g12 > c+12 c+12 c2 ^4
+	q4c f16 r16 r16 f16 f4.|^4. r8 d+16 d+16
+	q3c d+8 g8 q5c g12 > c+12 c+12 c4.|^4.
 
-#3	r=84
+#3	r=84^8
 
 	; $139C / $2CCC
 	@4
 	VCMD_VIBRATO_ON $23 $14 $30
 	y10 q4c
-	^8 o4 f16 f16 q3c f8 q5c f8 d8 < a8
-	q4c a+16 r16 r16 > d16 d2 ^4 r8 < a+16 a+16
-	q3c a+8 > c+8 q5c c+12 a+12 a+12 a2 ^4
+	o4 f16 f16 q3c f8 q5c f8 d8 < a8
+	q4c a+16 r16 r16 > d16 d4.|^4. r8 < a+16 a+16
+	q3c a+8 > c+8 q5c c+12 a+12 a+12 a4.|^4.
 
 #4	r=84
 
 	; $139C / $2D74
-	@4 y10
+	@4
 	q7e
 	l2 @26c^ l16 ^^ @26c@26c@26c^@26c^ l12 @26c@26c@26c @26c2 @26c@26c@26c
 	[[q7d l32 @26c]]22 q6f @26c=12 ;c4-=36
@@ -88,20 +88,21 @@ VCMD_ECHO_OFF
 	; $139C / $2D52
 	@4
 	VCMD_VIBRATO_ON $23 $11 $30
-	y10 q7e
-	o2 c2 ^2 ^8 c16 c16 c8 c8 c12 c+12 d12 d+2 d+12 d+12 d+12 f2 ^4
+	q7e
+	o2 c=108|^=108 c16 c16 c8 c8 c12 c+12 d12 d+2 d+12 d+12 d+12 f4.|^4.
 
-#6	[r=84
+#6	[r=92|^=92|^=92
 
 	; $139C / $2CFE
 	@2 y20
-	r2 r2 VCMD_PAN_FADE $90 $00]
-	q6b o4 h-5 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
+	VCMD_PAN_FADE $90 $00
+	q6b o4 h-5 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr]
 
 #7
 	; $139C / $2D27
-	r48 *
-	q69 o4 h-5 l32 ga+>dd+<a+>dd+gdd+ga+d+ga+>d<ga+>dd+<a+>dd+g l2 a+rr
+	; Original: q69
+	; Note: this assumes SMW volume table
+	r48 v214 *
                 
 
 #amk 2
