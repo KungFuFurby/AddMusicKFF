@@ -15,18 +15,14 @@
 incsrc "../UserDefines.asm"
 
 
-org $9724		; Fix the title music
-	db !Title
 org $94B3
 	db !RescueEgg
 org $96C7
 	db !Title
-org $009737
-	db !Bowser
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
-    db !Welcome	
+	db !CastleDestructionFanfare	
 org $00C526
 	db !BonusEnd
 org $00C9BD
@@ -44,7 +40,7 @@ if !PSwitchIsSFX = !true
 +
 else
 	BEQ +
-	LDX.B !PSwitch
+	LDX.B #!PSwitch
 +
 endif
 
@@ -70,7 +66,7 @@ if !PSwitchIsSFX = !true
 Skip10:
 else
 Skip10:
-	LDA.B !PSwitch
+	LDA.B #!PSwitch
 	STA $1DFB|!SA1Addr2
 endif
 
@@ -91,7 +87,7 @@ if !PSwitchIsSFX = !true
 	LDA.b #$C0
 	STA $1DFC|!SA1Addr2
 else
-	LDA.b !PSwitch
+	LDA.b #!PSwitch
 	STA $1DFB|!SA1Addr2
 endif
 
@@ -137,24 +133,31 @@ org $0CA40C
 	db !YoshisAreHome
 org $0CA5C2
 	db !CastList
-	
-
-	
-	
+		
 org $009723
-	LDA.b !Welcome
-	STA.w $1DFB|!SA1Addr2
-	
-	
-	
-org $009734			; Skip over Bowser fight music stuff.
-	BNE $05
-	
-	
-	
-	
-	
-	
+	LDA.b #!Welcome
+if !WelcomeSongOverride = !true
+	STA.w $0DDA|!SA1Addr2					
+else
+	STZ.w $1DFB|!SA1Addr2
+endif
+	LDA.w $0DDA|!SA1Addr2	; 
+	NOP : NOP		; 
+	NOP : NOP		; 
+	LDY.w $0D9B|!SA1Addr2	; 
+	CPY.b #$C1		; 
+if !BowserSongOverride = !true
+	BNE CODE_009738		; 
+else
+	BRA CODE_009738		; 
+endif
+	LDA.b #!Bowser		; 
+CODE_009738:			;
+	STA.w $1DFB|!SA1Addr2	; 
+CODE_00973B:			;
+	NOP : NOP		;BRA Skip6
+	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
+Skip6:
 
 org $008134			; Don't upload the overworld music bank.
         RTS
@@ -162,16 +165,17 @@ org $008134			; Don't upload the overworld music bank.
 if read1($008176) == $5c
 	
 	org $00817C			; For LevelNMI.  Three fewer bytes placed three bytes later.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 elseif read1($008179) == $5c
 	org $00817D			; For PowerTool.  Four fewer bytes placed four bytes later.
-		BRA Skip
+		NOP : NOP
 else
 	org $008179			; Skip over the standard NMI audio port stuff.  We handle that ourselves now every loop.
-		BRA Skip : NOP
+		NOP : NOP : NOP
 		NOP : NOP
 		NOP
 endif
+		BRA Skip
 YoshiDrumHijack:
 		;Identical to $02A763, except that Yoshi Drums are
 		;explicitly disabled if the conditions to turn them on are
@@ -182,38 +186,28 @@ YoshiDrumHijack:
 		BEQ NoYoshiDrum
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
-		JSL $00FC7A
-		PLB
+		JSL $00FC7A|!Bank
 		RTL
 NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
-		PLB
 		RTL
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP
-		;This hijack overwrites 23 of the 43 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP
+		;Just write a bunch of NOPs up until we reach $0081AA.
+		;We automate this using a padding operation.
+warnpc $0081AA
+padbyte $EA
+pad $0081AA
 	Skip:
 
 org $02A763
-		JML YoshiDrumHijack
+		JSL YoshiDrumHijack
+		BRA YoshiDrumHijackPLBRTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
+		NOP : NOP
+YoshiDrumHijackPLBRTL:
+		PLB
+		RTL
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
@@ -230,22 +224,6 @@ org $00A0B3				;;; ditto
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
 
-org $009728					
-	LDA.w $0DDA|!SA1Addr2	; 
-	NOP : NOP		; 
-	NOP : NOP		; 
-	LDY.w $0D9B|!SA1Addr2	; 
-	CPY.b #$C1		; 
-	BNE CODE_009738		; 
-	LDA.b !Bowser		; 
-CODE_009738:			;
-	STA.w $1DFB|!SA1Addr2	; 
-CODE_00973B:			;
-BRA +				; 
-	NOP : NOP : NOP		; 
-+
-
-
 org $00A231				; Change how pausing works
 	LDY #$08
 org $00A23D
@@ -257,20 +235,14 @@ org $00A635
 ; KevinM's edit: use this small freed up space for the start+select sfx
 StartSelectSfx:
 	sta $0100|!SA1Addr2 	; Overwritten code
-	lda #$09 				;\ Play sfx
+	lda #$09 		;\ Play sfx
 	sta $1DFA|!SA1Addr2 	;/
-	jmp $A289 				; Return back
-	;NOP : NOP : NOP  		;\
-	;NOP : NOP : NOP 		;| We used 11 bytes for the routine
-	;NOP : NOP 				;| so 11 less NOPs needed.
-	;NOP : NOP : NOP 		;/
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
+	jmp $A289 		; Return back
+	;Just write a bunch of NOPs up until we reach $00A654.
+	;We automate this using a padding operation.
+warnpc $00A654
+padbyte $EA
+pad $00A654
 Skip2:
 
 ; KevinM's edit: jump to code that plays sfx on start+select
@@ -332,11 +304,6 @@ else
 	STA $1570,x             
 endif
 	RTS
-	
-org $00973B
-	NOP : NOP		;BRA Skip6
-	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
-Skip6:
 
 ; KevinM's edit: this is already skipped by the hex edit at $00A635	
 ;org $00A645			; Related to restoring the music upon level load.
@@ -368,7 +335,7 @@ Skip9:
 org $01C585	; 13 bytes
 	;LDA $1DFB|!SA1Addr2
 	;STA $0DDA|!SA1Addr2
-	LDA !Starman
+	LDA #!Starman
 	STA $1DFB|!SA1Addr2
 	RTL
 	
@@ -392,7 +359,7 @@ org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP
 	
 org $0093C0
-LDA.b !NintPresents
+LDA.b #!NintPresents
 STA $1DFB|!SA1Addr2
 
 
