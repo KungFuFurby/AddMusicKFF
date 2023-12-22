@@ -2452,6 +2452,7 @@ void Music::parseOptionDirective()
 		pos += 19;
 		skipSpaces;
 		error("#option allsamplesimportant has not yet been implemented from Codec's AMK beta.");
+	}
 	else if (targetAMKVersion >= 4 && strnicmp(text.c_str() + pos, "amk109hotpatch", 14) == 0 && isspace(text[pos + 14]))
 	{
 		pos += 14;
