@@ -36,15 +36,24 @@ endif
 
 SRCS = src/AddmusicK/*.cpp src/AddmusicK/asardll.c src/AM405Remover/AddMusic.cpp
 
+AM4SRCS = src/AM4Batch/*.cpp
+
+AMMSRCS = src/AMMBatch/*.cpp
+
 all: addmusick
 
 addmusick: $(SRCS) src/AddmusicK/*.h
 	cd src/AddmusicK; \
 	$(CXX) $(CXXFLAGS) -c $(patsubst %,../../%,$(SRCS))
 	$(CXX) -o AddmusicK src/AddmusicK/*.o $(LDFLAGS)
-
+	cd src/AM4Batch; \
+	$(CXX) $(CXXFLAGS) -c $(patsubst %,../../%,$(AM4SRCS))
+	$(CXX) -o AM4Batch src/AM4Batch/*.o $(LDFLAGS)
+	cd src/AMMBatch; \
+	$(CXX) $(CXXFLAGS) -c $(patsubst %,../../%,$(AMMSRCS))
+	$(CXX) -o AMMBatch src/AMMBatch/*.o $(LDFLAGS)
 
 clean:
-	rm -rf src/AddmusicK/*.o ./addmusick
+	rm -rf src/AddmusicK/*.o ./addmusick ./AM4Batch ./AMMBatch
 
 .PHONY: all clean

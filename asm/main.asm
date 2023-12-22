@@ -1481,12 +1481,12 @@ CheckAPU1SFXPriority:
 	;mov	y, #$00		;Default priority
 	cmp	a, #$01
 	bne	+
-	mov	y, !JumpSFX1DFAPriority		;Priority for jump SFX
+	mov	y, #!JumpSFX1DFAPriority	;Priority for jump SFX
 	bra	.gotPriority
 +
 	;cmp	a, #$04
 	;bne	+
-	mov	y, !GirderSFX1DFAPriority	;Priority for girder SFX
+	mov	y, #!GirderSFX1DFAPriority	;Priority for girder SFX
 	;bra	.gotPriority
 +
 
@@ -1728,6 +1728,7 @@ endif
 
 .checkAPU1SFX
 if !useSFXSequenceFor1DFASFX = !false
+	bbc!1DFASFXChannel	$10, .sfxAllocAllowed
 	;Check and see if APU1 SFX is playing there via detecting $1D.
 	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
 	;but $1D has a voice bit set.

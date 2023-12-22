@@ -53,10 +53,14 @@ int main(int argc, char* argv[]) try		// // //
 {
 	std::clock_t startTime = clock();
 
-	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " by Kipernal" << std::endl;
+	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " Alpha by Kipernal" << std::endl;
 	std::cout << "Parser version " << PARSER_VERSION << std::endl << std::endl;
 	std::cout << "Protip: Be sure to read the readme! If there's an error or something doesn't\nseem right, it may have your answer!\n\n" << std::endl;
 
+    if (asar_init() == false)
+        useAsarDLL = false;
+    else
+        useAsarDLL = true;
 
 	std::vector<std::string> arguments;
 
@@ -163,12 +167,6 @@ int main(int argc, char* argv[]) try		// // //
 			std::getline(std::cin, ROMName.filePath);
 			puts("\n\n");
 		}
-
-		if (asar_init() == false)
-			useAsarDLL = false;
-		else
-			useAsarDLL = true;
-
 
 
 		std::string tempROMName = ROMName.cStr();
@@ -1309,14 +1307,32 @@ void fixMusicPointers()
 					auto thisSampleSize = samples[thisSample].data.size();
 					bool sampleIsImportant = samples[thisSample].important;
 					if (sampleIsImportant) importantSampleCount++;
-
-					musics[i].spaceInfo.individualSampleStartPositions.push_back(checkPos);
-					musics[i].spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
-					musics[i].spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
-
-					checkPos += thisSampleSize;
+					bool dupSample = false;
+					for (unsigned int k = 0; k < j; k++)
+					{
+						if (thisSample == musics[i].mySamples[k])
+						{
+							dupSample = true;
+							break;
+						}
+					}
+					if (dupSample == false) {
+						musics[i].spaceInfo.individualSampleStartPositions.push_back(checkPos);
+						musics[i].spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
+						musics[i].spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
+	
+						checkPos += thisSampleSize;
+					}
 				}
 				musics[i].spaceInfo.importantSampleCount = importantSampleCount;
+
+				int endOfSongAndSampleDataPos = checkPos;
+				
+				if (checkPos > 0x10000)
+				{
+					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					quit(1);
+				}
 
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
@@ -1341,7 +1357,7 @@ void fixMusicPointers()
 
 				if (checkPos > 0x10000)
 				{
-					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << " bytes." << std::dec << std::endl;
 					quit(1);
 				}
 			}
@@ -1559,17 +1575,31 @@ void generateSPCs()
 
 				for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
 				{
-					SPC[tablePos + j * 4 + 0x100] = samplePos & 0xFF;
-					SPC[tablePos + j * 4 + 0x101] = samplePos >> 8;
-					unsigned short loopPoint = samples[musics[i].mySamples[j]].loopPoint;
-					unsigned short newLoopPoint = loopPoint + samplePos;
-					SPC[tablePos + j * 4 + 0x102] = newLoopPoint & 0xFF;
-					SPC[tablePos + j * 4 + 0x103] = newLoopPoint >> 8;
-
-					for (unsigned int k = 0; k < samples[musics[i].mySamples[j]].data.size(); k++)
-						SPC[samplePos + 0x100 + k] = samples[musics[i].mySamples[j]].data[k];
-
-					samplePos += samples[musics[i].mySamples[j]].data.size();
+					bool dupSample = false;
+					for (unsigned int k = 0; k < j; k++){
+						if (musics[i].mySamples[j] == musics[i].mySamples[k]) {
+							//Copy the original sample position and loop points, and don't duplicate the sample data that was already loaded.
+							SPC[tablePos + j * 4 + 0x100] = SPC[tablePos + k * 4 + 0x100];
+							SPC[tablePos + j * 4 + 0x101] = SPC[tablePos + k * 4 + 0x101];
+							SPC[tablePos + j * 4 + 0x102] = SPC[tablePos + k * 4 + 0x102];
+							SPC[tablePos + j * 4 + 0x103] = SPC[tablePos + k * 4 + 0x103];
+							dupSample = true;
+							break;
+						}
+					}
+					if (dupSample == false) {
+						SPC[tablePos + j * 4 + 0x100] = samplePos & 0xFF;
+						SPC[tablePos + j * 4 + 0x101] = samplePos >> 8;
+						unsigned short loopPoint = samples[musics[i].mySamples[j]].loopPoint;
+						unsigned short newLoopPoint = loopPoint + samplePos;
+						SPC[tablePos + j * 4 + 0x102] = newLoopPoint & 0xFF;
+						SPC[tablePos + j * 4 + 0x103] = newLoopPoint >> 8;
+	
+						for (unsigned int l = 0; l < samples[musics[i].mySamples[j]].data.size(); l++)
+							SPC[samplePos + 0x100 + l] = samples[musics[i].mySamples[j]].data[l];
+	
+						samplePos += samples[musics[i].mySamples[j]].data.size();
+					}
 				}
 
 				for (unsigned int j = 0; j < DSPBase.size(); j++)
