@@ -38,6 +38,7 @@ bool doNotPatch = false;
 int errorCount = 0;
 bool optimizeSampleUsage = true;
 bool usingSA1 = false;
+bool fullSA1 = false;
 bool allowSA1 = true;
 bool forceNoContinuePrompt = false;
 bool sfxDump = false;
@@ -373,6 +374,11 @@ int SNESToPC(int addr)					// Thanks to alcaro.
 		(addr & 0xFE0000) == 0x7E0000 ||	// wram
 		(addr & 0x408000) == 0x000000)		// hardware regs
 		return -1;
+	if (fullSA1 && addr >= 0xC00000)        //HiROM area
+	{
+		addr -= 0x800000;            //Last four MB
+		return addr;                //Uses whole banks
+	}
 	if (usingSA1 && addr >= 0x808000)
 		addr -= 0x400000;
 	addr = ((addr & 0x7F0000) >> 1 | (addr & 0x7FFF));
@@ -381,6 +387,11 @@ int SNESToPC(int addr)					// Thanks to alcaro.
 
 int PCToSNES(int addr)
 {
+	if (fullSA1 && addr >= 0x400000 && addr < 0x800000)    //HiROM area
+	{
+		addr += 0x800000;                //Banks C0-FF
+		return addr;                    //Uses whole banks
+	}
 	if (addr < 0 || addr >= 0x400000)
 		return -1;
 
