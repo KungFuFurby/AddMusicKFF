@@ -36,7 +36,7 @@ for:
   -
     branches:
       only:
-        - AddmusicK1.0.10
+        - AddmusicK1.0.10bleeding-edge
     build_script:
       - ps: .\build_script.ps1
     artifacts:
