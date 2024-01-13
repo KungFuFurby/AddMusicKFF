@@ -132,6 +132,7 @@ incsrc "UserDefines.asm"
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
 !MusicToSFXEchoGateDistance = MusicToSFXEchoNoCopy-MusicToSFXEchoGate-2
+!MusicEchoChOnCarryGateDistance = MusicEchoChOnSkipClear-MusicEchoChOnCarryGate-2
 
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
@@ -1813,8 +1814,8 @@ APU1CMDJumpArray:
 	dw	PlayUnpauseSFX		;08
 	dw	PlayUnpauseSilentSFX	;09
 	dw	MusicSFXEchoCarryOn	;0a
-	dw	$0000			;0b
-	dw	$0000			;0c
+	dw	MusicEchoCarryOn	;0b
+	dw	MusicEchoCarryOff	;0c
 	dw	SFXEchoCarryOn		;0d
 	dw	SFXEchoCarryOff		;0e
 APU1CMDJumpArrayEOF:
@@ -1907,6 +1908,8 @@ L_099C:
 
 	inc	a
 	call	SetEDLDSP		; Also set the delay to 0.
+	mov	!MusicEchoChannels, a	;
+
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
@@ -1922,6 +1925,26 @@ endif
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
 				; The stack is also cleared.
 	;ret
+
+if !noSFX = !false
+PlayPauseSFX:
+	mov	a, #$11
+	mov	$00, a
+-
+	mov	!ProtectSFX6, a
+	ret
+
+PlayUnpauseSilentSFX:
+	mov	a, #$2C
+	bra	+
+PlayUnpauseSFX:
+	mov	a, #$12
++
+	mov	$00, a
+	mov	a, #$00
+	;mov	$08, #$00
+	bra	-
+endif
 
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
@@ -1948,6 +1971,10 @@ if !noSFX = !true
 	beq	EnableYoshiDrums	;
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
+	cmp	a, #$0b
+	beq	MusicEchoCarryOn
+	cmp	a, #$0c
+	beq	MusicEchoCarryOff
 endif
 if !noSFX = !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
@@ -1959,37 +1986,24 @@ if !useSFXSequenceFor1DFASFX = !false
 	push	y
 else
 	bcs	.terminate
-	cmp	a, #$0a
-	bcc	+
-	cmp	a, #$0d
-	bcc	.terminate
-+
 endif
 	asl	a
 	mov	x, a
 	lsr	a
 	jmp	(APU1CMDJumpArray-2+x)
-
-PlayPauseSFX:
-	mov	a, #$11
-	mov	$00, a
--
-	mov	!ProtectSFX6, a
-	ret
-
-PlayUnpauseSilentSFX:
-	mov	a, #$2C
-	bra	+
-PlayUnpauseSFX:
-	mov	a, #$12
-+
-	mov	$00, a
-	mov	a, #$00
-	;mov	$08, #$00
-	bra	-
 else
 	ret
 endif
+
+MusicEchoCarryOn:
+	mov	a, #!MusicEchoChOnCarryGateDistance
+	bra	+
+
+MusicEchoCarryOff:
+	mov	a, #$00
++
+	mov	MusicEchoChOnCarryGate+1, a
+	ret
 
 PauseMusic:
 	mov a, $0387		;\
@@ -2206,8 +2220,12 @@ endif
 	bpl	L_0B6D	
 	; MODIFIED CODE START
 	mov	!MusicPModChannels, a
-	mov	!MusicEchoChannels, a
 	mov	!MusicNoiseChannels, a
+MusicEchoChOnCarryGate:
+	bra	+		;Default state of gate is open
++
+	mov	!MusicEchoChannels, a
+MusicEchoChOnSkipClear:
 	mov	!SecondVTable, a
 	; MODIFIED CODE END	
 	mov	$58, a             ; MasterVolumeFade = 0
