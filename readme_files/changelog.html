@@ -276,6 +276,11 @@
 		<li>"Added the ability to fade the volume to any value instead of just zero through the $80-$FF $1DFB commands. It is backward compatible with the original $FF $1DFB command. <b>WARNING: May introduce conflicts on the SNES side if more than 127 songs are defined. The lower IDs for the fades will instead be reserved for song slots.</b>" - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"The MVOL DSP registers are now set to $7F on song initialization. This avoids problems with the sound being quieter than expected when a song fails to do the same, since the MVOL DSP registers are otherwise never touched except by direct DSP register writes from the sound data." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Historical Addmusic Adaptations
 		<ul>
 		<li>"Restored the special pulse wave from AddmusicM, as well as the corresponding hex commands that originally controlled it. The $FA hex command was moved to the $FA $07 hex command in the process due to being overwritten, and a new one was created, the $FA $10 hex command, that is automatically generated to assign a VxSRCN ID to the special pulse wave due to the memory location no longer being stable. A special BRR file was also created so that the special pulse wave can be automatically brought out as needed." - KungFuFurby</li>

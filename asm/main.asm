@@ -2301,6 +2301,12 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
+	;Reset the MVOL DSP registers in case the previous song modified them.
+	mov	y, #$7f
+	mov	a, #$0c
+	movw	$f2, ya
+	set1	$f3.4
+	mov	$f3, y
 	mov	a,#$2F			;BRA opcode
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
