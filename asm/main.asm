@@ -138,7 +138,10 @@ incsrc "UserDefines.asm"
 !remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
-arch spc700-raw
+arch 65816
+norom
+arch spc700
+
 org $000000
 base $0400			; Do not change this.
 
