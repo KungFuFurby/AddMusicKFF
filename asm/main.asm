@@ -137,7 +137,6 @@ incsrc "UserDefines.asm"
 !remoteCodeTargetAddr2 = $0190	; The address to jump to for "start of note" code.  16-bit.
 !InRest = $01a1
 
-arch 65816
 norom
 arch spc700
 

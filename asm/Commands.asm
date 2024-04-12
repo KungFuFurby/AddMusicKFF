@@ -1,4 +1,3 @@
-arch 65816
 norom
 arch spc700
 
