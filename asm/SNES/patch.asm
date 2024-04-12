@@ -1,5 +1,6 @@
+
 ;Don't stop program due to changing the mapper multiple times.
-warnings disable W1029
+warnings disable Wmapper_already_set
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
