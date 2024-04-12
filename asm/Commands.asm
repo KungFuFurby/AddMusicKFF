@@ -1,6 +1,6 @@
 arch spc700-raw
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-if !noSFX = !false
+if !noSFX == !false
 TerminateIfSFXPlaying:
 	mov	a, $48
 	and	a, $1d
@@ -136,7 +136,7 @@ ApplyInstrument:			; Call this to play the instrument in A whose data resides in
 	mov	y, #$00			; \ 
 	mov	a, ($14)+y		; / Get the first instrument byte (the sample)
 	bpl	+
-if !noSFX = !false
+if !noSFX == !false
 	and	a, #$1f
 	mov	$0389, a
 endif
@@ -151,7 +151,7 @@ endif
 	mov	($10)+y, a
 	dbnz	y, -
 
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying	; If there's a sound effect playing, then don't change anything.
 endif
 	
@@ -174,7 +174,7 @@ endif
 	bra	.DSPWriteDirectionGate1
 
 .noiseInstrument
-if !noSFX = !false
+if !noSFX == !false
 	cmp	!SFXNoiseChannels, #$00
 	bne	.DSPWriteDirectionGate1
 endif	
@@ -1220,7 +1220,7 @@ HandleArpeggio:				; Routine that controls all things arpeggio-related.
 .playNote
 	mov	a, !ArpLength+x		; \ Now wait for this many ticks again.
 	mov	!ArpTimeLeft+x, a	; /
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	
