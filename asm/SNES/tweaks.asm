@@ -194,7 +194,7 @@ NoYoshiDrum:
 		RTL
 		;Just write a bunch of NOPs up until we reach $0081AA.
 		;We automate this using a padding operation.
-warnpc $0081AA
+assert pc() <= $0081AA
 padbyte $EA
 pad $0081AA
 	Skip:
@@ -240,7 +240,7 @@ StartSelectSfx:
 	jmp $A289 		; Return back
 	;Just write a bunch of NOPs up until we reach $00A654.
 	;We automate this using a padding operation.
-warnpc $00A654
+assert pc() <= $00A654
 padbyte $EA
 pad $00A654
 Skip2:
