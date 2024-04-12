@@ -208,7 +208,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2024-01-16</h2>
+	<h2>Version 1.0.10 - 2023-12-19</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -218,6 +218,20 @@
 		<li>"Fixed a bug where the Yoshi Drum Hijack were conflicting with other SNES-side patches that used the PLB and RTL opcodes in this area." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
+		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Historical Addmusic Adaptations
+		<ul>
+		<li>"Added a warning for using non-standard FIR coefficient table IDs, mostly because they won't sound consistent due to an out-of-bounds read situation. Addmusic405 songs already output an error." - KungFuFurby</li>
+		</ul>
+	</li>
+	</ul>
+	<h2>AddmusicKFF Fork - 2024-01-16</h2>
+	<ul>
 	<li>Music MML Parser
 		<ul>
 		<li><b>There is partial support for parser version 3 from Codec's AddmusicK Beta. The following features are implemented here (note that the hex command IDs specified here are auto-converted to their AddmusicK equivalents):</b>
@@ -257,8 +271,6 @@
 	<li>SPC & ROM Compilation
 		<ul>
 		<li>"<b>(EXPERIMENTAL)</b> Added the ability to filter out hex command code. So far, only arpeggio ($FB hex command) is supported through a user define: there are some safety problems that could result in trying to go further and forgetting that they are already in place, causing accidental crashes in the process." - KungFuFurby</li>
-		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
-		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
 		<li>"Added full 8MB SA-1 memory mapping support." - Lord Ruby and PSI Ninja</li>
 		</ul>
 	</li>
@@ -287,7 +299,6 @@
 		<li>"Restored the sample pack from AddmusicM. The sample groups #AMMS01, #AMMS02, #AMMS03 and #AMMKisoPCM were added on" - KungFuFurby</li>
 		<li>"Corrected a bug where quantization/velocity bytes were being auto-created at the start of a loop where they shouldn't be in Addmusic405 and AddmusicM songs." - KungFuFurby</li>
 		<li>"Corrected a bug where quantization was interfering with ties and rests because they were not merged in Addmusic405 and AddmusicM." - KungFuFurby</li>
-		<li>"Added a warning for using non-standard FIR coefficient table IDs, mostly because they won't sound consistent due to an out-of-bounds read situation. Addmusic405 songs already output an error." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>
