@@ -106,11 +106,12 @@ endif
 
 incsrc "tweaks.asm"			
 			
-			
+	
+padbyte $55		
 org $0E8000		; Clear out what parts of bank E we can (Lunar Magic install some hacks there).
-rep $7100 : db $55
+pad $0EF100
 org $0F8000		; Clear out what parts of bank F we can (Lunar Magic install some more hacks there).
-rep $7051 : db $55
+pad $0FF051
 	
 org $8075
 	JML MainLabel
