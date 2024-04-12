@@ -1,4 +1,6 @@
-arch spc700-raw
+norom
+arch spc700
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 if !noSFX == !false
 TerminateIfSFXPlaying:

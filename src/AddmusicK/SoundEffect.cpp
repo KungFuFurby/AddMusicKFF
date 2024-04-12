@@ -485,7 +485,7 @@ void SoundEffect::compileASM()
 		std::stringstream asmCode;
 		removeFile("temp.bin");
 		removeFile("temp.asm");
-		asmCode << "arch spc700-raw\n\norg $000000\nincsrc \"" << "asm/main.asm" << "\"\nbase $" << hex4 << posInARAM + code.size() + data.size() << "\n\norg $008000\n\n" << asmStrings[i];
+		asmCode << "norom\narch spc700\n\norg $000000\nincsrc \"" << "asm/main.asm" << "\"\nbase $" << hex4 << posInARAM + code.size() + data.size() << "\n\norg $008000\n\n" << asmStrings[i];
 		writeTextFile("temp.asm", asmCode.str());
 
 		if (!asarCompileToBIN("temp.asm", "temp.bin"))
