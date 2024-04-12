@@ -1861,7 +1861,7 @@ DisableYoshiDrums:				; And disable them.
 EnableYoshiDrums:				; Enable Yoshi drums.
 endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
-	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
+	mov1	HandleYoshiDrums_drumSet.6, c
 	bra	HandleYoshiDrums
 
 L_099C:
@@ -3225,7 +3225,7 @@ L_10A1:
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
-	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3235,7 +3235,7 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
-	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +
