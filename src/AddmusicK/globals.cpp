@@ -1041,6 +1041,20 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 			return false;
 		}
 
+		asar_getwarnings(&count);
+
+		while (currentCount != count)
+		{
+			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
+			currentCount++;
+		}
+		if (count > 0)
+		{
+			writeTextFile("temp.log", printout);
+			free(binOutput);
+			return false;
+		}
+
 		std::vector<uint8_t> v;
 		v.assign(binOutput, binOutput + binlen);
 		writeFile(binOutputFile, v);
