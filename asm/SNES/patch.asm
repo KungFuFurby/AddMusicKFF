@@ -635,6 +635,12 @@ SkipSPCNormal:
 ;NoUpload:
 	STA !MusicReg
 	
+-:
+	LDA.w $4212
+	BPL -
+-:
+	LDA.w $4212
+	BMI -
 	LDA #$81
 	STA $4200
 	JMP End
