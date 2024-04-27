@@ -230,7 +230,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2024-01-16</h2>
+	<h2>AddmusicKFF Fork - 2024-04-27</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -283,6 +283,8 @@
 		<ul>
 		<li>"<b>(EXPERIMENTAL)</b> Upgraded the overall pitch range on the notes when trying to access them through transposition. Note that there may be hardware or precision limitations." - KungFuFurby</li>
 		<li>"Corrected a conflict where the fade command would conflict with the $E0 and $E1 hex commands." - KungFuFurby</li>
+		<li>"The MVOL DSP registers are now set to $7F on song initialization. This avoids problems with the sound being quieter than expected when a song fails to do the same, since the MVOL DSP registers are otherwise never touched except by direct DSP register writes from the sound data." - KungFuFurby</li>
+		<li>"This version alleviates some of the slowdown in SFX and CPUIO register polling caused by higher tempos and/or frequent pitch bends in the music." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700 <-> SNES Communication
@@ -291,11 +293,6 @@
 		<li>"Added the ability carry enabled echo channels for music between global and local songs (but not between two different local songs) via the $0B and $0C $1DFA commands to enable or disable them." - KungFuFurby</li>
 		<li>"Added the ability carry enabled echo channels for SFX between global and local songs (but not between two different local songs) via the $0D and $0E $1DFA commands to enable or disable them." - KungFuFurby</li>
 		<li>"Added the ability to fade the volume to any value instead of just zero through the $80-$FF $1DFB commands. It is backward compatible with the original $FF $1DFB command. <b>WARNING: May introduce conflicts on the SNES side if more than 127 songs are defined. The lower IDs for the fades will instead be reserved for song slots.</b>" - KungFuFurby</li>
-		</ul>
-	</li>
-	<li>SPC700-Side ASM
-		<ul>
-		<li>"The MVOL DSP registers are now set to $7F on song initialization. This avoids problems with the sound being quieter than expected when a song fails to do the same, since the MVOL DSP registers are otherwise never touched except by direct DSP register writes from the sound data." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Historical Addmusic Adaptations
