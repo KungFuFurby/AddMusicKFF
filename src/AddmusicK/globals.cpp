@@ -1110,6 +1110,15 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 			printout += asar_geterrors(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
 		}
+		
+		asar_getwarnings(&count);
+
+		while (currentCount != count)
+		{
+			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
+			currentCount++;
+		}
+
 		if (count > 0)
 		{
 			writeTextFile("temp.log", printout);
