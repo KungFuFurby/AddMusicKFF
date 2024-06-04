@@ -1,4 +1,4 @@
-@include
+include
 ; tweaks.asm
 ; Changes the song numbers for various default actions in the ROM.
 ; Needed because, by design, the song numbers for this program are different
