@@ -1025,6 +1025,7 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 			writeTextFile("temp.txt", printout);
 ///////////////////////////////////////////////////////////////////////////////
 		count = 0; currentCount = 0;
+		int totalCount = 0;
 		printout.clear();
 
 		asar_geterrors(&count);
@@ -1033,22 +1034,20 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 		{
 			printout += asar_geterrors(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
-		}
-		if (count > 0)
-		{
-			writeTextFile("temp.log", printout);
-			free(binOutput);
-			return false;
+			totalCount++;
 		}
 
+		count = 0; currentCount = 0;
 		asar_getwarnings(&count);
 
 		while (currentCount != count)
 		{
 			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
+			totalCount++;
 		}
-		if (count > 0)
+		
+		if (totalCount > 0)
 		{
 			writeTextFile("temp.log", printout);
 			free(binOutput);
@@ -1101,6 +1100,7 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 			writeTextFile("temp.txt", printout);
 ///////////////////////////////////////////////////////////////////////////////
 		count = 0; currentCount = 0;
+		int totalCount = 0;
 		printout.clear();
 
 		asar_geterrors(&count);
@@ -1109,7 +1109,10 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 		{
 			printout += asar_geterrors(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
+			totalCount++;
 		}
+		
+		count = 0; currentCount = 0;
 		
 		asar_getwarnings(&count);
 
@@ -1117,9 +1120,10 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 		{
 			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
+			totalCount++;
 		}
 
-		if (count > 0)
+		if (totalCount > 0)
 		{
 			writeTextFile("temp.log", printout);
 			return false;
