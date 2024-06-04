@@ -240,7 +240,7 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 ;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
@@ -296,7 +296,7 @@ Okay:
 
 if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-if !PSwitchIsSFX = !false && !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitch != $00
 	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
@@ -697,7 +697,7 @@ if !Starman != $00
 	cmp #$1E
 	bcs .starMusic			;;; just play the star music
 endif
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 	lda !MusicMir
 	cmp #!PSwitch
 	beq ++
@@ -709,7 +709,7 @@ endif
 	stz !MusicMir
 	rts
 
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 if !PSwitch != $00
 +	LDA #!PSwitch
 	STA !MusicMir
@@ -725,7 +725,7 @@ if !Starman != $00
 endif
 endif
 
-if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && if !PSwitch != $00
 	LDA #!PSwitch
 	STA !MusicMir
 endif
