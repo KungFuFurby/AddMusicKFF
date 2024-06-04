@@ -96,10 +96,7 @@ extern int songSampleListSize;
 
 extern bool useAsarDLL;
 
-static warnsetting noRelativePathWarning = {
-.warnid = "Wrelative_path_used",
-.enabled = false
-};
+static warnsetting noRelativePathWarning = {"Wrelative_path_used",false};
 
 patchparams asar_preparePatchParamsWNoRelPathWarn(const char * patchloc, char * romdata, int buflen, int * romlen);
 
