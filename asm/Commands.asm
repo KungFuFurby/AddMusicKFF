@@ -1491,10 +1491,10 @@ endif
 	beq	+				;  |
 +						;  | Default state of this branch gate is open.
 						;  | If runningArp was set outside of this routine, then
-	not1	NormalNote_runningArpGate&$1fff.5 ;  | remote code event -2 should be able to fire.
+	not1	NormalNote_runningArpGate.5 ;  | remote code event -2 should be able to fire.
 	call	NoteVCMD			;  |
 	setc					;  | Close the gate again.
-	mov1	NormalNote_runningArpGate&$1fff.5, c ; /
+	mov1	NormalNote_runningArpGate.5, c ; /
 	
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
 	or	($47), ($48)		; / Set this voice to be keyed on.

@@ -2321,7 +2321,7 @@ if !noVcmdFB = !false
 	;the gate by setting it to a BMI opcode, so the SETC opcode is
 	;required here.
 	setc
-	mov1	NormalNote_runningArpGate&$1fff.5, c ;Close runningArp gate.
+	mov1	NormalNote_runningArpGate.5, c ;Close runningArp gate.
 endif
 	mov	a,#$ff
 	mov	$038c,a
@@ -2681,7 +2681,7 @@ if !noVcmdFB == !false
 	;Carry is cleared due to a BCS opcode not firing previously, and all
 	;other opcodes not messing with the carry up to this point. We want
 	;to open a gate by turning it into a BPL opcode.
-	mov1	NormalNote_runningArpGate&$1fff.5, c ; Have this trigger remote code type -2.
+	mov1	NormalNote_runningArpGate.5, c ; Have this trigger remote code type -2.
 	mov	a, #$ff
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
