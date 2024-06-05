@@ -1898,7 +1898,7 @@ endif
 				; The stack is also cleared.
 	;ret
 
-if !noSFX = !false
+if !noSFX == !false
 PlayPauseSFX:
 	mov	a, #$11
 	mov	$00, a
