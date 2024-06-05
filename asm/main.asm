@@ -2549,7 +2549,7 @@ KeyOnVoices:
 	ret
 
 SubC_1D:
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	mov	a, $48
