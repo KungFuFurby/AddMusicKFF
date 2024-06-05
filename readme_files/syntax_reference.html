@@ -193,7 +193,8 @@
 				6: Reserved.  Do not use this event type.<br>
 				7: Disable the remote commands for this channel, except for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
 				8: Disable the remote command for the "key on" event type. Note that whatever code is used for this event is not run, so any code can be used.<br>
-				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br><br>
+				-1: Run code whenever a note is keyed on. This will allow you to undo the changes done by other events. It can be run alongside other event types.<br>
+				-2: Identical to -1, but it doesn't trigger on arpeggio-triggered notes.<br><br>
 				More values may be added in the future.</td>
 		<td>(!6, 1, 4) (!7, -1)</td>
 	</tr>

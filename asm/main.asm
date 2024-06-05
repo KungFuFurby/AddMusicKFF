@@ -130,6 +130,7 @@ incsrc "UserDefines.asm"
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
 !ProtectSFX7 = $038b		; If set, sound effects cannot start on channel #7 (but they can keep playing if they've already started)
 
+
 !remoteCodeTargetAddr = $0390	; The address to jump to for remote code.  16-bit and this IS a table.
 !remoteCodeType = $03a0		; The remote code type.
 !remoteCodeTimeLeft = $03a1	; The amount of time left until we run remote code if the type is 1 or 2.
@@ -418,11 +419,18 @@ endif
 .notTimerRemoteCode
 	
 	mov	a, !remoteCodeTargetAddr2+1+x
-	beq	.noRemoteCode			
+	beq	.noRemoteCode
 
 	mov	a, !remoteCodeType2+x
 	bpl	.noRemoteCode
 
+.runningArpGate
+	bmi	.runRemoteCodeKON
+
+	cmp	a, #$fe
+	beq	.noRemoteCode
+
+.runRemoteCodeKON
 	call	RunRemoteCode2
 	
 .noRemoteCode
@@ -2097,6 +2105,11 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
+	;Carry is cleared due to an ASL opcode previously. We want to close
+	;the gate by setting it to a BMI opcode, so the SETC opcode is
+	;required here.
+	setc
+	mov1	NormalNote_runningArpGate.5, c ;Close runningArp gate.
 	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
@@ -2412,11 +2425,14 @@ HandleArpeggioInterrupt:
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
-	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.
+	beq	+			; | Then don't play a note.  The arpeggio handler up ahead will do it automatically.	
 	mov	a, #$01			; | But we do have to restart the timer so that it will work correctly (and start right now).
 	mov	!ArpTimeLeft+x, a	; /
-	dec	a
-	dec	a
+	;Carry is cleared due to a BCS opcode not firing previously, and all
+	;other opcodes not messing with the carry up to this point. We want
+	;to open a gate by turning it into a BPL opcode.
+	mov1	NormalNote_runningArpGate.5, c ; Have this trigger remote code type -2.
+	mov	a, #$ff
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
 	mov	a, !ArpType+x		; \

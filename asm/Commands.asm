@@ -1226,12 +1226,16 @@ if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	
-	mov	a, !PreviousNote+x	; \ Play this note.
-	cmp	a, #$c7			;  |(unless it's a rest)
-.restBranchGate				;  |
-	beq	+			;  |
-+					;  | Default state of this branch gate is open.
-	call	NoteVCMD		; /
+	mov	a, !PreviousNote+x		; \ Play this note.
+	cmp	a, #$c7				;  |(unless it's a rest)
+.restBranchGate					;  |
+	beq	+				;  |
++						;  | Default state of this branch gate is open.
+						;  | If runningArp was set outside of this routine, then
+	not1	NormalNote_runningArpGate.5 ;  | remote code event -2 should be able to fire.
+	call	NoteVCMD			;  |
+	setc					;  | Close the gate again.
+	mov1	NormalNote_runningArpGate.5, c ; /
 	
 	call	TerminateOnLegatoEnable ; \ Key on the current voice (with conditions).
 	or	($47), ($48)		; / Set this voice to be keyed on.
@@ -1245,9 +1249,9 @@ cmdFC:
 	call	GetCommandDataFast			; |
 	push	a					; /
 	call	GetCommandDataFast			; \
-	beq	ClearRemoteCodeAddressesPre		; | Handle types #$ff, #$04, and #$00. #$04 and #$00 take effect now; #$ff has special properties.
-	cmp	a, #$ff					; |
-	beq	.noteStartCommand			; |
+	beq	ClearRemoteCodeAddressesPre		; | Handle types #$fe-#$ff, #$04, and #$00. #$04 and #$00 take effect now; #$fe-#$ff has special properties.
+	cmp	a, #$fe					; |
+	bcs	.noteStartCommand			; |
 	cmp	a, #$04					; |
 	beq	.immediateCall				; |
 	cmp	a, #$06					; | Handle type $06, which is reserved for AMK beta gain conversions due to containing an auto-restore.
