@@ -636,7 +636,7 @@ endif
 
 EffectModifier:				; Call this whenever either $1d or the various echo, noise, or pitch modulation addresses are modified.
 {		
-if !noSFX = !false
+if !noSFX == !false
 MusicToSFXEchoGate:
 	bra	MusicToSFXEchoNoCopy
 	mov	!SFXEchoChannels, !MusicEchoChannels
@@ -1876,7 +1876,7 @@ endif
 	mov1	HandleYoshiDrums_drumSet.6, c
 	bra	HandleYoshiDrums
 
-if !noSFX = !false
+if !noSFX == !false
 MusicSFXEchoCarryOn:
 	mov	a, #$00
 	mov	MusicToSFXEchoGate+1, a
