@@ -374,6 +374,10 @@ cmdE6:					; Second loop
 	ret				;
 
 label2:
+	mov   a,$30+x			; \
+	mov   $0180+x,a			; | Save the current song position into $0180
+	mov   a,$31+x			; |
+	mov   $0181+x,a			; /
 	mov   a, $01f0+x
 	dec   a
 	beq   label4
@@ -396,6 +400,20 @@ label4:
 {
 	; Handled elsewhere.
 }
+
+SubC_20:
+cmdE9RecallSingle:
+	mov   x, $46
+	mov   a, #$01
+
+cmdE9Recall:
+	mov   y, a
+	mov   a, $03f0+x
+	push  a
+	mov   a, $03f1+x
+	push  a
+	bra   cmdE9SetCounter
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdE9:					; Loop
 {
@@ -403,7 +421,8 @@ cmdE9:					; Loop
 	call  GetCommandDataFast
 	push  a
 	call  GetCommandDataFast
-	mov   $c0+x, a           ; repeat counter = op3
+cmdE9SetCounter:
+	mov   $c0+x, y           ; repeat counter = op3
 	mov   a, $30+x
 	mov   $03e0+x, a
 	mov   a, $31+x
@@ -568,6 +587,36 @@ SubC_table:
 	dw	SubC_7
 	dw	SubC_8
 	dw	SubC_9
+	dw	SubC_A
+	dw	SubC_B
+	dw	SubC_C
+	dw	SubC_D
+	dw	SubC_E
+	dw	SubC_F
+	dw	SubC_10
+	dw	SubC_11
+	dw	SubC_12
+	dw	SubC_13
+	dw	SubC_14
+	dw	SubC_15
+	dw	SubC_16
+	dw	SubC_17
+	dw	SubC_18
+	dw	SubC_19
+	dw	SubC_1A
+	dw	SubC_1B
+	dw	SubC_1C
+	dw	SubC_1D
+	dw	SubC_1E
+	dw	$0000
+	dw	SubC_20
+	dw	SubC_21
+	dw	SubC_22
+	dw	SubC_23
+	dw	$0000
+	dw	SubC_25
+	dw	SubC_26
+	dw	SubC_27
 
 SubC_0:
 	not1    $6e.5				; 
@@ -585,6 +634,34 @@ SubC_02:
 	tclr	$0160, a
 	ret
 
+SubC_D:
+	or	($6e), ($48)
+SubC_6:
+	eor	($6e), ($48)
+	bra	SubC_00
+
+SubC_C:
+	or	($6e), ($48)
+	bra	SubC_00
+
+SubC_5:
+	call	SubC_1B
+SubC_16:
+	not1	$0160.1
+	ret
+
+SubC_17:
+	call	SubC_1B
+SubC_19:
+	mov	a,#$02
+	bra	SubC_01
+
+SubC_18:
+	call	SubC_1B
+SubC_1A:
+	mov	a,#$02
+	bra	SubC_02
+
 SubC_1:
 	mov	a,$48
 	tclr	$0162, a
@@ -592,25 +669,134 @@ SubC_1:
 	mov	$0161,a
 	ret
 
+SubC_12:
+	mov	a, $48
+	tset	$0161,a
+	tclr	$0162,a
+	ret
+
+SubC_13:
+	mov	a,$48
+	tclr	$0161,a
+	tset	$0162,a
+	ret
+
 SubC_2:
 	eor	!WaitTime, #$03
 	ret
 	
-SubC_5:
+SubC_8:
+	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+	ret
+
+SubC_A:
+	mov	!SecondVTable, #$00		; Toggle which velocity table we're using.
+	ret
+
+SubC_14:
+	mov	!WaitTime, #$01
+	ret
+
+SubC_15:
+	mov	!WaitTime, #$02
+	ret
+
+SubC_1B:
 	mov    a, #$00
 	mov    $0167, a
 	mov    $0166, a
-	not1   $0160.1
 	ret
-	
-SubC_6:
-	eor	($6e), ($48)
-	bra	SubC_00
-	
-SubC_8:
-	mov	!SecondVTable, #$01		; Toggle which velocity table we're using.
+
+SubC_1C:
+SyncInc:
+	setp
+	inc.b	$0166&$FF		; Increase $166.
+	cmp	$0166&$FF, $016c&$FF
+	bne	SyncInc_ret
+	mov	$0166&$FF, #$00
+	inc.b	$0167&$FF
+	; Note that this is different from AMM's code.
+	; The old code never let the low byte go above #$C0.
+	; A good idea in theory, but it both assumes that all
+	; songs use 4/4 time, and it makes, for example,
+	; using the song's time as an index to a table more difficult.
+	; Thus, it is optional, and can be restored via the $FA $12 VCMD.
+	; By default, this is de facto treated as a word increment.
+
+SyncInc_ret:
+	clrp
+	ret
+
+SubC_21:
+	call	TerminateIfLoopBreakDisabled
+	;WARNING: This loop break is only compatible with the E9 VCMD!
+	mov	x, $46
+	mov	y, $c0+x
+	dbnz	y, +
+	ret
++
+	;No RET needed, thus we get rid of the return pointer.
+	pop	a
+	pop	y
+	jmp	L_0C60
+
+TerminateIfE6LoopCountNot1:
+	mov	x, $46
+	mov	a, $01f0+x
+	dec	a
+	beq	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
+SubC_23:
+	call	TerminateIfLoopBreakDisabled
+	;WARNING: This loop break is only compatible with the E6 VCMD!
+	call	TerminateIfE6LoopCountNot1
+	;Terminate the loop counter for the E9 VCMD.
+	mov	a, #$00
+	mov	$c0+x, a
+	bra	SubC_22_23_E6JumpToEnd
+
+SubC_22:
+	call	TerminateIfLoopBreakDisabled
+	;WARNING: This loop break is only compatible with the E6 VCMD!
+	call	TerminateIfE6LoopCountNot1
+SubC_22_23_E6JumpToEnd:
+	mov	a, $0180+x
+	mov	$30+x, a
+	mov	a, $0181+x
+	mov	$31+x, a
+	ret
+
+TerminateIfLoopBreakDisabled:
+	mov	a, $48
+	and	a, $038c
+	bne	+
+	;WARNING: Won't work if anything else is in the stack!
+	pop	a	;Jump forward one pointer in the stack in order to
+	pop	a	;terminate the entire preceding routine.
++
+	ret
+
+SubC_25:
+	mov	a, $48
+	eor	a, $038c
+	mov	$038c, a
+	ret
+
+SubC_26:
+	mov	a, $48
+	tset	$038c, a
+	ret
+
+SubC_27:
+	mov	a, $48
+	tclr	$038c, a
 cmdF5Ret:
-	ret	
+	ret
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF5:					; FIR Filter command.
@@ -871,6 +1057,15 @@ HotPatchVCMDByte0Bit2Storages:
 	dw	L_10B2_zeroVCMDCheckGate+1
 	db	L_10B2_jmpToL_10D1-L_10B2_zeroVCMDCheckGate-2
 	db	L_10B2_subroutineCheck-L_10B2_zeroVCMDCheckGate-2
+
+	dw	L_10B2_skipLoopChecksF4Gate+1
+	db	L_10B2_skipLoopChecksF4-L_10B2_skipLoopChecksF4Gate-2
+	db	$00
+
+	dw	L_10B2_FACommandSubroutineGate
+	db	$2F ;BRA opcode
+	db	$D0 ;BNE opcode
+
 HotPatchVCMDByte0Bit2StoragesEOF:
 
 	;Byte 0 Bit 3 Clear - $DD VCMD does not account for per-channel transposition
@@ -1073,6 +1268,19 @@ SubC_table2:
 	dw	.reserveBuffer		; 04
 	dw	$0000 ;.gainRest	; 05
 	dw	.manualVTable		; 06
+	dw	$0000			; 07
+	dw	.VxDSPWrite		; 08
+	dw	.VxDSPWrite		; 09
+	dw	.VxDSPWrite		; 0A
+	dw	.VxDSPWrite		; 0B
+	dw	.VxDSPWrite		; 0C
+	dw	.VxDSPWrite		; 0D
+	dw	.VxDSPWrite		; 0E
+	dw	.VxDSPWrite		; 0F
+	dw	$0000			; 10
+	dw	$0000			; 11
+	dw	.SyncClockDivider	; 12
+	dw	cmdE9Recall		; 13
 	
 .HFDTune
 	mov     !HTuneValues+x, a
@@ -1089,6 +1297,27 @@ SubC_table2:
 	mov	$5c, #$ff		; | Mark all channels as needing a volume refresh
 	ret				; /
 	
+.VxDSPWrite
+	;Y will contain our command ID shifted left once.
+	;Adjust by command ID to get the lower three bits of our voice DSP
+	;register ID. (The fourth is zeroed out.)
+	push	a
+	mov	a, y
++
+	setc
+	sbc	a, #$08<<1
+	xcn	a
+	or	a, $46
+	xcn	a
+	lsr	a
+	pop	y
+	movw	$f2, ya
+	ret
+
+.SyncClockDivider
+	mov	$016c, a
+	ret
+
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.

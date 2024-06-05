@@ -610,8 +610,24 @@ SubC_table2_PitchMod:
 	mov     !MusicPModChannels, a	; \ This is for music.
 	bra	EffectModifier		; / Call the effect modifier routine.
 
+SubC_F:
+	or	(!MusicEchoChannels), ($48)
 SubC_3:
 	eor	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+SubC_E:
+	or	(!MusicEchoChannels), ($48)
+	bra	EffectModifier
+
+SubC_10:
+	or	(!MusicPModChannels), ($48)
+	bra	EffectModifier
+
+SubC_11:
+	or	(!MusicPModChannels), ($48)
+SubC_B:
+	eor	(!MusicPModChannels), ($48)
 	bra	EffectModifier
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2097,9 +2113,12 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
-	mov	$46, #$00		;
+	mov	a,#$ff
+	mov	$038c,a
+	inc	a
+	mov	$46, a			;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
-	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
+	mov	$31, a			; This uses a little pointer trick to read a zero immediately. 
 	call	HotPatchVCMDByBit	; The code will handle the rest.
 
 	mov	!WaitTime, #$02		;
@@ -2243,13 +2262,7 @@ ProcessAPU2Input:
 	
 	setp			    ; Get the special AMM byte.
 	bbc1	$0160&$FF, .nothing ; If the second bit is set, then we've enabled sync. Otherwise, do nothing.
-	incw	$0166&$FF	; Increase $166.
-				; Note that this is different from AMM's code.
-				; The old code never let the low byte go above #$C0.
-				; A good idea in theory, but it both assumes that all
-				; songs use 4/4 time, and it makes, for example,
-				; using the song's time as an index to a table more difficult.
-				; If the SNES needs 0 <= value < #$C0, it can limit the value itself.
+	call	SyncInc
 .nothing			; 
 	clrp			;
 	mov	a, $02
@@ -2341,6 +2354,7 @@ L_0C57:
 runningRemoteCodeGate:
 	mov	a, $c0+x           ; vcmd 00: end repeat/return
 	beq	L_0C01             ;  goto next $40 section if rpt count 0
+L_0C60:
 	dec	$c0+x             ;  dec repeat count
 	bne	L_0C6E             ;  if zero then
 	mov	a, $03e0+x
@@ -2534,6 +2548,13 @@ KeyOnVoices:
 	tset	!PlayingVoices, a
 	ret
 
+SubC_1D:
+if !noSFX == !false
+	call	TerminateIfSFXPlaying
+endif
+	mov	a, $48
+	bra	KeyOnVoices
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF0:					; Echo off
 {
@@ -2565,6 +2586,7 @@ cmdF6:					; DSP Write command.
 	bra DSPWrite
 }
 
+SubC_1E:
 KeyOffVoiceWithCheck:
 if !noSFX == !false
 	call	TerminateIfSFXPlaying
@@ -2955,10 +2977,16 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 	;        (and return address not initialized outside of readahead)
 	;$11.4 - Loop section active
 	;$11.3 - Subroutine exited
+	;$11.2 - Loop break enabled
 	;$12/$13 - Return address (if subroutine)
 	;$14/$15 - Current track pointer
 	;$16/$17 - Return address (if loop section)
 	mov	$11, #$00
+	mov	a, $48
+	and	a, $038c
+	beq	+
+	set1	$11.2	;Loop break has been enabled.
++
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
@@ -2978,7 +3006,12 @@ L_10B2:							; |
 	bpl	.L_10BA					; /
 .L_10BF:
 	cmp	a, #$c6					; \ C6 is a tie.
-	beq	.skip_keyoff				; / So we shouldn't key off the voice.
+	bne	+					; / So we shouldn't key off the voice.
+;.skip_keyoff duplicate stored here since it's cheaper memory-wise
+;(and the distance is too great to go forwards)
+	clrc
+	ret
++
 	cmp	a, #$da					; \ Anything less than $DA is a note (or percussion, which counts as a note)
 	bcc	.jmpToL_10D1				; / So we have to key off in preparation
 +
@@ -2997,6 +3030,16 @@ L_10B2:							; |
 .FACommand
 	incw	$14
 	mov	a, ($14)+y
+	cmp	a, #$13
+.FACommandSubroutineGate:
+	bra	+
+	set1	$11.7		;Subroutine has been entered.
+	mov	a, $03f0+x
+	push	a
+	mov	a, $03f1+x
+	push	a
+	jmp	.subroutineIncReadLoopCounter
++
 	cmp	a, #$fe
 	beq	.FACommand_readUntilPositive
 .FACommand_skip2
@@ -3012,6 +3055,10 @@ L_10B2:							; |
 	bra	.FACommand_skip1
 
 .normalCommand
+	cmp	a, #$f4
+	bne	+
+	jmp	.F4Command
++
 	cmp	a, #$fa
 	beq	.FACommand
 	;Update by KungFuFurby 12/5/20
@@ -3033,6 +3080,7 @@ L_10B2:							; |
 .addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
+.braToL_10B2
 	bra	L_10B2					; /
 
 .jmpToL_10D1
@@ -3046,7 +3094,7 @@ L_10B2:							; |
 	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
 	mov	$14, $12	;Copy return address.
 	mov	$15, $13
-	bcs	L_10B2
+	bcs	.jmpToL_10B2_1
 	clr1	$11.6		;Subroutine loop is no longer active.
 	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
 	decw	$14		;Go back to the beginning of the subroutine pointer.
@@ -3057,8 +3105,7 @@ L_10B2:							; |
 	mov	a, ($14)+y
 	pop	y
 	movw	$14, ya
-.jmpToL_10B2_1:
-	bra	L_10B2
+	bra	.jmpToL_10B2_1
 
 .skip_keyoff:
 	clrc
@@ -3103,6 +3150,7 @@ L_10B2:							; |
 	incw	$14
 	mov	a, ($14)+y
 	push	a
+.subroutineIncReadLoopCounter:
 	incw	$14
 	mov	a, ($14)+y
 	dec	a
@@ -3117,8 +3165,8 @@ L_10B2:							; |
 	pop	y
 	pop	a
 	movw	$14, ya
-.jmpToL_10B2_2:
-	bra	.jmpToL_10B2_1
+.jmpToL_10B2_1:
+	bra	.braToL_10B2
 
 .L_10D1:
 	mov	$10, a
@@ -3160,6 +3208,12 @@ L_10B2:							; |
 .loopSectionNonZero:
 	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
 	set1	$11.4	;Loop section is now active.
+	;Unfortunately, we're out of scratch RAM, so the pointer to the end
+	;of the loop section is embedded in code.
+	mov	a, $14
+	mov	.loopSectionEndPtrLo+1, a
+	mov	a, $15
+	mov	.loopSectionEndPtrHi+1, a
 	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
 	mov	a, $01f0+x
 	dec	a
@@ -3179,7 +3233,88 @@ L_10B2:							; |
 	clr1	$11.4		;Loop section is no longer active.
 .loopSectionPassThrough:
 	incw	$14
+.loopSectionNoPassThrough:
+	bra	.jmpToL_10B2_1
+
+.loopSectionBreak:
+	bbs5	$11, .loopSectionBreakEnteredFromReadahead
+	mov	$14, #$0181&$FF
+	bra	.setupJumpToIndirect01
+
+.loopSectionBreakEnteredFromReadahead:
+	;Unfortunately, we're out of scratch RAM, so the return pointer is
+	;embedded in here.
+.loopSectionEndPtrLo:
+	mov	$14, #$ff
+.loopSectionEndPtrHi:
+	mov	$15, #$ff
+.jmpToL_10B2_2:
+	bra	.jmpToL_10B2_1
+
+.F4Command
+	incw	$14
+	mov	a, ($14)+y
+.skipLoopChecksF4Gate:
+	bra	.skipLoopChecksF4
+	cmp	a, #$20
+	bne	+
+	set1	$11.7		;Subroutine has been entered.
+	mov	a, $03f0+x
+	push	a
+	mov	a, $03f1+x
+	push	a
+	jmp	.subroutineNoLoop
++
+	cmp	a, #$21
+	bne	+
+	bbc2	$11, .F4Command_skip
+.subroutineBreakCheck:
+	mov	y, $c0+x
+	dbnz	y, .F4Command_skip
+	jmp	.subroutineCheck
++
+	cmp	a, #$22
+	bne	+
+	bbc2	$11, .F4Command_skip
+.loopSectionBreakCheck:
+	mov	a, $01f0+x
+	dec	a
+	;$01 means that the loop section has been entered and terminated.
+	bne	.F4Command_skip
+	bra	.loopSectionBreak
++
+	cmp	a, #$23
+	bne	+
+	bbc2	$11, .F4Command_skip
+.loopSectionSubroutineBreakCheck:
+	mov	y, $c0+x
+	dbnz	y, .F4Command_skip
+	clr1	$11.6		;Subroutine loop is no longer active.
+	bra	.loopSectionBreakCheck
++
+	cmp	a, #$25
+	bne	+
+	not1	$11.2		;Toggle loop break.
+	bra	.F4Command_skip
++
+
+	cmp	a, #$26
+	bne	+
+	set1	$11.2		;Loop break has been enabled.
+	bra	.F4Command_skip
++
+
+	cmp	a, #$27
+	bne	+
+	clr1	$11.2		;Loop break has been disabled.
+	;bra	.F4Command_skip
++
+
+.skipLoopChecksF4:
+.F4Command_skip
+	incw	$14
 	bra	.jmpToL_10B2_2
+
 }
 
 TerminateOnLegatoEnable:
