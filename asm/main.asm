@@ -1870,7 +1870,7 @@ endif
 	mov1	HandleYoshiDrums_drumSet.6, c
 	bra	HandleYoshiDrums
 
-if !noSFX = !false
+if !noSFX == !false
 SFXEchoCarryOn:
 	mov	a, #!SFXEchoChCarryGateDistance
 	bra	+
