@@ -13,6 +13,7 @@
 
 #include "Directory.h"
 #include "globals.h"
+#include "asardll.h"
 //ROM rom;
 std::vector<uint8_t> rom;
 
@@ -996,6 +997,29 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 	str = newstr;
 }
 
+patchparams asar_preparePatchParamsWNoRelPathWarn(const char * patchloc, char * romdata, int buflen, int * romlen)
+{
+		//NOTE: All of those null pointers are absolutely required. Otherwise, skipping out on setting these can result in a segmentation fault due to undefined pointers.
+		patchparams patchparams;
+		patchparams.patchloc = patchloc;
+		patchparams.romdata = romdata;
+		patchparams.buflen = buflen;
+		patchparams.romlen = romlen;
+		patchparams.includepaths = nullptr;
+		patchparams.numincludepaths = 0;
+		patchparams.should_reset = true;
+		patchparams.additional_defines = nullptr;
+		patchparams.additional_define_count = 0;
+		patchparams.stdincludesfile = nullptr;
+		patchparams.stddefinesfile = nullptr;
+		patchparams.warning_settings = &noRelativePathWarning;
+		patchparams.warning_setting_count = 1;
+		patchparams.memory_file_count = 0;
+		patchparams.override_checksum_gen = false;
+		patchparams.generate_checksum = false;
+		patchparams.structsize = sizeof(patchparams);
+		return patchparams;
+}
 
 bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool dieOnError)
 {
@@ -1009,7 +1033,8 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 
 		uint8_t *binOutput = (uint8_t *)malloc(buflen);
 
-		asar_patch(patchName.cStr(), (char *)binOutput, buflen, &binlen);
+		patchparams patchparams = asar_preparePatchParamsWNoRelPathWarn(patchName.cStr(), (char *)binOutput, buflen, &binlen);
+		asar_patch_ex(&patchparams);
 		int count = 0, currentCount = 0;
 		std::string printout;
 
@@ -1025,6 +1050,7 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 			writeTextFile("temp.txt", printout);
 ///////////////////////////////////////////////////////////////////////////////
 		count = 0; currentCount = 0;
+		int totalCount = 0;
 		printout.clear();
 
 		asar_geterrors(&count);
@@ -1033,8 +1059,20 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 		{
 			printout += asar_geterrors(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
+			totalCount++;
 		}
-		if (count > 0)
+
+		count = 0; currentCount = 0;
+		asar_getwarnings(&count);
+
+		while (currentCount != count)
+		{
+			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
+			currentCount++;
+			totalCount++;
+		}
+		
+		if (totalCount > 0)
 		{
 			writeTextFile("temp.log", printout);
 			free(binOutput);
@@ -1050,7 +1088,7 @@ bool asarCompileToBIN(const File &patchName, const File &binOutputFile, bool die
 	else
 	{
 		remove(binOutputFile);
-		std::string s = "asar " + (std::string)patchName + " " + (std::string)binOutputFile + " 2> temp.log > temp.txt";
+		std::string s = "asar -wnoWrelative_path_used " + (std::string)patchName + " " + (std::string)binOutputFile + " 2> temp.log > temp.txt";
 		execute(s);
 		if (dieOnError && fileExists("temp.log") && getFileSize("temp.log") != 0) return false;
 		return true;
@@ -1071,7 +1109,8 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 		openFile(romName, patchrom);
 		buflen = patchrom.size();
 
-		asar_patch(patchName.cStr(), (char *)patchrom.data(), buflen, &buflen);
+		patchparams patchparams = asar_preparePatchParamsWNoRelPathWarn(patchName.cStr(), (char *)patchrom.data(), buflen, &buflen);
+		asar_patch_ex(&patchparams);
 		int count = 0, currentCount = 0;
 		std::string printout;
 
@@ -1087,6 +1126,7 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 			writeTextFile("temp.txt", printout);
 ///////////////////////////////////////////////////////////////////////////////
 		count = 0; currentCount = 0;
+		int totalCount = 0;
 		printout.clear();
 
 		asar_geterrors(&count);
@@ -1095,8 +1135,21 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 		{
 			printout += asar_geterrors(&count)[currentCount].fullerrdata + (std::string)"\n";
 			currentCount++;
+			totalCount++;
 		}
-		if (count > 0)
+		
+		count = 0; currentCount = 0;
+		
+		asar_getwarnings(&count);
+
+		while (currentCount != count)
+		{
+			printout += asar_getwarnings(&count)[currentCount].fullerrdata + (std::string)"\n";
+			currentCount++;
+			totalCount++;
+		}
+
+		if (totalCount > 0)
 		{
 			writeTextFile("temp.log", printout);
 			return false;
@@ -1107,7 +1160,7 @@ bool asarPatchToROM(const File &patchName, const File &romName, bool dieOnError)
 	}
 	else
 	{
-		std::string s = "asar " + (std::string)patchName + " " + (std::string)romName + " 2> temp.log > temp.txt";
+		std::string s = "asar -wnoWrelative_path_used " + (std::string)patchName + " " + (std::string)romName + " 2> temp.log > temp.txt";
 		execute(s);
 		if (dieOnError && fileExists("temp.log") && getFileSize("temp.log") != 0) return false;
 		return true;

@@ -1,5 +1,6 @@
+
 ;Don't stop program due to changing the mapper multiple times.
-warnings disable W1029
+warnings disable Wmapper_already_set
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -106,11 +107,12 @@ endif
 
 incsrc "tweaks.asm"			
 			
-			
+	
+padbyte $55		
 org $0E8000		; Clear out what parts of bank E we can (Lunar Magic install some hacks there).
-rep $7100 : db $55
+pad $0EF100
 org $0F8000		; Clear out what parts of bank F we can (Lunar Magic install some more hacks there).
-rep $7051 : db $55
+pad $0FF051
 	
 org $8075
 	JML MainLabel
@@ -238,7 +240,7 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 ;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
@@ -294,7 +296,7 @@ Okay:
 
 if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-if !PSwitchIsSFX = !false && !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitch != $00
 	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
@@ -468,12 +470,10 @@ NoAdd:	STA $09			; /
 	LDA [$0D]			; Get the number of samples
 	STA !SampleCount
 	
-	STA $0B				; $0A is used as a copy because CPX $XXXXXX doesn't exist.
-	STZ $0C				; Zero out $0B because we'll be in 16-bit mode for a while.
-	
 	REP #$20
 	AND #$00FF
 	ASL
+	STA $0B				; $0B is used as a copy because CPX $XXXXXX doesn't exist.
 	ASL
 	CLC
 	ADC $09				; $09 contains the location of the ARAM SRCN table (positions and loop positions).
@@ -482,30 +482,44 @@ NoAdd:	STA $09			; /
 	REP #$30
 	LDX #$0000			; Clear out x and y.
 	LDY #$0000
-	DEC $0D				; Needed because we INC $0D twice.
+	INC $0D				; Point $0D to the sample ID collection.
 	
 .loop
-	CPX $0B				; 108100
+	CPY $0B				; 108100
 	BEQ NoMoreSamples
-	PHX				; We use x for indexing as well; push it.
-	
-	
-	TXA				; \
-	ASL				; |
+	PHY				; We use y for indexing as well; push it.
+
+	TYA				; \
 	ASL				; | Get index for the SRCN buffer table
-	TAX				; | and save it in Y.
-	TAY				; |
-	INY : INY			; /
-	
-	LDA $07
-	STA !SRCNTableBuffer,x
-			
-	INC $0D				; $0D is the current position in the table.
-	INC $0D				;
-	
-	LDA [$0D]			; Get the next sample
+	TAX				; / and save it in X.
+
+	LDA [$0D], y			; Get the next sample
 	STA $00
-	
+					; Check for duplicate samples.
+.duplicateCheckLoop
+	DEY
+	DEY
+	BMI .notDuplicateSample
+	CMP [$0D], y
+	BNE .duplicateCheckLoop
+					; Duplicate sample detected!
+					; Copy the corresponding SRCN buffer table entry over, and do no further loading.				
+	STX $00				; X contains the current SRCN buffer table ID. Store it.
+	TYA				; Y contains the duplicate SRCN buffer table ID divided by 2.
+	ASL
+	TAX
+	TAY				;Save duplicate SRCN buffer table ID in Y.
+	LDA !SRCNTableBuffer,x
+	LDX $00				;Reload current SRCN buffer table ID in X.
+	STA !SRCNTableBuffer,x
+	TYX				;Reload duplicate SRCN buffer table ID from Y to X.
+	LDA !SRCNTableBuffer+2,x
+	LDX $00				;Reload current SRCN buffer table ID in X.
+	STA !SRCNTableBuffer+2,x
+	BRA .nextSample			;We're done.
+
+.notDuplicateSample
+	TXY
 					; A contains the sample number
 
 	ASL				; \ A contains the sample loop position table index
@@ -514,8 +528,9 @@ NoAdd:	STA $09			; /
 	CLC				; |
 	ADC $07				; | A contains this sample's loop position relative to its position in ARAM. 
 	TYX				; | Copy y (the SRCN buffer table index) to x.
-	STA !SRCNTableBuffer,x		; / Store the loop position to the SRCN table buffer.
-
+	STA !SRCNTableBuffer+2,x	; | Store the loop position to the SRCN table buffer.
+	LDA $07				; | Copy the start position of the sample.
+	STA !SRCNTableBuffer,x		; / Store the start position to the SRCN table buffer.
 	
 	LDA $00				; \
 	ASL				; |
@@ -549,8 +564,10 @@ NoAdd:	STA $09			; /
 	CLC
 	ADC $05
 	STA $07
-	PLX
-	INX
+.nextSample
+	PLY
+	INY
+	INY
 	BRA .loop
 NoMoreSamples:
 					; $108166
@@ -558,7 +575,6 @@ NoMoreSamples:
 	LDA $09				; \ $09 is the address of the ARAM SRCN table.
 	STA $07				; |
 	LDA $0B				; |
-	ASL				; |
 	ASL				; |
 	STA $05				; |
 	LDA.w #!SRCNTableBuffer		; |
@@ -681,7 +697,7 @@ if !Starman != $00
 	cmp #$1E
 	bcs .starMusic			;;; just play the star music
 endif
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 	lda !MusicMir
 	cmp #!PSwitch
 	beq ++
@@ -693,7 +709,7 @@ endif
 	stz !MusicMir
 	rts
 
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 if !PSwitch != $00
 +	LDA #!PSwitch
 	STA !MusicMir
@@ -709,7 +725,7 @@ if !Starman != $00
 endif
 endif
 
-if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && if !PSwitch != $00
 	LDA #!PSwitch
 	STA !MusicMir
 endif
