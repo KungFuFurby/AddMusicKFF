@@ -1,5 +1,6 @@
+
 ;Don't stop program due to changing the mapper multiple times.
-warnings disable W1029
+warnings disable Wmapper_already_set
 
 !FreeROM		= $0E8000		; DO NOT TOUCH THESE, otherwise the program won't be able to determine where the data in your ROM is stored!
 ;!Data			= $0E8000		; Data+$0000 = Table of music data pointers 300 bytes long. 
@@ -106,11 +107,12 @@ endif
 
 incsrc "tweaks.asm"			
 			
-			
+	
+padbyte $55		
 org $0E8000		; Clear out what parts of bank E we can (Lunar Magic install some hacks there).
-rep $7100 : db $55
+pad $0EF100
 org $0F8000		; Clear out what parts of bank F we can (Lunar Magic install some more hacks there).
-rep $7051 : db $55
+pad $0FF051
 	
 org $8075
 	JML MainLabel
@@ -238,7 +240,7 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 ;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
@@ -294,7 +296,7 @@ Okay:
 
 if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
-if !PSwitchIsSFX = !false && !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitch != $00
 	CMP #!PSwitch			; |
 	BEQ +				; |
 endif
@@ -695,7 +697,7 @@ if !Starman != $00
 	cmp #$1E
 	bcs .starMusic			;;; just play the star music
 endif
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 	lda !MusicMir
 	cmp #!PSwitch
 	beq ++
@@ -707,7 +709,7 @@ endif
 	stz !MusicMir
 	rts
 
-if !PSwitchIsSFX = !false
+if !PSwitchIsSFX == !false
 if !PSwitch != $00
 +	LDA #!PSwitch
 	STA !MusicMir
@@ -723,7 +725,7 @@ if !Starman != $00
 endif
 endif
 
-if !PSwitchIsSFX = !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && if !PSwitch != $00
 	LDA #!PSwitch
 	STA !MusicMir
 endif
