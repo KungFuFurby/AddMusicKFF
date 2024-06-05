@@ -2252,9 +2252,8 @@ FadeSound:
 	setc
 	sbc	a, GlobalVolumeHi+1
 	notc
-	;NOTE: A bug in asar was circumnavigated: without &$1fff, it silently fails.
-	mov1	FadeSoundTargetCheckSign&$1fff.5, c
-	mov1	FadeSoundOverflowCheckSign&$1fff.5, c
+	mov1	FadeSoundTargetCheckSign.5, c
+	mov1	FadeSoundOverflowCheckSign.5, c
 	notc
 	;A - Global volume delta
 	;X - Number of ticks
