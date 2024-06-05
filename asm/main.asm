@@ -2081,7 +2081,7 @@ endif
 				; The stack is also cleared.
 	;ret
 
-if !noSFX = !false
+if !noSFX == !false
 MusicSFXEchoCarryOn:
 	mov	a, #$00
 	mov	MusicToSFXEchoGate+1, a
