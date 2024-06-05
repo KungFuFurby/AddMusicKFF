@@ -2109,7 +2109,7 @@ L_0B5A:
 	;the gate by setting it to a BMI opcode, so the SETC opcode is
 	;required here.
 	setc
-	mov1	NormalNote_runningArpGate&$1fff.5, c ;Close runningArp gate.
+	mov1	NormalNote_runningArpGate.5, c ;Close runningArp gate.
 	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
@@ -2431,7 +2431,7 @@ HandleArpeggioInterrupt:
 	;Carry is cleared due to a BCS opcode not firing previously, and all
 	;other opcodes not messing with the carry up to this point. We want
 	;to open a gate by turning it into a BPL opcode.
-	mov1	NormalNote_runningArpGate&$1fff.5, c ; Have this trigger remote code type -2.
+	mov1	NormalNote_runningArpGate.5, c ; Have this trigger remote code type -2.
 	mov	a, #$ff
 	mov	!ArpNoteIndex+x, a	; Set the note index to -1 (which will be increased to 0, where it should be for the first note).
 	
