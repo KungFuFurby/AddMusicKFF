@@ -528,7 +528,7 @@ endif
 	mov	a, !remoteCodeType2+x
 	bpl	.noRemoteCode
 
-if !noVcmdFB = !false
+if !noVcmdFB == !false
 .runningArpGate
 	bmi	.runRemoteCodeKON
 
@@ -2316,7 +2316,7 @@ L_0B5A:
 	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
 	mov	a,#$6F			;RET opcode
 	mov	SubC_4Gate,a
-if !noVcmdFB = !false
+if !noVcmdFB == !false
 	;Carry is cleared due to an ASL opcode previously. We want to close
 	;the gate by setting it to a BMI opcode, so the SETC opcode is
 	;required here.
