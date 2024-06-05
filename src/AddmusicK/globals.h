@@ -52,7 +52,7 @@ class SampleGroup;
 #include "asardll.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include "asardll.h"
 
 //extern ROM rom;
 extern std::vector<uint8_t> rom;
@@ -95,6 +95,10 @@ extern int songCount;
 extern int songSampleListSize;
 
 extern bool useAsarDLL;
+
+static warnsetting noRelativePathWarning = {"Wrelative_path_used",false};
+
+patchparams asar_preparePatchParamsWNoRelPathWarn(const char * patchloc, char * romdata, int buflen, int * romlen);
 
 // Return true if an error occurred (if "dieOnError" is true).
 bool asarCompileToBIN(const File &patchName, const File &binOutput, bool dieOnError = true);
