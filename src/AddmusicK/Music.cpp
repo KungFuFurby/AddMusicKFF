@@ -98,6 +98,7 @@ static bool octaveForDDWarning;
 static bool remoteGainWarning;
 static bool fractionNoteLengthWarning;
 static bool lowNoteWarning;
+static bool FIRTableWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -196,6 +197,7 @@ void Music::init()
 	remoteGainWarning = true;
 	fractionNoteLengthWarning = true;
 	lowNoteWarning = true;
+	FIRTableWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -1840,13 +1842,21 @@ void Music::parseHexCommand()
 				error("$FA $05 in #amk 2 or above has been replaced with remote code.")
 
 			// Print error for AM4 songs that attempt to use an invalid FIR filter.  They both A) won't sound like their originals and B) may crash the DSP (or for whatever reason that causes SPCPlayer to go silent with them).
-			if (hexLeft == 0 && currentHex == 0xF1 && songTargetProgram == 1)
+			if (hexLeft == 0 && currentHex == 0xF1)
 			{
 				if (i > 1)
 				{
-					char buffer[255];
-					sprintf(buffer, "$%02X", i);
-					error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.")
+					if (songTargetProgram == 1) {
+						char buffer[255];
+						sprintf(buffer, "$%02X", i);
+						error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.");
+					}
+					else if (FIRTableWarning) {
+						FIRTableWarning = false;
+						char buffer[255];
+						sprintf(buffer, "WARNING: $%02X", i);
+						printWarning(buffer + (std::string)" is a non-standard FIR table ID, and results in an out-of-bounds read. Only $00 and $01 are guaranteed to sound consistent. Please use the $F5 hex command for custom FIR coefficents.", name, line);
+					}
 				}
 			}
 

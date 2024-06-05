@@ -138,11 +138,13 @@ incsrc "UserDefines.asm"
 !remoteCodeType2 = $03d0	; The remote code type for negative cases.
 !InRest = $01a1
 
-arch spc700-raw
+norom
+arch spc700
+
 org $000000
 base $0400			; Do not change this.
 
-if !noSFX = !true
+if !noSFX == !true
 print "NoSFX is enabled"
 endif
 {		; Program setup
@@ -190,19 +192,19 @@ MainLoop:
 	mov   $44, a
 	bcc   L_0573
 	inc   $45
-if !noSFX = !false
+if !noSFX == !false
 	call	ProcessSFX
 endif
 	call  ProcessAPU1Input			; APU1 has to come first since it receives the "pause" sound effects that it pseudo-sends to APU0.
 	call  ProcessAPU0Input
-if !noSFX = !false
+if !noSFX == !false
 	call  ProcessAPU3Input
 endif
 	mov   x, #$00
 	call  ReadInputRegister             ; read/send APU0
 	call  ReadInputRegisterIncX1        ; read/send APU1
 	call  ReadInputRegisterIncX2        ; read/send APU3
-if !noSFX = !false	
+if !noSFX == !false	
 	mov	a, !ProtectSFX6
 	beq	+
 	mov	$00, #$00
@@ -360,7 +362,7 @@ NoteVCMD:
 if_rest:
 	mov	a, #$01
 	mov	!InRest+x, a
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	mov	a, !remoteCodeType+x
@@ -387,7 +389,7 @@ NormalNote:						;;;;;;;;;;/ Code change
 	
 	mov	a, #$00
 	mov	!InRest+x, a
-if !noSFX = !false	
+if !noSFX == !false	
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	NoPitchAdjust	; Don't adjust the pitch.
 endif
@@ -453,7 +455,7 @@ NoPitchAdjust:
 	mov	$b0+x, a	; /
 	or	($5c), ($48)       ; set volume changed flg
 	or	($47), ($48)       ; set key on shadow vbit
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	L_062B		; Don't adjust the pitch.	
 endif
@@ -477,7 +479,7 @@ L_062B:
 	call	DDEEFix	
 ; set DSP pitch from $10/11
 SetPitch:			;
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	push	x
@@ -556,7 +558,7 @@ L_09CDWPreCheck:
 	dec	$91+x
 	bra	L_112A
 L_1119:
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $1d			; \ Check to see if this channel is muted (by a sound effect or whatever)
 	and	a, $48			; |
 	bne	L_112A			; /
@@ -580,7 +582,7 @@ DDEEFix:
 	mov	a, $02b0+x
 	bra	++
 +
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $48		; If $48 is 0, then this is SFX code.
 	beq	-		; Don't adjust the pitch.
 	and	a, $1d
@@ -593,7 +595,7 @@ endif
 	ret
 }
 
-if !noSFX = !false
+if !noSFX == !false
 ;Carry is implied cleared here upon entry from the APU1 Command jump array.
 ForceSFXEchoOff:
 	setc
@@ -615,7 +617,7 @@ SubC_3:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF8:					; Noise command.
 {
-if !noSFX = !false
+if !noSFX == !false
 		call	Noiz
 		cmp	!SFXNoiseChannels, #$00
 		bne	+
@@ -643,7 +645,7 @@ EffectModifier:				; Call this whenever either $1d or the various echo, noise, o
 	clrc				; \
 	adc	$f2, #$10		; / Get the next DSP register.
 						
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $1d			; \ a = S
 	eor	a, #$ff			; | a = S'
 	and	a, (X)			; / a = S'M
@@ -672,7 +674,7 @@ endif
 
 
 }
-if !noSFX = !false
+if !noSFX == !false
 Noiz:
 	and	a, #$1f
 	mov	$0389, a
@@ -753,7 +755,7 @@ EndSFX:
 				
 	
 	mov	a, $18
-if !useSFXSequenceFor1DFASFX = !false
+if !useSFXSequenceFor1DFASFX == !false
 	bbc!1DFASFXChannel	$18, +
 	cmp	$1c, #$00
 	bne	++
@@ -765,7 +767,7 @@ endif
 
 	call	EffectModifier
 	mov	a, !SFXNoiseChannels
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	beq	.restoreMusicNoise
 	call	SetSFXNoise
 	call	ModifyNoise
@@ -775,7 +777,7 @@ else
 endif
 .restoreMusicNoise:
 	mov	$1f, a
-if !useSFXSequenceFor1DFASFX = !false
+if !useSFXSequenceFor1DFASFX == !false
 	bbc!1DFASFXChannel	$18, +
 	mov	a, $1c
 	bne	++
@@ -799,7 +801,7 @@ endif
 	lsr	$12
 	push	p
 	bcc	++
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	call	RestoreVolLevelsPostNoise
 else
 	%RestoreVolLevelsPostNoise()
@@ -847,7 +849,7 @@ UseGainInstead:
 	clrp
 	mov	a, #$80
 	call	ORBackupSRCN
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 RestoreRemoteGain:
@@ -864,7 +866,7 @@ RestoreRemoteGain:
 	movw	$f2, ya			; /
 	ret
 
-if !noSFX = !false
+if !noSFX == !false
 HandleSFXVoice:
 {
 	setp
@@ -887,7 +889,7 @@ HandleSFXVoice:
 	mov	a, x			; | 
 	lsr	a			; |
 	xcn	a			; | Put the left volume DSP register for this channel into y.
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	mov	y, a			; |
 	pop	a			; |
 	call	.setVolFromNoiseSetting ; |
@@ -902,7 +904,7 @@ else
 endif
 	call	GetNextSFXByte		;
 	bmi	.noteOrCommand		; If the byte is positive, then set the right volume to the byte we just got.
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	call	.setVolFromNoiseSetting ;
 endif
 	mov	$f3, a			; > Set the volume for the right speaker.
@@ -1002,7 +1004,7 @@ endif
 .instrumentCommand	
 	mov	a, $18			; \ Disable noise for this channel.
 	tclr	!SFXNoiseChannels, a	; / (EffectModifier is called a bit later)
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	tclr	$1a, a
 endif
 
@@ -1014,7 +1016,7 @@ endif
 .noise	
 	and	a, #$1f			; \ Noise can only be from #$00 - #$1F	
 	or	(!SFXNoiseChannels), ($18)
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	mov	$01f1+x, a
 	cmp	!SFXNoiseChannels, $18
 	beq	.noiseNoPrevSFXFrequency
@@ -1023,7 +1025,7 @@ if !noiseFrequencySFXInstanceResolution = !true
 
 .noiseNoPrevSFXFrequency
 	mov	$1f, #$00
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	mov	$1e, a
 else
 	;Store the channel number instead.
@@ -1033,7 +1035,7 @@ endif
 	;All music channels with noise need to have their VxVOL values
 	;zeroed out here if the frequency is not a match.
 .noiseCheckMusic
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	cmp	a, $0389
 	beq	.noiseSetFreq
 endif
@@ -1054,7 +1056,7 @@ endif
 	lsr	$12
 	push	p
 	bcc	+
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 	call	NoiseBackupThenZeroVolLevels
 else
 	%NoiseBackupThenZeroVolLevels()
@@ -1070,13 +1072,13 @@ endif
 .noiseSetFreq
 	call	ModifyNoise
 	bra	.getInstrumentByte	; Now we...go back until we find an actual instrument?  Odd way of doing it, but I guess that works.
-if !noiseFrequencySFXInstanceResolution = !true
+if !noiseFrequencySFXInstanceResolution == !true
 .setVolFromNoiseSetting
 	mov	$11, a
 	mov	a, $18
 	and	a, !SFXNoiseChannels
 	beq	.setNormalVol
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	mov	a, $01f1+x
 	cmp	a, $1e
 	beq	.setNormalVol
@@ -1138,7 +1140,7 @@ SetSFXNoise:
 	bcc	+
 	mov	$1f, a
 	mov	a, $01f1+x
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	mov	$1e, a
 else
 	mov	$11, a
@@ -1157,7 +1159,7 @@ endif
 	mov	$12, !SFXNoiseChannels
 	mov	a, $13
 	tclr	$12, a
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	mov	a, $1e
 else
 	mov	a, $11
@@ -1170,7 +1172,7 @@ endif
 	push	p
 	push	a
 	bcc	++
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	cmp	a, $01f1+x
 else
 	cmp	x, $1e
@@ -1245,7 +1247,7 @@ SetSFXInstrument:
 	ret
 }
 
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 
 PSwitchPtrs:
 	dw PSwitchCh0
@@ -1479,7 +1481,7 @@ PSwitchNoteLengths:
 	db $0D, $0D, $0B, $09, $07	
 endif
 
-if !useSFXSequenceFor1DFASFX = !false
+if !useSFXSequenceFor1DFASFX == !false
 CheckAPU1SFXPriority:
 	mov	y, a
 	;mov	y, #$00		;Default priority
@@ -1516,7 +1518,7 @@ L_0A14:
 	
 	call	KeyOffVoices
 	set1	$1d.!1DFASFXChannel		; Turn off channel 7's music
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	clr1	$1b.!1DFASFXChannel		; Turn off channel 7's P-Switch allocation
 endif
 	mov	x, #(!1DFASFXChannel*2)
@@ -1537,7 +1539,7 @@ SFXTerminateCh:
 SFXTerminateVCMD:
 	db $00
 
-if !useSFXSequenceFor1DFASFX = !true
+if !useSFXSequenceFor1DFASFX == !true
 CheckAPU1SFXPriority:
 	mov	x, #(!1DFASFXChannel*2)
 	mov	y, #$01
@@ -1551,7 +1553,7 @@ endif
 SpeedUpMusic:
 	mov	a, #$0a
 	call	SubC_7_storeTo387  ; add #$0A to tempo; zero tempo low      ;ERROR * 2
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, #$1d
 	mov	$03, a
 	mov	$00, a
@@ -1568,14 +1570,14 @@ endif
 ProcessAPU0Input:
 	mov	a, $00				; \ If the value from $1DF9 was $80+, then play the "time is running out!" jingle.
 	bmi	SpeedUpMusic			; /
-if !noSFX = !false
+if !noSFX == !false
 	mov	x, #(!1DF9SFXChannel*2)		; \ 
 	mov	y, #$00				; | 
 	mov	$10, #(1<<!1DF9SFXChannel)	; | 
 --						; | 
 	bra 	ProcessSFXInput			; / Actually a subroutine.
 	
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 PSwitchSFX:
 	asl	a
 	bne	PlayPSwitchSFX
@@ -1629,7 +1631,7 @@ PlayPSwitchActivateSFX:
 endif
 	
 ProcessAPU3Input:
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	mov	a, $03				;
 	bmi	PSwitchSFX			;
 endif
@@ -1658,7 +1660,7 @@ ProcessSFXInput:				; X = channel number * 2 to play a potential SFX on, y = inp
 	push	a				;
 	cmp	a, #$01				; | Otherwise, we load from table 2.
 	bcc	.loadFromSFXTable0		; /
-if !useSFXSequenceFor1DFASFX = !true
+if !useSFXSequenceFor1DFASFX == !true
 	bne	.loadFromSFXTable1
 	cmp	y, #$04*2
 	beq	.useAPU1GirderSFX
@@ -1675,7 +1677,7 @@ if !useSFXSequenceFor1DFASFX = !true
 endif
 						;
 .loadFromSFXTable1				;
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	cmp	$03, #$81			;
 	bcs	.PSwitchSFX
 endif
@@ -1688,7 +1690,7 @@ endif
 	mov	a, SFXTable0-1+y		; \
 	push	a				; |
 	mov	a, SFXTable0-2+y		; /
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	bra	.gottenPointer
 
 .PSwitchSFX	
@@ -1731,7 +1733,7 @@ endif
 	ret
 
 .checkAPU1SFX
-if !useSFXSequenceFor1DFASFX = !false
+if !useSFXSequenceFor1DFASFX == !false
 	bbc!1DFASFXChannel	$10, .sfxAllocAllowed
 	;Check and see if APU1 SFX is playing there via detecting $1D.
 	;APU1 SFX is playing if APU0/APU3 SFX sequence data is not playing,
@@ -1756,7 +1758,7 @@ endif
 	mov	a, $10				; \
 	call	KeyOffVoices
 	or	($1d), ($10)			;
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	cmp	$03, #$81			;
 	or	($1b), ($10)
 	bcs	.PSwitchSFXChSet
@@ -1794,7 +1796,7 @@ endif
 
 ;
 
-if !noSFX = !false
+if !noSFX == !false
 APU1CMDJumpArray:
 	dw	CheckAPU1SFXPriority	;01
 	dw	EnableYoshiDrums	;02
@@ -1854,7 +1856,7 @@ UnpauseMusic:
 
 ;The cases here are different: carry is implied cleared if jump array is
 ;used, and carry is implied set if a standard branch is used.
-if !noSFX = !false
+if !noSFX == !false
 EnableYoshiDrums:				; Enable Yoshi drums.
 	setc
 DisableYoshiDrums:				; And disable them.
@@ -1864,7 +1866,7 @@ DisableYoshiDrums:				; And disable them.
 EnableYoshiDrums:				; Enable Yoshi drums.
 endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
-	mov1	HandleYoshiDrums_drumSet&$1FFF.6, c
+	mov1	HandleYoshiDrums_drumSet.6, c
 	bra	HandleYoshiDrums
 
 L_099C:
@@ -1881,7 +1883,7 @@ L_099C:
 	mov	$02, a			; 
 	mov	$06, a			; Reset the song number
 	mov	$0A, a			; 
-if !noSFX = !false
+if !noSFX == !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
@@ -1896,8 +1898,8 @@ endif
 
 ProcessAPU1Input:				; Input from SMW $1DFA
 	mov	a, $01
-if !noSFX = !false
-if !useSFXSequenceFor1DFASFX = !false
+if !noSFX == !false
+if !useSFXSequenceFor1DFASFX == !false
 	beq	ProcessAPU1SFX
 else
 	bne	.hasCommand
@@ -1908,7 +1910,7 @@ endif
 endif
 	cmp	a, #$ff
 	beq	L_099C
-if !noSFX = !true
+if !noSFX == !true
 	cmp	a, #$08			; 08 unpauses music
 	beq	UnpauseMusic
 	cmp	a, #$07			; 07 pauses music
@@ -1920,9 +1922,9 @@ if !noSFX = !true
 	cmp	a, #$03			; 03 = turn off Yoshi drums
 	beq	DisableYoshiDrums	;
 endif
-if !noSFX = !false
+if !noSFX == !false
 	cmp	a, #((APU1CMDJumpArrayEOF-APU1CMDJumpArray)/2)+1
-if !useSFXSequenceFor1DFASFX = !false
+if !useSFXSequenceFor1DFASFX == !false
 	bcs	ProcessAPU1SFX
 	mov	y, #ProcessAPU1SFX>>8&$ff
 	push	y
@@ -1971,7 +1973,7 @@ PauseMusic:
 	;setting the FLG DSP register.
 	ret
 
-if !noSFX = !false && !useSFXSequenceFor1DFASFX = !false
+if !noSFX == !false && !useSFXSequenceFor1DFASFX == !false
 ;
 ProcessAPU1SFX:
 	mov	x, #(!1DFASFXChannel*2)
@@ -2078,7 +2080,7 @@ PlaySong:
 	;mov	y, #$00		
 	;mov	$0387, y		; Zero out the tempo modifier.
 
-if !noSFX = !false
+if !noSFX == !false
 	mov	!SFXEchoChannels, #$00
 endif
 
@@ -2121,7 +2123,7 @@ L_0B5A:
 	; MODIFIED CODE END
 	
 	mov	x, #$0e            ; Loop through every channel
-if !noSFX = !false
+if !noSFX == !false
 	mov	$48, #$80
 endif
 L_0B6D:
@@ -2143,7 +2145,7 @@ L_0B6D:
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
-if !noSFX = !false
+if !noSFX == !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
 	mov	a, $1d
@@ -2154,7 +2156,7 @@ endif
 	mov	$02f0+x, a
 	mov	$0210+x, a
 +
-if !noSFX = !false
+if !noSFX == !false
 	lsr	$48
 endif
 	dec	x
@@ -2171,7 +2173,7 @@ endif
 	mov	$52, a             ; TempoFade = 0
 	mov	$43, a             ; GlobalTranspose = 0
 	mov	!PauseMusic, a		; Unpause the music, if it's been paused.
-if !noSFX = !false
+if !noSFX == !false
 	mov	!ProtectSFX6, a		; Protection against START + SELECT
 	mov	!ProtectSFX7, a		; Protection against START + SELECT
 endif
@@ -2203,7 +2205,7 @@ L_0BA3:
 	mov	$06, a		; ???
 L_0BA5:
 	mov	a, #$00
-if !noSFX = !false
+if !noSFX == !false
 	mov	$0389, a
 	mov	a, !NCKValue		; \ 
 	and	!NCKValue, #$20		; | Disable mute and reset, keep echo off.
@@ -2382,7 +2384,7 @@ L_0C9F:
 	bra	L_0C57             ; do next vcmd
 L_0CA8:
 	                           ; vcmd 80-d9 (note)
-if !noSFX = !false
+if !noSFX == !false
 	mov	$10, $1d	; Check if there's a sound effect on the current channel.
 	or	($10),($5e)	; If it's muted or there's a sound effect playing...
 else
@@ -2505,7 +2507,7 @@ L_0D23:
 	dec	x
 	bpl	L_0D1C
 	mov	$5c, #$00          ; clear volchg flags
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $1d
 	eor	a, #$FF		;;;;;;;;;;;;;;;Code change
 	and	a, $47		; Set legato to off for voice.
@@ -2563,7 +2565,7 @@ cmdF6:					; DSP Write command.
 }
 
 KeyOffVoiceWithCheck:
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 KeyOffCurrentVoice:
@@ -2827,7 +2829,7 @@ L_102D:
 	movw	$10, ya            ; set $10/1 from voice pan
 ; set voice volume DSP regs with pan value from $10/1
 L_1036:
-if !noSFX = !false
+if !noSFX == !false
 	call	TerminateIfSFXPlaying
 endif
 	mov	a, x		;
@@ -2867,13 +2869,13 @@ L_105A:
 	inc	a
 	mov	y, a
 L_1061:
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $48
 	and	a, !MusicNoiseChannels
 	beq	++
 	and	a, $1d
 	bne	++
-if !noiseFrequencyMatchChecks = !true
+if !noiseFrequencyMatchChecks == !true
 	;Hardware limitations prevent more than one noise frequency from
 	;playing at once. Thus, we zero out the voice volume of the music
 	;if SFX is using the noise and the frequencies don't match.
@@ -3222,7 +3224,7 @@ L_10A1:
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
-	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3232,14 +3234,14 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
-	mov1	HandleArpeggio_nextNoteCheck&$1fff.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +
 	
 	clr1	$13.7					;
 	mov	a, $90+x				;
-if !noSFX = !false
+if !noSFX == !false
 	beq	L_10E4					;
 	mov	a, $48					;
 	and	a, $1d					;
@@ -3254,7 +3256,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
-if !noSFX = !false
+if !noSFX == !false
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
 	beq	L_10FB					; /
@@ -3584,7 +3586,7 @@ Start:
 	
 	;mov	$0387, a
 	mov	!PauseMusic, a
-if !noSFX = !false
+if !noSFX == !false
 	mov	$0389, a
 endif
 	mov	!MaxEchoDelay, a
@@ -3599,7 +3601,7 @@ endif
 -
 	mov	!ChSFXPtrs-1+y, a	; \ Turn off sound effects
 	dbnz	y, -			; /
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	mov	$1b, a
 endif
 
@@ -3612,8 +3614,8 @@ JumpToUploadLocation:
 	incsrc "InstrumentData.asm"
 	
 
-if !noSFX = !false
-if !useSFXSequenceFor1DFASFX = !true
+if !noSFX == !false
+if !useSFXSequenceFor1DFASFX == !true
 APU1JumpSFXSequence:
 	db $E0
 	db !JumpSFX1DFAPriority
