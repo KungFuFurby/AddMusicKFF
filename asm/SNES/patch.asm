@@ -17,7 +17,11 @@ endif
 
 
 if !UsingSA1
-	sa1rom
+	if read1($00FFD7) == $0D
+		fullsa1rom
+	else
+		sa1rom
+	endif
 	!SA1Addr1 = $3000
 	!SA1Addr2 = $6000
 	!Bank     = $000000
