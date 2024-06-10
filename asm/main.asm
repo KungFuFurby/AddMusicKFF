@@ -2034,8 +2034,7 @@ L_0A99:
 L_0AA5:
 	mov	a, $90+x
 	beq	L_0AB0
-	call	L_09CD
-	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
+	jmp	HandleSFXVoice_handlePitchSlide ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
 
