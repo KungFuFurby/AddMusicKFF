@@ -191,7 +191,7 @@ MainLoop:
 	adc   a, $44
 	mov   $44, a
 	bcs   SFXTickOn
-	cmp   y, #$00
+	mov   a, y
 	beq   L_0573
 SFXTickOn:
 	inc   $45
