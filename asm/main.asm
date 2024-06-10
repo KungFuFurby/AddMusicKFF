@@ -190,7 +190,10 @@ MainLoop:
 	clrc
 	adc   a, $44
 	mov   $44, a
-	bcc   L_0573
+	bcs   SFXTickOn
+	cmp   y, #$00
+	beq   L_0573
+SFXTickOn:
 	inc   $45
 if !noSFX == !false
 	call	ProcessSFX
