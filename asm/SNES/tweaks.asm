@@ -321,15 +321,19 @@ org $00A6ED
 	NOP : NOP : NOP
 Skip8:
 
-;org $00E2EB
-	;BRA Skip9 : NOP
-	;NOP : NOP
-org $00E2EE
-	BRA Skip9
+org $00E2EB
+	BRA Skip9 : NOP
+	NOP : NOP
 	NOP : NOP
 	NOP : NOP
 	NOP : NOP : NOP
-	;NOP
+	NOP
+	NOP : NOP : NOP
+	NOP : NOP : NOP
+	NOP : NOP : NOP
+	NOP : NOP
+	NOP : NOP
+	NOP : NOP : NOP
 Skip9:
 
 org $01C585	; 13 bytes
