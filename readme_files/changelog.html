@@ -240,6 +240,7 @@
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where enabling NMI during V-Blank would cause graphical interferences, such as messing up HDMA." - Yoshifanatic</li>
+		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
