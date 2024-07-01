@@ -735,7 +735,7 @@ if !Starman != $00
 endif
 endif
 
-if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && if !PSwitch != $00
+if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && !PSwitch != $00
 	LDA #!PSwitch
 	STA !MusicMir
 endif
