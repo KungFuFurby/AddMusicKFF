@@ -143,16 +143,13 @@ void quit(int code)
 	exit(code);
 }
 
-int execute(const File &command, bool prepend)
+int execute(const File &command)
 {
-     std::string tempstr = command.cStr();
-     if (prepend)
-     {
+	std::string tempstr = command.cStr();
 #ifndef _WIN32
-	  tempstr.insert(0, "./");
+	if (fileExists("./asar")) tempstr.insert(0, "./");
 #endif
-     }
-     return system(tempstr.c_str());
+	return system(tempstr.c_str());
 }
 
 int scanInt(const std::string &str, const std::string &value)		// Scans an integer value that comes after the specified string within another string.  Must be in $XXXX format (or $XXXXXX, etc.).
