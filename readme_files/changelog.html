@@ -1,61 +1,71 @@
 <html>
 <head>
-	<title>Changelog - AddmusicK Readme</title>
-	<link href="readme.css" type="text/css" rel="stylesheet">
-
+<title>Changelog - AddmusicK Readme</title>
+<link href="readme.css" type="text/css" rel="stylesheet">
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body text="#FFFFFF">
-	<h1>Changelog</h1><br><br>
-	
-	<h2>Version 1.0 - 2014-04-07</h2>
-	<ul><li>Initial release</li></ul>
-	<h2>Version 1.0.1 - 2014-04-12</h2>
-	<ul>
+<body>
+<h1>Changelog</h1>
+<!-- Update -->
+<h2>Version 1.0 - 2014-04-07</h2>
+<ul><li>Initial release</li></ul>
+<!-- Update -->
+<h2>Version 1.0.1 - 2014-04-12</h2>
+<ul>
 	<li>Fixed incompatibility with PowerTool (conflicting NMI hijack)</li>
 	<li>Fixed a bug that rendered #option smwvtable useless</li>
 	<li>Fixed a bug that required a song using #option smwvtable to be looped</li>
 	<li>Fixed a bug where using the $FA $05 or $FC commands in #amk 2 songs (where those commands were replaced with remote code) would cause the song to crash</li>
-	</ul>
-	<h2>Version 1.0.2 - 2014-11-26</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.2 - 2014-11-26</h2>
+<ul>
 	<li>Fixed a bug in parser 1 emulation mode that could causes crashes in certain circumstances and unpredictable behavior in others.</li>
 	<li>Fixed a bug with the $F9 command that caused it to only take one byte of data instead of two.</li>
 	<li>Added the ability to visualize the memory consumption of a song.</li>
-	</ul>
-	<h2>Version 1.0.3 - 2015-04-28</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.3 - 2015-04-28</h2>
+<ul>
 	<li>"I believe it's just a minor SFX fix." - Sinc-X</li>
-	</ul>
-	<h2>Version 1.0.4 - 2015-07-20</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.4 - 2015-07-20</h2>
+<ul>
 	<li>"this fixes a bug where using code insertion in 1DFC sound effects would cause an spc crash." - HuFlungDu</li>
 	<li>Upgraded to Visual Studio 2015</li>
 	<li>Fixed C++ header files in AddmusicK source</li>
-	</ul>
-	<h2>Version 1.0.5 - 2017-02-27</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.5 - 2017-02-27</h2>
+<ul>
 	<li>"This version fixes the bug that caused random music to play after the P-switch timer ran out on accurate emulators while using the SA-1." - Medic</li>
-	</ul>
-	<h2>Version 1.0.6 - 2018-05-15</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.6 - 2018-05-15</h2>
+<ul>
 	<li>"This version fixes the issue where certain error messages do not show up in the AddmusicK GUI, especially the one about missing sample groups." - HertzDevil</li>
 	<li>Upgraded to Visual Studio 2017</li>
-	</ul>
-	<h2>Version 1.0.7 - 2020-10-08</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.7 - 2020-10-08</h2>
+<ul>
 	<li>"Fixes an issue with hardware timing after uploading SPC data" - Lui</li>
 	<li>"This version fixes the bug where the music would break sometimes when pausing and unpausing **IMPORTANT NOTE: This adds a new freeRAM !FREERAM_FIX_PAUSE used in the asm\SNES\patch.asm which may need to be checked for conflicts**" - Medic</li>
 	<li>"Added a fix for bank crossing issues on large SA-1 roms" - Vitor</li>
 	<li>"This version fixes the bug where AMK would break the credits music." - Medic</li>
 	<li>"This version alleviates some of the slowdown caused by higher tempos and/or frequent pitch bends." - KungFuFurby</li>
-	</ul>
-	<h2>Version 1.0.8 - 2020-11-12</h2>
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.8 - 2020-11-12</h2>
+<ul>
 	<li>"added my "Better Pause" fix to prevent songs that use long notes/legato from breaking when pausing. Also removed Medic's pause fix from 1.0.7 since it's obsoleted by this change. Do note that a new SFX was added in slot $2C in $1DF9, make sure you don't change it!" - KevinM</li>
-	</ul>
-	<h2>Version 1.0.9 - 2023-08-28</h2>
-	This changelog is organized a little bit differently because of the massive number of modifications made to it.
-	<ul>
+</ul>
+<!-- Update -->
+<h2>Version 1.0.9 - 2023-08-28</h2>
+<p>This changelog is organized a little bit differently because of the massive number of modifications made to it.</p>
+<ul>
 	<li>Overall
 		<ul>
 		<li>"Upgraded to Visual Studio 2019." - Atari 2.0</li>
@@ -129,7 +139,6 @@
 			<li>"Fixed a playback inconsistency with Addmusic405 songs where rests could skip keying off notes if they were not encountered during readahead." - KungFuFurby</li>
 		</ul>
 		</li>
-		</ul>
 	</li>
 	<li>Music MML Parser
 		<ul>
@@ -137,18 +146,18 @@
 		<li>"Fixed a bug where specifying an o after a $DD command would freeze AddmusicK during hex validation." - KungFuFurby</li>
 		<li>"Fixed a bug on the detection of the lowest note possible." - KungFuFurby</li>
 		<li>"Fixed a big bug where uppercase notes would refer to undefined arrays, meaning they would output wildly inconsistent data." - KungFuFurby</li>
-                <li><b>The parser has been updated to version 4 with these changes (some of these were inherited from Codec's AddmusicK Beta, which used version 3 - this version has not yet been fully implemented due to some extra requirements that are not yet satisfied by the stock AddmusicK build on the SPC700 side):</b>
-                	<ul>
-                		<li>"Added remote command reset syntax via (!!0), (!!-1), (!!1), etc." - 6646</li>
-                		<li>"Added fade support to the v (volume), t (tempo) and w (global volume) MML commands." - 6646</li>
-                		<li>"Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music." - KungFuFurby</li>
-                		<li>"Fixed a bug where #halvetempo and #option dividetempo were not dividing the tempo ratio at all because they were immediately returning. Multiplication was working fine, though. Note that if the tempo ratio is 1, this will still immediately return since it is redundant." - KungFuFurby</li>
+				<li><b>The parser has been updated to version 4 with these changes (some of these were inherited from Codec's AddmusicK Beta, which used version 3 - this version has not yet been fully implemented due to some extra requirements that are not yet satisfied by the stock AddmusicK build on the SPC700 side):</b>
+					<ul>
+						<li>"Added remote command reset syntax via (!!0), (!!-1), (!!1), etc." - 6646</li>
+						<li>"Added fade support to the v (volume), t (tempo) and w (global volume) MML commands." - 6646</li>
+						<li>"Exact tick note lengths and default note lengths via the l MML command can now be used with note length modifiers for music." - KungFuFurby</li>
+						<li>"Fixed a bug where #halvetempo and #option dividetempo were not dividing the tempo ratio at all because they were immediately returning. Multiplication was working fine, though. Note that if the tempo ratio is 1, this will still immediately return since it is redundant." - KungFuFurby</li>
 				<li>"Added a new option directive: #option amk109hotpatch" - KungFuFurby</li>
-                	</ul>
-                </li>
-                <li>"Added bug exploitation warnings for songs prior to #amk 4, specifically affecting the utilization of the $FC command, using o in a target note after using a $DD command, using notes that were too low in pitch, and using uppercase letter notes. This is because these are allowed to happen in prior parser versions, but due to the amount of time that has passed between when #amk 2 debuted (with the initial release of AddmusicK), other users may be unaware of these bugs occurring and may still be using a previous version of AddmusicK. In addition, the uppercase note problem is particularly irreconcilable because it is caused by an out of bounds bug, which can vary from build to build when manually compiled." - KungFuFurby</li>
-                <li>"Added warnings for using fractional tick lengths caused by either note length divisors, dotted notes or triplets. They were already present when dividing by a tempo ratio." - KungFuFurby</li>
-                <li>"Upgraded the manual note warning. Now it identifies duration/quantization bytes and the phrase end marker, the last one being potentially fatal to the song if the .txt file was mislabeled with the wrong parser." - KungFuFurby</li>
+					</ul>
+				</li>
+				<li>"Added bug exploitation warnings for songs prior to #amk 4, specifically affecting the utilization of the $FC command, using o in a target note after using a $DD command, using notes that were too low in pitch, and using uppercase letter notes. This is because these are allowed to happen in prior parser versions, but due to the amount of time that has passed between when #amk 2 debuted (with the initial release of AddmusicK), other users may be unaware of these bugs occurring and may still be using a previous version of AddmusicK. In addition, the uppercase note problem is particularly irreconcilable because it is caused by an out of bounds bug, which can vary from build to build when manually compiled." - KungFuFurby</li>
+				<li>"Added warnings for using fractional tick lengths caused by either note length divisors, dotted notes or triplets. They were already present when dividing by a tempo ratio." - KungFuFurby</li>
+				<li>"Upgraded the manual note warning. Now it identifies duration/quantization bytes and the phrase end marker, the last one being potentially fatal to the song if the .txt file was mislabeled with the wrong parser." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SFX
@@ -258,11 +267,8 @@
 		</ul>
 	</li>
 	</ul>
-
-	<br><br>
-	
-
-	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
-	
+	<!-- Go Home -->
+	<a class="go-home" href="../readme.html">Return to the Main Page</a>
+	</body>
 </body>
 </html>
