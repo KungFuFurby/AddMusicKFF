@@ -35,6 +35,14 @@ for:
       - path: AddmusicK1.0.10_latestRC.zip
   -
     branches:
+      only:
+        - AddmusicK1.0.11
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AddmusicK1.0.11_latestRC.zip
+  -
+    branches:
       except:
         - master
         - bleeding-edge
@@ -78,6 +86,12 @@ deploy:
   - provider: Webhook
     on:
       branch: AddmusicK1.0.10
+    authorization: Basic $(ATARISMWC_AUTH_KEY)
+    url: https://www.atarismwc.com/upload_amk.php
+    request_timeout: 10
+  - provider: Webhook
+    on:
+      branch: AddmusicK1.0.11
     authorization: Basic $(ATARISMWC_AUTH_KEY)
     url: https://www.atarismwc.com/upload_amk.php
     request_timeout: 10
