@@ -44,6 +44,7 @@ endif
 !FreeRAM		= $7FB000
 !CurrentSong		= !FreeRAM+$00
 !NoUploadSamples	= !FreeRAM+$01
+!CurrentSongGroup	= !FreeRAM+$02
 !SongPositionLow	= !FreeRAM+$04
 !SongPositionHigh	= !FreeRAM+$05
 !SPCOutput1		= !SongPositionLow
@@ -317,8 +318,11 @@ endif
 	LDA !MusicMir			; |
 	CMP !MusicBackup		; |
 	BNE ++				; |
+	CMP !CurrentSongGroup		; |
+	BNE ++				; |
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
+	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
 	LDA !MusicMir
@@ -377,7 +381,7 @@ endif
 ;	JMP Fade
 ;+
 
-
+	STA !CurrentSongGroup
 	
 
 	LDA #$FF		; Send this as early as possible
