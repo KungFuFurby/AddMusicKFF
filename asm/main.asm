@@ -125,6 +125,7 @@ incsrc "UserDefines.asm"
 !PlayingVoices = $0382		; Each bit is set to 1 if there's currently a voice playing on that channel (either by music or SFX).
 !SpeedUpBackUp = $0384		; Used to restore the speed after pausing the music.
 
+!SFXEchoChCarryGateDistance = SFXEchoSkipClear-SFXEchoChCarryGate-2
 !reserveBufferZeroEDLGateDistance = SubC_table2_reserveBuffer_zeroEDL-SubC_table2_reserveBuffer_zeroEDLGate-2
 
 !ProtectSFX6 = $038a		; If set, sound effects cannot start on channel #6 (but they can keep playing if they've already started)
@@ -1805,6 +1806,11 @@ APU1CMDJumpArray:
 	dw	PlayPauseSFX		;07
 	dw	PlayUnpauseSFX		;08
 	dw	PlayUnpauseSilentSFX	;09
+	dw	$0000			;0a
+	dw	$0000			;0b
+	dw	$0000			;0c
+	dw	SFXEchoCarryOn		;0d
+	dw	SFXEchoCarryOff		;0e
 APU1CMDJumpArrayEOF:
 endif
 
@@ -1866,6 +1872,18 @@ endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
 	mov1	HandleYoshiDrums_drumSet.6, c
 	bra	HandleYoshiDrums
+
+if !noSFX == !false
+SFXEchoCarryOn:
+	mov	a, #!SFXEchoChCarryGateDistance
+	bra	+
+
+SFXEchoCarryOff:
+	mov	a, #$00
++
+	mov	SFXEchoChCarryGate+1, a
+	ret
+endif
 
 L_099C:
 	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1930,6 +1948,11 @@ if !useSFXSequenceFor1DFASFX == !false
 	push	y
 else
 	bcs	.terminate
+	cmp	a, #$0a
+	bcc	+
+	cmp	a, #$0d
+	bcc	.terminate
++
 endif
 	asl	a
 	mov	x, a
@@ -2085,7 +2108,11 @@ PlaySong:
 	;mov	$0387, y		; Zero out the tempo modifier.
 
 if !noSFX == !false
+SFXEchoChCarryGate:
+	bra	+ ;Default state of this gate is open.
++
 	mov	!SFXEchoChannels, #$00
+SFXEchoSkipClear:
 endif
 
 L_0B5A:
