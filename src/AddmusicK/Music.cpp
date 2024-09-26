@@ -475,8 +475,18 @@ void Music::compile()
 		case 'c': case 'd': case 'e': case 'f': case 'g': case 'a': case 'b': case 'r': case '^':
 			parseNote();			break;
 		case ';':
-			parseComment();			break;		// Needed for comments in quotes
+			parseComment();			break;		// Needed for comments in quotes		
 		default:
+			if (targetAMKVersion == 3) {
+				if (tolower(text[pos]) == '%') {
+					error("Percussion note support from Codec's AMK Beta has not been implemented yet.");
+					break;
+				}
+				else if (tolower(text[pos]) == ':') {
+					error("Loop break from Codec's AMK Beta has not been implemented yet.");
+					break;
+				}
+			}
 			if (isspace(text[pos]))
 			{
 				pos++; break;
@@ -2005,9 +2015,53 @@ void Music::parseHexCommand()
 				}
 			}
 
-			if (hexLeft == 0 && currentHex == 0xF4)
-			if (i == 0x00 || i == 0x06)
-				hasYoshiDrums = true;
+			if (hexLeft == 0 && currentHex == 0xF4) {
+				if (i == 0x00 || i == 0x06)
+					hasYoshiDrums = true;
+				//Convert VCMD IDs from Codec's AMK Beta
+				else if (i == 0x0a && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FD command.
+					append(0xFD);
+					return;
+				}
+				else if (i == 0x0b && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot here.
+					data[channel].pop_back(); //Instead, we use the $FE command.
+					append(0xFE);
+					return;
+				}
+				else if (i == 0x0c && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0C with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0d && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0D with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x07);
+					append(0x00);
+					return;
+				}
+				else if (i == 0x0e && targetAMKVersion == 3) {
+					data[channel].pop_back(); //We don't use a $F4 command slot at the moment.
+					data[channel].pop_back(); //Thus, replace $F4 $0E with the equivalent $FC remote code event.
+					append(0xFC);
+					append(0x00);
+					append(0x00);
+					append(0x08);
+					append(0x00);
+					return;
+				}
+			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
 			{
@@ -2393,6 +2447,12 @@ void Music::parseOptionDirective()
 		if (tempoRatio < 0)
 			error("#halvetempo has been used too many times...what are you even doing?")
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "allsamplesimportant", 19) == 0 && isspace(text[pos + 19]))
+	{
+		pos += 19;
+		skipSpaces;
+		error("#option allsamplesimportant has not yet been implemented from Codec's AMK beta.");
+	}
 	else if (targetAMKVersion >= 4 && strnicmp(text.c_str() + pos, "amk109hotpatch", 14) == 0 && isspace(text[pos + 14]))
 	{
 		pos += 14;
@@ -2417,6 +2477,11 @@ void Music::parseSpecialDirective()
 		pos += 11;
 		parseInstrumentDefinitions();
 
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "percussion", 10) == 0 && isspace(text[pos + 10]))
+	{
+		pos += 10;
+		error("Custom percussion has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "samples", 7) == 0 && isspace(text[pos + 7]))
 	{
@@ -2459,12 +2524,27 @@ void Music::parseSpecialDirective()
 		pos += 3;
 		parseSPCInfo();
 	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "efficient", 9) == 0 && isspace(text[pos + 9]))
+	{
+		pos += 9;
+		error("#efficient (decreasing pitch accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "semiefficient", 13) == 0 && isspace(text[pos + 13]))
+	{
+		pos += 13;
+		error("#semiefficient (decreasing vibrato accuracy in exchange for speed) has not yet been implemented from Codec's AMK beta.");
+	}
 	else if (strnicmp(text.c_str() + pos, "louder", 6) == 0 && isspace(text[pos + 6]))
 	{
 		if (targetAMKVersion > 1)
 			printWarning("#louder is redundant in #amk 2 and above.");
 		pos += 6;
 		parseLouderCommand();
+	}
+	else if (targetAMKVersion == 3 && strnicmp(text.c_str() + pos, "notranspose", 11) == 0 && isspace(text[pos + 11]))
+	{  //ADDED
+		pos += 11;
+		error("#notranspose has not yet been implemented from Codec's AMK beta.");
 	}
 	else if (strnicmp(text.c_str() + pos, "tempoimmunity", 13) == 0 && isspace(text[pos + 13]))
 	{
