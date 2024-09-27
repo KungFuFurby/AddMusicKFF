@@ -58,11 +58,13 @@ class SampleGroup;
 extern std::vector<uint8_t> rom;
 
 extern Music musics[256];
-//extern Sample samples[256];
+
+/// vector[GlobalSampleIndex] Sample
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];
 extern std::vector<std::unique_ptr<BankDefine>> bankDefines;
 
+/// map[str] GlobalSampleIdx
 extern std::map<File, int> sampleToIndex;
 
 extern bool convert;
@@ -153,12 +155,13 @@ int PCToSNES(int addr);
 int clearRATS(int PCaddr);
 bool findRATS(int addr);
 
-void addSample(const File &fileName, Music *music, bool important);
-void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *music, bool important, bool noLoopHeader, int loopPoint = 0, bool isBNK = false);
+void addSample(const File &fileName, Music *maybeMusic, bool important);
+void addSample(const std::vector<uint8_t> &sample, const std::string &name, Music *maybeMusic, bool important, bool noLoopHeader, int loopPoint = 0, bool isBNK = false);
 void addSampleGroup(const File &fileName, Music *music);
 void addSampleBank(const File &fileName, Music *music);
 
-int getSample(const File &name, Music *music);
+int getGlobalSample(const File &name, Music *music);
+int getMySample(const File &name, Music *music);
 
 void preprocess(std::string &str, const std::string &filename, int &version);
 
