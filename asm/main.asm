@@ -2100,6 +2100,13 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
+	;Reset the MVOL DSP registers in case the previous song modified them.
+	mov	y, #$7f
+	mov	a, #$0c
+	movw	$f2, ya
+	set1	$f3.4
+	mov	$f3, y
+
 	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
