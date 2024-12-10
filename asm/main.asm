@@ -188,16 +188,35 @@ endif
 	
 	movw	$00, ya
 	
+	dec	a
+	mov	$f2, #$6c	;Make sure sound is muted while the DSP
+	mov	$f3, a		;registers are being cleared out.
+	lsr	a		;Prepare to clear FIR7 first.
 
-	
-	
-	mov   y, #$0c
-L_0529:
-	mov   a, DefDSPRegs-1+y
-	mov   $f2, a
-	mov   a, DefDSPValues-1+y
-	mov   $f3, a               ; write A to DSP reg Y
-	dbnz  y, L_0529            ; set initial DSP reg values
+ClearDSPLoop:
+	movw	$f2, ya
+	mov	y, #$00
+
+	cmp	a, #$0c+1
+	beq	ClearDSPLoop_MVOL
+	cmp	a, #$1c+1
+	bne	ClearDSPLoop_notMVOL
+ClearDSPLoop_MVOL:
+	mov	y, #$7f
+
+ClearDSPLoop_notMVOL:
+	cmp	a, #$6c+1
+	bne	ClearDSPLoop_notFLG
+	mov	y, #$2f ;Disable echo writes + initialize noise to frequency $F
+
+ClearDSPLoop_notFLG:
+	cmp	a, #$6d+1
+	bne	ClearDSPLoop_notESA
+	mov	y, #$88 ;Set to $88 in case echo writes are accidentally on
+
+ClearDSPLoop_notESA:
+	dec	a
+	bpl	ClearDSPLoop
 	
 	mov   $f1, #$f0		; Reset ports, disable timers
 	mov   $fa, #$10		; Set Timer 0's frequency to 2 ms
@@ -3926,23 +3945,7 @@ VelocityValues:
 ; pan table (max pan full L = $14.00)
 PanValues:
 	db $00, $01, $03, $07, $0D, $15, $1E, $29, $34, $42, $51, $5E, $67, $6E, $73, $77
-	db $7A, $7C, $7D, $7E, $7F
-
-
-
-
-
-
-; default values (1295) for DSP regs (12A1)
-;  mvol L/R max, echo vol L/R zero, FLG = echo off/noise 400HZ
-;  echo feedback = $60, echo/pitchmod/noise vbits off
-;  source dir = $8000, echo ram = $6000, echo delay = 32ms
-
-DefDSPValues:
-		db $7F, $7F, $00, $00, $2F, $00, $00, $00, $00, $2F, $88, $00 
-
-DefDSPRegs:
-		db $0C, $1C, $2C, $3C, $6C, $0D, $2D, $3D, $4D, $5D, $6D, $7D
+	db $7A, $7C, $7D, $7E, $7F, $7F
 
 ; echo filters 0 and 1
 EchoFilter0:
