@@ -798,7 +798,7 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 
 			if (temp == "define")
 			{
-				if (!okayToAdd) { level++; continue; }
+				if (!okayToAdd) { level++; okayStatus.push(okayToAdd); continue; }
 
 				skipSpaces;
 				std::string temp2 = getArgument(str, ' ', i, filename, line, true);
@@ -825,7 +825,7 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 			}
 			else if (temp == "undef")
 			{
-				if (!okayToAdd) { level++; continue; }
+				if (!okayToAdd) { level++; okayStatus.push(okayToAdd); continue; }
 
 				skipSpaces;
 				std::string temp2 = getArgument(str, ' ', i, filename, line, true);
@@ -835,7 +835,7 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 			}
 			else if (temp == "ifdef")
 			{
-				if (!okayToAdd) { level++; continue; }
+				if (!okayToAdd) { level++; okayStatus.push(okayToAdd); continue; }
 
 				skipSpaces;
 				std::string temp2 = getArgument(str, ' ', i, filename, line, true);
@@ -853,7 +853,7 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 			}
 			else if (temp == "ifndef")
 			{
-				if (!okayToAdd) { level++; continue; }
+				if (!okayToAdd) { level++; okayStatus.push(okayToAdd); continue; }
 
 				skipSpaces;
 				std::string temp2 = getArgument(str, ' ', i, filename, line, true);
@@ -871,7 +871,7 @@ void preprocess(std::string &str, const std::string &filename, int &version)
 			}
 			else if (temp == "if")
 			{
-				if (!okayToAdd) { level++; continue; }
+				if (!okayToAdd) { level++; okayStatus.push(okayToAdd); continue; }
 
 				skipSpaces;
 				std::string temp2 = getArgument(str, ' ', i, filename, line, true);
