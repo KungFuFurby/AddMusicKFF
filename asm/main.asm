@@ -1024,6 +1024,17 @@ SubC_9:
 	mov	!BackupSRCN+x, a		; | And make sure it's an instrument, not a sample or something.
 	bra	RestoreInstrumentInformation	; / This ensures stuff like an instrument's ADSR is restored as well.
 
+if !noSFX == !false
+HandleEndSFX:
+	mov	a, !PlayingVoices ; If the note was not keyed off, we'll have to do so manually.
+	and	a, $18
+	beq	EndSFX
+	mov	a, #$00			; Stop the pitch bends immediately.
+	mov	$90+x, a
+	mov	$91+x, a
+	jmp	SFXTerminateCh
+endif
+
 UseGainInstead:
 	setp
 	mov	$0170&$FF+x, y
@@ -1052,24 +1063,12 @@ HandleSFXVoice:
 {
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
-	clrp
-	beq	+	
-	jmp	.processSFXPitch
-+
+	clrp	
+	bne	.processSFXPitch
+
 .getMoreSFXData
 	call	GetNextSFXByte		
-	bne	.notEnd			; If the current byte is zero, then end it.
-	mov	a, !PlayingVoices	; If the note was not keyed off, we'll have to do so manually.
-	and	a, $18
-	bne	+
-	jmp	EndSFX
-+
-	mov	a, #$00			; Stop the pitch bends immediately.
-	mov	$90+x, a
-	mov	$91+x, a
-	jmp	SFXTerminateCh
-.notEnd
-
+	beq	HandleEndSFX		; If the current byte is zero, then end it.
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
 					; The current byte is the duration.
