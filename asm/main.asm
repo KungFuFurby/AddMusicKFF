@@ -1053,13 +1053,23 @@ HandleSFXVoice:
 	setp
 	dec	!ChSFXNoteTimer&$FF+x
 	clrp
-	bne	.processSFXPitch
-
+	beq	+	
+	jmp	.processSFXPitch
++
 .getMoreSFXData
 	call	GetNextSFXByte		
-	bne	+			; If the current byte is zero, then end it.
+	bne	.notEnd			; If the current byte is zero, then end it.
+	mov	a, !PlayingVoices	; If the note was not keyed off, we'll have to do so manually.
+	and	a, $18
+	bne	+
 	jmp	EndSFX
 +
+	mov	a, #$00			; Stop the pitch bends immediately.
+	mov	$90+x, a
+	mov	$91+x, a
+	jmp	SFXTerminateCh
+.notEnd
+
 	bmi	.noteOrCommand		; If it's negative, then it's a command or note.
 	mov	!ChSFXNoteTimerBackup+x, a			
 					; The current byte is the duration.
