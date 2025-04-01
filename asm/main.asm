@@ -3059,6 +3059,19 @@ FetchVoiceXAndZeroA:
 ; vcmd F0: disable echo
 ; vcmd F1: set echo delay, feedback, filter
 
+cmdDD:					; Pitch bend
+	mov	$91+x, a				; \ Get the $DD parameters.
+	call	GetCommandDataFast			; |
+	mov	$90+x, a				; |
+	call	GetCommandDataFast			; /
+	clrc
+	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
+	clrc
+	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
+
 ; calculate portamento delta
 CalcPortamentoDelta:
 	and	a, #$7f
@@ -3733,20 +3746,9 @@ L_10F3:
 	bra	L_1111
 endif
 L_10FB:
-	call	L_1260					; \ 
-	call	GetCommandDataFast			; |
-	mov	$91+x, a				; | Get the $DD parameters.
-	call	GetCommandDataFast			; |
-	mov	$90+x, a				; |
-	call	GetCommandDataFast			; /
-	clrc
-	adc	a, $43
-cmdDDAddHTuneValuesGate:
-	bra	cmdDDAddHTuneValuesSkip
-	clrc
-	adc	a, !HTuneValues+x
-cmdDDAddHTuneValuesSkip:
-	call	CalcPortamentoDelta
+	call	L_1260
+	call	GetCommandDataFast
+	call	cmdDD
 L_1111:
 	call	L_09CDWPreCheck
 L_1133:
