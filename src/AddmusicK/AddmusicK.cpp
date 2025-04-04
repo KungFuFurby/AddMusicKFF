@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) try		// // //
 {
 	std::clock_t startTime = clock();
 
-	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " by Kipernal" << std::endl;
+	std::cout << "AddmusicK version " << AMKVERSION << "." << AMKMINOR << "." << AMKREVISION << " Beta by Kipernal" << std::endl;
 	std::cout << "Parser version " << PARSER_VERSION << std::endl << std::endl;
 	std::cout << "Protip: Be sure to read the readme! If there's an error or something doesn't\nseem right, it may have your answer!\n\n" << std::endl;
 
