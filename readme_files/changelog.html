@@ -222,7 +222,6 @@
 		<ul>
 		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
 		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
-		<li>"Added full 8MB SA-1 memory mapping support." - Lord Ruby and PSI Ninja</li>
 		</ul>
 	</li>
 	<li>Historical Addmusic Adaptations
@@ -241,7 +240,6 @@
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where enabling NMI during V-Blank would cause graphical interferences, such as messing up HDMA." - Yoshifanatic</li>
-		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		</ul>
 	</li>
 	<li>Music MML Parser
@@ -265,6 +263,7 @@
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
+		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		</ul>
 	</li>
 	<li>Built-In Original Songs
@@ -275,6 +274,11 @@
 	<li>Music MML Parser
 		<ul>
 		<li>"Corrected a stack fault that was causing nested if statements to result in a segmentation fault during preprocessing." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"Added full 8MB SA-1 memory mapping support." - Lord Ruby and PSI Ninja</li>
 		</ul>
 	</li>
 	</ul>
