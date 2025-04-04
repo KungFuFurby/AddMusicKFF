@@ -77,6 +77,7 @@ extern bool doNotPatch;
 extern int errorCount;
 extern bool optimizeSampleUsage;
 extern bool usingSA1;
+extern bool fullSA1;
 extern bool allowSA1;
 extern bool forceNoContinuePrompt;
 extern bool sfxDump;
