@@ -10,6 +10,6 @@ del src\AM405Remover\Release -Recurse
 del src\AMKGUI\obj -Recurse
 del src\Release -Recurse
 7z a src.zip src
-mkdir "AddmusicK_1.0.12"
-move 1DF9, 1DFC, asm, music, readme_files, samples, SPCs, stats, Visualizations, Addmusic_list.txt, "Addmusic_sample groups.txt", "Addmusic_sound effects.txt", addmusicMRemover.pl, readme.html, src.zip, *.exe, *.dll, Makefile "AddmusicK_1.0.12"
-7z a "AddmusicK1.0.12_latestRC.zip" "AddmusicK_1.0.12"
+mkdir "AddmusicK_1.0.12_Beta"
+move 1DF9, 1DFC, asm, music, readme_files, samples, SPCs, stats, Visualizations, Addmusic_list.txt, "Addmusic_sample groups.txt", "Addmusic_sound effects.txt", addmusicMRemover.pl, readme.html, src.zip, *.exe, *.dll, Makefile "AddmusicK_1.0.12_Beta"
+7z a "AddmusicK1.0.12_latestRCbeta.zip" "AddmusicK_1.0.12_Beta"
