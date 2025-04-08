@@ -45,7 +45,7 @@ incsrc "UserDefines.asm"
 ; $80+x: Volume fade tick counter
 ; $a1+x: Vibrato maximum offset
 ; $b1+x: Tremolo maximum offset
-; $c0+x: Repeat counter
+; $c0+x: Nest level
 ; $c1+x: Instrument
 ; $0161: Strong portamento/legato
 ; $58: Global volume
@@ -2144,6 +2144,7 @@ L_0B6D:
 	mov	$80+x, a           ; VolVade[ch] = 0
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; Tremolo[ch] = 0
+	mov	$c0+x, a
 	mov	!HTuneValues+x, a	
 	
 	mov	!ArpNoteIndex+x, a
@@ -2343,19 +2344,19 @@ L_0C57:
 
 runningRemoteCodeGate:
 	mov	a, $c0+x           ; vcmd 00: end repeat/return
-	beq	L_0C01             ;  goto next $40 section if rpt count 0
-	dec	$c0+x             ;  dec repeat count
-	bne	L_0C6E             ;  if zero then
-	mov	a, $03e0+x
-	mov	$30+x, a
-	mov	a, $03e1+x
-	bra	L_0C76             ;   goto 03E0/1
-L_0C6E:
-	mov	a, $03f0+x         ;  else
-	mov	$30+x, a
-	mov	a, $03f1+x         ;   goto 03F0/1
-L_0C76:
-	mov	$31+x, a
+	bne	+
+	mov	x, #$0e
+-
+	mov	$c0+x, a
+	dec	x
+	dec	x
+	bpl	-
+	bra	L_0C01             ;  goto next $40 section if rpt count 0
++
+	call	getNestLocation
+	mov	y, #$04
+	mov	a, ($16)+y
+	call    loopEndCheck
 	bra	L_0C57             ;  continue to next vbyte
 L_0C7A:
 	bmi	L_0C9F             ; vcmds 01-7f
@@ -2951,17 +2952,22 @@ ShouldSkipKeyOff:		; Returns with carry set if the key off should be skipped.  O
 ;L_10AC:							;
 	;Scratch RAM usages ($14/$15 is in original, all others are new):
 	;$10 - Current note
-	;$11.7 - Subroutine entered
-	;        (and return address not initialized outside of readahead)
-	;$11.6 - Subroutine loop active
-	;$11.5 - Loop section entered
-	;        (and return address not initialized outside of readahead)
-	;$11.4 - Loop section active
-	;$11.3 - Subroutine exited
-	;$12/$13 - Return address (if subroutine)
+	;$11.7 - Use pointers from readahead section
+	;$11.6 - Leave nesting level on next loop (only works with $11.7 cleared)
+	;$12 - Offset to use from current channel for readahead nesting
+	;$13 - Current nest level
 	;$14/$15 - Current track pointer
-	;$16/$17 - Return address (if loop section)
+	;$16/$17 - Current nest pointer
 	mov	$11, #$00
+	;Set up the offset to use for readahead nesting analysis.
+	mov	a, #$08
+	setc
+	sbc	a, $46
+	mov	y, #$06
+	mul	ya
+	mov	$12, a
+	mov	a, $c0+x
+	mov	$13, a
 	mov	a, $30+x				; \ 
 	mov	y, $31+x				; |
 	movw	$14, ya					; |
@@ -3036,92 +3042,128 @@ L_10B2:							; |
 .addYAToPtr						; |
 	addw	ya, $14					; |
 	movw	$14, ya					; |
+.jmpToL_10B2_1:
 	bra	L_10B2					; /
 
 .jmpToL_10D1
-	bra	.L_10D1
-
-.subroutineCheck:							;
-	;Check for subroutine first before automatically setting a key off.
-	mov1	c, $11.6	;Grab subroutine loop active flag...
-	notc
-	bbc7	$11, .subroutineNoPreviousEntry
-	mov1	$11.3, c	;The inverse of the above flag indicates whether the subroutine was exited or not.
-	mov	$14, $12	;Copy return address.
-	mov	$15, $13
-	bcs	L_10B2
-	clr1	$11.6		;Subroutine loop is no longer active.
-	decw	$14		;We limit loops to one iteration to prevent excessive readahead iterations.
-	decw	$14		;Go back to the beginning of the subroutine pointer.
-.jumpToIndirect
-	mov	a, ($14)+y	;Jump to pointer stored in this location.
-	push	a		;Reading is done backwards for better
-	decw	$14		;utilization of the word storage opcode.
-	mov	a, ($14)+y
-	pop	y
-	movw	$14, ya
-.jmpToL_10B2_1:
-	bra	L_10B2
+	jmp	.L_10D1
 
 .skip_keyoff:
 	clrc
 	ret
 
-.subroutineNoPreviousEntry:
-	bbs3	$11, .L_10D1
-	mov	a, $c0+x
-	beq	.L_10D1
+.subroutineCheck:
+	mov	a, $13
+	beq	.jmpToL_10D1
+	call	getNestLocationFromReadahead
+	call	.getYOffsetFromCurrentNestLevel
+.loopCounterCheck:
+	bbs6	$11, .goUpOneLevel
+	push	y
+	inc	y
+	inc	y
+	inc	y
+	inc	y
+	mov	a, ($16)+y	;If the loop counter is already 1, then go up a nesting level in the readahead.
+	bbc7	$11, .useNonReadaheadLoopCounter
+	bpl	.goUpOneLevelPopY
+.goUpOneLevelFromReadahead:
+	mov	a, #$00
+	mov	($16)+y, a
+	pop	y
+	bra	.loopBack
+.useNonReadaheadLoopCounter:
 	dec	a
-	mov1	$11.3, c
-	beq	.subroutineExit	;Branch if this was the last subroutine loop.
-	bcc	.subroutineExit	;Branch if subroutine was not exited...
-	clr1	$11.6		;Subroutine loop is no longer active.
-	mov	$14, #$03f1&$FF	;Restart subroutine just this once.
-	bra	.setupJumpToIndirect03 ;We limit loops to one iteration to prevent excessive readahead iterations.
+	pop	y
+	beq	.goUpOneLevel
+	set1	$11.6		;We limit loops to one iteration to prevent excessive readahead iterations.
+.loopBack:			
+	inc	y		;Go back to the beginning of the loop.
+	inc	y
+	bra	.jumpToNestPtr
+
+.goUpOneLevelPopY:
+	pop	y
+.goUpOneLevel:
+	clr1	$11.6
+	mov	a, $13
+	dec	a
+	mov	$13, a
+	bbs7	$11, .jumpToNestPtr
+	cmp	a, $c0+x
+	notc
+.setReadaheadPointerReferenceFlag:
+	mov1	$11.7, c
+.jumpToNestPtr:
+	mov	a, ($16)+y
+	mov	$14, a
+	inc	y
+	mov	a, ($16)+y
+	mov	$15, a
+	bra	.jmpToL_10B2_1
 
 .loopSection:
 	incw	$14
 	mov	a, ($14)+y
 	bne	.loopSectionNonZero
-	;Save return point for loop.
-	set1	$11.5		;Loop section was entered.
 	incw	$14
-	movw	ya, $14
-	movw	$16, ya
-	bra	.jmpToL_10B2_1
-
-.subroutineExit:
-	mov	$14, #$03e1&$FF
-.setupJumpToIndirect03:
-	mov	$15, #$03e1>>8
-.setupJumpToIndirectFromIndex:
-	or	($14), ($46)
-	bra	.jumpToIndirect
-
-.subroutine:
-	set1	$11.7		;Subroutine has been entered.
-	incw	$14
-	mov	a, ($14)+y
-	push	a
-	incw	$14
-	mov	a, ($14)+y
-	push	a
-	incw	$14
-	mov	a, ($14)+y
-	dec	a
-	beq	.subroutineNoLoop
-	set1	$11.6		;Subroutine loop is active.
-.subroutineNoLoop:
-	incw	$14
-	;Save return point for subroutine.
-	movw	ya, $14
-	movw	$12, ya
-	;Jump inside subroutine.
-	pop	y
-	pop	a
-	movw	$14, ya
+	call	.goDownOneLevel
+	call	.saveLoopPointer
+	inc	y
+	inc	y
+	inc	y
+	mov	a, #$00
+	mov	($16)+y, a
 .jmpToL_10B2_2:
 	bra	.jmpToL_10B2_1
+
+.subroutine:
+	incw	$14
+	call	.goDownOneLevel
+	push	y
+	inc	y
+	inc	y
+	mov	x, #$00
+	mov	a, ($14+x)
+	mov	($16)+y, a
+	incw	$14
+	inc	y
+	mov	a, ($14+x)
+	mov	($16)+y, a
+	incw	$14
+	inc	y
+	mov	a, ($14+x)
+	dec	a
+	beq	+
+	mov	a, #$80
++
+	mov	($16)+y, a
+	mov	x, $46
+	pop	y
+	call	.saveLoopPointer
+	bra	.jmpToL_10B2_2
+
+.loopSectionNonZero:
+	incw	$14
+	mov	a, $13
+	call	getNestLocationFromReadahead
+	call	.getYOffsetFromCurrentNestLevel
+	bbs7	$11, +
+	jmp	.loopCounterCheck
++
+	push	y
+	inc	y
+	inc	y
+	call	.saveLoopPointer
+	inc	y
+	mov	a, ($16)+y
+	bpl	+
+	jmp	.goUpOneLevelFromReadahead
++
+	pop	y
+	mov	a, #$80
+	mov	($16)+y, a
+	bra	.jmpToL_10B2_2
 
 .L_10D1:
 	mov	$10, a
@@ -3160,29 +3202,30 @@ L_10B2:							; |
 	clrc
 	ret
 
-.loopSectionNonZero:
-	bbs4	$11, .loopSectionClearAndPassThrough	;Branch if loop section is active.
-	set1	$11.4	;Loop section is now active.
-	bbs5	$11, .loopSectionJumpFromScratchRAM	;Branch if loop section was entered via readahead.
-	mov	a, $01f0+x
-	dec	a
-	;$01 means that the loop section has been entered and terminated.
-	beq	.loopSectionPassThrough
-	mov	$14, #$01e1&$FF	;Grab pre-existing return address and jump.
-.setupJumpToIndirect01:
-	mov	$15, #$01e1>>8
-	bra	.setupJumpToIndirectFromIndex
+.getYOffsetFromCurrentNestLevel:
+	bbs7	$11, +
+	mov	y, #$00
+	ret
++
+	mov	y, $12
+	ret
 
-.loopSectionJumpFromScratchRAM:
-	movw	ya, $16
-	movw	$14, ya
-	bra	.jmpToL_10B2_2
+.goDownOneLevel:
+	set1	$11.7
+	clr1	$11.6
+	inc	$13
+	mov	a, $13
+	call	getNestLocationFromReadahead
+	mov	y, $12
+	ret
 
-.loopSectionClearAndPassThrough:
-	clr1	$11.4		;Loop section is no longer active.
-.loopSectionPassThrough:
-	incw	$14
-	bra	.jmpToL_10B2_2
+.saveLoopPointer:
+	mov	a, $14
+	mov	($16)+y, a
+	inc	y
+	mov	a, $15
+	mov	($16)+y, a
+	ret
 }
 
 TerminateOnLegatoEnable:
