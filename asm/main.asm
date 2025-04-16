@@ -1161,6 +1161,7 @@ endif
 .noPitchSlideDelay
 	mov	a, $90+x		; pitch slide counter
 	beq	.noPitchSlide
+.handlePitchSlide
 	call	L_09CD			; add pitch slide delta and set DSP pitch
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 .noPitchSlide
