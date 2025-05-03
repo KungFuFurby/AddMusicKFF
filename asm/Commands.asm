@@ -836,6 +836,7 @@ HotPatchVCMDByte0StorageSet:
 	;Byte 0 Bit 0 Clear - Arpeggio plays during rests
 	;Byte 0 Bit 0 Set - Arpeggio doesn't play during rests
 HotPatchVCMDByte0Bit0Storages:
+if !noVcmdFB == !false
 	dw	HandleArpeggioInterrupt_restOpcodeGate
 	db	$B0 ;BCS opcode
 	db	$F0 ;BEQ opcode
@@ -843,6 +844,7 @@ HotPatchVCMDByte0Bit0Storages:
 	dw	HandleArpeggio_restBranchGate+1
 	db	$00
 	db	HandleArpeggio_return2-HandleArpeggio_restBranchGate-2
+endif
 HotPatchVCMDByte0Bit0StoragesEOF:
 
 	;Byte 0 Bit 1 Clear - Write ADSR to DSP registers first during instrument setup
@@ -902,9 +904,11 @@ HotPatchVCMDByte0Bit5StoragesEOF:
 	;Byte 0 Bit 6 Clear - When using arpeggio, glissando disables itself after two base notes
 	;Byte 0 Bit 6 Set - When using arpeggio, glissando disables itself after one base note
 HotPatchVCMDByte0Bit6Storages:
+if !noVcmdFB == !false
 	dw	cmdFB_glissNoteCounter+1
 	db	$02
 	db	$01
+endif
 HotPatchVCMDByte0Bit6StoragesEOF:
 
 HotPatchVCMDByte1StorageSet:
@@ -1092,6 +1096,7 @@ SubC_table2:
 }
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 cmdFB:					; Arpeggio command.
+if !noVcmdFB == !false
 {
 	bmi	.special		; \ Save the number of notes.
 	mov	!ArpNoteCount+x, a	; / (But if it's negative, then it's a special command).
@@ -1238,6 +1243,7 @@ endif
 .return2
 	ret
 }	
+endif
 	
 cmdFC:
 {
