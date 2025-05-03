@@ -76,13 +76,19 @@
 	AddmusicM songs require some extra steps:
 	<ol>
 	<li><p>Open up your song's text file and type "#amm" (without quotes) at the top of the file.  Make sure it's on its own line.  Now save the file.</p></li>
-	<li><p>Look for a line or lines that look like sXX_10_14_13_12_16_15_FF or something similar.</p></li>
+	<li><p>Look for a line or lines that look like sXX_10_14_13_12_16_15_FF or something similar.</p>
+		<ul>
+		<li><p>If sXX is 00, more likely than not there are no extra samples specified, as it was reserved for the default AddmusicM sample pack (which had less important samples than AddmusicK does).</p></li>
+		<li><p>If sXX is 01, more likely than not it is a default AddmusicM add-on pack used to load 00_SMW@9.brr according to AddmusicM's filename, and 0A SMW @9.brr according to AddmusicK's filename.<br>The <tt>#AMMS01</tt> sample group, when used with <tt>#AMMKisoPCM</tt>, will ensure that the $F3 command (which relies on a raw SRCN ID) can work properly with the original SRCN IDs that AddmusicM would have expected.</p></li>
+		<li><p>If sXX is 02, more likely than not it is a default AddmusicM add-on pack used to load the remaining samples from the default Super Mario World set that are otherwise not loaded (AddmusicK loads more samples by default than AddmusicM).<br>The <tt>#AMMS02</tt> sample group, when used with <tt>#AMMKisoPCM</tt>, will ensure that the $F3 command (which relies on a raw SRCN ID) can work properly with the original SRCN IDs that AddmusicM would have expected.</p></li>
+		<li><p>If sXX is 03, more likely than not it is a default AddmusicM add-on pack used to load a smaller version of 07 SMW @5.brr according to AddmusicK's filename, known as 07_SMW@5_light.brr according to AddmusicM's filename.<br>The <tt>#AMMS03</tt> sample group, when used with <tt>#AMMKisoPCM</tt>, will ensure that the $F3 command (which relies on a raw SRCN ID) can work properly with the original SRCN IDs that AddmusicM would have expected.</p></li>
+		</ul>
+	</li>
 	<li><p>At the top of the file, add the following text:
 		<br><code>
 	#samples<br>
 	{<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#default<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#AMM<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#AMMKisoPCM<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"sample10.brr"<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"sample14.brr"<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"sample13.brr"<br>
@@ -114,8 +120,7 @@
 	<li>All in all, the #samples definition should look like this:<br><code>
 	#samples<br>
 	{<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#default<br>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#AMM<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#AMMKisoPCM<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Trumpet.brr"<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Strings.brr"<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Cymbal.brr"<br>
