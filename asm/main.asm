@@ -2011,26 +2011,6 @@ APU1CMDJumpArray:
 APU1CMDJumpArrayEOF:
 endif
 
-HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
-
-	mov	$5e, #$00
-	mov	a, $6e
-.drumSet
-	tset	$5e, a
-
-	;If you are using any extra code that also sets the mute flag, send
-	;all of them over to HandleYoshiDrums_externalChMuteFlags+1 (and
-	;uncomment the two lines below) so that they get preserved
-	;accordingly. The +1 is important, since it's embedded in code (and
-	;labels can't go in the middle of opcodes unless I were to input raw
-	;hex opcodes instead of letting the assembler do its job).
-HandleYoshiDrums_externalChMuteFlags:
-	;mov	a, #$00
-	;tset	$5e, a
-
-	mov	a, $5e
-	jmp	KeyOffVoices
-
 UnpauseMusic:
 	mov a, #$00
 	mov !PauseMusic, a
@@ -2068,7 +2048,26 @@ EnableYoshiDrums:				; Enable Yoshi drums.
 endif
 	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
 	mov1	HandleYoshiDrums_drumSet.6, c
-	bra	HandleYoshiDrums
+
+HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
+
+	mov	$5e, #$00
+	mov	a, $6e
+.drumSet
+	tset	$5e, a
+
+	;If you are using any extra code that also sets the mute flag, send
+	;all of them over to HandleYoshiDrums_externalChMuteFlags+1 (and
+	;uncomment the two lines below) so that they get preserved
+	;accordingly. The +1 is important, since it's embedded in code (and
+	;labels can't go in the middle of opcodes unless I were to input raw
+	;hex opcodes instead of letting the assembler do its job).
+HandleYoshiDrums_externalChMuteFlags:
+	;mov	a, #$00
+	;tset	$5e, a
+
+	mov	a, $5e
+	jmp	KeyOffVoices
 
 if !noSFX == !false
 SFXEchoCarryOn:
