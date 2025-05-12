@@ -191,7 +191,7 @@ MainLoop:
 	adc   a, $44
 	mov   $44, a
 	bcs   SFXTickOn
-	cmp   y, #$00
+	mov   a, y
 	beq   L_0573
 SFXTickOn:
 	inc   $45
@@ -234,7 +234,7 @@ L_0573:
 ;- Read $FD more often (only needed if we overflow from 15 to 0) and
 ;  reserve a memory location for this purpose.
 	bcs   SoundTickOn
-	cmp   y, #$00
+	mov   a, y
 	beq   L_058D
 	
 SoundTickOn:
@@ -620,13 +620,12 @@ SubC_3:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF8:					; Noise command.
 {
-Noiz:
-		or	(!MusicNoiseChannels), ($48)
 if !noSFX == !false
-		and	a, #$1f
-		mov	$0389, a
+		call	Noiz
 		cmp	!SFXNoiseChannels, #$00
 		bne	+
+else
+		or	(!MusicNoiseChannels), ($48)
 endif
 		call	ModifyNoise
 +	
@@ -679,6 +678,12 @@ endif
 
 }
 if !noSFX == !false
+Noiz:
+	and	a, #$1f
+	mov	$0389, a
+	or	(!MusicNoiseChannels), ($48)
+	ret
+
 macro RestoreVolLevelsPostNoise()
 	mov	a, $d0+x
 	mov	$f3, a
@@ -969,6 +974,7 @@ endif
 .noPitchSlideDelay
 	mov	a, $90+x		; pitch slide counter
 	beq	.noPitchSlide
+.handlePitchSlide
 	call	L_09CD			; add pitch slide delta and set DSP pitch
 	jmp	SetPitch                ; force voice DSP pitch from 02B0/1
 .noPitchSlide
@@ -1709,7 +1715,7 @@ endif
 	mov	a, ($14)+y
 	cmp	a, #$E0
 	beq	.getSFXPriority
-	mov	a, #$00
+	mov	a, y
 	bra	.sfxPriorityCheck
 .getSFXPriority
 	incw	$14
@@ -1808,6 +1814,44 @@ APU1CMDJumpArray:
 APU1CMDJumpArrayEOF:
 endif
 
+UnpauseMusic:
+	mov a, #$00
+	mov !PauseMusic, a
+.unsetMute:
+	mov a, !SpeedUpBackUp	;\
+	mov $0387, a			;/ Restore the tempo.
+
+	clr1 !NCKValue.6		; Unset the mute flag.
+	jmp SetFLGFromNCKValue
+
+.silent:	
+	mov a, #$01		;\ Set pause flag to solve issue when doing start+select quickly
+	mov !PauseMusic, a	;/
+
+	dec a
+	mov $f2, #$2c		;\
+	mov $f3, a		;| Mute echo.
+	set1 $f2.4		;|
+	mov $f3, a		;/
+
+	dec a			; \ Key off voices
+	call KeyOffVoicesNoPlayingVoicesClear	; / (so the music doesn't restart playing when using start+select)
+	bra .unsetMute
+
+;The cases here are different: carry is implied cleared if jump array is
+;used, and carry is implied set if a standard branch is used.
+if !noSFX == !false
+EnableYoshiDrums:				; Enable Yoshi drums.
+	setc
+DisableYoshiDrums:				; And disable them.
+else
+DisableYoshiDrums:				; And disable them.
+	clrc
+EnableYoshiDrums:				; Enable Yoshi drums.
+endif
+	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
+	mov1	HandleYoshiDrums_drumSet.6, c
+
 HandleYoshiDrums:				; Subroutine.  Call it any time anything Yoshi-drum related happens.
 
 	mov	$5e, #$00
@@ -1827,45 +1871,6 @@ HandleYoshiDrums_externalChMuteFlags:
 
 	mov	a, $5e
 	jmp	KeyOffVoices
-
-UnpauseMusic:
-	mov a, #$00
-	mov !PauseMusic, a
-.unsetMute:
-	mov a, !SpeedUpBackUp	;\
-	mov $0387, a			;/ Restore the tempo.
-
-	clr1 !NCKValue.6		; Unset the mute flag.
-	jmp SetFLGFromNCKValue
-
-.silent:	
-	mov a, #$01			;\ Set pause flag to solve issue when doing start+select quickly
-	mov !PauseMusic, a	;/
-
-	mov $f2, #$5c		; \ Key off voices
-	mov $f3, #$ff		; / (so the music doesn't restart playing when using start+select)
-
-	dec a
-	mov $f2, #$2c		;\
-	mov $f3, a		;| Mute echo.
-	set1 $f2.4		;|
-	mov $f3, a		;/
-	bra .unsetMute
-
-;The cases here are different: carry is implied cleared if jump array is
-;used, and carry is implied set if a standard branch is used.
-if !noSFX == !false
-EnableYoshiDrums:				; Enable Yoshi drums.
-	setc
-DisableYoshiDrums:				; And disable them.
-else
-DisableYoshiDrums:				; And disable them.
-	clrc
-EnableYoshiDrums:				; Enable Yoshi drums.
-endif
-	;Toggle between TSET/TCLR using the carry to toggle between opcodes.
-	mov1	HandleYoshiDrums_drumSet.6, c
-	bra	HandleYoshiDrums
 
 L_099C:
 	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
@@ -1974,6 +1979,9 @@ PauseMusic:
 if !noSFX == !false && !useSFXSequenceFor1DFASFX == !false
 ;
 ProcessAPU1SFX:
+	mov	x, #(!1DFASFXChannel*2)
+	mov	$46, x
+	mov	$48, #$00	; Let NoteVCMD know that this is SFX code.
 	mov	a, $05		; 
 	cmp	a, #$04		; \ If the currently playing SFX is the girder SFX
 	beq	L_0B08		; / Then process that.
@@ -1982,16 +1990,13 @@ ProcessAPU1SFX:
 
 ; $01 = 01
 L_0A51:						;;;;;;;;/ Code change
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
-
 L_0A56:
 	dbnz	$1c, L_0A38
 RestoreInstrumentFromAPU1SFX:
 	clr1	$1d.!1DFASFXChannel
 	mov	a, #$00
 	mov	$05, a
-	mov	!ChSFXPriority+(!1DFASFXChannel*2), a
-	mov	x, #(!1DFASFXChannel*2)
+	mov	!ChSFXPriority+x, a
 	jmp	RestoreInstrumentInformation
 
 L_0A38:
@@ -2003,8 +2008,6 @@ L_0A38:
 ; executes when.
 	cmp	$1c, #$2a
 	bne	L_0A99
-	mov	x, #(!1DFASFXChannel*2)
-	mov	$46, x
 	mov	y, #$00
 	mov	$91+x, y
 	mov	y, #$12
@@ -2014,7 +2017,6 @@ L_0A38:
 	bra	L_0A99
 
 L_0A68:
-	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$08
 	call	SetSFXInstrument
 	mov	a, #$b2
@@ -2030,17 +2032,14 @@ L_0A68:
 L_0A99:
 	call	SFX1DFAKOFFCheck
 L_0AA5:
-	mov	x, #(!1DFASFXChannel*2)
 	mov	a, $90+x
 	beq	L_0AB0
-	call	L_09CD
-	jmp	SetPitch             ; force voice DSP pitch from 02B0/1
+	jmp	HandleSFXVoice_handlePitchSlide ; force voice DSP pitch from 02B0/1
 L_0AB0:
 	ret
 
 ; $01 = 04 && $05 != 01
 L_0B08:
-	mov	$48, #$00		; Let NoteVCMD know that this is SFX code.
 	dbnz	$1c, L_0AF2
 	bra	RestoreInstrumentFromAPU1SFX
 
@@ -2053,7 +2052,6 @@ L_0AF2:
 	cmp	$1c, #$0c
 	bne	L_0B33
 L_0AF7:
-	mov	$46, #(!1DFASFXChannel*2)
 	mov	a, #$07
 	call	SetSFXInstrument
 	mov	a, #$a4
@@ -2576,6 +2574,7 @@ KeyOffCurrentVoice:
 	mov	a, $48
 KeyOffVoices:
 	tclr	!PlayingVoices, a
+KeyOffVoicesNoPlayingVoicesClear:
 	mov	y, #$5c
 DSPWrite:
 	mov	$f2, y	; write A to DSP reg Y
@@ -2642,9 +2641,8 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	
 	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	$14, #$00
-	mov	$15, y
 	mov	a, #$00
+	movw	$14, ya
 	mov	y, a
 	
 -	mov	($14)+y, a		; clear the whole echo buffer
