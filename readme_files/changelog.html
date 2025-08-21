@@ -324,6 +324,7 @@
 		<li>"All DSP registers are now initialized on boot rather than just a selection of them, to prevent uninitialized values from causing side effects." - KungFuFurby</li>
 		<li>"Fixed a bug where encountering the $DD command outside of readahead would crash the sound driver due to a zero pointer." - KungFuFurby</li>
 		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
+		<li>"Fixed a bug where the Hurry Up! SFX had inconsistent off-by-one errors on the amount it was adding on to the tempo (sometimes it was adding $0A, and sometimes it was adding $0B). It now replicates the same behavior as when a hex command is called to change the tempo, meaning it adds the intended value plus one (with the one being a vanilla SMW bug that caused all of the off-by-one errors)." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700 <-> SNES Communication
