@@ -317,6 +317,7 @@ SubC_7_storeTo387:
 cmdE2:					; Change the tempo
 {
 L_0E14: 
+	setc
 	adc   a, $0387			; WARNING: This is sometimes called to change the tempo.  Changing this function is NOT recommended!
 	mov   $51, a
 	mov   $50, #$00
