@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2025-04-01</h2>
+	<h2>AddmusicKFF Fork - 2025-08-21</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -323,6 +323,7 @@
 		<li>"The MVOL DSP registers are now set to $7F on song initialization. This avoids problems with the sound being quieter than expected when a song fails to do the same, since the MVOL DSP registers are otherwise never touched except by direct DSP register writes from the sound data." - KungFuFurby</li>
 		<li>"All DSP registers are now initialized on boot rather than just a selection of them, to prevent uninitialized values from causing side effects." - KungFuFurby</li>
 		<li>"Fixed a bug where encountering the $DD command outside of readahead would crash the sound driver due to a zero pointer." - KungFuFurby</li>
+		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700 <-> SNES Communication
