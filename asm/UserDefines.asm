@@ -260,6 +260,18 @@ includeonce
 ;=======================================
 
 ;=======================================
+;---------------
+!TimerResetOnLevelFade = !true
+
+;Default setting: !true
+;---------------
+; If you set this to true, the P-Switch, star and directional coin timers
+; will be reset when transitioning to another room.
+; If you are using a patch that tries to make the timers persist between
+; rooms that works without AddmusicK, set this to false.
+;=======================================
+
+;=======================================
 ; If you've changed list.txt and plan on using the original SMW songs
 ; change these constants to whatever they are in list.txt
 ; For example, if you changed the "Stage Clear" music to be number 9,

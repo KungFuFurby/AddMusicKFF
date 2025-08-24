@@ -700,6 +700,7 @@ if !Starman != $00
 	BEQ .restoreFromStarMusic
 	BCS .starMusic
 endif
+if !TimerResetOnLevelFade == !true
 ++
 	RTS
 	
@@ -708,6 +709,10 @@ endif
 	STZ $14AE|!SA1Addr2
 	STZ $190C|!SA1Addr2
 	STZ $1490|!SA1Addr2
+else
+++
++
+endif
 	RTS
 	
 if !PSwitch != $00

@@ -258,14 +258,15 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2025-08-21</h2>
+	<h2>AddmusicKFF Fork - 2025-08-24</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
 		<li>"Fixed a bug where changing level music while the Starman or P-Switch songs were active would cause the next level music to fail to load upon the conclusion of the Starman and/or the P-Switch effect." - KungFuFurby</li>
-		</ul>
+		<li>"Added a new user define, !TimerResetOnLevelFade . This define is designed to allow patches that allow P-Switch, star and directional coin timers to persist between rooms that would otherwise fail when AddmusicK is applied on top of these patches." - KungFuFurby</li>
+	</ul>
 	</li>
 	<li>Built-In Original Songs
 		<ul>
