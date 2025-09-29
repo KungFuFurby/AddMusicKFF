@@ -1111,10 +1111,16 @@ void compileMusic()
 	}
 
 	songSampleList << "\n\n";
+	
+	bool musicInSampleList[256];
+	for (int i = 0; i < sizeof(musicInSampleList); i++)
+	{
+		musicInSampleList[i] = false;
+	}
 
 	for (int i = 0; i < songCount; i++)
 	{
-		if (!musics[i].exists) continue;
+		if ((!musics[i].exists) || (musicInSampleList[i])) continue;
 
 		songSampleListSize++;
 
@@ -1122,6 +1128,22 @@ void compileMusic()
 
 		if (i > highestGlobalSong)
 		{
+			for (int j = highestGlobalSong+1; j < songCount; j++) {
+				if (i == j) continue;
+				if (!musics[j].exists) continue;
+				if (musics[i].mySamples.size() != musics[j].mySamples.size()) continue;
+				bool sampleGroupMatch = true;
+				for (unsigned int k = 0; k < musics[i].mySamples.size(); k++)
+				{
+					if ((musics[i].mySamples[k]) != (musics[j].mySamples[k])){
+						sampleGroupMatch = false;
+					}
+				}
+				if (sampleGroupMatch) {
+					songSampleList << "\n" << "SGPointer" << hex2 << j << ":\n";
+					musicInSampleList[j] = true;
+				}
+			}
 			songSampleList << "db $" << hex2 << musics[i].mySamples.size() << "\ndw";
 			for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
 			{
