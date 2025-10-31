@@ -652,9 +652,11 @@ SkipSPCNormal:
 	JMP End
 	
 HandleSpecialSongs:
+if !TimerResetOnLevelFade == !true
 	LDA $0100|!SA1Addr2
 	CMP #$0F
 	BEQ +
+endif
 	LDA !MusicMir
 	CMP #!Miss
 	BEQ +
@@ -682,7 +684,6 @@ if !Starman != $00
 	BCS .starMusic
 	BEQ .restoreFromStarMusic
 endif
-if !TimerResetOnLevelFade == !true
 ++
 	RTS
 	
@@ -691,10 +692,6 @@ if !TimerResetOnLevelFade == !true
 	STZ $14AE|!SA1Addr2
 	STZ $190C|!SA1Addr2
 	STZ $1490|!SA1Addr2
-else
-++
-+
-endif
 	RTS
 	
 if !PSwitch != $00
