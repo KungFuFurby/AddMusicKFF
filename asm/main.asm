@@ -330,10 +330,7 @@ L_0573:
 	beq   L_058D
 	
 SoundTickOn:
-	mov   a, !PauseMusic
-	bne   L_0586
 	call  ProcessAPU2Input		; Also handles playing the current music.
-L_0586:
 	mov   x, #$02
 	call  ReadInputRegister             ; read/send APU2
 	
@@ -2494,7 +2491,7 @@ if !noSFX == !false
 	mov	a, $1d		
 	eor	a, #$ff		
 	;mov	y, #$5c
-	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
+	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here.
 else
 	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
 	call	ModifyNoise		; /
@@ -2547,6 +2544,8 @@ ProcessAPU2Input:
 	beq	L_0BE7
 	jmp	PlaySong             ; play song in A
 L_0BE7:
+	mov	a, !PauseMusic
+	bne	L_0BEF
 	mov	a, $0c
 	bne	L_0BFE
 	mov	a, $06

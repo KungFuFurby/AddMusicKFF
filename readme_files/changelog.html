@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2025-09-29</h2>
+	<h2>AddmusicKFF Fork - 2025-10-31</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -267,7 +267,6 @@
 		<li>"Fixed a bug where changing level music while the Starman or P-Switch songs were active would cause the next level music to fail to load upon the conclusion of the Starman and/or the P-Switch effect." - KungFuFurby</li>
 		<li>"Added a new user define, !TimerResetOnLevelFade . This define is designed to allow patches that allow P-Switch, star and directional coin timers to persist between rooms that would otherwise fail when AddmusicK is applied on top of these patches." - KungFuFurby</li>
 		</ul>
-	</ul>
 	</li>
 	<li>Built-In Original Songs
 		<ul>
@@ -333,6 +332,7 @@
 		<li>"Fixed a bug where encountering the $DD command outside of readahead would crash the sound driver due to a zero pointer." - KungFuFurby</li>
 		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
 		<li>"Fixed a bug where the Hurry Up! SFX had inconsistent off-by-one errors on the amount it was adding on to the tempo (sometimes it was adding $0A, and sometimes it was adding $0B). It now replicates the same behavior as when a hex command is called to change the tempo, meaning it adds the intended value plus one (with the one being a vanilla SMW bug that caused all of the off-by-one errors)." - KungFuFurby</li>
+		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700 <-> SNES Communication
@@ -349,6 +349,8 @@
 		<li>"Restored the sample pack from AddmusicM. The sample groups #AMMS01, #AMMS02, #AMMS03 and #AMMKisoPCM were added on" - KungFuFurby</li>
 		<li>"Corrected a bug where quantization/velocity bytes were being auto-created at the start of a loop where they shouldn't be in Addmusic405 and AddmusicM songs." - KungFuFurby</li>
 		<li>"Corrected a bug where quantization was interfering with ties and rests because they were not merged in Addmusic405 and AddmusicM." - KungFuFurby</li>
+		</ul>
+	</li>
 	</ul>
 	<br><br>
 	
