@@ -304,7 +304,7 @@ includeonce
 !MSU1PCMAudio = !false
 
 ;Default setting: !false
-;Vanilla SMW setting: !true
+;Vanilla SMW setting: !false
 ;---------------
 ; When set to true, a .PCM file can be used in place of a music track.
 ; Please note that in order for this to work properly, in the same folder as
