@@ -2230,6 +2230,10 @@ else
 endif
 ; fade volume out over 240 counts
 FadeOut:
+if !MSU1PCMAudio == !true
+	cmp	a, #$FD
+	beq	StopAll
+endif
 	mov	x, #$f0
 	mov	$58, x
 	mov	a, #$00
@@ -2239,6 +2243,18 @@ FadeOut:
 	call	Divide16
 	movw	$5a, ya            ; set volume fade out after 240 counts
 	bra	L_0BE7
+if !MSU1PCMAudio == !true
+StopAll:
+	mov y, #$FF
+	mov a, #$5C
+	movw $F2, ya
+	inc y
+	mov $06, y
+	mov !ProtectSFX6, y
+	mov !ProtectSFX7, y
+	mov !PauseMusic, y
+	bra L_0BE7
+endif
 ;
 ProcessAPU2Input:
 

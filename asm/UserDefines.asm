@@ -298,3 +298,36 @@ includeonce
 !YoshisAreHome	= $27
 !CastList	= $28
 ;=======================================
+
+;=======================================
+;---------------
+!MSU1PCMAudio = !false
+
+;Default setting: !false
+;Vanilla SMW setting: !true
+;---------------
+; When set to true, a .PCM file can be used in place of a music track.
+; Please note that in order for this to work properly, in the same folder as
+; the ROM, you also need to have a <romname>.msu file (whether it's empty or
+; not) and <romname>-<tracknum>.pcm for each song that you want to use the \
+; MSU-1 to play music for, where <romname> is the name of your ROM and
+; <tracknum> is the track number of the song you'd like to play as a PCM
+; file instead.
+;=======================================
+
+;=======================================
+;---------------
+!MSU1DEF_VOLUME = $80
+
+;Default setting: $80
+; The default volume of the PCM sound to play on the MSU-1.
+;=======================================
+
+;=======================================
+;---------------
+!MSU1FADE_SPEED = $03
+
+;Default setting: $03
+; The default amount to adjust the volume per call when fading out the PCM
+; volume on the MSU-1.
+;=======================================
