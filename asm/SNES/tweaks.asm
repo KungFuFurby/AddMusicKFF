@@ -14,6 +14,10 @@ include
 
 incsrc "../UserDefines.asm"
 
+!YoshifanaticOverworldRevolutionPresent = !false
+if read4($048000) == $524F4659 ; "YFOR"
+!YoshifanaticOverworldRevolutionPresent = !true
+endif
 
 org $94B3
 	db !RescueEgg
@@ -92,6 +96,7 @@ org $03AC53
 	db !PrincessSaved
 org $03CE9A
 	db !BossClear
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $0483D2
 	db !VoBAppears
 
@@ -108,6 +113,7 @@ org $048D8A
 	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
 org $04DBC8
 	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
+endif
 endif
 	
 org $0584DB
@@ -202,9 +208,11 @@ org $0096C3				; Don't upload music bank 1
 	BRA Skip1Point5 : NOP
 Skip1Point5:
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $00A0B3				;;; ditto
 	BRA + : NOP
 	+
+endif
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
@@ -351,7 +359,7 @@ org $0093C0
 LDA.b #!NintPresents
 STA $1DFB|!SA1Addr2
 
-
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $049AC2
 JMP OWMusicHijack		; Force music to play when fading out from an exit tile, not just from pipe/star fade-outs.
 
@@ -364,7 +372,7 @@ OWMusicHijack:
 	SEP #$30		; Restore hijacked code (if it weren't for this, we could just JMP directly there...
 	JMP $DBD7		; Jump to normal music changing code, which perform the RTS that we overwrote.
 	
-
+endif
 
 
 
@@ -438,12 +446,13 @@ else
 	STA $1DFA|!SA1Addr2
 endif
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD
 	BRA +
 	NOP #20
 	+
-	
+endif
 	
 ;;; prevent game overs from fading overworld songs out
 org $009E17
