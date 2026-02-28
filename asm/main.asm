@@ -2308,6 +2308,19 @@ Quick1DFAMonoVolDSPWritesWKON:
 	mov	a, #(1<<!1DFASFXChannel)
 	jmp	KeyOnVoices
 endif
+
+; read next word at $40 into YA
+L_0BF0:
+	mov	y, #$00
+	mov	a, ($40)+y
+	incw	$40
+	push	a
+	mov	a, ($40)+y
+	incw	$40
+	mov	y, a
+	pop	a
+	ret
+
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -2551,17 +2564,6 @@ L_0BE7:
 	mov	a, $06
 	bne	L_0C46
 L_0BEF:
-	ret
-; read next word at $40 into YA
-L_0BF0:
-	mov	y, #$00
-	mov	a, ($40)+y
-	incw	$40
-	push	a
-	mov	a, ($40)+y
-	incw	$40
-	mov	y, a
-	pop	a
 	ret
 ;
 L_0BFE:
