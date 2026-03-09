@@ -2700,10 +2700,6 @@ HandleArpeggioInterrupt:
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
-	mov	a, $10
-endif
-	bne	L_0CB3
-if !noVcmdFB == !false
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
@@ -2727,8 +2723,10 @@ if !noVcmdFB == !false
 	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
 +
 .glissandoOver
-	mov	a, y			; / And actually play the next note.
+	mov	a, $10
 endif
+	bne	L_0CB3
+	mov	a, y			; / And actually play the next note.
 	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn
 .notGlissando
