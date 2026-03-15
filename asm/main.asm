@@ -2079,10 +2079,8 @@ SFXEchoCarryOff:
 endif
 
 L_099C:
-	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	movw	$f2, ya
-	mov	!NCKValue, y
+	mov	!NCKValue, #$60 ; Mute, disable echo.  We don't want any rogue sounds during upload
+				; and we ESPECIALLY don't want the echo buffer to overwrite anything.
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -2097,9 +2095,9 @@ if !noSFX == !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	call	L_0F22
 	mov	a, #!reserveBufferZeroEDLGateDistance
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
