@@ -2614,12 +2614,15 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f2, #$6c
 	or	$f3, #$60
 
+	inc	$f2			; \ Write the new buffer address.
+	mov	$f3, a			; / This is safe to do because writes are currently disabled.
+
 	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
-	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the EDL DSP register.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	movw	$14, ya			; Consume at least eight cycles per iteration. 
@@ -2630,10 +2633,7 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$14, -
 +
 	
-	pop	y			; \
-	mov	a, #$6d			; | Write the new buffer address.
-	movw	$f2, ya			; / 
-	
+	pop	y
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
