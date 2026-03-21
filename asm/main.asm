@@ -2714,7 +2714,29 @@ FetchVoiceXAndZeroA:
 ; vcmd F0: disable echo
 ; vcmd F1: set echo delay, feedback, filter
 
+cmdDDFromReadahead:
+	call	L_1260
+if !noSFX == !false
+	mov	a, $48					; \ 
+	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
+	beq	L_10FB					; /
+	call	L_1260
+-
+	call	L_1260
+	jmp	L_1260
+endif
+
+L_10FB:
+	call	GetCommandDataFast
+
 cmdDD:					; Pitch bend
+if !noSFX == !false
+	push	a
+	mov	a, $48					; \ 
+	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
+	pop	a					; |
+	bne	-					; /
+endif
 	mov	$91+x, a				; \ Get the $DD parameters.
 	call	GetCommandDataFast			; |
 	mov	$90+x, a				; |
@@ -3273,20 +3295,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
-if !noSFX == !false
-	mov	a, $48					; \ 
-	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
-	beq	L_10FB					; /
-	mov	$10, #$04
-L_10F3:
-	call	L_1260
-	dbnz	$10, L_10F3
-	bra	L_1111
-endif
-L_10FB:
-	call	L_1260
-	call	GetCommandDataFast
-	call	cmdDD
+	call	cmdDDFromReadahead
 L_1111:
 	call	L_09CDWPreCheck
 L_1133:
