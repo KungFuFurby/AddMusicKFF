@@ -1967,9 +1967,13 @@ PauseMusic:
 	mov !PauseMusic, a
 	
 	set1  !NCKValue.6	; Set the mute flag.
+if !noSFX == !false
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret
+else
+	jmp SetFLGFromNCKValue
+endif
 
 if !noSFX == !false && !useSFXSequenceFor1DFASFX == !false
 ;
