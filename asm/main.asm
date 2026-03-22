@@ -238,10 +238,7 @@ L_0573:
 	beq   L_058D
 	
 SoundTickOn:
-	mov   a, !PauseMusic
-	bne   L_0586
 	call  ProcessAPU2Input		; Also handles playing the current music.
-L_0586:
 	mov   x, #$02
 	call  ReadInputRegister             ; read/send APU2
 	
@@ -1967,9 +1964,13 @@ PauseMusic:
 	mov !PauseMusic, a
 	
 	set1  !NCKValue.6	; Set the mute flag.
+if !noSFX == !false
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret
+else
+	jmp SetFLGFromNCKValue
+endif
 
 if !noSFX == !false && !useSFXSequenceFor1DFASFX == !false
 ;
@@ -2221,7 +2222,7 @@ if !noSFX == !false
 	mov	a, $1d		
 	eor	a, #$ff		
 	;mov	y, #$5c
-	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
+	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here.
 else
 	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
 	call	ModifyNoise		; /
@@ -2260,6 +2261,8 @@ ProcessAPU2Input:
 	beq	L_0BE7
 	jmp	PlaySong             ; play song in A
 L_0BE7:
+	mov	a, !PauseMusic
+	bne	L_0BEF
 	mov	a, $0c
 	bne	L_0BFE
 	mov	a, $06
@@ -2410,8 +2413,6 @@ HandleArpeggioInterrupt:
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
-	mov	a, $10
-	bne	L_0CB3
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
@@ -2432,6 +2433,8 @@ HandleArpeggioInterrupt:
 	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
 +
 .glissandoOver
+	mov	a, $10
+	bne	L_0CB3
 	mov	a, y			; / And actually play the next note.
 	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn

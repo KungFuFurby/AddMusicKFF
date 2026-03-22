@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.12 Beta - 2025-09-29</h2>
+	<h2>Version 1.0.12 Beta - 2026-03-22</h2>
 	<ul>
 	<li>Gameplay
 		<ul>
@@ -288,6 +288,13 @@
 =======
 		<li>"All sample group pointers are now deduplicated prior to being compiled for a ROM." - KungFuFurby</li>
 >>>>>>> AddmusicK1.0.12
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
+		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
+		<li>"Fixed a bug where glissando was failing to do its first semitone addition with the hot patch disabled when SFX was played on top of the first note." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>
