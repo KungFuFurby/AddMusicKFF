@@ -501,6 +501,9 @@ void SoundEffect::compileASM()
 			code.push_back(temp[j]);
 	}
 
+	if (asmStrings.size() == 0 && jmpNames.size() > 0)
+		error2("Could not match asm and jsr names.");
+
 	for (unsigned int i = 0; i < asmStrings.size(); i++)
 	{
 		int k = -1;
