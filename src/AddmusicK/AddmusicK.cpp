@@ -1181,6 +1181,10 @@ void fixMusicPointers()
 	//int songPointerARAMPos = programSize + programPos;
 
 	bool addedLocalPtr = false;
+	
+	if (checkEcho) {
+		printf("\nMemory remaining...\n");
+	}
 
 	for (int i = 0; i < 256; i++)
 	{
@@ -1320,10 +1324,12 @@ void fixMusicPointers()
 		{
 			if (checkEcho)
 			{
+				printf("%s\n", musics[i].name.c_str());
 				musics[i].spaceInfo.songStartPos = songDataARAMPos;
 				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
 
 				int checkPos = songDataARAMPos + sizeWithPadding;
+				printf("Music overhead remaining (to next DIR increment): 0x%X bytes\n", 0x100-(checkPos & 0xFF));
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
 				musics[i].spaceInfo.sampleTableStartPos = checkPos;
@@ -1391,6 +1397,16 @@ void fixMusicPointers()
 				{
 					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << " bytes." << std::dec << std::endl;
 					quit(1);
+				}
+				else {
+					int sampleAndEchoSpaceRemaining;
+					if (musics[i].echoBufferSize > 0) {
+						sampleAndEchoSpaceRemaining = musics[i].spaceInfo.echoBufferStartPos-endOfSongAndSampleDataPos;
+					}
+					else {
+						sampleAndEchoSpaceRemaining = 0x10000 - endOfSongAndSampleDataPos;
+					}
+					printf("Sample and echo space remaining: 0x%X bytes\n\n", sampleAndEchoSpaceRemaining);
 				}
 			}
 		}
