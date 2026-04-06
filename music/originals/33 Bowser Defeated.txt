@@ -199,7 +199,7 @@ r16.
 q7fo2f8VCMD_SLIDETONOTE$00$0C>dVCMD_SLIDETONOTE$00$0C<e
 q7fo2a8VCMD_SLIDETONOTE$00$0C>fVCMD_SLIDETONOTE$00$0C<g
 q7fo3c8VCMD_SLIDETONOTE$00$0CgVCMD_SLIDETONOTE$00$0C<b
-q7eo3f8VCMD_SLIDETONOTE$00$0Cb;VCMD_SLIDETONOTE$00$0Cd
+q7eo3f8VCMD_SLIDETONOTE$00$18b;VCMD_SLIDETONOTE$00$18d
 ;Interrupted a dotted 16th of a note prior to completing the phrase.
 ;The second pitch slide of the last note is commented out because the
 ;interruption causes the command to fail to execute.

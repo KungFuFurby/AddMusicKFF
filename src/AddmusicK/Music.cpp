@@ -3305,14 +3305,14 @@ void Music::pointersFirstPass()
 		statStrStream << "FREE ARAM (APPROXIMATE):		0x" << hex4 << 0x10000 - (echoBufferSize << 11) - spaceUsedBySamples - totalSize - programUploadPos << "\n\n";
 	else
 		statStrStream << "FREE ARAM (APPROXIMATE):		UNKNOWN\n\n";
-	statStrStream << "CHANNEL 0 TICKS:			0x" << hex4 << channelLengths[0] << "\n";
-	statStrStream << "CHANNEL 1 TICKS:			0x" << hex4 << channelLengths[1] << "\n";
-	statStrStream << "CHANNEL 2 TICKS:			0x" << hex4 << channelLengths[2] << "\n";
-	statStrStream << "CHANNEL 3 TICKS:			0x" << hex4 << channelLengths[3] << "\n";
-	statStrStream << "CHANNEL 4 TICKS:			0x" << hex4 << channelLengths[4] << "\n";
-	statStrStream << "CHANNEL 5 TICKS:			0x" << hex4 << channelLengths[5] << "\n";
-	statStrStream << "CHANNEL 6 TICKS:			0x" << hex4 << channelLengths[6] << "\n";
-	statStrStream << "CHANNEL 7 TICKS:			0x" << hex4 << channelLengths[7] << "\n\n";
+	statStrStream << "CHANNEL 0 TICKS:			" << channelLengths[0] << "\n";
+	statStrStream << "CHANNEL 1 TICKS:			" << channelLengths[1] << "\n";
+	statStrStream << "CHANNEL 2 TICKS:			" << channelLengths[2] << "\n";
+	statStrStream << "CHANNEL 3 TICKS:			" << channelLengths[3] << "\n";
+	statStrStream << "CHANNEL 4 TICKS:			" << channelLengths[4] << "\n";
+	statStrStream << "CHANNEL 5 TICKS:			" << channelLengths[5] << "\n";
+	statStrStream << "CHANNEL 6 TICKS:			" << channelLengths[6] << "\n";
+	statStrStream << "CHANNEL 7 TICKS:			" << channelLengths[7] << "\n\n";
 	if (knowsLength)
 	{
 		statStrStream << "SONG INTRO LENGTH IN SECONDS:		" << std::dec << introSeconds << "\n";
