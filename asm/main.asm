@@ -2154,6 +2154,13 @@ Quick1DFAMonoVolDSPWritesWKON:
 	mov	a, #(1<<!1DFASFXChannel)
 	jmp	KeyOnVoices
 endif
+
+CloseSquareGate:
+	mov	a,#$2F			;BRA opcode
+	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
+	ret
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -2176,10 +2183,7 @@ L_0B5A:
 	push	a				; MODIFIED
 	mov	$41, a		; $40.w now points to the current song.
 	; MODIFIED CODE START
-	mov	a,#$2F			;BRA opcode
-	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
-	mov	a,#$6F			;RET opcode
-	mov	SubC_4Gate,a
+	call	CloseSquareGate
 	mov	$46, #$00		;
 	mov	$30, #$31		; We want to reset our hot patches to the default state.
 	mov	$31, #$00		; This uses a little pointer trick to read a zero immediately. 
@@ -3694,10 +3698,7 @@ endif
 	mov	!NCKValue, #$20
 	call	SetFLGFromNCKValue
 
-	mov	a,#$2F			;BRA opcode
-	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
-	mov	a,#$6F			;RET opcode
-	mov	SubC_4Gate,a
+	call	CloseSquareGate
 
 JumpToUploadLocation:
 	jmp	($0014+x)		; Jump to address
