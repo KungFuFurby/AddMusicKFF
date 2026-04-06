@@ -2716,28 +2716,19 @@ FetchVoiceXAndZeroA:
 
 cmdDDFromReadahead:
 	call	L_1260
-if !noSFX == !false
-	mov	a, $48					; \ 
-	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
-	beq	L_10FB					; /
-	call	L_1260
--
-	call	L_1260
-	jmp	L_1260
-endif
-
-L_10FB:
 	call	GetCommandDataFast
 
 cmdDD:					; Pitch bend
 if !noSFX == !false
-	push	a
 	mov	a, $48					; \ 
 	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
-	pop	a					; |
-	bne	-					; /
+	beq	L_10FB					; /
+-
+	call	L_1260
+	jmp	L_1260
 endif
-	mov	$91+x, a				; \ Get the $DD parameters.
+L_10FB:
+	mov	$91+x, y				; \ Get the $DD parameters.
 	call	GetCommandDataFast			; |
 	mov	$90+x, a				; |
 	call	GetCommandDataFast			; /
