@@ -98,6 +98,7 @@ static bool octaveForDDWarning;
 static bool remoteGainWarning;
 static bool fractionNoteLengthWarning;
 static bool lowNoteWarning;
+static bool FIRTableWarning;
 
 static bool channelDefined;
 //static int am4silence;			// Used to keep track of the brief silence at the start of am4 songs.
@@ -196,6 +197,7 @@ void Music::init()
 	remoteGainWarning = true;
 	fractionNoteLengthWarning = true;
 	lowNoteWarning = true;
+	FIRTableWarning = true;
 	tempoDefined = false;
 	//am4silence = 0;
 	//songVersionIdentified = false;
@@ -1843,13 +1845,21 @@ void Music::parseHexCommand()
 				error("$FA $05 in #amk 2 or above has been replaced with remote code.")
 
 			// Print error for AM4 songs that attempt to use an invalid FIR filter.  They both A) won't sound like their originals and B) may crash the DSP (or for whatever reason that causes SPCPlayer to go silent with them).
-			if (hexLeft == 0 && currentHex == 0xF1 && songTargetProgram == 1)
+			if (hexLeft == 0 && currentHex == 0xF1)
 			{
 				if (i > 1)
 				{
-					char buffer[255];
-					sprintf(buffer, "$%02X", i);
-					error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.")
+					if (songTargetProgram == 1) {
+						char buffer[255];
+						sprintf(buffer, "$%02X", i);
+						error(buffer + (std::string)" is not a valid FIR filter for the $F1 command. Must be either $00 or $01.");
+					}
+					else if (FIRTableWarning) {
+						FIRTableWarning = false;
+						char buffer[255];
+						sprintf(buffer, "WARNING: $%02X", i);
+						printWarning(buffer + (std::string)" is a non-standard FIR table ID, and results in an out-of-bounds read. Only $00 and $01 are guaranteed to sound consistent. Please use the $F5 hex command for custom FIR coefficents.", name, line);
+					}
 				}
 			}
 
@@ -3087,17 +3097,6 @@ void Music::pointersFirstPass()
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
-		for (i = 0; i < mySamples.size()-1; i++)
-		{
-			for (j = i+1; j < mySamples.size(); j++)
-			{
-			if ((mySamples[i] == mySamples[j]) && mySamples[i] != emptySampleIndex)
-				{
-					mySamples[j] = emptySampleIndex;
-				}
-			}
-		}
-
 		for (i = 0; i < mySamples.size(); i++)
 		if (usedSamples[i] == false && samples[mySamples[i]].important == false)
 			mySamples[i] = emptySampleIndex;
@@ -3323,14 +3322,14 @@ void Music::pointersFirstPass()
 		statStrStream << "FREE ARAM (APPROXIMATE):		0x" << hex4 << 0x10000 - (echoBufferSize << 11) - spaceUsedBySamples - totalSize - programUploadPos << "\n\n";
 	else
 		statStrStream << "FREE ARAM (APPROXIMATE):		UNKNOWN\n\n";
-	statStrStream << "CHANNEL 0 TICKS:			0x" << hex4 << channelLengths[0] << "\n";
-	statStrStream << "CHANNEL 1 TICKS:			0x" << hex4 << channelLengths[1] << "\n";
-	statStrStream << "CHANNEL 2 TICKS:			0x" << hex4 << channelLengths[2] << "\n";
-	statStrStream << "CHANNEL 3 TICKS:			0x" << hex4 << channelLengths[3] << "\n";
-	statStrStream << "CHANNEL 4 TICKS:			0x" << hex4 << channelLengths[4] << "\n";
-	statStrStream << "CHANNEL 5 TICKS:			0x" << hex4 << channelLengths[5] << "\n";
-	statStrStream << "CHANNEL 6 TICKS:			0x" << hex4 << channelLengths[6] << "\n";
-	statStrStream << "CHANNEL 7 TICKS:			0x" << hex4 << channelLengths[7] << "\n\n";
+	statStrStream << "CHANNEL 0 TICKS:			" << channelLengths[0] << "\n";
+	statStrStream << "CHANNEL 1 TICKS:			" << channelLengths[1] << "\n";
+	statStrStream << "CHANNEL 2 TICKS:			" << channelLengths[2] << "\n";
+	statStrStream << "CHANNEL 3 TICKS:			" << channelLengths[3] << "\n";
+	statStrStream << "CHANNEL 4 TICKS:			" << channelLengths[4] << "\n";
+	statStrStream << "CHANNEL 5 TICKS:			" << channelLengths[5] << "\n";
+	statStrStream << "CHANNEL 6 TICKS:			" << channelLengths[6] << "\n";
+	statStrStream << "CHANNEL 7 TICKS:			" << channelLengths[7] << "\n\n";
 	if (knowsLength)
 	{
 		statStrStream << "SONG INTRO LENGTH IN SECONDS:		" << std::dec << introSeconds << "\n";

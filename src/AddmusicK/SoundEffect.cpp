@@ -485,7 +485,7 @@ void SoundEffect::compileASM()
 		std::stringstream asmCode;
 		removeFile("temp.bin");
 		removeFile("temp.asm");
-		asmCode << "arch spc700-raw\n\norg $000000\nincsrc \"" << "asm/main.asm" << "\"\nbase $" << hex4 << posInARAM + code.size() + data.size() << "\n\norg $008000\n\n" << asmStrings[i];
+		asmCode << "norom\narch spc700\n\norg $000000\nincsrc \"" << "asm/main.asm" << "\"\n\norg $" << hex4 << posInARAM + code.size() + data.size() << "\n\n" << asmStrings[i];
 		writeTextFile("temp.asm", asmCode.str());
 
 		if (!asarCompileToBIN("temp.asm", "temp.bin"))
@@ -495,11 +495,14 @@ void SoundEffect::compileASM()
 
 		openFile("temp.bin", temp);
 
-		temp.erase(temp.begin(), temp.begin() + 0x08000);
+		temp.erase(temp.begin(), temp.begin() + posInARAM + code.size() + data.size());
 
 		for (unsigned int j = 0; j < temp.size(); j++)
 			code.push_back(temp[j]);
 	}
+
+	if (asmStrings.size() == 0 && jmpNames.size() > 0)
+		error2("Could not match asm and jsr names.");
 
 	for (unsigned int i = 0; i < asmStrings.size(); i++)
 	{

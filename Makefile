@@ -54,6 +54,6 @@ addmusick: $(SRCS) src/AddmusicK/*.h
 	$(CXX) -o AMMBatch src/AMMBatch/*.o $(LDFLAGS)
 
 clean:
-	rm -rf src/AddmusicK/*.o ./addmusick
+	rm -rf src/AddmusicK/*.o ./addmusick ./AM4Batch ./AMMBatch
 
 .PHONY: all clean

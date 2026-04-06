@@ -54,7 +54,7 @@ db $0B, $7E, $6A, $7F, $08, $00, $A6
 db $0B, $7E, $6A, $30, $08, $00, $A6
 db $0E, $0E, $6A, $7F, $03, $00, $A1
 
-if !noSFX = !false
+if !noSFX == !false
 ; Format: 9 bytes per sample instrument.
 ; Byte 0: Left volume
 ; Byte 1: Right volume

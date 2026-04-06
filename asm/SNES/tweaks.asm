@@ -1,4 +1,4 @@
-@include
+include
 ; tweaks.asm
 ; Changes the song numbers for various default actions in the ROM.
 ; Needed because, by design, the song numbers for this program are different
@@ -22,7 +22,7 @@ org $96C7
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
 org $0CD5D4 ; Change castle destruction sequence song 2
-    db !Welcome	
+	db !CastleDestructionFanfare	
 org $00C526
 	db !BonusEnd
 org $00C9BD
@@ -31,7 +31,7 @@ org $00D0DE
 	db !GameOver
 
 org $00E301
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 ;;; Don't factor in the P-Switch and directional coin timers. Instead, only
 ;;; use the star power timer. This is because the P-Switch music is now
 ;;; a SFX instance playing with the actual level music.
@@ -52,7 +52,7 @@ org $018784
 	db !BossClear
 
 org $01AAFD
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	LDA.B #$C0
 	STA $1DFC|!SA1Addr2
 else
@@ -61,7 +61,7 @@ else
 endif
 	BRA Skip10 : NOP
 	NOP : NOP
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	NOP #5
 Skip10:
 else
@@ -81,7 +81,7 @@ org $01E216
 org $01FB2E
 	db !BossClear
 org $028967
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 ;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
 ;;; NOTE: This overwrites the $0B that was just stored there!
 	LDA.b #$C0
@@ -136,13 +136,21 @@ org $0CA5C2
 		
 org $009723
 	LDA.b #!Welcome
+if !WelcomeSongOverride == !true
 	STA.w $0DDA|!SA1Addr2					
+else
+	STZ.w $1DFB|!SA1Addr2
+endif
 	LDA.w $0DDA|!SA1Addr2	; 
 	NOP : NOP		; 
 	NOP : NOP		; 
 	LDY.w $0D9B|!SA1Addr2	; 
 	CPY.b #$C1		; 
+if !BowserSongOverride == !true
 	BNE CODE_009738		; 
+else
+	BRA CODE_009738		; 
+endif
 	LDA.b #!Bowser		; 
 CODE_009738:			;
 	STA.w $1DFB|!SA1Addr2	; 
@@ -179,36 +187,27 @@ YoshiDrumHijack:
 		LDA $1B9B|!SA1Addr2
 		BNE NoYoshiDrum
 		JSL $00FC7A|!Bank
-		PLB
 		RTL
 NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
-		PLB
 		RTL
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
-		;This hijack overwrites 23 of the 41 NOPs consistently written to the ROM. Thus, we don't need these NOPs anymore.
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP : NOP
-		;NOP : NOP
+		;Just write a bunch of NOPs up until we reach $0081AA.
+		;We automate this using a padding operation.
+assert pc() <= $0081AA
+padbyte $EA
+pad $0081AA
 	Skip:
 
 org $02A763
-		JML YoshiDrumHijack
+		JSL YoshiDrumHijack
+		BRA YoshiDrumHijackPLBRTL
 		NOP : NOP : NOP
 		NOP : NOP : NOP
-		NOP : NOP : NOP
-		NOP : NOP : NOP
+		NOP : NOP
+YoshiDrumHijackPLBRTL:
+		PLB
+		RTL
 
 org $0094A0				; Don't upload music bank 1
 	BRA Skip1Point25 : NOP
@@ -236,20 +235,14 @@ org $00A635
 ; KevinM's edit: use this small freed up space for the start+select sfx
 StartSelectSfx:
 	sta $0100|!SA1Addr2 	; Overwritten code
-	lda #$09 				;\ Play sfx
+	lda #$09 		;\ Play sfx
 	sta $1DFA|!SA1Addr2 	;/
-	jmp $A289 				; Return back
-	;NOP : NOP : NOP  		;\
-	;NOP : NOP : NOP 		;| We used 11 bytes for the routine
-	;NOP : NOP 				;| so 11 less NOPs needed.
-	;NOP : NOP : NOP 		;/
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
+	jmp $A289 		; Return back
+	;Just write a bunch of NOPs up until we reach $00A654.
+	;We automate this using a padding operation.
+assert pc() <= $00A654
+padbyte $EA
+pad $00A654
 Skip2:
 
 ; KevinM's edit: jump to code that plays sfx on start+select
@@ -257,7 +250,7 @@ org $00A286
 	jmp StartSelectSfx
 
 org $00C53E
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 ;;; Don't factor in the previous level music.
 	LDA.b #$80
 	NOP
@@ -279,7 +272,7 @@ endif
 ;	Skip4:
 
 org $00C54C
-if !PSwitchIsSFX = !true
+if !PSwitchIsSFX == !true
 	STA $1DFC|!SA1Addr2
 else
 	STA $1DFB|!SA1Addr2

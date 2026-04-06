@@ -208,15 +208,98 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.10 Alpha - 2023-10-12</h2>
+	<h2>Version 1.0.10 - 2023-12-19</h2>
 	<ul>
+	<li>Gameplay
+		<ul>
+		<li>"Split the Castle Destruction fanfare and Welcome songs into separate defines. Now they can use separate song IDs as needed: in Vanilla SMW they used the same ID, so they're still defined with matching IDs in the default settings." - KungFuFurby</li>
+		<li>"Added a user define to allow the Bowser fight music to override the default level music upon loading the Bowser fight." - KungFuFurby</li>
+		<li>"Added a user define to allow the Welcome music to override the default level music upon loading the intro level upon loading a new save file." - KungFuFurby</li>
+		<li>"Fixed a bug where the Yoshi Drum Hijack were conflicting with other SNES-side patches that used the PLB and RTL opcodes in this area." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"Fixed a regression where duplicate samples were being assigned EMPTY.brr whereas they are expecting to still be the same sample. Now they use duplicate pointers so that they can be referred to at either internal sample ID. This also means that pre-existing cases from the sample groups will no longer have duplicate sample data loaded, meaning less memory consumption." - KungFuFurby</li>
+		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Historical Addmusic Adaptations
+		<ul>
+		<li>"Added a warning for using non-standard FIR coefficient table IDs, mostly because they won't sound consistent due to an out-of-bounds read situation. Addmusic405 songs already output an error." - KungFuFurby</li>
+		</ul>
+	</li>
+	</ul>
+	<h2>Version 1.0.11 - 2024-07-01</h2>
+	<ul>
+	<li>Overall
+		<ul>
+		<li>"The asar version has been updated from 1.81 to 1.91. The code and DLL integrations have also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Gameplay
+		<ul>
+		<li>"Fixed a bug where enabling NMI during V-Blank would cause graphical interferences, such as messing up HDMA." - Yoshifanatic</li>
+		</ul>
+	</li>
+	<li>Music MML Parser
+		<ul>
+		<li>"Removed the hex markers from the tick counters in the stats .txt file outputs for the music." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"Fixed a regression where an if statement was being misrecognized as a label due to being put after an && marker." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"This version alleviates some of the slowdown in SFX and CPUIO register polling caused by higher tempos and/or frequent pitch bends in the music." - KungFuFurby</li>
+		</ul>
+	</li>
+	</ul>
+	<h2>Version 1.0.12 Alpha - 2026-04-05</h2>
+	<ul>
+	<li>Gameplay
+		<ul>
+		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Built-In Original Songs
+		<ul>
+		<li>"Fixed a bug where the Bowser Defeated song was using an incorrect pitch bend length for one of its notes." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Documentation
+		<ul>
+		<li>"Updated the UberASM section to cover both pre-V2.0 and post-V2.0." - MarioFanGamer</li>
+		</ul>
+	</li>
+	<li>Music MML Parser
+		<ul>
+		<li>"Corrected a stack fault that was causing nested if statements to result in a segmentation fault during preprocessing." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"All sample group pointers are now deduplicated prior to being compiled for a ROM." - KungFuFurby</li>
+		<li>"Fixed a bug where SFX ASM were generating incorrect pointers within the ASM. - KungFuFurby"</li>
+		<li>"Fixed a bug where a zero pointer was generated in SFX if #jsr was used, but no #asm sections were defined at all. - KungFuFurby"</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
+		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
+		<li>"Fixed a bug where glissando was failing to do its first semitone addition with the hot patch disabled when SFX was played on top of the first note." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Historical Addmusic Adaptations
 		<ul>
 		<li>"Restored the special pulse wave from AddmusicM, as well as the corresponding hex commands that originally controlled it. The $FA hex command was moved to the $FA $07 hex command in the process due to being overwritten, and a new one was created, the $FA $10 hex command, that is automatically generated to assign a VxSRCN ID to the special pulse wave due to the memory location no longer being stable. A special BRR file was also created so that the special pulse wave can be automatically brought out as needed." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>
-
 	<br><br>
 	
 
