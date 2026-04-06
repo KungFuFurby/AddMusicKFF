@@ -2319,6 +2319,13 @@ L_0BF0:
 	pop	a
 	ret
 
+CloseSquareGate:
+	mov	a,#$2F			;BRA opcode
+	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
+	mov	a,#$6F			;RET opcode
+	mov	SubC_4Gate,a
+	ret
+
 				; Call this routine to play the song currently in A.
 PlaySong:
 
@@ -2351,10 +2358,7 @@ L_0B5A:
 	movw	$f2, ya
 	set1	$f3.4
 	mov	$f3, y
-	mov	a,#$2F			;BRA opcode
-	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
-	mov	a,#$6F			;RET opcode
-	mov	SubC_4Gate,a
+	call	CloseSquareGate
 if !noVcmdFB == !false
 	;Carry is cleared due to an ASL opcode previously. We want to close
 	;the gate by setting it to a BMI opcode, so the SETC opcode is
@@ -4068,10 +4072,7 @@ endif
 	mov	!NCKValue, #$20
 	call	SetFLGFromNCKValue
 
-	mov	a,#$2F			;BRA opcode
-	mov	SquareGate,a		;SRCN ID for special wave is not initialized, so we must do this to avoid overwriting chaos.
-	mov	a,#$6F			;RET opcode
-	mov	SubC_4Gate,a
+	call	CloseSquareGate
 
 	jmp	($0014+x)		; Jump to address
 
