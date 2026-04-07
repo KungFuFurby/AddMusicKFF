@@ -1172,7 +1172,7 @@ void fixMusicPointers()
 
 	bool addedLocalPtr = false;
 	
-	if (checkEcho) {
+	if (checkEcho && (justSPCsPlease || verbose)) {
 		printf("\nMemory remaining...\n");
 	}
 
