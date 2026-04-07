@@ -1319,7 +1319,7 @@ void fixMusicPointers()
 				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
 
 				int checkPos = songDataARAMPos + sizeWithPadding;
-				printf("Music overhead remaining (to next DIR increment): 0x%X bytes\n", 0x100-(checkPos & 0xFF));
+				printf("Music overhead remaining (to next DIR increment): 0x%X bytes\n", (0x100 - (checkPos % 0x100));
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
 				musics[i].spaceInfo.sampleTableStartPos = checkPos;
