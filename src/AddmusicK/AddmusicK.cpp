@@ -1366,6 +1366,8 @@ void fixMusicPointers()
 				{
 					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
 					std::cerr << "Without modifying samples, song size must be reduced by at least 0x" << hex4 << (((checkPos - 0x10000)/0x100)*0x100) + songDataToSampleTableGap << " bytes." << std::dec << std::endl;
+					if (musics[i].echoBufferSize > 0)
+						std::cerr << "Echo must also be disabled as part of this process." << std::dec << std::endl;
 					quit(1);
 				}
 
