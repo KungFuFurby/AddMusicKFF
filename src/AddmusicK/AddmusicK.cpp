@@ -1171,10 +1171,7 @@ void fixMusicPointers()
 	//int songPointerARAMPos = programSize + programPos;
 
 	bool addedLocalPtr = false;
-	
-	if (checkEcho && (justSPCsPlease || verbose)) {
-		printf("\nMemory remaining...\n");
-	}
+	bool memoryRemainingPrinted = false;
 
 	for (int i = 0; i < 256; i++)
 	{
@@ -1189,11 +1186,17 @@ void fixMusicPointers()
 			globalPointers << "\ndw song" << hex2 << i;
 			incbins << "song" << hex2 << i << ": incbin \"" << "SNES/bin/" << "music" << hex2 << i << ".bin\"\n";
 		}
-		else if (addedLocalPtr == false)
-		{
-			globalPointers << "\ndw localSong";
-			incbins << "localSong: ";
-			addedLocalPtr = true;
+		else {
+			if (checkEcho && (justSPCsPlease || verbose) && !memoryRemainingPrinted) {
+				printf("\nMemory remaining...\n");
+				memoryRemainingPrinted = true;
+			}
+			if (addedLocalPtr == false)
+			{
+				globalPointers << "\ndw localSong";
+				incbins << "localSong: ";
+				addedLocalPtr = true;
+			}
 		}
 
 		for (int j = 0; j < musics[i].spaceForPointersAndInstrs; j+=2)
