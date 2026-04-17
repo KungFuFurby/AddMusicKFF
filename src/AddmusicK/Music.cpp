@@ -3346,19 +3346,7 @@ void Music::pointersFirstPass()
 
 	statStr = statStrStream.str();
 
-	std::string fname = name;
-
-	int extPos = fname.find_last_of('.');
-	if (extPos != -1)
-		fname = fname.substr(0, extPos);
-
-	if (fname.find('/') != -1)
-		fname = fname.substr(fname.find_last_of('/') + 1);
-	else if (fname.find('\\') != -1)
-		fname = fname.substr(fname.find_last_of('\\') + 1);
-	fname = "stats/" + fname + ".txt";
-
-	writeTextFile(fname, statStr);
+	writeTextFile(statFName, statStr);
 }
 
 void Music::parseDefine()
