@@ -70,6 +70,7 @@ static bool usingHTranspose;
 static int hexLeft = 0;
 static int currentHex = 0;
 static int currentHexSub = -1;
+static int currentDSPRegister = -1;
 
 //static int tempLoopLength;		// How long the current [ ] loop is.
 //static int e6LoopLength;		// How long the current $E6 loop is.
@@ -1524,6 +1525,10 @@ void Music::parseHFDHex()
 			else
 			{
 				songTargetProgram = 1;		// The HFD header bytes indicate this as being an AM4 song, so it gets AM4 treatment.
+				if (reg == 0x7D) {
+					// Set a base echo buffer allocation size based off of the EDL DSP register value that is used.
+					echoBufferSize = std::max(echoBufferSize, i);
+				}
 			}
 			hexLeft = 0;
 		}
@@ -1797,6 +1802,11 @@ void Music::parseHexCommand()
 				currentHexSub = i;
 			}
 			
+			if (hexLeft == 1 && currentHex == 0xF6)
+			{
+				currentDSPRegister = i;
+			}
+			
 			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x7F)
 			{
 				//Hot patches require that the $FA $04 VCMD be generated afterwards, not prior.
@@ -1965,6 +1975,14 @@ void Music::parseHexCommand()
 			{
 				if (optimizeSampleUsage)
 					usedSamples[i] = true;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xF6)
+			{
+				if (currentDSPRegister == 0x7D)
+				{
+					echoBufferSize = std::max(echoBufferSize, i);
+				}
 			}
 
 			if (hexLeft == 2 && currentHex == 0xF1)
