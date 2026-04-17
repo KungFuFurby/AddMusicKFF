@@ -1062,6 +1062,19 @@ void compileMusic()
 			if (i > highestGlobalSong) {
 				musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
 			}
+			std::string fname = musics[i].name;
+		
+			int extPos = fname.find_last_of('.');
+			if (extPos != -1)
+				fname = fname.substr(0, extPos);
+		
+			if (fname.find('/') != -1)
+				fname = fname.substr(fname.find_last_of('/') + 1);
+			else if (fname.find('\\') != -1)
+				fname = fname.substr(fname.find_last_of('\\') + 1);
+			fname = "stats/" + fname + ".txt";
+			musics[i].statFName = fname;
+			
 			musics[i].compile();
 			if (i <= highestGlobalSong) {
 				maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
@@ -1171,6 +1184,7 @@ void fixMusicPointers()
 	//int songPointerARAMPos = programSize + programPos;
 
 	bool addedLocalPtr = false;
+	bool memoryRemainingPrinted = false;
 
 	for (int i = 0; i < 256; i++)
 	{
@@ -1185,11 +1199,17 @@ void fixMusicPointers()
 			globalPointers << "\ndw song" << hex2 << i;
 			incbins << "song" << hex2 << i << ": incbin \"" << "SNES/bin/" << "music" << hex2 << i << ".bin\"\n";
 		}
-		else if (addedLocalPtr == false)
-		{
-			globalPointers << "\ndw localSong";
-			incbins << "localSong: ";
-			addedLocalPtr = true;
+		else {
+			if (checkEcho && (justSPCsPlease || verbose) && !memoryRemainingPrinted) {
+				printf("\nMemory remaining...\n");
+				memoryRemainingPrinted = true;
+			}
+			if (addedLocalPtr == false)
+			{
+				globalPointers << "\ndw localSong";
+				incbins << "localSong: ";
+				addedLocalPtr = true;
+			}
 		}
 
 		for (int j = 0; j < musics[i].spaceForPointersAndInstrs; j+=2)
@@ -1310,10 +1330,19 @@ void fixMusicPointers()
 		{
 			if (checkEcho)
 			{
+				std::stringstream statStrStream;
+				statStrStream << "\n" << "LOCAL SONG MEMORY REMAINING STATS..." << "\n";
+				if (justSPCsPlease || verbose)
+					printf("%s\n", musics[i].name.c_str());
 				musics[i].spaceInfo.songStartPos = songDataARAMPos;
 				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
 
 				int checkPos = songDataARAMPos + sizeWithPadding;
+				int songDataToSampleTableGap = checkPos % 0x100;
+				int songDataLeftBeforeSampleTableRealignment = (0x100 - songDataToSampleTableGap) % 0x100;
+				statStrStream << "SONG DATA LEFT BEFORE SAMPLE TABLE REALIGNMENT: 0X" << hex4 << songDataLeftBeforeSampleTableRealignment << "\n";
+				if (justSPCsPlease || verbose)
+					printf("Song data left before sample table realignment: 0x%X bytes\n", songDataLeftBeforeSampleTableRealignment);
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
 				musics[i].spaceInfo.sampleTableStartPos = checkPos;
@@ -1352,7 +1381,14 @@ void fixMusicPointers()
 				
 				if (checkPos > 0x10000)
 				{
-					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					int overflowSize = checkPos - 0x10000;
+					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << overflowSize << " bytes." << std::dec << std::endl;
+					std::cerr << "Without modifying samples, song size must be reduced by at least 0x" << hex4 << (((overflowSize)/0x100)*0x100) + songDataToSampleTableGap << " bytes." << std::dec << std::endl;
+					if (musics[i].echoBufferSize > 0)
+						std::cerr << "Echo must also be disabled as part of this process." << std::dec << std::endl;
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << overflowSize +  (musics[i].echoBufferSize << 11)<< "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
 				}
 
@@ -1380,7 +1416,26 @@ void fixMusicPointers()
 				if (checkPos > 0x10000)
 				{
 					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << " bytes." << std::dec << std::endl;
+					std::cerr << "Without modifying samples or echo, song size must be reduced by at least 0x" << hex4 << (checkPos - 0x10100) + songDataToSampleTableGap << std::dec << std::endl << "bytes." << std::dec << std::endl;
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
+				}
+				else {
+					int sampleAndEchoSpaceRemaining;
+					if (musics[i].echoBufferSize > 0) {
+						sampleAndEchoSpaceRemaining = musics[i].spaceInfo.echoBufferStartPos-endOfSongAndSampleDataPos;
+					}
+					else {
+						sampleAndEchoSpaceRemaining = 0x10000 - endOfSongAndSampleDataPos;
+					}
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: 0X" << hex4 << sampleAndEchoSpaceRemaining << "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
+					if (justSPCsPlease || verbose) {
+						printf("Sample and echo space remaining: 0x%X bytes\n\n", sampleAndEchoSpaceRemaining);
+					}
 				}
 			}
 		}
