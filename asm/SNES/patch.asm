@@ -128,6 +128,10 @@ db $00, $00, $00, $00		;
 db $00, $00, $00, $00		;
 db $00, $00, $00, $00		;
 
+if !MSU1PCMAudio == !true
+incsrc "msu.asm"
+endif
+
 MainLabel:
 	STZ $10
 	PHP
@@ -144,6 +148,9 @@ if !PSwitchStarRestart == !true
 +
 endif
 	JSR HandleSpecialSongs
+if !MSU1PCMAudio == !true
+	JSR HandleMSU
+endif
 	REP #$20
 	LDA !SFX1DF9Reg
 	STA !SPCOutput1
@@ -187,6 +194,11 @@ NoMusic:
 	
 Fade:
 	STA !MusicReg
+if !MSU1PCMAudio == !true
+	CMP #$FD
+	BNE End
+	STZ !MusicMir
+endif
 	;STA !CurrentSong
 	BRA End
 
@@ -216,6 +228,10 @@ if !PSwitchStarRestart == !true
 endif
 
 	STA !MusicReg
+if !MSU1PCMAudio == !true
+	CMP #$FD
+	BEQ End
+endif
 	STA !CurrentSong
 	BRA End
 
@@ -293,6 +309,10 @@ Okay:
 
 	CMP #$FF			; \ #$FF is fade.
 	BEQ Fade			; /
+if !MSU1PCMAudio == !true
+	CMP #$FD
+	BEQ Fade
+endif
 
 if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
 	LDA !CurrentSong		; \ 
@@ -350,7 +370,12 @@ endif
 	LDA !MusicMir
 	CMP #!SongCount
 	BCC +
+if !MSU1PCMAudio == !true
+	CMP #$FD
+	BEQ BruhMoment
+endif
 	LDA #$FF
+	BruhMoment:
 	JMP Fade
 +
 ;	REP #$30
