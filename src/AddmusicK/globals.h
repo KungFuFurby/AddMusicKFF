@@ -123,7 +123,7 @@ void writeFile(const File &fileName, const std::vector<T> &vector)
 }
 
 void writeTextFile(const File &fileName, const std::string &string);
-int execute(const File &command, bool prepentDotSlash = true);
+int execute(const File &command);
 
 void printError(const std::string &error, bool isFatal, const std::string &fileName = "", int line = -1);
 void printWarning(const std::string &error, const std::string &fileName = "", int line = -1);
