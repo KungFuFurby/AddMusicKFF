@@ -1865,10 +1865,8 @@ endif
 	bra	HandleYoshiDrums
 
 L_099C:
-	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	movw	$f2, ya
-	mov	!NCKValue, y
+	mov	!NCKValue, #$60 ; Mute, disable echo.  We don't want any rogue sounds during upload
+				; and we ESPECIALLY don't want the echo buffer to overwrite anything.
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -1882,9 +1880,9 @@ if !noSFX == !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	call	L_0F22
 	mov	a, #!reserveBufferZeroEDLGateDistance
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
@@ -2619,12 +2617,15 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f2, #$6c
 	or	$f3, #$60
 
+	inc	$f2			; \ Write the new buffer address.
+	mov	$f3, a			; / This is safe to do because writes are currently disabled.
+
 	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
-	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the EDL DSP register.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	movw	$14, ya			; Consume at least eight cycles per iteration. 
@@ -2635,10 +2636,7 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$14, -
 +
 	
-	pop	y			; \
-	mov	a, #$6d			; | Write the new buffer address.
-	movw	$f2, ya			; / 
-	
+	pop	y
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
