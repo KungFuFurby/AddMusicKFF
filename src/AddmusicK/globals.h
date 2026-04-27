@@ -57,7 +57,7 @@ class SampleGroup;
 //extern ROM rom;
 extern std::vector<uint8_t> rom;
 
-extern Music musics[256];
+extern Music musics[65536];
 //extern Sample samples[256];
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];
