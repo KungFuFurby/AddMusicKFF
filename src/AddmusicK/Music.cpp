@@ -1562,6 +1562,7 @@ void Music::parseHFDHex()
 				songTargetProgram = 1;		// The HFD header bytes indicate this as being an AM4 song, so it gets AM4 treatment.
 				if (reg == 0x7D) {
 					// Set a base echo buffer allocation size based off of the EDL DSP register value that is used.
+					val &= 0xF;
 					echoBufferSize = std::max(echoBufferSize, val);
 				}
 			}
@@ -2019,12 +2020,14 @@ void Music::parseHexCommand()
 			{
 				if (currentDSPRegister == 0x7D)
 				{
+					i &= 0xF;
 					echoBufferSize = std::max(echoBufferSize, i);
 				}
 			}
 
 			if (hexLeft == 2 && currentHex == 0xF1)
 			{
+				i &= 0xF;
 				echoBufferSize = std::max(echoBufferSize, i);
 				hasEchoBufferCommand = true;
 			}
