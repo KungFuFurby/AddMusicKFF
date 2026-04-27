@@ -230,14 +230,14 @@ int main(int argc, char* argv[]) try		// // //
 		int firstLocalSong = highestGlobalSong + 1;
 
 		// Unset local songs loaded from Addmusic_list.txt.
-		for (int i = firstLocalSong; i < 4096; i++)
+		for (int i = firstLocalSong; i < 65536; i++)
 			musics[i].exists = false;
 
 		// Load local songs from command-line arguments.
 		for (int i = 0; i < textFilesToCompile.size(); i++)
 		{
-			if (firstLocalSong + i >= 4096)
-				printError("Error: The total number of requested music files to compile exceeded 4095.", true);
+			if (firstLocalSong + i >= 65536)
+				printError("Error: The total number of requested music files to compile exceeded 65535.", true);
 			musics[firstLocalSong + i].exists = true;
 			musics[firstLocalSong + i].name = textFilesToCompile[i];
 		}
@@ -548,7 +548,6 @@ void loadMusicList()
 				}
 				else printError("Invalid number in list.txt.", true);
 			}
-			/* //We'll only support this once musics supports vectors to avoid compilation problems... and someone tries to insert more than 4095 songs in a ROM, which is incredibly unlikely.
 			if (!indexLookupDone)
 			{
 				index <<= 4;
@@ -562,7 +561,6 @@ void loadMusicList()
 				}
 				else printError("Invalid number in list.txt.", true);
 			}
-			*/
 
 			if (!isspace(musicFile[i]))
 				printError("Invalid number in list.txt.", true);
@@ -598,7 +596,7 @@ void loadMusicList()
 	if (verbose)
 		printf("Read in all %d songs.\n", shallowSongCount);
 
-	for (int i = 4095; i >= 0; i--)
+	for (int i = 65535; i >= 0; i--)
 	{
 		if (musics[i].exists)
 		{
@@ -1084,7 +1082,7 @@ void compileMusic()
 	int totalSamplecount = 0;
 	int totalSize = 0;
 	int maxGlobalEchoBufferSize = 0;
-	for (int i = 0; i < 4096; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics[i].exists)
 		{
@@ -1148,7 +1146,7 @@ void compileMusic()
 
 	songSampleList << "\n\n";
 	
-	bool musicInSampleList[4096];
+	bool musicInSampleList[65536];
 	for (int i = 0; i < sizeof(musicInSampleList); i++)
 	{
 		musicInSampleList[i] = false;
@@ -1218,7 +1216,7 @@ void fixMusicPointers()
 	bool addedLocalPtr = false;
 	bool memoryRemainingPrinted = false;
 
-	for (int i = 0; i < 4096; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics[i].exists == false) continue;
 
@@ -1612,7 +1610,7 @@ void generateSPCs()
 	for (int mode = 0; mode <= maxMode; mode++)
 	{
 
-		for (unsigned int i = 0; i < 4096; i++)
+		for (unsigned int i = 0; i < 65536; i++)
 		{
 			if (mode == 0 && musics[i].exists == false) continue;
 			if (mode > 0 && i >= 256) break;
@@ -1659,7 +1657,7 @@ void generateSPCs()
 				int backupIndex = i;
 				if (mode != 0) {
 					i = highestGlobalSong + 1;
-					for (int j = highestGlobalSong+1; j < 4096; j++) {
+					for (int j = highestGlobalSong+1; j < 65536; j++) {
 						if (musics[j].exists) {
 							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
 							break;
@@ -2025,7 +2023,7 @@ void generateMSC()
 
 	std::stringstream text;
 
-	for (int i = 0; i < 4096; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics[i].exists)
 		{
