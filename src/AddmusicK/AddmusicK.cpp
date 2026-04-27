@@ -1615,7 +1615,7 @@ void generateSPCs()
 		for (unsigned int i = 0; i < 4096; i++)
 		{
 			if (mode == 0 && musics[i].exists == false) continue;
-			if (mode >= 0 && i >= 256) break;
+			if (mode > 0 && i >= 256) break;
 			if (mode == 1 && soundEffects[0][i].exists == false) continue;
 			if (mode == 2 && soundEffects[1][i].exists == false) continue;
 
