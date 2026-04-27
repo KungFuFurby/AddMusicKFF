@@ -1137,7 +1137,7 @@ void compileMusic()
 	{
 		if (i % 16 == 0)
 			songSampleList << "\ndw ";
-		if (musics.count(i)) {
+		if (musics.count(i) == 0) {
 			songSampleList << "$" << hex4 << 0;
 		}
 		else if (musics[i].exists == false) {
