@@ -17,7 +17,7 @@
 //ROM rom;
 std::vector<uint8_t> rom;
 
-Music musics[65536];
+Music musics[4096];
 //Sample samples[256];
 std::vector<Sample> samples;
 SoundEffect soundEffectsDF9[256];
