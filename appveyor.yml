@@ -59,6 +59,14 @@ for:
       - path: AddmusicK1.0.12_latestRCbeta.zip
   -
     branches:
+      only:
+        - versionX
+    build_script:
+      - ps: .\build_script.ps1
+    artifacts:
+      - path: AddmusicK1.0.12_latestRCversionX.zip
+  -
+    branches:
       except:
         - master
         - bleeding-edge
