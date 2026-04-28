@@ -98,8 +98,9 @@ org $0483D2
 org $048E44
 	NOP : NOP : NOP
 
-org $0491E1
-	db $FF
+org $0491E0
+	jsl FadeHijack
+	NOP
 
 
 
@@ -177,6 +178,13 @@ NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
 		RTL
+FadeHijack:
+		;We need to write a 16-bit ID instead of an 8-bit ID.
+		LDA #$FF
+		STA $1DFB|!SA1Addr2
+		STA !MusicMirHi
+		RTL
+
 		;Just write a bunch of NOPs up until we reach $0081AA.
 		;We automate this using a padding operation.
 assert pc() <= $0081AA

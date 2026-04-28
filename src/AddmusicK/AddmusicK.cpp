@@ -240,14 +240,14 @@ int main(int argc, char* argv[]) try		// // //
 		int firstLocalSong = highestGlobalSong + 1;
 
 		// Unset local songs loaded from Addmusic_list.txt.
-		for (int i = firstLocalSong; i < 256; i++)
+		for (int i = firstLocalSong; i < 65536; i++)
 			musics[i].exists = false;
 
 		// Load local songs from command-line arguments.
 		for (int i = 0; i < textFilesToCompile.size(); i++)
 		{
-			if (firstLocalSong + i >= 256)
-				printError("Error: The total number of requested music files to compile exceeded 255.", true);
+			if (firstLocalSong + i >= 65536)
+				printError("Error: The total number of requested music files to compile exceeded 65535.", true);
 			musics[firstLocalSong + i].exists = true;
 			musics[firstLocalSong + i].name = textFilesToCompile[i];
 		}
@@ -528,6 +528,7 @@ void loadMusicList()
 
 		if (index < 0)
 		{
+			bool indexLookupDone = false;
 			if      ('0' <= musicFile[i] && musicFile[i] <= '9') index = musicFile[i++] - '0';
 			else if ('A' <= musicFile[i] && musicFile[i] <= 'F') index = musicFile[i++] - 'A' + 10;
 			else if ('a' <= musicFile[i] && musicFile[i] <= 'f') index = musicFile[i++] - 'a' + 10;
@@ -535,12 +536,41 @@ void loadMusicList()
 
 			index <<= 4;
 
-
 			if      ('0' <= musicFile[i] && musicFile[i] <= '9') index |= musicFile[i++] - '0';
 			else if ('A' <= musicFile[i] && musicFile[i] <= 'F') index |= musicFile[i++] - 'A' + 10;
 			else if ('a' <= musicFile[i] && musicFile[i] <= 'f') index |= musicFile[i++] - 'a' + 10;
-			else if (isspace(musicFile[i])) index >>= 4;
+			else if (isspace(musicFile[i])) {
+				index >>= 4;
+				indexLookupDone = true;
+			}
 			else printError("Invalid number in list.txt.", true);
+			
+			if (!indexLookupDone)
+			{
+				index <<= 4;
+				
+				if      ('0' <= musicFile[i] && musicFile[i] <= '9') index |= musicFile[i++] - '0';
+				else if ('A' <= musicFile[i] && musicFile[i] <= 'F') index |= musicFile[i++] - 'A' + 10;
+				else if ('a' <= musicFile[i] && musicFile[i] <= 'f') index |= musicFile[i++] - 'a' + 10;
+				else if (isspace(musicFile[i])) {
+					index >>= 4;
+					indexLookupDone = true;
+				}
+				else printError("Invalid number in list.txt.", true);
+			}
+			if (!indexLookupDone)
+			{
+				index <<= 4;
+				
+				if      ('0' <= musicFile[i] && musicFile[i] <= '9') index |= musicFile[i++] - '0';
+				else if ('A' <= musicFile[i] && musicFile[i] <= 'F') index |= musicFile[i++] - 'A' + 10;
+				else if ('a' <= musicFile[i] && musicFile[i] <= 'f') index |= musicFile[i++] - 'a' + 10;
+				else if (isspace(musicFile[i])) {
+					index >>= 4;
+					indexLookupDone = true;
+				}
+				else printError("Invalid number in list.txt.", true);
+			}
 
 			if (!isspace(musicFile[i]))
 				printError("Invalid number in list.txt.", true);
@@ -576,7 +606,7 @@ void loadMusicList()
 	if (verbose)
 		printf("Read in all %d songs.\n", shallowSongCount);
 
-	for (int i = 255; i >= 0; i--)
+	for (int i = 65535; i >= 0; i--)
 	{
 		if (musics.count(i)) {
 			if (musics[i].exists)
@@ -1064,7 +1094,7 @@ void compileMusic()
 	int totalSamplecount = 0;
 	int totalSize = 0;
 	int maxGlobalEchoBufferSize = 0;
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics.count(i)) {
 			if (musics[i].exists)
@@ -1135,7 +1165,7 @@ void compileMusic()
 
 	songSampleList << "\n\n";
 	
-	bool musicInSampleList[256];
+	bool musicInSampleList[65536];
 	for (int i = 0; i < sizeof(musicInSampleList); i++)
 	{
 		musicInSampleList[i] = false;
@@ -1207,7 +1237,7 @@ void fixMusicPointers()
 	bool addedLocalPtr = false;
 	bool memoryRemainingPrinted = false;
 
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics.count(i) == 0) continue;
 		if (musics[i].exists == false) continue;
@@ -1602,12 +1632,13 @@ void generateSPCs()
 	for (int mode = 0; mode <= maxMode; mode++)
 	{
 
-		for (unsigned int i = 0; i < 256; i++)
+		for (unsigned int i = 0; i < 65536; i++)
 		{
 			if (mode == 0) {
 				if (musics.count(i) == 0) continue;
 				if (musics[i].exists == false) continue;
 			}
+			if (mode > 0 && i >= 256) break;
 			if (mode == 1 && soundEffects[0][i].exists == false) continue;
 			if (mode == 2 && soundEffects[1][i].exists == false) continue;
 
@@ -1651,7 +1682,7 @@ void generateSPCs()
 				int backupIndex = i;
 				if (mode != 0) {
 					i = highestGlobalSong + 1;
-					for (int j = highestGlobalSong+1; j < 256; j++) {
+					for (int j = highestGlobalSong+1; j < 65536; j++) {
 						if (musics.count(j)) {
 							if (musics[j].exists) {
 								i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
@@ -2024,7 +2055,7 @@ void generateMSC()
 
 	std::stringstream text;
 
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < 65536; i++)
 	{
 		if (musics.count(i)){
 			if (musics[i].exists)
