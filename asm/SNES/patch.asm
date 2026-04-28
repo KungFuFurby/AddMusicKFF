@@ -33,7 +33,7 @@ endif
 
 
 
-!Version = $00
+!Version = $01
 
 !SampleGroupPtrsLoc	= $008000
 
