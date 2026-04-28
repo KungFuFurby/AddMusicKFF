@@ -689,8 +689,8 @@ endif
 if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
-	BCS .starMusic
 	BEQ .restoreFromStarMusic
+	BCS .starMusic
 endif
 ++
 	RTS
