@@ -313,7 +313,7 @@ EndWithCancel:
 if !PSwitchStarRestart == !false
 	STZ !MusicMir
 	LDA #$00
-	SDA !MusicMirHi
+	STA !MusicMirHi
 endif
 	JMP End
 	
