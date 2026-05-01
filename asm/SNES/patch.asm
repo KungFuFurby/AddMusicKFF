@@ -389,7 +389,7 @@ endif
 ;	CMP.W #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
-
+;	SEP #$20
 
 
 ;	LDA !MusicMir
