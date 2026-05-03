@@ -5,12 +5,23 @@
 
 </head>
 <body text="#FFFFFF">
-	<h1>ARAM Map</h1><br><br>
-The following contains ARAM usage past and present, including the latest version of AddmusicK. These mostly only cover the stable ARAM locations from $0000-$04FF, with some exceptions. Please note that they are sorted by when memory locations were discontinued (or changed), with the latest version containing all of the current memory locations sorted by source (New meaning that it debuted in the latest version).<br>
+	<h1>ARAM Map</h1>
+	<p>The following contains ARAM usage past and present, including the latest version of AddmusicK. These mostly only cover the stable ARAM locations from $0000-$04FF, with some exceptions. Please note that they are sorted by when memory locations were discontinued (or changed), with the latest version containing all of the current memory locations sorted by source (New meaning that it debuted in the latest version).</p>
 
-Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and therefore is de facto not included in this list.<br>
+	<p>Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and therefore is de facto not included in this list.</p>
 
-	<h2>Latest Version</h2>
+	<h2>ARAM Map Section List</h2>
+	<ul>
+		<li><a href="#latest">Latest Version</a></li>
+		<li><a href="#addmusick-legacy-1P0">AddmusicK 1.0-1.0.8</a></li>
+		<li><a href="#addmusick-beta">AddmusicK Beta</a></li>
+		<li><a href="#addmusicm">AddmusicM</a> (by homing)</li>
+		<li><a href="#addmusic405">Addmusic405</a> (by HuFlungDu)</li>
+		<li><a href="#carols-more-bin">carol's MORE.bin</a</li>
+		<li><a href="#vanilla">Vanilla</a></li>
+	</ul>
+
+	<h2 id="latest">Latest Version</h2>
 		NOTE: $0400-$04FF are omitted from here and AddmusicK because the SPC700 program starts at $0400 rather than $0500.
 		<table border="3">
 			<tr>
@@ -1075,8 +1086,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>Vanilla</td>
 			</tr>
 		</table>
-
-	<h2>AddmusicK 1.0-1.0.8</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="addmusick-legacy-1P0">AddmusicK 1.0-1.0.8</h2>
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1097,7 +1108,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>N/A (Turned into an opcode gate, and thus embedded into the code)</td>
 			</tr>
 		</table>
-	<h2>AddmusicK Beta</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="addmusick-beta">AddmusicK Beta</h2>
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1143,7 +1155,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 
 		</table>
-	<h2>AddmusicM (by homing)</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="addmusicm">AddmusicM (by homing)</h2>
 	Contains the majority of carol's MORE.bin except for global transposition ($E4 command) due to sending staccato to its own hex command slot and not checking for $20 as a song ID, tremolo ($E5 command) due to sending set sample to its own hex command slot and not checking for $20 as a song ID, and tremolo off ($E6 command) by overwriting it with the repeat section hex command.
 		<table border="3">
 			<tr>
@@ -1230,8 +1243,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>N/A (Was not reimplemented into AddmusicK)</td>
 			</tr>
 		</table>
-
-	<h2>Addmusic405 (by HuFlungDu)</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="addmusic405">Addmusic405 (by HuFlungDu)</h2>
 	Contains the majority of carol's MORE.bin except for the repeat section ($E6) command (which was previously limited to song IDs $20 and up) and the ADSR ($ED) command, which is instead from Romi's Addmusic (Addmusic404), which doesn't utilize the backup instrument table, nor did it support setting the GAIN DSP register directly (instead it forces ADSR mode when used).
 		<table border="3">
 			<tr>
@@ -1251,8 +1264,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0120, $0122, $0124, $0126, $0128, $012A, $012C, $012E</td>
 			</tr>
 		</table>
-
-	<h2>carol's MORE.bin</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="carols-more-bin">carol's MORE.bin</h2>
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1293,8 +1306,8 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td colspan="3"><div style="text-align:center; font-weight: bold;">Reserved for code. (the start of the SPC700 program is still at $0500)</div></td>
 			</tr>
 		</table>
-
-	<h2>Vanilla</h2>
+	<p><a href="#">Go back to top of page</a></p>
+	<h2 id="vanilla">Vanilla</h2>
 		<table border="3">
 			<tr>
 				<th>Memory Locations</th>
@@ -1466,7 +1479,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 			</tr>
 			
 		</table>
-
-	<br><br><p>Return to the <a href="../readme.html">main page</a></p><br>
+	<p><a href="#">Go back to top of page</a></p>
+	<p><a href="../readme.html">Return to the main page</a></p><br>
 </body>
 </html>
