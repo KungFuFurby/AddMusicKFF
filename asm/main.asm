@@ -20,6 +20,29 @@
 
 incsrc "UserDefines.asm"
 
+macro dwIfDefTrue(defCheck, dwOnTrue)
+if <defCheck> == !true
+	dw <dwOnTrue>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwIfDefFalse(defCheck, dwOnFalse)
+if <defCheck> == !false
+	dw <dwOnFalse>
+else
+	dw $0000
+endif
+endmacro
+
+macro dwByDefCheck(defCheck, dwOnTrue, dwOnFalse)
+if <defCheck> == !true
+	dw <dwOnTrue>
+else
+	dw <dwOnFalse>
+endif
+endmacro
 
 ; Some documented RAM addresses: (note that addresses with "+x" are indexed by the current channel * 2)
 ; $00: Current input from APU0 (only available for 1 "loop").
@@ -437,8 +460,10 @@ endif
 	adc	a, $43 			; /
 	clrc				; \
 	adc	a, !HTuneValues+x		; / Add the h tune...
+if !noVcmdFB == !false
 	clrc				; \
 	adc	a, !ArpCurrentDelta+x	; / Add the arpeggio delta...
+endif
 	
 	bra +
 NoPitchAdjust:
@@ -2146,10 +2171,13 @@ L_0B6D:
 	mov	$a1+x, a		; Vibrato[ch] = 0
 	mov	$b1+x, a		; Tremolo[ch] = 0
 	mov	!HTuneValues+x, a	
-	
+if !noVcmdFB == !false	
 	mov	!ArpNoteIndex+x, a
 	mov	!ArpNoteCount+x, a
 	mov	!ArpCurrentDelta+x, a
+else
+	mov	!VolumeMult+x, a
+endif
 if !noSFX == !false
 	push	a
 	;Don't clear pitch base if it is occupied by SFX.
@@ -2193,11 +2221,13 @@ endif
 -	
 	; repeat ctr + Instrument[ch] = 0
 	mov	$c0-1+y, a
+if !noVcmdFB == !false
 	;(!ArpSpecial + !VolumeMult get zeroed out here...)
 	mov	!ArpSpecial-1+y, a
 	mov	!ArpNotePtrs-1+y, a
 	;(!ArpLength + !ArpTimeLeft get zeroed out here...)
 	mov	!ArpLength-1+y, a
+endif
 	mov	$0300-1+y, a
 	mov	$0160-1+y,a
 	dbnz	y, -
@@ -2401,6 +2431,7 @@ endif
 	
 					; Warning: The code ahead gets messy thanks to arpeggio modifications.
 
+if !noVcmdFB == !false
 	mov	y, a			; / Put the current note into y for now.
 
 HandleArpeggioInterrupt:
@@ -2434,6 +2465,7 @@ HandleArpeggioInterrupt:
 +
 .glissandoOver
 	mov	a, $10
+endif
 	bne	L_0CB3
 	mov	a, y			; / And actually play the next note.
 	call	NoteVCMD             ; handle note cmd if vbit 1D clear
@@ -2454,7 +2486,9 @@ L_0CC1:
 L_0CC6:
 	call	L_10A1             ; do voice readahead
 L_0CC9:	
+if !noVcmdFB == !false
 	call	HandleArpeggio	; Handle all things related to arpeggio.
+endif
 	inc	x
 	inc	x
 	asl	$48
@@ -3231,7 +3265,9 @@ L_10A1:
 	bne	.noRemoteCode				; /
 	
 	call	ShouldSkipKeyOff			; \ If we're going to skip the keyoff, then also don't run the code.
+if !noVcmdFB == !false
 	mov1	HandleArpeggio_nextNoteCheck.5, c	; | Switch between a BEQ/BNE opcode depending on the output.
+endif
 	bcc	.noRemoteCode				; /
 	
 	call	RunRemoteCode				;
@@ -3241,7 +3277,9 @@ L_10A1:
 	cbne	$70+x, +				;
 .doKeyOffCheck
 	call	ShouldSkipKeyOff
+if !noVcmdFB == !false
 	mov1	HandleArpeggio_nextNoteCheck.5, c	; Switch between a BEQ/BNE opcode depending on the output.
+endif
 	bcc	+
 	call	KeyOffVoiceWithCheck 
 +

@@ -32,7 +32,7 @@ dw $0000 ;cmdF7
 dw cmdF8
 dw cmdF9
 dw cmdFA
-dw cmdFB
+%dwIfDefFalse(!noVcmdFB, cmdFB)
 dw cmdFC
 dw cmdFD
 dw cmdFE
