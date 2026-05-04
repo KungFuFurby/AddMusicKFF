@@ -263,6 +263,7 @@
 	<li>Overall
 		<ul>
 		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
+		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. Note that you'll probably have to do some additional ASM work on the vanilla ROM to access IDs above $FF, and higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Gameplay
