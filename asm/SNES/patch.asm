@@ -37,22 +37,8 @@ endif
 
 !SampleGroupPtrsLoc	= $008000
 
-!FreeRAM		= $7FB000
-!CurrentSong		= !FreeRAM+$00
-!NoUploadSamples	= !FreeRAM+$02
-!SongPositionLow	= !FreeRAM+$05
-!SongPositionHigh	= !FreeRAM+$06
-!SPCOutput1		= !SongPositionLow
-!SPCOutput2		= !SongPositionHigh
-!SPCOutput3		= !FreeRAM+$07
-!SPCOutput4		= !FreeRAM+$08
-;!MusicBackup		= !FreeRAM+$09
-!SampleCount		= !FreeRAM+$0A
-!MusicMirHi		= !FreeRAM+$0B
-!MusicBackupHi		= !FreeRAM+$0C
-!SRCNTableBuffer	= !FreeRAM+$0D
+incsrc "AMKFreeRAMDefines.asm"
 
-!Trick   = !FreeRAM+$09
 !Tricker = !BonusEnd
 
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
