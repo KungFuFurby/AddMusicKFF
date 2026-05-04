@@ -11,6 +11,6 @@
 !SPCOutput2		= !SongPositionHigh
 !SPCOutput3		= !FreeRAM+$06
 !SPCOutput4		= !FreeRAM+$07
-;!MusicBackup		= !FreeRAM+$08
+!Trick			= !FreeRAM+$08
 !SampleCount		= !FreeRAM+$09
 !SRCNTableBuffer	= !FreeRAM+$0A
