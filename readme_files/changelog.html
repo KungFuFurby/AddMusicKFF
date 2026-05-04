@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.12 - 2026-04-27</h2>
+	<h2>Version 1.0.12 - 2026-05-04</h2>
 	<ul>
 	<li>Overall
 		<ul>
@@ -293,6 +293,7 @@
 		<li>"Fixed a bug where the echo buffer size to allocate was not factoring in the $F6 hex command when writing to the EDL DSP register." - KungFuFurby</li>
 		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
 		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
+		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
