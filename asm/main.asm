@@ -2617,18 +2617,24 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	inc	$f2			; \ Write the new buffer address.
 	mov	$f3, y			; / This is safe to do because writes are currently disabled.
 
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	+
 	mov	$14, #$00
 	mov	$15, y
 	mov	a, #$00
 	mov	y, a
-	
+	cmp	$15, #$FF		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	bne	+
+	mov	y, #$04
+	decw	$14
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	bra	++
++
+
 -	mov	($14)+y, a		; clear the whole echo buffer
 	dbnz	y, -
 	inc	$15
 	bne	-
-+
+++
 	mov	a, !EchoDelay
 	beq	+
 	mov	$f2, #$7d
