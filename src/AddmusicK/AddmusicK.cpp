@@ -2263,16 +2263,18 @@ void generatePNGs()
 					g = static_cast<unsigned char>(static_cast<double>(currentSampleIndex) / static_cast<double>(sampleCount)* 127.0 + 128.0);
 				}
 			}
-			else if (i >= current.second.spaceInfo.echoBufferStartPos && i < current.second.spaceInfo.echoBufferEndPos)
-			{
-				r = 160;
-				b = 160;
-			}
-			else if (i >= current.second.spaceInfo.echoBufferEndPos)
-			{
-				r = 63;
-				b = 63;
-				g = 63;
+			else if (current.second.echoBufferSize > 0 || current.second.usesEcho) {
+				if (i >= current.second.spaceInfo.echoBufferStartPos && i < current.second.spaceInfo.echoBufferEndPos)
+				{
+					r = 160;
+					b = 160;
+				}
+				else if (i >= current.second.spaceInfo.echoBufferEndPos)
+				{
+					r = 63;
+					b = 63;
+					g = 63;
+				}
 			}
 
 			int bitmapIndex = y * width + x;
