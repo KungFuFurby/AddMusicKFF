@@ -12,7 +12,7 @@
 #include <cstdint>
 #include "lodepng.h"
 #include <thread>
-
+#include <map>
 
 bool waitAtEnd = true;
 File ROMName;
@@ -568,10 +568,12 @@ void loadMusicList()
 
 	for (int i = 255; i >= 0; i--)
 	{
-		if (musics[i].exists)
-		{
-			songCount = i+1;
-			break;
+		if (musics.count(i)) {
+			if (musics[i].exists)
+			{
+				songCount = i+1;
+				break;
+			}
 		}
 	}
 }
@@ -1054,20 +1056,35 @@ void compileMusic()
 	int maxGlobalEchoBufferSize = 0;
 	for (int i = 0; i < 256; i++)
 	{
-		if (musics[i].exists)
-		{
-			//if (!(i <= highestGlobalSong && !recompileMain))
-			//{
-			musics[i].index = i;
-			if (i > highestGlobalSong) {
-				musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+		if (musics.count(i)) {
+			if (musics[i].exists)
+			{
+				//if (!(i <= highestGlobalSong && !recompileMain))
+				//{
+				musics[i].index = i;
+				if (i > highestGlobalSong) {
+					musics[i].echoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+				}
+				std::string fname = musics[i].name;
+			
+				int extPos = fname.find_last_of('.');
+				if (extPos != -1)
+					fname = fname.substr(0, extPos);
+			
+				if (fname.find('/') != -1)
+					fname = fname.substr(fname.find_last_of('/') + 1);
+				else if (fname.find('\\') != -1)
+					fname = fname.substr(fname.find_last_of('\\') + 1);
+				fname = "stats/" + fname + ".txt";
+				musics[i].statFName = fname;
+				
+				musics[i].compile();
+				if (i <= highestGlobalSong) {
+					maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
+				}
+				totalSamplecount += musics[i].mySamples.size();
+				//}
 			}
-			musics[i].compile();
-			if (i <= highestGlobalSong) {
-				maxGlobalEchoBufferSize = std::max(musics[i].echoBufferSize, maxGlobalEchoBufferSize);
-			}
-			totalSamplecount += musics[i].mySamples.size();
-			//}
 		}
 	}
 
@@ -1090,10 +1107,15 @@ void compileMusic()
 	{
 		if (i % 16 == 0)
 			songSampleList << "\ndw ";
-		if (musics[i].exists == false)
+		if (musics.count(i) == 0) {
 			songSampleList << "$" << hex4 << 0;
-		else
+		}
+		else if (musics[i].exists == false) {
+			songSampleList << "$" << hex4 << 0;
+		}
+		else {
 			songSampleList << "SGPointer" << hex2 << i;
+		}
 		songSampleListSize += 2;
 
 		if (i != songCount - 1 && (i & 0xF) != 0xF)
@@ -1111,6 +1133,7 @@ void compileMusic()
 
 	for (int i = 0; i < songCount; i++)
 	{
+		if (musics.count(i) == 0) continue;
 		if ((!musics[i].exists) || (musicInSampleList[i])) continue;
 
 		songSampleListSize++;
@@ -1121,6 +1144,7 @@ void compileMusic()
 		{
 			for (int j = highestGlobalSong+1; j < songCount; j++) {
 				if (i == j) continue;
+				if (musics.count(j) == 0) continue;
 				if (!musics[j].exists) continue;
 				if (musics[i].mySamples.size() != musics[j].mySamples.size()) continue;
 				bool sampleGroupMatch = true;
@@ -1171,9 +1195,11 @@ void fixMusicPointers()
 	//int songPointerARAMPos = programSize + programPos;
 
 	bool addedLocalPtr = false;
+	bool memoryRemainingPrinted = false;
 
 	for (int i = 0; i < 256; i++)
 	{
+		if (musics.count(i) == 0) continue;
 		if (musics[i].exists == false) continue;
 
 		musics[i].posInARAM = songDataARAMPos;
@@ -1185,11 +1211,17 @@ void fixMusicPointers()
 			globalPointers << "\ndw song" << hex2 << i;
 			incbins << "song" << hex2 << i << ": incbin \"" << "SNES/bin/" << "music" << hex2 << i << ".bin\"\n";
 		}
-		else if (addedLocalPtr == false)
-		{
-			globalPointers << "\ndw localSong";
-			incbins << "localSong: ";
-			addedLocalPtr = true;
+		else {
+			if (checkEcho && (justSPCsPlease || verbose) && !memoryRemainingPrinted) {
+				printf("\nMemory remaining...\n");
+				memoryRemainingPrinted = true;
+			}
+			if (addedLocalPtr == false)
+			{
+				globalPointers << "\ndw localSong";
+				incbins << "localSong: ";
+				addedLocalPtr = true;
+			}
 		}
 
 		for (int j = 0; j < musics[i].spaceForPointersAndInstrs; j+=2)
@@ -1310,10 +1342,19 @@ void fixMusicPointers()
 		{
 			if (checkEcho)
 			{
+				std::stringstream statStrStream;
+				statStrStream << "\n" << "LOCAL SONG MEMORY REMAINING STATS..." << "\n";
+				if (justSPCsPlease || verbose)
+					printf("%s\n", musics[i].name.c_str());
 				musics[i].spaceInfo.songStartPos = songDataARAMPos;
 				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
 
 				int checkPos = songDataARAMPos + sizeWithPadding;
+				int songDataToSampleTableGap = checkPos % 0x100;
+				int songDataLeftBeforeSampleTableRealignment = (0x100 - songDataToSampleTableGap) % 0x100;
+				statStrStream << "SONG DATA LEFT BEFORE SAMPLE TABLE REALIGNMENT: 0X" << hex4 << songDataLeftBeforeSampleTableRealignment << "\n";
+				if (justSPCsPlease || verbose)
+					printf("Song data left before sample table realignment: 0x%X bytes\n", songDataLeftBeforeSampleTableRealignment);
 				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
 
 				musics[i].spaceInfo.sampleTableStartPos = checkPos;
@@ -1352,7 +1393,14 @@ void fixMusicPointers()
 				
 				if (checkPos > 0x10000)
 				{
-					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << checkPos - 0x10000 << " bytes." << std::dec << std::endl;
+					int overflowSize = checkPos - 0x10000;
+					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << overflowSize << " bytes." << std::dec << std::endl;
+					std::cerr << "Without modifying samples, song size must be reduced by at least 0x" << hex4 << (((overflowSize)/0x100)*0x100) + songDataToSampleTableGap << " bytes." << std::dec << std::endl;
+					if (musics[i].echoBufferSize > 0)
+						std::cerr << "Echo must also be disabled as part of this process." << std::dec << std::endl;
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << overflowSize +  (musics[i].echoBufferSize << 11)<< "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
 				}
 
@@ -1380,7 +1428,26 @@ void fixMusicPointers()
 				if (checkPos > 0x10000)
 				{
 					std::cerr << musics[i].name << ": Echo buffer exceeded total space in ARAM by 0x" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << " bytes." << std::dec << std::endl;
+					std::cerr << "Without modifying samples or echo, song size must be reduced by at least 0x" << hex4 << (checkPos - 0x10100) + songDataToSampleTableGap << std::dec << std::endl << "bytes." << std::dec << std::endl;
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << endOfSongAndSampleDataPos - musics[i].spaceInfo.echoBufferStartPos << "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
+				}
+				else {
+					int sampleAndEchoSpaceRemaining;
+					if (musics[i].echoBufferSize > 0) {
+						sampleAndEchoSpaceRemaining = musics[i].spaceInfo.echoBufferStartPos-endOfSongAndSampleDataPos;
+					}
+					else {
+						sampleAndEchoSpaceRemaining = 0x10000 - endOfSongAndSampleDataPos;
+					}
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: 0X" << hex4 << sampleAndEchoSpaceRemaining << "\n";
+					musics[i].statStr.append(statStrStream.str());
+					writeTextFile(musics[i].statFName, musics[i].statStr);
+					if (justSPCsPlease || verbose) {
+						printf("Sample and echo space remaining: 0x%X bytes\n\n", sampleAndEchoSpaceRemaining);
+					}
 				}
 			}
 		}
@@ -1527,7 +1594,10 @@ void generateSPCs()
 
 		for (unsigned int i = 0; i < 256; i++)
 		{
-			if (mode == 0 && musics[i].exists == false) continue;
+			if (mode == 0) {
+				if (musics.count(i) == 0) continue;
+				if (musics[i].exists == false) continue;
+			}
 			if (mode == 1 && soundEffects[0][i].exists == false) continue;
 			if (mode == 2 && soundEffects[1][i].exists == false) continue;
 
@@ -1572,9 +1642,11 @@ void generateSPCs()
 				if (mode != 0) {
 					i = highestGlobalSong + 1;
 					for (int j = highestGlobalSong+1; j < 256; j++) {
-						if (musics[j].exists) {
-							i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
-							break;
+						if (musics.count(j)) {
+							if (musics[j].exists) {
+								i = j;		// While dumping SFX, pretend that the current song is the lowest valid local song
+								break;
+							}
 						}
 					}
 				}
@@ -1776,27 +1848,32 @@ void assembleSNESDriver2()
 
 	for (int i = 0; i < songCount; i++)
 	{
-		if (musics[i].exists == true && i > highestGlobalSong)
-		{
-			int requestSize;
-			int freeSpace;
-			std::stringstream musicBinPath;
-			musicBinPath << "asm/SNES/bin/music" << hex2 << i << ".bin";
-			requestSize = getFileSize(musicBinPath.str());
-			freeSpace = findFreeSpace(requestSize, bankStart, rom);
-			if (freeSpace == -1)
+		if (musics.count(i)) {
+			if (musics[i].exists == true && i > highestGlobalSong)
 			{
-				printError("Error: Your ROM is out of free space.", true);
+				int requestSize;
+				int freeSpace;
+				std::stringstream musicBinPath;
+				musicBinPath << "asm/SNES/bin/music" << hex2 << i << ".bin";
+				requestSize = getFileSize(musicBinPath.str());
+				freeSpace = findFreeSpace(requestSize, bankStart, rom);
+				if (freeSpace == -1)
+				{
+					printError("Error: Your ROM is out of free space.", true);
+				}
+	
+				freeSpace = PCToSNES(freeSpace);
+				musicPtrStr << "music" << hex2 << i << "+8";
+				musicIncbins << "org $" << hex6 << freeSpace << "\nmusic" << hex2 << i << ": incbin \"bin/music" << hex2 << i << ".bin\"" << std::endl;
 			}
-
-			freeSpace = PCToSNES(freeSpace);
-			musicPtrStr << "music" << hex2 << i << "+8";
-			musicIncbins << "org $" << hex6 << freeSpace << "\nmusic" << hex2 << i << ": incbin \"bin/music" << hex2 << i << ".bin\"" << std::endl;
+			else
+			{
+				musicPtrStr << "$" << hex6 << 0;
+			}
 		}
 		else
 		{
 			musicPtrStr << "$" << hex6 << 0;
-
 		}
 
 		if ((i & 0xF) == 0xF && i != songCount-1)
@@ -1939,12 +2016,14 @@ void generateMSC()
 
 	for (int i = 0; i < 256; i++)
 	{
-		if (musics[i].exists)
-		{
-			text << hex2 << i << "\t" << 0 << "\t" << musics[i].title << "\n";
-			text << hex2 << i << "\t" << 1 << "\t" << musics[i].title << "\n";
-			//fprintf(fout, "%2X\t0\t%s\n", i, musics[i].title.c_str());
-			//fprintf(fout, "%2X\t1\t%s\n", i, musics[i].title.c_str());
+		if (musics.count(i)){
+			if (musics[i].exists)
+			{
+				text << hex2 << i << "\t" << 0 << "\t" << musics[i].title << "\n";
+				text << hex2 << i << "\t" << 1 << "\t" << musics[i].title << "\n";
+				//fprintf(fout, "%2X\t0\t%s\n", i, musics[i].title.c_str());
+				//fprintf(fout, "%2X\t1\t%s\n", i, musics[i].title.c_str());
+			}
 		}
 	}
 	writeTextFile(mscname, text.str());
@@ -2069,8 +2148,13 @@ void checkMainTimeStamps()			// Disabled for now, as this only works if the ROM 
 		goto recompile;				// More laziness!
 	}
 
-	for (int i = 1; i <= highestGlobalSong; i++)
-		mostRecentMainModification = std::max(mostRecentMainModification, getTimeStamp((File)("music/" + musics[i].name)));
+	for (int i = 1; i <= highestGlobalSong; i++) {
+		if (musics.count(i)) {
+			if (musics[i].exists) {
+				mostRecentMainModification = std::max(mostRecentMainModification, getTimeStamp((File)("music/" + musics[i].name)));
+			}
+		}
+	}
 
 	mostRecentMainModification = std::max(mostRecentMainModification, getTimeStamp((File)"asm/main.asm"));
 	mostRecentMainModification = std::max(mostRecentMainModification, getTimeStamp((File)"asm/commands.asm"));
@@ -2113,8 +2197,8 @@ void generatePNGs()
 {
 	for (auto &current : musics)
 	{
-		if (current.index <= highestGlobalSong) continue;
-		if (current.exists == false) continue;
+		if (current.second.index <= highestGlobalSong) continue;
+		if (current.second.exists == false) continue;
 
 		std::vector<unsigned char> bitmap;
 		// 1024 pixels wide, 64 pixels tall, 4 bytes per pixel
@@ -2144,28 +2228,28 @@ void generatePNGs()
 				r = 255;
 				g = 255;
 			}
-			else if (i >= current.spaceInfo.songStartPos && i < current.spaceInfo.songEndPos)
+			else if (i >= current.second.spaceInfo.songStartPos && i < current.second.spaceInfo.songEndPos)
 			{
 				g = 128;
 			}
-			else if (i >= current.spaceInfo.sampleTableStartPos && i < current.spaceInfo.sampleTableEndPos)
+			else if (i >= current.second.spaceInfo.sampleTableStartPos && i < current.second.spaceInfo.sampleTableEndPos)
 			{
 				g = 255;
 			}
-			else if (i >= current.spaceInfo.individualSampleStartPositions[0] && i < current.spaceInfo.individualSampleEndPositions[current.spaceInfo.individualSampleEndPositions.size() - 1])
+			else if (i >= current.second.spaceInfo.individualSampleStartPositions[0] && i < current.second.spaceInfo.individualSampleEndPositions[current.second.spaceInfo.individualSampleEndPositions.size() - 1])
 			{
 				int currentSampleIndex = 0;
 
-				for (auto currentSampleEndPos : current.spaceInfo.individualSampleEndPositions)
+				for (auto currentSampleEndPos : current.second.spaceInfo.individualSampleEndPositions)
 				{
 					if (currentSampleEndPos > i) break;
 
 					currentSampleIndex++;
 				}
 
-				bool sampleIsImportant = current.spaceInfo.individialSampleIsImportant[currentSampleIndex];
+				bool sampleIsImportant = current.second.spaceInfo.individialSampleIsImportant[currentSampleIndex];
 
-				int sampleCount = current.spaceInfo.individualSampleStartPositions.size();
+				int sampleCount = current.second.spaceInfo.individualSampleStartPositions.size();
 
 				b = static_cast<unsigned char>(static_cast<double>(currentSampleIndex) / static_cast<double>(sampleCount)* 127.0 + 128.0);
 
@@ -2175,12 +2259,12 @@ void generatePNGs()
 					g = static_cast<unsigned char>(static_cast<double>(currentSampleIndex) / static_cast<double>(sampleCount)* 127.0 + 128.0);
 				}
 			}
-			else if (i >= current.spaceInfo.echoBufferStartPos && i < current.spaceInfo.echoBufferEndPos)
+			else if (i >= current.second.spaceInfo.echoBufferStartPos && i < current.second.spaceInfo.echoBufferEndPos)
 			{
 				r = 160;
 				b = 160;
 			}
-			else if (i >= current.spaceInfo.echoBufferEndPos)
+			else if (i >= current.second.spaceInfo.echoBufferEndPos)
 			{
 				r = 63;
 				b = 63;
@@ -2206,7 +2290,7 @@ void generatePNGs()
 			}
 		}
 
-		auto path = current.pathlessSongName;
+		auto path = current.second.pathlessSongName;
 		path = "Visualizations/" + path + ".png";
 		lodepng::encode(path, bitmap, width, height);
 

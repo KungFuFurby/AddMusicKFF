@@ -258,8 +258,13 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.12 Alpha - 2025-09-29</h2>
+	<h2>Version 1.0.12 Alpha - 2026-05-04</h2>
 	<ul>
+	<li>Overall
+		<ul>
+		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
@@ -283,6 +288,19 @@
 	<li>SPC & ROM Compilation
 		<ul>
 		<li>"All sample group pointers are now deduplicated prior to being compiled for a ROM." - KungFuFurby</li>
+		<li>"Fixed a bug where SFX ASM were generating incorrect pointers within the ASM." - KungFuFurby</li>
+		<li>"Fixed a bug where a zero pointer was generated in SFX if #jsr was used, but no #asm sections were defined at all." - KungFuFurby</li>
+		<li>"Fixed a bug where the echo buffer size to allocate was not factoring in the $F6 hex command when writing to the EDL DSP register." - KungFuFurby</li>
+		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
+		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
+		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
+		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
+		<li>"Fixed a bug where glissando was failing to do its first semitone addition with the hot patch disabled when SFX was played on top of the first note." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
