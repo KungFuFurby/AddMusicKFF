@@ -2623,6 +2623,7 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	y, a
 	cmp	$15, #$FF		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
 	bne	+
+	bbs	!NCKValue.5, ++		;Don't clear if we're not using it.
 	mov	y, #$04
 	decw	$14
 -	mov	($14)+y, a		; clear the whole echo buffer
