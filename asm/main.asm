@@ -2609,14 +2609,27 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dec	a
 +
 	eor	a, #$FF
-	push	a
+	mov	y, a
 
 	mov	$f2, #$6c
 	or	$f3, #$60
 
 	inc	$f2			; \ Write the new buffer address.
-	mov	$f3, a			; / This is safe to do because writes are currently disabled.
+	mov	$f3, y			; / This is safe to do because writes are currently disabled.
 
+	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	and	a, #$0f
+	beq	+
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	mov	y, a
+	
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
++
 	mov	a, !EchoDelay
 	and	a, #$0f
 	beq	+
@@ -2632,23 +2645,9 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
 	dbnz	$14, -
 +
-	
-	pop	y
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
-	
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	$14, #$00
-	mov	$15, y
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
 	bra	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
 	
 ; dispatch vcmd in A
