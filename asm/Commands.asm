@@ -490,6 +490,7 @@ L_0EEB:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdF1:					; Echo command 2 (delay, feedback, FIR)
 {
+	and	a, #$0f
 	cmp	a, !MaxEchoDelay
 	beq	.justSet
 	bcs	.needsModifying

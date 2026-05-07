@@ -2581,6 +2581,7 @@ DSPWrite:
 	ret
 
 SubC_table2_reserveBuffer:
+	and	a, #$0f
 .zeroEDLGate
 	beq	.zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -2601,7 +2602,6 @@ SubC_table2_reserveBuffer:
 	clr1	!NCKValue.5
 		
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
-	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
 	xcn	a			; Get the buffer address.
@@ -2618,7 +2618,6 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	mov	$f3, y			; / This is safe to do because writes are currently disabled.
 
 	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	and	a, #$0f
 	beq	+
 	mov	$14, #$00
 	mov	$15, y
@@ -2631,7 +2630,6 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	bne	-
 +
 	mov	a, !EchoDelay
-	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
