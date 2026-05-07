@@ -894,10 +894,15 @@ HotPatchVCMDByte0Bit4StoragesEOF:
 	;Byte 0 Bit 5 Set - Echo writes are disabled when EDL is zero on initial playback of local song
 	;NOTE: This bit is sensitive to order of execution! The $FA $04 VCMD
 	;must be executed after the patch is set, not before!
+	;WARNING: This hot patch has been obsoleted! The AddmusicK compiler
+	;will now automatically set an $FA $04 $80 command at the start of
+	;the song when it detects that echo is not in use: this does all of
+	;the steps except for clearing the buffer and enabling the echo
+	;writes.
 HotPatchVCMDByte0Bit5Storages:
-	dw	SubC_table2_reserveBuffer_echoWriteBitClearLoc+1
-	db	!NCKValue
-	db	$10
+	;dw	SubC_table2_reserveBuffer_echoWriteBitClearLoc+1
+	;db	!NCKValue
+	;db	$10
 HotPatchVCMDByte0Bit5StoragesEOF:
 
 	;Byte 0 Bit 6 Clear - When using arpeggio, glissando disables itself after two base notes

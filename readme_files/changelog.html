@@ -280,6 +280,11 @@
 		<li>"Updated the UberASM section to cover both pre-V2.0 and post-V2.0." - MarioFanGamer</li>
 		</ul>
 	</li>
+	<li>Music Hex Commands
+		<ul>
+		<li>"The $FA $04 command has been modified so that setting the highest bit will now directly disable echo writes. <b>This obsoletes a hot patch bit! (Namely, the one that that would disables echo writes when setting up the echo buffer through $FA $04.)</b>" - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Music MML Parser
 		<ul>
 		<li>"Corrected a stack fault that was causing nested if statements to result in a segmentation fault during preprocessing." - KungFuFurby</li>
@@ -294,6 +299,7 @@
 		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
 		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
 		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
+		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM

@@ -2584,6 +2584,9 @@ DSPWrite:
 	ret
 
 SubC_table2_reserveBuffer:
+	asl	a
+	mov1	!NCKValue.5, c
+	lsr	a
 	and	a, #$0f
 .zeroEDLGate
 	beq	.zeroEDL
@@ -2600,10 +2603,11 @@ SubC_table2_reserveBuffer:
 .zeroEDL
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+
 .modifyEchoDelay
 .echoWriteBitClearLoc
-	clr1	!NCKValue.5
-		
+	;clr1	!NCKValue.5
+
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
 	push	a			; Save the requested delay.
 	beq	+
