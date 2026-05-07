@@ -177,6 +177,7 @@ Music::Music()
 	echoBufferSize = 0;
 	echoBufferAllocVCMDIsSet = false;
 	hasEchoBufferCommand = false;
+	usesEcho = false;
 	noteParamaterByteCount = 0;
 
 	//if (validateHex)		// Allow space for the buffer reservation header.
@@ -1552,6 +1553,9 @@ void Music::parseHFDHex()
 				}
 				else
 				{
+					if (reg == 0x2C || reg == 0x3C || reg == 0x0D || reg == 0x4D || (reg & 0x0F) == 0x0F) {
+						usesEcho = true;
+					}
 					append(0xF6);
 					append(reg);
 					append(val);
@@ -2016,12 +2020,24 @@ void Music::parseHexCommand()
 					usedSamples[i] = true;
 			}
 			
+			if (hexLeft == 0 && (currentHex == 0xEF || currentHex == 0xF2 || currentHex == 0xF5)) {
+				usesEcho = true;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x04) {
+				usesEcho = true;
+			}
+			
 			if (hexLeft == 0 && currentHex == 0xF6)
 			{
 				if (currentDSPRegister == 0x7D)
 				{
 					i &= 0xF;
 					echoBufferSize = std::max(echoBufferSize, i);
+					usesEcho = true;
+				}
+				if (currentDSPRegister == 0x2C || currentDSPRegister == 0x3C || currentDSPRegister == 0x0D || currentDSPRegister == 0x4D || currentDSPRegister == 0x6D || (currentDSPRegister & 0x0F) == 0x0F || ((currentDSPRegister == 0x6C) && ((i & 0x20) != 0))) {
+					usesEcho = true;
 				}
 			}
 
@@ -2030,6 +2046,7 @@ void Music::parseHexCommand()
 				i &= 0xF;
 				echoBufferSize = std::max(echoBufferSize, i);
 				hasEchoBufferCommand = true;
+				usesEcho = true;
 			}
 
 			if (currentHex == 0xDA && songTargetProgram == 1)			// If this was the instrument command
@@ -2065,8 +2082,12 @@ void Music::parseHexCommand()
 			}
 
 			if (hexLeft == 0 && currentHex == 0xF4) {
-				if (i == 0x00 || i == 0x06 || i == 0x0C)
+				if (i == 0x00 || i == 0x06 || i == 0x0C) {
 					hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
+				}
+				else if (i == 0x03) {
+					usesEcho = true;
+				}
 				//Convert VCMD IDs from Codec's AMK Beta
 				else if (i == 0x0a && targetAMKVersion == 3) {
 					data[channel].pop_back(); //We don't use a $F4 command slot here.
@@ -3166,7 +3187,14 @@ void Music::pointersFirstPass()
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}
-		if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
+		if (!usesEcho) {
+			//Echo is not used. Force it to be disabled.
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x80);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
 			//Just put the VCMD in its default place: no need to move it around.
 			//In particular, the $F1 command means that echo writes have been enabled, meaning the special case is irrelevant.
 			data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);

@@ -69,6 +69,7 @@ public:
 	std::vector<unsigned short> mySamples;
 	//int mySampleCount;
 	int echoBufferSize;
+	bool usesEcho;
 	bool hasEchoBufferCommand;
 	bool echoBufferAllocVCMDIsSet;
 	unsigned short echoBufferAllocVCMDLoc;

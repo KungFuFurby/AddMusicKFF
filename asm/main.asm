@@ -2934,6 +2934,10 @@ DSPWrite:
 	ret
 
 SubC_table2_reserveBuffer:
+	asl	a
+	mov1	!NCKValue.5, c
+	lsr	a
+	and	a, #$0f
 .zeroEDLGate
 	beq	.zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -2949,12 +2953,12 @@ SubC_table2_reserveBuffer:
 .zeroEDL
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+
 .modifyEchoDelay
 .echoWriteBitClearLoc
-	clr1	!NCKValue.5
-		
+	;clr1	!NCKValue.5
+
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
-	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
 	xcn	a			; Get the buffer address.
@@ -2962,16 +2966,33 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dec	a
 +
 	eor	a, #$FF
-	push	a
+	mov	y, a
 
 	mov	$f2, #$6c
 	or	$f3, #$60
 
 	inc	$f2			; \ Write the new buffer address.
-	mov	$f3, a			; / This is safe to do because writes are currently disabled.
+	mov	$f3, y			; / This is safe to do because writes are currently disabled.
 
+	mov	a, #$00
+	movw	$14, ya
+	mov	y, a
+	cmp	$15, #$FF		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	bne	+
+	bbs	!NCKValue.5, ++		;Don't clear if we're not using it.
+	mov	y, #$04
+	decw	$14
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	bra	++
++
+
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
+++
 	mov	a, !EchoDelay
-	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
@@ -2985,22 +3006,9 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
 	dbnz	$14, -
 +
-	
-	pop	y
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
-	
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	a, #$00
-	movw	$14, ya
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
 	bra	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
 	
 ; dispatch vcmd in A
