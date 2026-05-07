@@ -1396,9 +1396,9 @@ void fixMusicPointers()
 					int overflowSize = checkPos - 0x10000;
 					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << overflowSize << " bytes." << std::dec << std::endl;
 					std::cerr << "Without modifying samples, song size must be reduced by at least 0x" << hex4 << (((overflowSize)/0x100)*0x100) + songDataToSampleTableGap << " bytes." << std::dec << std::endl;
-					if (musics[i].echoBufferSize > 0)
+					if (musics[i].echoBufferSize > 0 || musics[i].usesEcho)
 						std::cerr << "Echo must also be disabled as part of this process." << std::dec << std::endl;
-					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << overflowSize +  (musics[i].echoBufferSize << 11)<< "\n";
+					statStrStream << "SAMPLE AND ECHO SPACE REMAINING: OVERFLOW BY 0X" << hex4 << overflowSize +  (musics[i].echoBufferSize << 11) + (((musics[i].echoBufferSize == 0) && musics[i].usesEcho) ? 0x100 : 0)<< "\n";
 					musics[i].statStr.append(statStrStream.str());
 					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
@@ -1422,6 +1422,10 @@ void fixMusicPointers()
 				{
 					musics[i].spaceInfo.echoBufferStartPos = 0xFF00;
 					musics[i].spaceInfo.echoBufferEndPos = 0xFF04;
+					if (musics[i].usesEcho) {
+						//A zero EDL echo buffer will use four bytes. We'll imply that this will reserve the last 0x100 bytes of memory for this purpose to avoid data loss.
+						checkPos += 0x100;
+					}
 				}
 
 
@@ -1436,7 +1440,7 @@ void fixMusicPointers()
 				}
 				else {
 					int sampleAndEchoSpaceRemaining;
-					if (musics[i].echoBufferSize > 0) {
+					if (musics[i].echoBufferSize > 0 || musics[i].usesEcho) {
 						sampleAndEchoSpaceRemaining = musics[i].spaceInfo.echoBufferStartPos-endOfSongAndSampleDataPos;
 					}
 					else {

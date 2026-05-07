@@ -1865,10 +1865,8 @@ endif
 	bra	HandleYoshiDrums
 
 L_099C:
-	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	movw	$f2, ya
-	mov	!NCKValue, y
+	mov	!NCKValue, #$60 ; Mute, disable echo.  We don't want any rogue sounds during upload
+				; and we ESPECIALLY don't want the echo buffer to overwrite anything.
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -1882,9 +1880,9 @@ if !noSFX == !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	call	L_0F22
 	mov	a, #!reserveBufferZeroEDLGateDistance
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
@@ -2586,6 +2584,10 @@ DSPWrite:
 	ret
 
 SubC_table2_reserveBuffer:
+	asl	a
+	mov1	!NCKValue.5, c
+	lsr	a
+	and	a, #$0f
 .zeroEDLGate
 	beq	.zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -2601,12 +2603,12 @@ SubC_table2_reserveBuffer:
 .zeroEDL
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+
 .modifyEchoDelay
 .echoWriteBitClearLoc
-	clr1	!NCKValue.5
-		
+	;clr1	!NCKValue.5
+
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
-	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
 	xcn	a			; Get the buffer address.
@@ -2614,17 +2616,38 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dec	a
 +
 	eor	a, #$FF
-	push	a
+	mov	y, a
 
 	mov	$f2, #$6c
 	or	$f3, #$60
 
+	inc	$f2			; \ Write the new buffer address.
+	mov	$f3, y			; / This is safe to do because writes are currently disabled.
+
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	mov	y, a
+	cmp	$15, #$FF		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	bne	+
+	bbs	!NCKValue.5, ++		;Don't clear if we're not using it.
+	mov	y, #$04
+	decw	$14
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	bra	++
++
+
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
+++
 	mov	a, !EchoDelay
-	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
-	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the EDL DSP register.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	movw	$14, ya			; Consume at least eight cycles per iteration. 
@@ -2634,26 +2657,9 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
 	dbnz	$14, -
 +
-	
-	pop	y			; \
-	mov	a, #$6d			; | Write the new buffer address.
-	movw	$f2, ya			; / 
-	
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
-	
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	$14, #$00
-	mov	$15, y
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
 	bra	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
 	
 ; dispatch vcmd in A
