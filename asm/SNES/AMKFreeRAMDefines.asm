@@ -1,5 +1,5 @@
 ;AddmusicK FreeRAM Defines
-;For AddmusicK 1.0.12 Alpha (as of 4/27/2026)
+;For AddmusicK 1.0.12 Alpha (as of TBD)
 
 !FreeRAM		= $7FB000
 !CurrentSong		= !FreeRAM+$00
@@ -12,7 +12,4 @@
 !SPCOutput4		= !FreeRAM+$08
 !Trick			= !FreeRAM+$09
 !SampleCount		= !FreeRAM+$0A
-!MusicMirHi		= !FreeRAM+$0B
-!MusicBackupHi		= !FreeRAM+$0C
-!SRCNTableBuffer	= !FreeRAM+$0D
-
+!SRCNTableBuffer	= !FreeRAM+$0B
