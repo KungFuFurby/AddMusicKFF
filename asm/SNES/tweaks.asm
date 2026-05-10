@@ -307,18 +307,12 @@ org $00A6ED
 Skip8:
 
 org $00E2EB
-	BRA Skip9 : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	NOP
-	NOP : NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP : NOP
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
+	BRA Skip9
+		;Just write a bunch of NOPs up until we reach $00E308.
+		;We automate this using a padding operation.
+assert pc() <= $00E308
+padbyte $EA
+pad $00E308
 Skip9:
 
 org $01C585	; 13 bytes
