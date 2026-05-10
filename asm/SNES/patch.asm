@@ -920,12 +920,20 @@ StoreToMusicBackupLoHi:
 
 ;We're out of space for inserting hijack code, so some of it will reside in AddmusicK's reserved space instead.
 
+;Some hijacks will not be making an appearance if Yoshifanatic's Overworld Revolution is present.
+!YoshifanaticOverworldRevolutionPresent = !false
+if read4($048000) == $524F4659 ; "YFOR"
+!YoshifanaticOverworldRevolutionPresent = !true
+endif
+
+if !YoshifanaticOverworldRevolutionPresent == !false
 OverworldMusicHijack:
 	LDA.L OverworldMusicArrayLo, X
 	STA $1DFB|!SA1Addr2
 	LDA.L OverworldMusicArrayHi, X
 	STA !MusicMirHi
 	RTL
+endif
 
 LevelMusicHijack:
 	LDA.L LevelMusicArrayLo, X
@@ -1055,12 +1063,14 @@ PrincessSavedHijack:
 	STA !MusicMirHi
 	RTL
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 VoBAppearsHijack:
 	LDA.B #!VoBAppears&$FF
 	STA $1DFB|!SA1Addr2
 	LDA.B #!VoBAppears>>8&$FF
 	STA !MusicMirHi
 	RTL
+endif
 
 StaffRollHijack:
 	LDA.B #!StaffRoll&$FF
