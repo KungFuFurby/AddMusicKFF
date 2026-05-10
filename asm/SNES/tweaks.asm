@@ -45,21 +45,6 @@ org $00D0DD
 	NOP
 
 org $00E2EB
-if !PSwitchIsSFX == !true
-;;; Don't factor in the P-Switch and directional coin timers. Instead, only
-;;; use the star power timer. This is because the P-Switch music is now
-;;; a SFX instance playing with the actual level music.
-	JSL RestoreMusicFromBackup
-else
-	LDA $14AD|!SA1Addr2
-	ORA $14AE|!SA1Addr2
-	ORA $190C|!SA1Addr2
-	BEQ ChangeToPSwitch
-	JSL RestoreMusicFromBackup
-	BRA Skip9
-ChangeToPSwitch:
-	JSL PSwitchHijack
-endif
 	BRA Skip9
 		;Just write a bunch of NOPs up until we reach $00E308.
 		;We automate this using a padding operation.
