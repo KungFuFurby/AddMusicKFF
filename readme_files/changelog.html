@@ -258,12 +258,13 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.12 Beta Version X Fork - 2026-04-27</h2>
+	<h2>Version 1.0.12 Beta Version X Fork - 2026-05-09</h2>
 	<ul>
 	<li>Overall
 		<ul>
 		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
-		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. Note that you'll probably have to do some additional ASM work on the vanilla ROM to access IDs above $FF, and higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations." - KungFuFurby</li>
+		<li>"<b>The data version has been incremented here due to a change to Addmusic_list.txt's parsing to support 16-bit song IDs... as well as a larger-than-usual potential of partial patch breakage, though except for the fade command, most cases will merely truncate to 8 bits instead until the ASM is adjusted.</b>" - KungFuFurby</li>
+		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. <b>There are a lot of hijack changes involved here, including some new ones. Higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations, and any patch that wants to access song IDs above $FF (and/or use the fade command) must be manually adjusted.</b>" - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Gameplay
@@ -296,6 +297,7 @@
 		<li>"Fixed a bug where the echo buffer size to allocate was not factoring in the $F6 hex command when writing to the EDL DSP register." - KungFuFurby</li>
 		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
 		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
+		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM

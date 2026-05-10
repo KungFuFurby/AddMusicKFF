@@ -41,22 +41,8 @@ endif
 
 !SampleGroupPtrsLoc	= $008000
 
-!FreeRAM		= $7FB000
-!CurrentSong		= !FreeRAM+$00
-!NoUploadSamples	= !FreeRAM+$02
-!SongPositionLow	= !FreeRAM+$05
-!SongPositionHigh	= !FreeRAM+$06
-!SPCOutput1		= !SongPositionLow
-!SPCOutput2		= !SongPositionHigh
-!SPCOutput3		= !FreeRAM+$07
-!SPCOutput4		= !FreeRAM+$08
-;!MusicBackup		= !FreeRAM+$09
-!SampleCount		= !FreeRAM+$0A
-!MusicMirHi		= !FreeRAM+$0B
-!MusicBackupHi		= !FreeRAM+$0C
-!SRCNTableBuffer	= !FreeRAM+$0D
+incsrc "AMKFreeRAMDefines.asm"
 
-!Trick   = !FreeRAM+$09
 !Tricker = !BonusEnd
 
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
@@ -104,15 +90,17 @@ endif
 !SFX1DFCMir = 	$1DFC|!SA1Addr2
 
 !MusicBackup = $0DDA|!SA1Addr2
-
+!MusicBackupHi = $06FF|!SA1Addr2
+!MusicMirHi = $0700|!SA1Addr2
 
 !DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 			; All of these are changed automatically.
 !SongCount = $00	; How many songs exist.  Used by the fading routine; changed automatically.
 
-incsrc "tweaks.asm"			
-			
+incsrc "../UserDefines.asm"
+!true = 1
+!false = 0
 	
 padbyte $55		
 org $0E8000		; Clear out what parts of bank E we can (Lunar Magic install some hacks there).
@@ -186,8 +174,7 @@ End:
 	SEP #$20
 if !PSwitchStarRestart == !true	
 	stz !MusicMir
-	lda #$00
-	sta !MusicMirHi
+	stz !MusicMirHi
 endif
 	CLI
 	PLB
@@ -211,17 +198,25 @@ PlayDirect:
 ;	STA !MusicReg
 ;	LDA !CurrentSong
 ;	STA !MusicBackup
+;	STZ !MusicBackupHi
+;	LDA #$00
+;	STA !CurrentSong+1
 ;	PLA
 ;	STA !CurrentSong
 ;	BRA End
 
 ;	STA !MusicReg
 ;	PHA
+;	LDA !CurrentSong+1
+;	BNE +
 ;	LDA !CurrentSong
 ;	CMP !GlobalMusicCount+1
 ;	BCC +
 ;	STA !MusicBackup
+;	STZ !MusicBackupHi
 ;+
+;	LDA #$00
+;	STA !CurrentSong+1
 ;	PLA
 ;	STA !CurrentSong
 ;	BRA End
@@ -243,7 +238,8 @@ endif
 if !PSwitchStarRestart == !true
 +	lda #$01
 	sta !Trick
-	lda #!Tricker
+	;WARNING: No 16-bit support here
+	lda.b #!Tricker
 	sta !MusicReg
 	bra End
 endif
@@ -316,8 +312,7 @@ EndWithCancel:
 	;;; SEP #$20
 if !PSwitchStarRestart == !false
 	STZ !MusicMir
-	LDA #$00
-	SDA !MusicMirHi
+	STZ !MusicMirHi
 endif
 	JMP End
 	
@@ -393,7 +388,7 @@ endif
 ;	CMP.W #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
-
+;	SEP #$20
 
 
 ;	LDA !MusicMir
@@ -782,10 +777,9 @@ endif
 if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
-	BNE +++
-	JMP .restoreFromStarMusic
-+++
-	BCS .starMusic
+	BCC ++
+	BNE .starMusic
+	JSL RestoreMusicFromBackup
 endif
 ++
 	RTS
@@ -836,10 +830,7 @@ endif
 if !PSwitchIsSFX == !false
 if !PSwitch != $00
 +	SEP #$20
-	LDA #!PSwitch&$FF
-	STA !MusicMir
-	LDA #!PSwitch>>8&$FF
-	STA !MusicMirHi
+	JSL PSwitchHijack
 endif
 ++	RTS
 endif
@@ -853,8 +844,7 @@ endif
 endif
 
 if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && !PSwitch != $00
-	LDA #!PSwitch
-	STA !MusicMir
+	JSL PSwitchHijack
 endif
 ++
 	RTS
@@ -878,26 +868,13 @@ if !PSwitchStarRestart == !true
 	bne +
 	sep #$20
 	stz !MusicMir
-	lda #$00
-	sta !MusicMirHi
+	stz !MusicMirHi
 	rts
 endif
 
 +	SEP #$20
-	LDA #!Starman&$FF
-	STA !MusicMir
-	LDA #!Starman>>8&$FF
-	STA !MusicMirHi
+	JSL StarmanHijack
 ++	RTS
-
-	
-.restoreFromStarMusic
-	LDA !MusicBackup
-	STA !MusicMir
-	LDA !MusicBackupHi
-	STA !MusicMirHi
-+
-	RTS
 endif
 
 if !PSwitchStarRestart == !true
@@ -917,8 +894,236 @@ SkipPowStar:
 	sep #$20
 	rts
 endif
+
+RestoreMusicFromBackup:
+	LDA !MusicBackup
+	STA !MusicMir
+	LDA !MusicBackupHi
+	STA !MusicMirHi
+	RTL
+
+CheckMusicBackupForFF:
+	LDA $0DDA|!SA1Addr2
+	CMP #$FF
+	BNE +
+	LDA !MusicBackupHi
+	CMP #$FF
++
+	RTL
+
+SetMusicBackupToFF:
+	LDA #$FF
+StoreToMusicBackupLoHi:
+	STA $0DDA|!SA1Addr2
+	STA !MusicBackupHi
+	RTL
+
+;We're out of space for inserting hijack code, so some of it will reside in AddmusicK's reserved space instead.
+
+OverworldMusicHijack:
+	LDA.L OverworldMusicArrayLo, X
+	STA $1DFB|!SA1Addr2
+	LDA.L OverworldMusicArrayHi, X
+	STA !MusicMirHi
+	RTL
+
+LevelMusicHijack:
+	LDA.L LevelMusicArrayLo, X
+	STA $0DDA|!SA1Addr2
+	LDA.L LevelMusicArrayHi, X
+	STA !MusicBackupHi
+	RTL
+
+RescueEggHijack:
+	LDA.B #!RescueEgg&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!RescueEgg>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+TitleHijack:
+	LDA.B #!Title&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Title>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+CastleDestructionFanfareHijack:
+	LDA.B #!CastleDestructionFanfare&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!CastleDestructionFanfare>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BonusEndHijack:
+	LDY.B #!BonusEnd&$FF
+	STY $1DFB|!SA1Addr2
+	LDY.B #!BonusEnd>>8&$FF
+	STY !MusicMirHi
+	RTL
+
+IrisOutHijack:
+	LDA.B #!IrisOut&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!IrisOut>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+GameOverHijack:
+	LDA.B #!GameOver&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!GameOver>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+if !PSwitchIsSFX == !false
+PSwitchHijack:
+	LDA.B #!PSwitch&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!PSwitch>>8&$FF
+	STA !MusicMirHi
+	RTL
+endif
+
+StageClearHijack:
+	LDA.B #!StageClear&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!StageClear>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+MissHijack:
+	LDA.B #!Miss&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Miss>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BossClearHijack:
+	LDA.B #!BossClear&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BossClear>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+StarmanHijack:
+	LDA.B #!Starman&$FF
+	STA !MusicMir
+	LDA.B #!Starman>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+KeyholeHijack:
+	LDA.B #!Keyhole&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Keyhole>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserZoomOutHijack:
+	LDA.B #!BowserZoomOut&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserZoomOut>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserIntrludeHijack:
+	LDA.B #!BowserIntrlude&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserIntrlude>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserZoomInHijack:
+	LDA.B #!BowserZoomIn&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserZoomIn>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserDefeatedHijack:
+	LDA.B #!BowserDefeated&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserDefeated>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+PrincessSavedHijack:
+	LDA.B #!PrincessSaved&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!PrincessSaved>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+VoBAppearsHijack:
+	LDA.B #!VoBAppears&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!VoBAppears>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+StaffRollHijack:
+	LDA.B #!StaffRoll&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!StaffRoll>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+YoshisAreHomeHijack:
+	LDA.B #!YoshisAreHome&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!YoshisAreHome>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+CastListHijack:
+	LDA.B #!CastList&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!CastList>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+if !WelcomeSongOverride == !true
+WelcomeHijack:
+	LDA.B #!Welcome&$FF
+	STA $0DDA|!SA1Addr2
+	LDA.B #!Welcome>>8&$FF
+	STA !MusicBackupHi
+	RTL
+endif
+
+if !BowserSongOverride == !true
+BowserHijack:
+	LDA.B #!Bowser&$FF
+	STA $0DDA|!SA1Addr2
+	LDA.B #!Bowser>>8&$FF
+	STA !MusicBackupHi
+	RTL
+endif
+
+BowserExtraMusicSFXArrayHi:
+	db $2E,$2F,$30,$31,$32,$33,$34,!Bowser2>>8&$FF,!Bowser3>>8&$FF
+
+BowserExtraMusicSFXHijack:
+	PHX
+	TYX
+	LDA.L BowserExtraMusicSFXArrayLo, X
+	STA $1DFB|!SA1Addr2
+	LDA.L BowserExtraMusicSFXArrayHi, X
+	STA !MusicMirHi
+	PLX
+	RTL
+
+NintPresentsHijack:
+	LDA.B #!NintPresents&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!NintPresents>>8&$FF
+	STA !MusicMirHi
+	RTL
 	
 pushpc
+
+incsrc "tweaks.asm"
 
 incsrc "SongSampleList.asm"
 
