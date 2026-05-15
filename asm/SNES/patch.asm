@@ -338,7 +338,7 @@ endif
 	LDA !MusicMir
 	CMP #!SongCount
 	BCC +
-	LDA #$FF
+	ORA #$80
 	JMP Fade
 +
 ;	REP #$30
