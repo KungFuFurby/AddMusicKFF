@@ -22,7 +22,7 @@
 
 #define AMKVERSION 1
 #define AMKMINOR 0
-#define AMKREVISION 11		// // //
+#define AMKREVISION 12		// // //
 
 #define PARSER_VERSION 4			// Used to keep track of incompatible changes to the parser
 
@@ -57,7 +57,8 @@ class SampleGroup;
 //extern ROM rom;
 extern std::vector<uint8_t> rom;
 
-extern Music musics[256];
+//extern Music musics[256];
+extern std::map<int, Music> musics;
 //extern Sample samples[256];
 extern std::vector<Sample> samples;
 extern SoundEffect *soundEffects[2];	// soundEffects[2][256];

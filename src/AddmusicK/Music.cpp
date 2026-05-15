@@ -70,6 +70,7 @@ static bool usingHTranspose;
 static int hexLeft = 0;
 static int currentHex = 0;
 static int currentHexSub = -1;
+static int currentDSPRegister = -1;
 
 //static int tempLoopLength;		// How long the current [ ] loop is.
 //static int e6LoopLength;		// How long the current $E6 loop is.
@@ -176,6 +177,7 @@ Music::Music()
 	echoBufferSize = 0;
 	echoBufferAllocVCMDIsSet = false;
 	hasEchoBufferCommand = false;
+	usesEcho = false;
 	noteParamaterByteCount = 0;
 
 	//if (validateHex)		// Allow space for the buffer reservation header.
@@ -1516,6 +1518,9 @@ void Music::parseHFDHex()
 				}
 				else
 				{
+					if (reg == 0x2C || reg == 0x3C || reg == 0x0D || reg == 0x4D || (reg & 0x0F) == 0x0F) {
+						usesEcho = true;
+					}
 					append(0xF6);
 					append(reg);
 					append(val);
@@ -1524,6 +1529,11 @@ void Music::parseHFDHex()
 			else
 			{
 				songTargetProgram = 1;		// The HFD header bytes indicate this as being an AM4 song, so it gets AM4 treatment.
+				if (reg == 0x7D) {
+					// Set a base echo buffer allocation size based off of the EDL DSP register value that is used.
+					val &= 0xF;
+					echoBufferSize = std::max(echoBufferSize, val);
+				}
 			}
 			hexLeft = 0;
 		}
@@ -1797,6 +1807,11 @@ void Music::parseHexCommand()
 				currentHexSub = i;
 			}
 			
+			if (hexLeft == 1 && currentHex == 0xF6)
+			{
+				currentDSPRegister = i;
+			}
+			
 			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x7F)
 			{
 				//Hot patches require that the $FA $04 VCMD be generated afterwards, not prior.
@@ -1966,11 +1981,34 @@ void Music::parseHexCommand()
 				if (optimizeSampleUsage)
 					usedSamples[i] = true;
 			}
+			
+			if (hexLeft == 0 && (currentHex == 0xEF || currentHex == 0xF2 || currentHex == 0xF5)) {
+				usesEcho = true;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x04) {
+				usesEcho = true;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xF6)
+			{
+				if (currentDSPRegister == 0x7D)
+				{
+					i &= 0xF;
+					echoBufferSize = std::max(echoBufferSize, i);
+					usesEcho = true;
+				}
+				if (currentDSPRegister == 0x2C || currentDSPRegister == 0x3C || currentDSPRegister == 0x0D || currentDSPRegister == 0x4D || currentDSPRegister == 0x6D || (currentDSPRegister & 0x0F) == 0x0F || ((currentDSPRegister == 0x6C) && ((i & 0x20) != 0))) {
+					usesEcho = true;
+				}
+			}
 
 			if (hexLeft == 2 && currentHex == 0xF1)
 			{
+				i &= 0xF;
 				echoBufferSize = std::max(echoBufferSize, i);
 				hasEchoBufferCommand = true;
+				usesEcho = true;
 			}
 
 			if (currentHex == 0xDA && songTargetProgram == 1)			// If this was the instrument command
@@ -2005,9 +2043,14 @@ void Music::parseHexCommand()
 				}
 			}
 
-			if (hexLeft == 0 && currentHex == 0xF4)
-			if (i == 0x00 || i == 0x06 || i == 0x0C)
-				hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
+			if (hexLeft == 0 && currentHex == 0xF4) {
+				if (i == 0x00 || i == 0x06 || i == 0x0C) {
+					hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
+				}
+				if (i == 0x03) {
+					usesEcho = true;
+				}
+			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
 			{
@@ -3017,7 +3060,14 @@ void Music::pointersFirstPass()
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}
-		if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
+		if (!usesEcho) {
+			//Echo is not used. Force it to be disabled.
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x80);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
 			//Just put the VCMD in its default place: no need to move it around.
 			//In particular, the $F1 command means that echo writes have been enabled, meaning the special case is irrelevant.
 			data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
@@ -3305,14 +3355,14 @@ void Music::pointersFirstPass()
 		statStrStream << "FREE ARAM (APPROXIMATE):		0x" << hex4 << 0x10000 - (echoBufferSize << 11) - spaceUsedBySamples - totalSize - programUploadPos << "\n\n";
 	else
 		statStrStream << "FREE ARAM (APPROXIMATE):		UNKNOWN\n\n";
-	statStrStream << "CHANNEL 0 TICKS:			0x" << hex4 << channelLengths[0] << "\n";
-	statStrStream << "CHANNEL 1 TICKS:			0x" << hex4 << channelLengths[1] << "\n";
-	statStrStream << "CHANNEL 2 TICKS:			0x" << hex4 << channelLengths[2] << "\n";
-	statStrStream << "CHANNEL 3 TICKS:			0x" << hex4 << channelLengths[3] << "\n";
-	statStrStream << "CHANNEL 4 TICKS:			0x" << hex4 << channelLengths[4] << "\n";
-	statStrStream << "CHANNEL 5 TICKS:			0x" << hex4 << channelLengths[5] << "\n";
-	statStrStream << "CHANNEL 6 TICKS:			0x" << hex4 << channelLengths[6] << "\n";
-	statStrStream << "CHANNEL 7 TICKS:			0x" << hex4 << channelLengths[7] << "\n\n";
+	statStrStream << "CHANNEL 0 TICKS:			" << channelLengths[0] << "\n";
+	statStrStream << "CHANNEL 1 TICKS:			" << channelLengths[1] << "\n";
+	statStrStream << "CHANNEL 2 TICKS:			" << channelLengths[2] << "\n";
+	statStrStream << "CHANNEL 3 TICKS:			" << channelLengths[3] << "\n";
+	statStrStream << "CHANNEL 4 TICKS:			" << channelLengths[4] << "\n";
+	statStrStream << "CHANNEL 5 TICKS:			" << channelLengths[5] << "\n";
+	statStrStream << "CHANNEL 6 TICKS:			" << channelLengths[6] << "\n";
+	statStrStream << "CHANNEL 7 TICKS:			" << channelLengths[7] << "\n\n";
 	if (knowsLength)
 	{
 		statStrStream << "SONG INTRO LENGTH IN SECONDS:		" << std::dec << introSeconds << "\n";
@@ -3328,19 +3378,7 @@ void Music::pointersFirstPass()
 
 	statStr = statStrStream.str();
 
-	std::string fname = name;
-
-	int extPos = fname.find_last_of('.');
-	if (extPos != -1)
-		fname = fname.substr(0, extPos);
-
-	if (fname.find('/') != -1)
-		fname = fname.substr(fname.find_last_of('/') + 1);
-	else if (fname.find('\\') != -1)
-		fname = fname.substr(fname.find_last_of('\\') + 1);
-	fname = "stats/" + fname + ".txt";
-
-	writeTextFile(fname, statStr);
+	writeTextFile(statFName, statStr);
 }
 
 void Music::parseDefine()

@@ -36,6 +36,7 @@ public:
 
 	std::string name;
 	std::string pathlessSongName;
+	std::string statFName;
 	std::vector<uint8_t> data[9];
 	std::vector<unsigned short> loopLocations[9];	// With remote loops, we can have remote loops in standard loops, so we need that ninth channel.
 	bool playOnce;
@@ -68,6 +69,7 @@ public:
 	std::vector<unsigned short> mySamples;
 	//int mySampleCount;
 	int echoBufferSize;
+	bool usesEcho;
 	bool hasEchoBufferCommand;
 	bool echoBufferAllocVCMDIsSet;
 	unsigned short echoBufferAllocVCMDLoc;

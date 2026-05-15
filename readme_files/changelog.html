@@ -230,15 +230,59 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.11 Alpha - 2024-03-12</h2>
+	<h2>Version 1.0.11 - 2024-07-01</h2>
 	<ul>
 	<li>Overall
 		<ul>
 		<li>"The asar version has been updated from 1.81 to 1.91. The code and DLL integrations have also been updated accordingly to account for any changes and deprecations that have occurred between these versions." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>Gameplay
+		<ul>
+		<li>"Fixed a bug where enabling NMI during V-Blank would cause graphical interferences, such as messing up HDMA." - Yoshifanatic</li>
+		</ul>
+	</li>
+	<li>Music MML Parser
+		<ul>
+		<li>"Removed the hex markers from the tick counters in the stats .txt file outputs for the music." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"Fixed a regression where an if statement was being misrecognized as a label due to being put after an && marker." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"This version alleviates some of the slowdown in SFX and CPUIO register polling caused by higher tempos and/or frequent pitch bends in the music." - KungFuFurby</li>
+		</ul>
+	</li>
+	</ul>
+	<h2>Version 1.0.12 Alpha - 2026-05-15</h2>
+	<ul>
+	<li>Overall
+		<ul>
+		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Gameplay
+		<ul>
+		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Built-In Original Songs
+		<ul>
+		<li>"Fixed a bug where the Bowser Defeated song was using an incorrect pitch bend length for one of its notes." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>Documentation
+		<ul>
+		<li>"Updated the UberASM section to cover both pre-V2.0 and post-V2.0." - MarioFanGamer</li>
+		</ul>
+	</li>
 	<li>Music Hex Commands
 		<ul>
+		<li>"The $FA $04 command has been modified so that setting the highest bit will now directly disable echo writes. <b>This obsoletes a hot patch bit! (Namely, the one that that would disables echo writes when setting up the echo buffer through $FA $04.)</b>" - KungFuFurby</li>
 		<li>"Added the ability to explicitly switch back to the SMW Velocity Table through the $F4 $0A hex command." - KungFuFurby</li>
 		<li>"Added the ability to explicitly switch on and off the Yoshi Drums for a channel through the $F4 $0C and $F4 $0D hex commands."- KungFuFurby</li>
 		<li>"Added the ability to explicitly switch on and off echo for a channel through the $F4 $0E and $F4 $0F hex commands."- KungFuFurby</li>
@@ -253,8 +297,35 @@
 		<li>"Added loop breaks and superloop breaks through the $F4 $21-$23 hex commands. They can also be toggled, enabled, or disabled through the $F4 $25-$27 hex commands." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>Music MML Parser
+		<ul>
+		<li>"Corrected a stack fault that was causing nested if statements to result in a segmentation fault during preprocessing." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC & ROM Compilation
+		<ul>
+		<li>"All sample group pointers are now deduplicated prior to being compiled for a ROM." - KungFuFurby</li>
+		<li>"Fixed a bug where SFX ASM were generating incorrect pointers within the ASM." - KungFuFurby</li>
+		<li>"Fixed a bug where a zero pointer was generated in SFX if #jsr was used, but no #asm sections were defined at all." - KungFuFurby</li>
+		<li>"Fixed a bug where the echo buffer size to allocate was not factoring in the $F6 hex command when writing to the EDL DSP register." - KungFuFurby</li>
+		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
+		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
+		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
+		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
+		<li>"If a zero EDL buffer is being used, it is now required that the last $100 bytes of ARAM be reserved for it due to $FF00-$FF03 being occupied to prevent data loss due to the echo buffer overwriting those four bytes." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
+		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
+		<li>"Fixed a bug where glissando was failing to do its first semitone addition with the hot patch disabled when SFX was played on top of the first note." - KungFuFurby</li>
+		<li>"Fixed a bug where encountering the $DD command outside of readahead would crash the sound driver due to a zero pointer." - KungFuFurby</li>
+		<li>"All DSP registers are now initialized on boot rather than just a selection of them, to prevent uninitialized values from causing side effects." - KungFuFurby</li>
+		<li>"Fixed a bug where the echo volume was not zeroed out prior to calling the loader, sometimes causing clicks while loading new data." - KungFuFurby</li>
+		</ul>
+	</li>
 	</ul>
-
 	<br><br>
 	
 

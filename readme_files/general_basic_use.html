@@ -146,8 +146,26 @@
 	
 	<br><br><h2><a id="ItAlwaysBuggedMeWhenSkyLevelsSoundedLikeTheyTakePlaceInACaveBecauseOfTheSongTheyUsed">My sound effects aren't echoing correctly!</a></h2>
 	By default AddmusicK disables echo for sound effects.  This is so that, for example, if you're using a song in a sky level, and that song uses an echo effect, your sound effects won't also echo and sound weird.  To turn echo on, here is what you do:
-	<ol><li>Download uberASM from SMWCentral's <a href="http://www.smwcentral.net/?p=section&s=smwpatches">patches</a> section.</li>
-	<li>In the "code" folder, open up "level_init_code.asm"</li>
+	<ol><li>Download <a href="https://www.smwcentral.net/?p=section&a=details&id=39036">UberASM Tool</a> from SMWCentral or from its <a href="https://github.com/Fernap/UberASMTool">GitHub repository</a>.</li>
+	<li>Open up the "levels" folder and create a file with the ".asm" extension (it could be any name but "enable_sfx_echo.asm" is the most straightforward one). Make sure that when you change the extension, you have it enabled in your file viewer, else you still get a ".txt" file but isn't shown to you.</li>
+	<li>Open up the file and paste the following code:<br><code>
+init:<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LDA #$06<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STA $1DFA|!addr<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTL<br>
+</code></li>
+	<li>Open up UberASM Tool's "list.txt" and add it to all levels which should have an echo enabled by putting the level number and name of the ASM file under the "level:" label. For example, for level 105, you add "105 enable_sfx_echo.asm" (without quotes) below "level:". You can als insert multiple codes into a single level by appending a code to the existing entry (e.g. "105 example.asm enable_sfx_echo.asm") or enable echo for all levels by entering a "*" instead of a number for the level number.</li></ol><br>
+	And that's it! You can repeat step 4 for any other level.
+	
+	<br><br>Keep in mind that pre-2.0 UberASM doesn't support multiple codes per level and so all the code has to be added to a single file instead. One potential solution is to copy the following code:<br><code>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LDA #$06<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STA $1DFA|!addr<br></code>
+	And paste it to the level code right after the "init:" label. This may end up in duplicate code in the final ROM in case the same code runs in levels and only one needs to have echo enabled but in general, the increased use of code space is limited and optimisations are only needed in case you run out of space.
+	<br>
+	Likewise, there is no way to run code for all levels directly. One solution is to run the code for a specific game mode. The steps are similar to inserting code for a single level, only you place it below "gamemode:", and instead of the level number, you enter either 12 (the game mode where the level is loaded, particularly its graphics) or 13 (the game mode  of the level fade in) for the entry number.
+
+	<br><br>In case you use the old UberASM patch, you need to do the following steps instead:
+	<ol><li>In the "code" folder, open up "level_init_code.asm"</li>
 	<li>You should see a bunch of labels that look like "<code>levelinit0</code>", "<code>levelinit1</code>", etc.  Go to the label that corresponds to the level you want echoey sound effects in.  For example, for level 105 you'd go to "<code>levelinit105</code>".
 	<li>Insert this code <i>after</i> the label but <i>before</i> the <code>RTS</code>:<br><code>
 	LDA #$06<br>
@@ -161,11 +179,9 @@ levelinit105:<br>
 levelinit106:<br>
 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTS<br>
 </code><br>
-	(etc.)
+	(etc.)</li></ol>
 	<br>
-	
-	<br></li>
-	<li>And that's it!  Patch uberASM to your hack, and just repeat steps 2 - 5 for any level in which you want sound effects to echo.</li></ol>
+	And that's it!  Patch uberASM to your hack, and just repeat these steps for any level in which you want sound effects to echo.
 	
 	<br><br><h2><a id="StickToSlowerTemposGuys">This song seems to be slowing down randomly...</a></h2>
 	Add the text "#halvetempo" (without the quotes) at the top of the song's text file before anything else.  Note that this may not work for all songs, however.
