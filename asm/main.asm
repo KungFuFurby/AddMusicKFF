@@ -257,10 +257,7 @@ L_0573:
 	beq   L_058D
 	
 SoundTickOn:
-	mov   a, !PauseMusic
-	bne   L_0586
 	call  ProcessAPU2Input		; Also handles playing the current music.
-L_0586:
 	mov   x, #$02
 	call  ReadInputRegister             ; read/send APU2
 	
@@ -1986,9 +1983,13 @@ PauseMusic:
 	mov !PauseMusic, a
 	
 	set1  !NCKValue.6	; Set the mute flag.
+if !noSFX == !false
 	;ModifyNoise, called when restoring the noise frequency, will handle
 	;setting the FLG DSP register.
 	ret
+else
+	jmp SetFLGFromNCKValue
+endif
 
 if !noSFX == !false && !useSFXSequenceFor1DFASFX == !false
 ;
@@ -2240,7 +2241,7 @@ if !noSFX == !false
 	mov	a, $1d		
 	eor	a, #$ff		
 	;mov	y, #$5c
-	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here. (goto L_0586?)
+	jmp	KeyOffVoices		; Set the key off for each voice to ~$1D.  Note that there is a ret in DSPWrite, so execution ends here.
 else
 	and	!NCKValue, #$20		; \ Disable mute and reset, reset the noise clock, keep echo off.
 	call	ModifyNoise		; /
@@ -2279,6 +2280,8 @@ ProcessAPU2Input:
 	beq	L_0BE7
 	jmp	PlaySong             ; play song in A
 L_0BE7:
+	mov	a, !PauseMusic
+	bne	L_0BEF
 	mov	a, $0c
 	bne	L_0BFE
 	mov	a, $06
@@ -2429,8 +2432,6 @@ HandleArpeggioInterrupt:
 .anythingGoes
 	mov	!PreviousNote+x, a	; Save the current note pitch.  The arpeggio command needs it.
 +
-	mov	a, $10
-	bne	L_0CB3
 	cmp	y, #$c6			; \ Ties and rests shouldn't affect anything arpeggio related.
 	bcs	+			; /
 	mov	a, !ArpNoteCount+x	; \ If there's currently an arpeggio playing (which handles its own notes)...
@@ -2451,6 +2452,8 @@ HandleArpeggioInterrupt:
 	mov	!ArpCurrentDelta+x, a	; | If we're turning it off, then reset the delta.
 +
 .glissandoOver
+	mov	a, $10
+	bne	L_0CB3
 	mov	a, y			; / And actually play the next note.
 	call	NoteVCMD             ; handle note cmd if vbit 1D clear
 .glissandoIsStillOn
@@ -2732,6 +2735,32 @@ FetchVoiceXAndZeroA:
 ; vcmd F2: echo volume fade
 ; vcmd F0: disable echo
 ; vcmd F1: set echo delay, feedback, filter
+
+cmdDDFromReadahead:
+	call	L_1260
+	call	GetCommandDataFast
+
+cmdDD:					; Pitch bend
+if !noSFX == !false
+	mov	a, $48					; \ 
+	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
+	beq	L_10FB					; /
+-
+	call	L_1260
+	jmp	L_1260
+endif
+L_10FB:
+	mov	$91+x, y				; \ Get the $DD parameters.
+	call	GetCommandDataFast			; |
+	mov	$90+x, a				; |
+	call	GetCommandDataFast			; /
+	clrc
+	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
+	clrc
+	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
 
 ; calculate portamento delta
 CalcPortamentoDelta:
@@ -3279,31 +3308,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
-if !noSFX == !false
-	mov	a, $48					; \ 
-	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
-	beq	L_10FB					; /
-	mov	$10, #$04
-L_10F3:
-	call	L_1260
-	dbnz	$10, L_10F3
-	bra	L_1111
-endif
-L_10FB:
-	call	L_1260					; \ 
-	call	GetCommandDataFast			; |
-	mov	$91+x, a				; | Get the $DD parameters.
-	call	GetCommandDataFast			; |
-	mov	$90+x, a				; |
-	call	GetCommandDataFast			; /
-	clrc
-	adc	a, $43
-cmdDDAddHTuneValuesGate:
-	bra	cmdDDAddHTuneValuesSkip
-	clrc
-	adc	a, !HTuneValues+x
-cmdDDAddHTuneValuesSkip:
-	call	CalcPortamentoDelta
+	call	cmdDDFromReadahead
 L_1111:
 	call	L_09CDWPreCheck
 L_1133:
