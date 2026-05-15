@@ -2085,8 +2085,8 @@ void Music::parseHexCommand()
 				if (i == 0x00 || i == 0x06 || i == 0x0C) {
 					hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
 				}
-				else if (i == 0x03) {
-					usesEcho = true;
+				else if (i == 0x03 || i == 0x0E) {
+					usesEcho = true; // NOTE: VCMD 0x0F also deals with echo, but it always disables them, hence there is no reason to have this trigger the echo check.
 				}
 				//Convert VCMD IDs from Codec's AMK Beta
 				else if (i == 0x0a && targetAMKVersion == 3) {
