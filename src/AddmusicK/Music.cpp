@@ -2044,11 +2044,11 @@ void Music::parseHexCommand()
 			}
 
 			if (hexLeft == 0 && currentHex == 0xF4) {
-				if (i == 0x00 || i == 0x06) {
-					hasYoshiDrums = true;
+				if (i == 0x00 || i == 0x06 || i == 0x0C) {
+					hasYoshiDrums = true; // NOTE: VCMD 0x0D also deals with Yoshi Drums, but it always disables them, hence there is no reason to have this trigger the Yoshi Drum check.
 				}
-				if (i == 0x03) {
-					usesEcho = true;
+				if (i == 0x03 || i == 0x0E) {
+					usesEcho = true; // NOTE: VCMD 0x0F also deals with echo, but it always disables them, hence there is no reason to have this trigger the echo check.
 				}
 			}
 
