@@ -559,8 +559,22 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>AddmusicM</td>
 			</tr>
 			<tr>
-				<td>$0163-$0165</td>
-				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
+				<td>$0163</td>
+				<td>The sample ID that the special pulse wave uses.</td>
+				<td>N/A</td>
+				<td>New</td>
+			</tr>
+			<tr>
+				<td>$0164</td>
+				<td>Counter for the special pulse wave tempo ticker: a de-facto oscillation position variable.</td>
+				<td>N/A</td>
+				<td>AddmusicM<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
+			</tr>
+			<tr>
+				<td>$0165</td>
+				<td>Amount to shift the special wave width per 256/x timer 0 ticks. Yes, this is a tempo value independent of the SFX and music tempos.</td>
+				<td>N/A</td>
+				<td>AddmusicM<br>(NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
 			</tr>
 			<tr>
 				<td>$0166</td>
@@ -587,7 +601,17 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>AddmusicK<br>(Moved from $0167 in AddmusicM, but only from where it outputs: the music tempo tick usage doesn't carry over here)</td>
 			</tr>
 			<tr>
-				<td>$016A-$016F</td>
+				<td>$016A</td>
+				<td>Fractional counter for the special pulse wave tempo ticker.</td>
+				<td>N/A</td>
+				<td>New<br>(Moved from $0163 in AddmusicM. NOTE: Skipped over earlier versions of AddmusicK until the latest version)</td>
+			</tr>
+			<tr>
+				<td>$016B</td>
+				<td>Number of special pulse wave tempo ticks remaining to process.</td>
+			</tr>
+			<tr>
+				<td>$016C-$016F</td>
 				<td colspan="3"><div style="text-align:center; font-weight: bold;">Unused.</div></td>
 			</tr>
 			<tr>
@@ -1193,19 +1217,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$0163</td>
 				<td>Fractional counter for the special pulse wave tempo ticker.</td>
 				<td>N/A (New)</td>
-				<td>N/A (Was not reimplemented into AddmusicK)</td>
-			</tr>
-			<tr>
-				<td>$0164</td>
-				<td>Counter for the special pulse wave tempo ticker: a de-facto oscillation position variable.</td>
-				<td>N/A (New)</td>
-				<td>N/A (Was not reimplemented into AddmusicK)</td>
-			</tr>
-			<tr>
-				<td>$0165</td>
-				<td>Amount to shift the special wave width per 256/x timer 0 ticks. Yes, this is a tempo value independent of the SFX and music tempos.</td>
-				<td>N/A (New)</td>
-				<td>N/A (Was not reimplemented into AddmusicK)</td>
+				<td>$016A</td>
 			</tr>
 			<tr>
 				<td>$0167</td>
@@ -1227,7 +1239,7 @@ Romi's Addmusic (Addmusic404)'s custom code used no new memory locations, and th
 				<td>$2450-$247C<br><i>(stored within a sample directory table)</i></td>
 				<td>The special pulse wave BRR sample.</td>
 				<td>N/A (New)</td>
-				<td>N/A (Was not reimplemented into AddmusicK)</td>
+				<td>N/A (Location is no longer stable, and the sample is no longer guaranteed to exist in every build)</td>
 			</tr>
 		</table>
 

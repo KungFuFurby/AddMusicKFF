@@ -48,8 +48,8 @@
 
 #AMM
 {
+	"SPECIALWAVE.brr"!
 	"EMPTY.brr"!
-	"EMPTY.brr"
 	"EMPTY.brr"
 	"EMPTY.brr"
 	"EMPTY.brr"
