@@ -37,21 +37,8 @@ endif
 
 !SampleGroupPtrsLoc	= $008000
 
-!FreeRAM		= $7FB000
-!CurrentSong		= !FreeRAM+$00
-!NoUploadSamples	= !FreeRAM+$01
-!CurrentSongGroup	= !FreeRAM+$02
-!SongPositionLow	= !FreeRAM+$04
-!SongPositionHigh	= !FreeRAM+$05
-!SPCOutput1		= !SongPositionLow
-!SPCOutput2		= !SongPositionHigh
-!SPCOutput3		= !FreeRAM+$06
-!SPCOutput4		= !FreeRAM+$07
-;!MusicBackup		= !FreeRAM+$08
-!SampleCount		= !FreeRAM+$09
-!SRCNTableBuffer	= !FreeRAM+$0A
+incsrc "AMKFreeRAMDefines.asm"
 
-!Trick   = !FreeRAM+$08
 !Tricker = !BonusEnd
 
 ; FREERAM requires anywhere between 2 to potentially 1032 bytes of unused RAM (though somewhere in the range of, say, 100 is much more likely).
@@ -432,7 +419,12 @@ endif
 	
 	LDA !NoUploadSamples
 	BEQ +
-	NOP #3			; Missing waiting cycles after UploadSPCData added
+	;$2141 is still outputting a $BB, courtesy of acknowledging that it
+	;is ready for a data transfer. This is zeroed out upon the
+	;completion of the transfer, so wait for that to happen first.
+-:
+	LDA $2141
+	BNE -
 	JMP SPCNormal
 +
 	
@@ -606,8 +598,12 @@ NoMoreSamples:
 	STA $03				; |
 	JSL UploadSPCDataDynamic	; /
 	SEP #$20
-	NOP #11				; Needed to waste time. 10817b
-					; On ZSNES it works with only 4 NOPs because...ZSNES.
+	;$2141 is still outputting a $BB, courtesy of acknowledging that it
+	;is ready for a data transfer. This is zeroed out upon the
+	;completion of the transfer, so wait for that to happen first.
+-:
+	LDA $2141
+	BNE -
 	JMP SkipSPCNormal
 	
 					; Time to get the SPC out of its loop.
@@ -626,9 +622,14 @@ else					; |
 endif					; |
 	STA $02				; | 
 	JSL UploadSPCData		; /
-	
-	NOP #8				; Needed to waste time.
-					; On ZSNES it works with only 4 NOPs because...ZSNES.
+
+	;$2141 is still outputting a $BB, courtesy of acknowledging that it
+	;is ready for a data transfer. This is zeroed out upon the
+	;completion of the transfer, so wait for that to happen first.
+-:
+	LDA $2141
+	BNE -
+
 SPCNormal:				
 	SEP #$30
 	
