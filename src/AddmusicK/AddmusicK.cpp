@@ -41,6 +41,9 @@ void cleanUpTempFiles();
 void generatePNGs();
 
 void checkMainTimeStamps();
+
+std::string genPathlessName(std::string);
+
 bool recompileMain = true;
 
 time_t mostRecentMainModification = 0;		// The most recent modification to any sound effect file, any global song file, any list file, or any asm file
@@ -240,6 +243,7 @@ int main(int argc, char* argv[]) try		// // //
 				printError("Error: The total number of requested music files to compile exceeded 255.", true);
 			musics[firstLocalSong + i].exists = true;
 			musics[firstLocalSong + i].name = textFilesToCompile[i];
+			musics[firstLocalSong + i].pathlessSongName = genPathlessName(musics[firstLocalSong + i].name);
 		}
 	}
 
@@ -545,6 +549,7 @@ void loadMusicList()
 			if (musicFile[i] == '\n' || musicFile[i] == '\r')
 			{
 				musics[index].name = tempName;
+				musics[index].pathlessSongName = genPathlessName(musics[index].name);
 				if (inLocals && justSPCsPlease == false)
 				{
 					openTextFile((std::string("music/") + tempName), musics[index].text);
@@ -1340,60 +1345,87 @@ void fixMusicPointers()
 		}
 		else
 		{
+			//We need to do the memory calculations for the visualization in case the user wants them... even if the memory overflows.
+			musics[i].spaceInfo.songStartPos = songDataARAMPos;
+			musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
+
+			int checkPos = songDataARAMPos + sizeWithPadding;
+			int songDataToSampleTableGap = checkPos % 0x100;
+			int songDataLeftBeforeSampleTableRealignment = (0x100 - songDataToSampleTableGap) % 0x100;
+			
+			if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
+
+			musics[i].spaceInfo.sampleTableStartPos = checkPos;
+
+			checkPos += musics[i].mySamples.size() * 4;
+
+			musics[i].spaceInfo.sampleTableEndPos = checkPos;
+
+			int importantSampleCount = 0;
+			for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
+			{
+				auto thisSample = musics[i].mySamples[j];
+				auto thisSampleSize = samples[thisSample].data.size();
+				bool sampleIsImportant = samples[thisSample].important;
+				if (sampleIsImportant) importantSampleCount++;
+				bool dupSample = false;
+				for (unsigned int k = 0; k < j; k++)
+				{
+					if (thisSample == musics[i].mySamples[k])
+					{
+						dupSample = true;
+						break;
+					}
+				}
+				if (dupSample == false) {
+					musics[i].spaceInfo.individualSampleStartPositions.push_back(checkPos);
+					musics[i].spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
+					musics[i].spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
+
+					checkPos += thisSampleSize;
+				}
+			}
+			musics[i].spaceInfo.importantSampleCount = importantSampleCount;
+
+			int endOfSongAndSampleDataPos = checkPos;
+			
+			if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
+
+			//musics[i].spaceInfo.echoBufferStartPos = checkPos;
+
+			checkPos += musics[i].echoBufferSize << 11;
+
+			//musics[i].spaceInfo.echoBufferEndPos = checkPos;
+
+			musics[i].spaceInfo.echoBufferEndPos = 0x10000;
+			if (musics[i].echoBufferSize > 0)
+			{
+				musics[i].spaceInfo.echoBufferStartPos = 0x10000 - (musics[i].echoBufferSize << 11);
+				musics[i].spaceInfo.echoBufferEndPos = 0x10000;
+			}
+			else
+			{
+				musics[i].spaceInfo.echoBufferStartPos = 0xFF00;
+				musics[i].spaceInfo.echoBufferEndPos = 0xFF04;
+				if (musics[i].usesEcho) {
+					//A zero EDL echo buffer will use four bytes. We'll imply that this will reserve the last 0x100 bytes of memory for this purpose to avoid data loss.
+					checkPos += 0x100;
+				}
+			}
+			
 			if (checkEcho)
 			{
 				std::stringstream statStrStream;
 				statStrStream << "\n" << "LOCAL SONG MEMORY REMAINING STATS..." << "\n";
 				if (justSPCsPlease || verbose)
 					printf("%s\n", musics[i].name.c_str());
-				musics[i].spaceInfo.songStartPos = songDataARAMPos;
-				musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
-
-				int checkPos = songDataARAMPos + sizeWithPadding;
-				int songDataToSampleTableGap = checkPos % 0x100;
-				int songDataLeftBeforeSampleTableRealignment = (0x100 - songDataToSampleTableGap) % 0x100;
 				statStrStream << "SONG DATA LEFT BEFORE SAMPLE TABLE REALIGNMENT: 0X" << hex4 << songDataLeftBeforeSampleTableRealignment << "\n";
 				if (justSPCsPlease || verbose)
 					printf("Song data left before sample table realignment: 0x%X bytes\n", songDataLeftBeforeSampleTableRealignment);
-				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
-
-				musics[i].spaceInfo.sampleTableStartPos = checkPos;
-
-				checkPos += musics[i].mySamples.size() * 4;
-
-				musics[i].spaceInfo.sampleTableEndPos = checkPos;
-
-				int importantSampleCount = 0;
-				for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
-				{
-					auto thisSample = musics[i].mySamples[j];
-					auto thisSampleSize = samples[thisSample].data.size();
-					bool sampleIsImportant = samples[thisSample].important;
-					if (sampleIsImportant) importantSampleCount++;
-					bool dupSample = false;
-					for (unsigned int k = 0; k < j; k++)
-					{
-						if (thisSample == musics[i].mySamples[k])
-						{
-							dupSample = true;
-							break;
-						}
-					}
-					if (dupSample == false) {
-						musics[i].spaceInfo.individualSampleStartPositions.push_back(checkPos);
-						musics[i].spaceInfo.individualSampleEndPositions.push_back(checkPos + thisSampleSize);
-						musics[i].spaceInfo.individialSampleIsImportant.push_back(sampleIsImportant);
-	
-						checkPos += thisSampleSize;
-					}
-				}
-				musics[i].spaceInfo.importantSampleCount = importantSampleCount;
-
-				int endOfSongAndSampleDataPos = checkPos;
 				
-				if (checkPos > 0x10000)
+				if (endOfSongAndSampleDataPos > 0x10000)
 				{
-					int overflowSize = checkPos - 0x10000;
+					int overflowSize = endOfSongAndSampleDataPos - 0x10000;
 					std::cerr << musics[i].name << ": Sample data exceeded total space in ARAM by 0x" << hex4 << overflowSize << " bytes." << std::dec << std::endl;
 					std::cerr << "Without modifying samples, song size must be reduced by at least 0x" << hex4 << (((overflowSize)/0x100)*0x100) + songDataToSampleTableGap << " bytes." << std::dec << std::endl;
 					if (musics[i].echoBufferSize > 0 || musics[i].usesEcho)
@@ -1403,31 +1435,6 @@ void fixMusicPointers()
 					writeTextFile(musics[i].statFName, musics[i].statStr);
 					quit(1);
 				}
-
-				if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;
-
-				//musics[i].spaceInfo.echoBufferStartPos = checkPos;
-
-				checkPos += musics[i].echoBufferSize << 11;
-
-				//musics[i].spaceInfo.echoBufferEndPos = checkPos;
-
-				musics[i].spaceInfo.echoBufferEndPos = 0x10000;
-				if (musics[i].echoBufferSize > 0)
-				{
-					musics[i].spaceInfo.echoBufferStartPos = 0x10000 - (musics[i].echoBufferSize << 11);
-					musics[i].spaceInfo.echoBufferEndPos = 0x10000;
-				}
-				else
-				{
-					musics[i].spaceInfo.echoBufferStartPos = 0xFF00;
-					musics[i].spaceInfo.echoBufferEndPos = 0xFF04;
-					if (musics[i].usesEcho) {
-						//A zero EDL echo buffer will use four bytes. We'll imply that this will reserve the last 0x100 bytes of memory for this purpose to avoid data loss.
-						checkPos += 0x100;
-					}
-				}
-
 
 				if (checkPos > 0x10000)
 				{
@@ -1748,24 +1755,12 @@ void generateSPCs()
 
 				std::string pathlessSongName;
 				if (mode == 0)
-					pathlessSongName = musics[i].name;
+					pathlessSongName = musics[i].pathlessSongName;
 				else if (mode == 1)
-					pathlessSongName = soundEffects[0][i].name;
+					pathlessSongName = genPathlessName(soundEffects[0][i].name);
 				else if (mode == 2)
-					pathlessSongName = soundEffects[1][i].name;
+					pathlessSongName = genPathlessName(soundEffects[1][i].name);
 
-
-				int extPos = pathlessSongName.find_last_of('.');
-				if (extPos != -1)
-					pathlessSongName = pathlessSongName.substr(0, extPos);
-
-
-				if (pathlessSongName.find('/') != -1)
-					pathlessSongName = pathlessSongName.substr(pathlessSongName.find_last_of('/') + 1);
-				else if (pathlessSongName.find('\\') != -1)
-					pathlessSongName = pathlessSongName.substr(pathlessSongName.find_last_of('\\') + 1);
-
-				if (mode == 0) musics[i].pathlessSongName = pathlessSongName;
 				if (mode == 1) pathlessSongName.insert(0, "1DF9/");
 				if (mode == 2) pathlessSongName.insert(0, "1DFC/");
 
@@ -2306,4 +2301,17 @@ void generatePNGs()
 
 }
 
+std::string genPathlessName(std::string pathlessSongName)
+{
+	int extPos = pathlessSongName.find_last_of('.');
+	if (extPos != -1)
+		pathlessSongName = pathlessSongName.substr(0, extPos);
 
+
+	if (pathlessSongName.find('/') != -1)
+		pathlessSongName = pathlessSongName.substr(pathlessSongName.find_last_of('/') + 1);
+	else if (pathlessSongName.find('\\') != -1)
+		pathlessSongName = pathlessSongName.substr(pathlessSongName.find_last_of('\\') + 1);
+	
+	return pathlessSongName;
+}
