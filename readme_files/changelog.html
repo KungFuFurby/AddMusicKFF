@@ -265,6 +265,11 @@
 		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>Command Line
+		<ul>
+		<li>"Fixed a segmentation fault caused by using -visualize with the -e flag activated. Visualizations will now be properly generated even with echo buffer checking disabled and will output the proper filename as well, as that was also not being properly generated." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
