@@ -14,6 +14,10 @@ include
 
 incsrc "../UserDefines.asm"
 
+!YoshifanaticOverworldRevolutionPresent = !false
+if read4($048000) == $524F4659 ; "YFOR"
+!YoshifanaticOverworldRevolutionPresent = !true
+endif
 
 org $94B3
 	db !RescueEgg
@@ -29,21 +33,6 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-
-org $00E301
-if !PSwitchIsSFX == !true
-;;; Don't factor in the P-Switch and directional coin timers. Instead, only
-;;; use the star power timer. This is because the P-Switch music is now
-;;; a SFX instance playing with the actual level music.
-	BRA +
-	NOP #2
-+
-else
-	BEQ +
-	LDX.B #!PSwitch
-+
-endif
-
 org $00EEC3
 	db !StageClear
 org $00F60B
@@ -107,6 +96,7 @@ org $03AC53
 	db !PrincessSaved
 org $03CE9A
 	db !BossClear
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $0483D2
 	db !VoBAppears
 
@@ -123,6 +113,7 @@ org $048D8A
 	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
 org $04DBC8
 	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
+endif
 endif
 	
 org $0584DB
@@ -217,9 +208,11 @@ org $0096C3				; Don't upload music bank 1
 	BRA Skip1Point5 : NOP
 Skip1Point5:
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $00A0B3				;;; ditto
 	BRA + : NOP
 	+
+endif
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
@@ -321,15 +314,13 @@ org $00A6ED
 	NOP : NOP : NOP
 Skip8:
 
-;org $00E2EB
-	;BRA Skip9 : NOP
-	;NOP : NOP
-org $00E2EE
+org $00E2EB
 	BRA Skip9
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	;NOP
+		;Just write a bunch of NOPs up until we reach $00E308.
+		;We automate this using a padding operation.
+assert pc() <= $00E308
+padbyte $EA
+pad $00E308
 Skip9:
 
 org $01C585	; 13 bytes
@@ -362,7 +353,7 @@ org $0093C0
 LDA.b #!NintPresents
 STA $1DFB|!SA1Addr2
 
-
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $049AC2
 JMP OWMusicHijack		; Force music to play when fading out from an exit tile, not just from pipe/star fade-outs.
 
@@ -375,7 +366,7 @@ OWMusicHijack:
 	SEP #$30		; Restore hijacked code (if it weren't for this, we could just JMP directly there...
 	JMP $DBD7		; Jump to normal music changing code, which perform the RTS that we overwrote.
 	
-
+endif
 
 
 
@@ -449,12 +440,13 @@ else
 	STA $1DFA|!SA1Addr2
 endif
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD
 	BRA +
 	NOP #20
 	+
-	
+endif
 	
 ;;; prevent game overs from fading overworld songs out
 org $009E17
