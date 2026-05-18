@@ -29,21 +29,6 @@ org $00C9BD
 	db !IrisOut
 org $00D0DE
 	db !GameOver
-
-org $00E301
-if !PSwitchIsSFX == !true
-;;; Don't factor in the P-Switch and directional coin timers. Instead, only
-;;; use the star power timer. This is because the P-Switch music is now
-;;; a SFX instance playing with the actual level music.
-	BRA +
-	NOP #2
-+
-else
-	BEQ +
-	LDX.B #!PSwitch
-+
-endif
-
 org $00EEC3
 	db !StageClear
 org $00F60B
@@ -321,15 +306,13 @@ org $00A6ED
 	NOP : NOP : NOP
 Skip8:
 
-;org $00E2EB
-	;BRA Skip9 : NOP
-	;NOP : NOP
-org $00E2EE
+org $00E2EB
 	BRA Skip9
-	NOP : NOP
-	NOP : NOP
-	NOP : NOP : NOP
-	;NOP
+		;Just write a bunch of NOPs up until we reach $00E308.
+		;We automate this using a padding operation.
+assert pc() <= $00E308
+padbyte $EA
+pad $00E308
 Skip9:
 
 org $01C585	; 13 bytes
