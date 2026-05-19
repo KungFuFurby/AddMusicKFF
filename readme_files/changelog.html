@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2026-05-17</h2>
+	<h2>AddmusicKFF Fork - 2026-05-18</h2>
 	<ul>
 	<li>Overall
 		<ul>
@@ -272,10 +272,10 @@
 	</li>
 	<li>Gameplay
 		<ul>
-		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
 		<li>"Fixed a bug where changing level music while the Starman or P-Switch songs were active would cause the next level music to fail to load upon the conclusion of the Starman and/or the P-Switch effect." - KungFuFurby</li>
 		<li>"Added a new user define, !TimerResetOnLevelFade . This define is designed to allow patches that allow P-Switch, star and directional coin timers to persist between rooms that would otherwise fail when AddmusicK is applied on top of these patches." - KungFuFurby</li>
+		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		<li>"Added a filter for hijacks that conflict with Yoshifanatic's Overworld Revolution patch." - KungFuFurby</li>
 		</ul>
 	</li>
@@ -341,6 +341,7 @@
 		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
 		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
 		<li>"If a zero EDL buffer is being used, it is now required that the last $100 bytes of ARAM be reserved for it due to $FF00-$FF03 being occupied to prevent data loss due to the echo buffer overwriting those four bytes." - KungFuFurby</li>
+		<li>"Fixed a bug where the first generated SPC file has an extra EMPTY.brr sample slot when running in -norom with all global songs removed." - nyanpasu64</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
