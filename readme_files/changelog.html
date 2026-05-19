@@ -308,6 +308,7 @@
 		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
 		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
 		<li>"If a zero EDL buffer is being used, it is now required that the last $100 bytes of ARAM be reserved for it due to $FF00-$FF03 being occupied to prevent data loss due to the echo buffer overwriting those four bytes." - KungFuFurby</li>
+		<li>"Fixed a bug where the first generated SPC file has an extra EMPTY.brr sample slot when running in -norom with all global songs removed." - nyanpasu64</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
