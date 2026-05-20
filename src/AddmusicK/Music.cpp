@@ -530,8 +530,14 @@ void Music::printChannelDataNonVerbose(int totalSize)
 	{
 		printf("?:??, 0x%04X bytes\n", totalSize);
 	}
-
-
+	
+	if (minSize > 0) {
+		std::stringstream paddedSizeStringStream;
+		paddedSizeStringStream << " padded to 0x" << hex4 << minSize << " bytes ";
+		std::cout << std::setw(80) << std::right << std::setfill('.');
+		std::cout << paddedSizeStringStream.str() << std::endl << std::left << std::setw(0) << std::dec;
+	}
+	
 }
 
 void Music::parseQMarkDirective()
@@ -3321,8 +3327,13 @@ void Music::pointersFirstPass()
 		spaceUsedBySamples += 4 + samples[mySamples[i]].data.size();	// The 4 accounts for the space used by the SRCN table.
 	}
 
-	if (verbose)
-		std::cout << name << " total size: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << totalSize << " bytes" << std::dec << std::endl;
+	if (verbose) {
+		std::cout << name << " total size: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << totalSize << " bytes";
+		if (minSize > 0) {
+			std::cout << " padded to 0x" << minSize << " bytes";
+		}
+		std::cout << std::dec << std::endl;
+	}
 	else
 		printChannelDataNonVerbose(totalSize);
 	//for (int z = 0; z <= 8; z++)
@@ -3352,6 +3363,9 @@ void Music::pointersFirstPass()
 	statStrStream << "SAMPLES SIZE:				0x" << hex4 << spaceUsedBySamples << "\n";
 	statStrStream << "ECHO SIZE:				0x" << hex4 << (echoBufferSize << 11) << "\n";
 	statStrStream << "SONG TOTAL DATA SIZE:			0x" << hex4 << data[0].size() + data[1].size() + data[2].size() + data[3].size() + data[4].size() + data[5].size() + data[6].size() + data[7].size() + data[8].size() + spaceForPointersAndInstrs << "\n";
+	if (minSize > 0) {
+	statStrStream << "SONG PADDED DATA SIZE:			0x" << hex4 << minSize << "\n";
+	}
 	if (index > highestGlobalSong)
 		statStrStream << "FREE ARAM (APPROXIMATE):		0x" << hex4 << 0x10000 - (echoBufferSize << 11) - spaceUsedBySamples - totalSize - programUploadPos << "\n\n";
 	else
