@@ -1680,7 +1680,7 @@ void generateSPCs()
 
 				}
 
-				int tablePos = localPos + musics[i].finalData.size();
+				int tablePos = musics[i].spaceInfo.sampleTableStartPos;
 
 				if ((tablePos & 0xFF) != 0)
 					tablePos = (tablePos & 0xFF00) + 0x100;
