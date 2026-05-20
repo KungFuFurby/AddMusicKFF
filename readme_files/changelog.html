@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>AddmusicKFF Fork - 2026-05-18</h2>
+	<h2>AddmusicKFF Fork - 2026-05-20</h2>
 	<ul>
 	<li>Overall
 		<ul>
@@ -342,6 +342,8 @@
 		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
 		<li>"If a zero EDL buffer is being used, it is now required that the last $100 bytes of ARAM be reserved for it due to $FF00-$FF03 being occupied to prevent data loss due to the echo buffer overwriting those four bytes." - KungFuFurby</li>
 		<li>"Fixed a bug where the first generated SPC file has an extra EMPTY.brr sample slot when running in -norom with all global songs removed." - nyanpasu64</li>
+		<li>"Fixed a bug where the sample directory was not being properly relocated in SPC exports when using #pad." - KungFuFurby</li>
+		<li>"The use of #pad in songs is now acknowledged as part of the memory usage reporting provided by the program." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
