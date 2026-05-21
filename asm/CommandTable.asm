@@ -2,7 +2,7 @@ CommandDispatchTable:
 dw cmdDA
 dw cmdDB
 dw cmdDC
-dw $0000
+dw cmdDD
 dw cmdDE
 dw cmdDF
 dw cmdE0
