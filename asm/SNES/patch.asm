@@ -305,8 +305,11 @@ endif
 	LDA !MusicMir			; |
 	CMP !MusicBackup		; |
 	BNE ++				; |
+	CMP !CurrentSongGroup		; |
+	BNE ++				; |
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
+	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
 	LDA !MusicMir
@@ -365,7 +368,7 @@ endif
 ;	JMP Fade
 ;+
 
-
+	STA !CurrentSongGroup
 	
 
 	LDA #$FF		; Send this as early as possible
@@ -654,9 +657,11 @@ SkipSPCNormal:
 	JMP End
 	
 HandleSpecialSongs:
+if !TimerResetOnLevelFade == !true
 	LDA $0100|!SA1Addr2
 	CMP #$0F
 	BEQ +
+endif
 	LDA !MusicMir
 	CMP #!Miss
 	BEQ +
