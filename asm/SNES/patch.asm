@@ -305,7 +305,6 @@ endif
 	BNE ++				; |
 	STA !CurrentSong		; |
 	STA !MusicBackup		; |
-	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
 	LDA !MusicMir
@@ -364,7 +363,7 @@ endif
 ;	JMP Fade
 ;+
 
-	STA !CurrentSongGroup
+	PHA
 	
 
 	LDA #$FF		; Send this as early as possible
@@ -402,6 +401,34 @@ endif
 	INX
 	LDA MusicPtrs,x
 	STA $02
+
+	LDA.b #SampleGroupPtrs		; [$0D] is the pointer to this song's sample group.
+	STA $0D				; Sample groups contain the number of samples in their first byte
+	LDA.b #SampleGroupPtrs>>8	; Then the sample numbers themselves after that.
+	STA $0E
+	LDA.b #SampleGroupPtrs>>16
+	STA $0F
+	
+	LDA !MusicMir			; \
+	REP #$30			; |
+	AND #$00FF			; |
+	ASL				; | Index the table by the music number
+	TAY				; |
+	LDA !CurrentSongGroup		; |
+	AND #$00FF			; |
+	ASL				; |
+	TAX				; |
+	LDA [$0D],y			; /
+	TXY
+	CMP [$0D],y
+	STA $0D				; The sample groups are stored in the same bank as the table.
+	SEP #$30
+	BNE +
+	LDA.b #$01
+	STA !NoUploadSamples
++
+	PLA
+	STA !CurrentSongGroup
 	
 	REP #$10
 	LDX #!DefARAMRet
@@ -428,40 +455,10 @@ endif
 	JMP SPCNormal
 +
 	
-	REP #$20
-	
-	LDY #$02		; \
-	LDA [$00]		; | 
-	STA $09			; |
-	LDA [$00],y		; | This puts the location of the ARAM sample table into $09.
-	CLC			; |
-	ADC $09			; |
-	XBA : XBA		; | Test the low byte of the accumulator
-	BEQ NoAdd		; |
-	CLC			; | The low byte of the sample table must be 0.
-	ADC #$0100		; |
-	AND #$FF00		; |
-NoAdd:	STA $09			; /
-	
-
-	SEP #$20
-	
-					
-	LDA.b #SampleGroupPtrs		; [$0D] is the pointer to this song's sample group.
-	STA $0D				; Sample groups contain the number of samples in their first byte
-	LDA.b #SampleGroupPtrs>>8	; Then the sample numbers themselves after that.
-	STA $0E
-	LDA.b #SampleGroupPtrs>>16
-	STA $0F
-	
-	LDA !MusicMir			; \
-	REP #$30			; |
-	AND #$00FF			; |
-	ASL				; | Index the table by the music number
-	TAY				; |
-	LDA [$0D],y			; /
-	STA $0D				; The sample groups are stored in the same bank as the table.
-	SEP #$30
+	LDA [$0D]			; Get the sample directory pointer.
+	STA $0A
+	STZ $09
+	INC $0D
 	
 	LDA [$0D]			; Get the number of samples
 	STA !SampleCount
