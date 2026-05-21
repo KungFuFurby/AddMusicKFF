@@ -1,9 +1,10 @@
 ;AddmusicK FreeRAM Defines
-;For AddmusicK 1.0.9
+;For AddmusicK 1.0.12 Alpha (as of TBD)
 
 !FreeRAM		= $7FB000
 !CurrentSong		= !FreeRAM+$00
 !NoUploadSamples	= !FreeRAM+$01
+!CurrentSongGroup	= !FreeRAM+$02
 !SongPositionLow	= !FreeRAM+$04
 !SongPositionHigh	= !FreeRAM+$05
 !SPCOutput1		= !SongPositionLow
