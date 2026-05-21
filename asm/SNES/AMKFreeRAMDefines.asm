@@ -1,5 +1,5 @@
 ;AddmusicK FreeRAM Defines
-;For AddmusicK 1.0.12 Alpha (as of 5/20/2026)
+;For AddmusicK 1.0.12
 
 !FreeRAM		= $7FB000
 !CurrentSong		= !FreeRAM+$00
