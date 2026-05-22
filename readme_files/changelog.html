@@ -263,7 +263,12 @@
 	<li>Overall
 		<ul>
 		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
-		<li>"<b>The data version has been incremented here due to a change to Addmusic_list.txt's parsing to support 16-bit song IDs... as well as a larger-than-usual potential of partial patch breakage, though except for the fade command, most cases will merely truncate to 8 bits instead until the ASM is adjusted.</b>" - KungFuFurby</li>
+		<li>"<b>The data version has been incremented here for multiple reasons..."</b> - KungFuFurby
+		<ul>
+			<li>A change was made to Addmusic_list.txt's parsing to support 16-bit song IDs... and there is also a larger-than-usual potential of partial patch breakage, though except for the fade command, most cases will merely truncate to 8 bits instead until the ASM is adjusted.</li>
+			<li>On the SNES side, the way the sample packs are defined have changed.</li>
+		</ul>
+		</li>
 		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. <b>There are a lot of hijack changes involved here, including some new ones. Higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations, and any patch that wants to access song IDs above $FF (and/or use the fade command) must be manually adjusted.</b>" - KungFuFurby</li>
 		</ul>
 	</li>
@@ -279,6 +284,7 @@
 		<li>"Added a filter for hijacks that conflict with Yoshifanatic's Overworld Revolution patch." - KungFuFurby</li>
 		<li>"Fixed a bug where changing level music while the Starman or P-Switch songs were active would cause the next level music to fail to load upon the conclusion of the Starman and/or the P-Switch effect." - KungFuFurby</li>
 		<li>"Added a new user define, !TimerResetOnLevelFade . This define is designed to allow patches that allow P-Switch, star and directional coin timers to persist between rooms that would otherwise fail when AddmusicK is applied on top of these patches." - KungFuFurby</li>
+		<li>"The sample pack is no longer reloaded when switching local songs if it is exactly the same sample pack that was loaded before and it can be kept in the same memory location." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Built-In Original Songs
@@ -316,6 +322,7 @@
 		<li>"Fixed a bug where the first generated SPC file has an extra EMPTY.brr sample slot when running in -norom with all global songs removed." - nyanpasu64</li>
 		<li>"Fixed a bug where the sample directory was not being properly relocated in SPC exports when using #pad." - KungFuFurby</li>
 		<li>"The use of #pad in songs is now acknowledged as part of the memory usage reporting provided by the program." - KungFuFurby</li>
+		<li>"All sample packs in the ROM now include a sample directory location in them instead of calculating where it is when loading a new local song. This is so that the sample pack does not need to be reloaded if it is the exact same one and its memory location has also not changed." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM

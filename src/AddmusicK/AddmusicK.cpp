@@ -33,6 +33,7 @@ void compileSFX();
 void compileGlobalData();
 void compileMusic();
 void fixMusicPointers();
+void compileSamplePacks();
 void generateSPCs();
 void assembleSNESDriver2();
 void generateMSC();
@@ -259,6 +260,7 @@ int main(int argc, char* argv[]) try		// // //
 
 	compileMusic();
 	fixMusicPointers();
+	compileSamplePacks();
 
 	generateSPCs();
 
@@ -1097,7 +1099,7 @@ void compileMusic()
 		std::cout << "Compiling music..." << std::endl;
 
 	int totalSamplecount = 0;
-	int totalSize = 0;
+	//int totalSize = 0;
 	int maxGlobalEchoBufferSize = 0;
 	for (int i = 0; i < 65536; i++)
 	{
@@ -1132,7 +1134,13 @@ void compileMusic()
 			}
 		}
 	}
+}
 
+void compileSamplePacks()
+{
+	if (verbose)
+		std::cout << "Compiling sample packs..." << std::endl;
+	
 	//int songSampleListSize = 0;
 
 	//for (int i = 0; i < songCount; i++)
@@ -1176,15 +1184,14 @@ void compileMusic()
 		musicInSampleList[i] = false;
 	}
 
+	std::map<int, std::vector<int>> samplePackToMusic;
+	int samplePackID = 0;
+	
 	for (int i = 0; i < songCount; i++)
 	{
 		if (musics.count(i) == 0) continue;
 		if ((!musics[i].exists) || (musicInSampleList[i])) continue;
-
-		songSampleListSize++;
-
-		songSampleList << "\n" << "SGPointer" << hex2 << i << ":\n";
-
+		samplePackToMusic[samplePackID].push_back(i);
 		if (i > highestGlobalSong)
 		{
 			for (int j = highestGlobalSong+1; j < songCount; j++) {
@@ -1197,23 +1204,81 @@ void compileMusic()
 				{
 					if ((musics[i].mySamples[k]) != (musics[j].mySamples[k])){
 						sampleGroupMatch = false;
+						break;
 					}
 				}
 				if (sampleGroupMatch) {
-					songSampleList << "\n" << "SGPointer" << hex2 << j << ":\n";
 					musicInSampleList[j] = true;
+					samplePackToMusic[samplePackID].push_back(j);
 				}
 			}
-			songSampleList << "db $" << hex2 << musics[i].mySamples.size() << "\ndw";
-			for (unsigned int j = 0; j < musics[i].mySamples.size(); j++)
-			{
-				songSampleListSize+=2;
-				songSampleList << " $" << hex4 << (int)(musics[i].mySamples[j]);
-				if (j != musics[i].mySamples.size() - 1)
-					songSampleList << ",";
-			}
+			int newSamplePacks = 1;
+			//If any songs' sample packs overlap the echo buffer after pushing out the sample directory, assign a new pack instead.
+			if (checkEcho) {
+				for (int j = 0; j < newSamplePacks; j++) {
+					bool newSamplePackNeeded = false;
+					//Identify the sample table directory our sample pack will be assigned.
+					int samplePackSampleTableDir = 0;
+					for (int k = 0; k < samplePackToMusic[samplePackID+j].size(); k++) {
+						int l = samplePackToMusic[samplePackID+j][k];
+						if (l <= highestGlobalSong) continue;
+						samplePackSampleTableDir = std::max(musics[l].spaceInfo.sampleTableStartPos, samplePackSampleTableDir);
+					}
+					for (int k = 0; k < samplePackToMusic[samplePackID+j].size(); k++) {
+						int l = samplePackToMusic[samplePackID+j][k];
+						if (l <= highestGlobalSong) continue;
+						if (musics[l].echoBufferSize == 0 && !musics[l].usesEcho) continue;
+						int samplePackTableDirOffset = samplePackSampleTableDir - musics[l].spaceInfo.sampleTableStartPos;
+						if (musics[l].spaceInfo.endOfSongAndSampleDataPos+samplePackTableDirOffset >= musics[l].spaceInfo.echoBufferStartPos) {
+							samplePackToMusic[samplePackID+j+1].push_back(l);
+							samplePackToMusic[samplePackID+j].erase(samplePackToMusic[samplePackID+j].begin()+k);
+							k--;
+							newSamplePackNeeded = true;
+						}
+					}
+					if (newSamplePackNeeded) newSamplePacks++;
+				}
+			}	
+			samplePackID += newSamplePacks;
 		}
+	}
+	
+	for (auto &samplePackEntry : samplePackToMusic)
+	{
+		int samplePackSampleTableDir = 0x0000;
+		for (int i = 0; i < samplePackEntry.second.size(); i++)
+		{
+			songSampleListSize++;
 
+			songSampleList << "\n" << "SGPointer" << hex2 << samplePackEntry.second[i] << ":\n";
+			
+			samplePackSampleTableDir = std::max(musics[samplePackEntry.second[i]].spaceInfo.sampleTableStartPos, samplePackSampleTableDir);
+		}
+		//Update the musics sampleTableStartPos and sampleTableEndPos entries for SPC generation and visualization updates
+		for (int i = 0; i < samplePackEntry.second.size(); i++) {
+			if (samplePackEntry.second[i] <= highestGlobalSong) continue;
+			int samplePackTableDirOffset = samplePackSampleTableDir - musics[samplePackEntry.second[i]].spaceInfo.sampleTableStartPos;
+			
+			musics[samplePackEntry.second[i]].spaceInfo.sampleTableStartPos += samplePackTableDirOffset;
+			musics[samplePackEntry.second[i]].spaceInfo.sampleTableEndPos += samplePackTableDirOffset;
+			for (int j = 0; j < musics[samplePackEntry.second[i]].spaceInfo.individualSampleStartPositions.size(); j++) {
+				musics[samplePackEntry.second[i]].spaceInfo.individualSampleStartPositions[j] += samplePackTableDirOffset;
+				musics[samplePackEntry.second[i]].spaceInfo.individualSampleEndPositions[j] += samplePackTableDirOffset;
+			}
+			musics[samplePackEntry.second[i]].spaceInfo.endOfSongAndSampleDataPos += samplePackTableDirOffset;
+			
+		}
+		samplePackSampleTableDir = ((samplePackSampleTableDir >> 8) & 0xff);
+		songSampleList << "db $" << hex2 << samplePackSampleTableDir << " ;DIR DSP register location\n";
+		songSampleList << "db $" << hex2 << musics[samplePackEntry.second[0]].mySamples.size() << " ;Number of samples in sample group\ndw";
+		for (unsigned int i = 0; i < musics[samplePackEntry.second[0]].mySamples.size(); i++)
+		{
+			songSampleListSize+=2;
+			songSampleList << " $" << hex4 << (int)(musics[samplePackEntry.second[0]].mySamples[i]);
+			if (i != musics[samplePackEntry.second[0]].mySamples.size() - 1)
+				songSampleList << ",";
+		}
+		songSampleList << "\n\n";
 	}
 	songSampleList << "\nSGEnd:";
 	s = songSampleList.str();
@@ -1385,7 +1450,7 @@ void fixMusicPointers()
 		}
 		else
 		{
-			//We need to do the memory calculations for the visualization in case the user wants them... even if the memory overflows.
+			//We need to do the memory calculations for the visualization in case the user wants them... even if the memory overflows. That, and we also want the sample table locations from here.
 			musics[i].spaceInfo.songStartPos = songDataARAMPos;
 			musics[i].spaceInfo.songEndPos = musics[i].spaceInfo.songStartPos + sizeWithPadding;
 
@@ -1427,6 +1492,7 @@ void fixMusicPointers()
 			}
 			musics[i].spaceInfo.importantSampleCount = importantSampleCount;
 
+			musics[i].spaceInfo.endOfSongAndSampleDataPos = checkPos;
 			int endOfSongAndSampleDataPos = checkPos;
 			
 			if ((checkPos & 0xFF) != 0) checkPos = ((checkPos >> 8) + 1) << 8;

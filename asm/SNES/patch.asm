@@ -369,7 +369,6 @@ endif
 	STA !MusicBackup		; |
 	REP #$20			; |
 	STA !CurrentSong		; |
-	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
 	SEP #$20
@@ -454,7 +453,7 @@ endif
 ;	JMP Fade
 ;+
 
-	STA !CurrentSongGroup
+	PHA
 	SEP #$20
 	
 
@@ -496,7 +495,39 @@ endif
 	INX
 	LDA MusicPtrs,x
 	STA $02
+
+	LDA.b #SampleGroupPtrs		; [$0D] is the pointer to this song's sample group.
+	STA $0D				; Sample groups contain the number of samples in their first byte
+	LDA.b #SampleGroupPtrs>>8	; Then the sample numbers themselves after that.
+	STA $0E
+	LDA.b #SampleGroupPtrs>>16
+	STA $0F
 	
+	SEP #$20			; \
+	LDA !MusicMir			; |
+	XBA				; |
+	LDA !MusicMirHi			; |
+	XBA				; |
+	REP #$30			; |
+	ASL				; | Index the table by the music number
+	TAY				; |
+	LDA !CurrentSongGroup		; |
+	ASL				; |
+	TAX				; |
+	LDA [$0D],y			; /
+	TXY
+	CMP [$0D],y
+	STA $0D				; The sample groups are stored in the same bank as the table.
+	SEP #$30
+	BNE +
+	LDA.b #$01
+	STA !NoUploadSamples
++
+	REP #$20
+	PLA
+	STA !CurrentSongGroup
+
+	SEP #$20	
 	REP #$10
 	LDX #!DefARAMRet
 	LDA !NoUploadSamples
@@ -522,43 +553,10 @@ endif
 	JMP SPCNormal
 +
 	
-	REP #$20
-	
-	LDY #$02		; \
-	LDA [$00]		; | 
-	STA $09			; |
-	LDA [$00],y		; | This puts the location of the ARAM sample table into $09.
-	CLC			; |
-	ADC $09			; |
-	XBA : XBA		; | Test the low byte of the accumulator
-	BEQ NoAdd		; |
-	CLC			; | The low byte of the sample table must be 0.
-	ADC #$0100		; |
-	AND #$FF00		; |
-NoAdd:	STA $09			; /
-	
-
-	SEP #$20
-	
-					
-	LDA.b #SampleGroupPtrs		; [$0D] is the pointer to this song's sample group.
-	STA $0D				; Sample groups contain the number of samples in their first byte
-	LDA.b #SampleGroupPtrs>>8	; Then the sample numbers themselves after that.
-	STA $0E
-	LDA.b #SampleGroupPtrs>>16
-	STA $0F
-	
-	SEP #$20			; \
-	LDA !MusicMir			; |
-	XBA				; |
-	LDA !MusicMirHi			; |
-	XBA				; |
-	REP #$30			; |
-	ASL				; | Index the table by the music number
-	TAY				; |
-	LDA [$0D],y			; /
-	STA $0D				; The sample groups are stored in the same bank as the table.
-	SEP #$30
+	LDA [$0D]			; Get the sample directory pointer.
+	STA $0A
+	STZ $09
+	INC $0D
 	
 	LDA [$0D]			; Get the number of samples
 	STA !SampleCount
