@@ -13,6 +13,7 @@ struct SpaceInfo {
 	std::vector<int> individualSampleStartPositions;
 	std::vector<int> individualSampleEndPositions;
 	std::vector<bool> individialSampleIsImportant;
+	int endOfSongAndSampleDataPos;
 	int importantSampleCount;
 	int echoBufferEndPos;
 	int echoBufferStartPos;
