@@ -161,16 +161,35 @@ endif
 	
 	movw	$00, ya
 	
+	dec	a
+	mov	$f2, #$6c	;Make sure sound is muted while the DSP
+	mov	$f3, a		;registers are being cleared out.
+	lsr	a		;Prepare to clear FIR7 first.
 
-	
-	
-	mov   y, #$0c
-L_0529:
-	mov   a, DefDSPRegs-1+y
-	mov   $f2, a
-	mov   a, DefDSPValues-1+y
-	mov   $f3, a               ; write A to DSP reg Y
-	dbnz  y, L_0529            ; set initial DSP reg values
+ClearDSPLoop:
+	movw	$f2, ya
+	mov	y, #$00
+
+	cmp	a, #$0c+1
+	beq	ClearDSPLoop_MVOL
+	cmp	a, #$1c+1
+	bne	ClearDSPLoop_notMVOL
+ClearDSPLoop_MVOL:
+	mov	y, #$7f
+
+ClearDSPLoop_notMVOL:
+	cmp	a, #$6c+1
+	bne	ClearDSPLoop_notFLG
+	mov	y, #$2f ;Disable echo writes + initialize noise to frequency $F
+
+ClearDSPLoop_notFLG:
+	cmp	a, #$6d+1
+	bne	ClearDSPLoop_notESA
+	mov	y, #$88 ;Set to $88 in case echo writes are accidentally on
+
+ClearDSPLoop_notESA:
+	dec	a
+	bpl	ClearDSPLoop
 	
 	mov   $f1, #$f0		; Reset ports, disable timers
 	mov   $fa, #$10		; Set Timer 0's frequency to 2 ms
@@ -1865,10 +1884,8 @@ endif
 	bra	HandleYoshiDrums
 
 L_099C:
-	mov	a, #$6c		; Mute, disable echo.  We don't want any rogue sounds during upload
-	mov	y, #$60		; and we ESPECIALLY don't want the echo buffer to overwrite anything.
-	movw	$f2, ya
-	mov	!NCKValue, y
+	mov	!NCKValue, #$60 ; Mute, disable echo.  We don't want any rogue sounds during upload
+				; and we ESPECIALLY don't want the echo buffer to overwrite anything.
 	
 	mov	a, #$ff
 	call	KeyOffVoices
@@ -1882,9 +1899,9 @@ if !noSFX == !false
 	mov	$1d, a
 endif
 	mov	!MaxEchoDelay, a	;
+	call	L_0F22
 	mov	a, #!reserveBufferZeroEDLGateDistance
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
-	call	EffectModifier
 
 	jmp	L_12F2             ; do standardish SPC transfer                                ;ERROR
 				; Note that after this, the program is "reset"; it jumps to wherever the 5A22 tells it to.
@@ -2586,6 +2603,10 @@ DSPWrite:
 	ret
 
 SubC_table2_reserveBuffer:
+	asl	a
+	mov1	!NCKValue.5, c
+	lsr	a
+	and	a, #$0f
 .zeroEDLGate
 	beq	.zeroEDL
 	cmp	a, !MaxEchoDelay
@@ -2601,12 +2622,12 @@ SubC_table2_reserveBuffer:
 .zeroEDL
 	;Don't skip again until !MaxEchoDelay is reset.
 	mov	SubC_table2_reserveBuffer_zeroEDLGate+1, a
+
 .modifyEchoDelay
 .echoWriteBitClearLoc
-	clr1	!NCKValue.5
-		
+	;clr1	!NCKValue.5
+
 ModifyEchoDelay:			; a should contain the requested delay.  Normally only called when the max EDL is increased or if it is being reset upon playing a locally loaded song.
-	and	a, #$0F
 	push	a			; Save the requested delay.
 	beq	+
 	xcn	a			; Get the buffer address.
@@ -2614,17 +2635,38 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dec	a
 +
 	eor	a, #$FF
-	push	a
+	mov	y, a
 
 	mov	$f2, #$6c
 	or	$f3, #$60
 
+	inc	$f2			; \ Write the new buffer address.
+	mov	$f3, y			; / This is safe to do because writes are currently disabled.
+
+	mov	$14, #$00
+	mov	$15, y
+	mov	a, #$00
+	cmp	y, #$FF			; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
+	mov	y, a
+	bcc	+
+	bbs	!NCKValue.5, ++		;Don't clear if we're not using it.
+	mov	y, #$04
+	decw	$14
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	bra	++
++
+
+-	mov	($14)+y, a		; clear the whole echo buffer
+	dbnz	y, -
+	inc	$15
+	bne	-
+++
 	mov	a, !EchoDelay
-	and	a, #$0f
 	beq	+
 	mov	$f2, #$7d
 	mov	y, #$00
-	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the ESA and EDL DSP registers.
+	mov	$f3, y			; Wait for the echo buffer to be "captured" in a four byte area at the beginning before modifying the EDL DSP register.
 	xcn	a			; This ensures it can be safely reallocated without risking overwriting the program.
 	lsr	a			; This requires waiting for at least the amount of time it takes for the old EDL value to complete one buffer write loop.
 	movw	$14, ya			; Consume at least eight cycles per iteration. 
@@ -2634,26 +2676,9 @@ ModifyEchoDelay:			; a should contain the requested delay.  Normally only called
 	dbnz	$15, -			; 7 cycles per DBNZ (except for the last iteration, which subtracts two cycles)
 	dbnz	$14, -
 +
-	
-	pop	y			; \
-	mov	a, #$6d			; | Write the new buffer address.
-	movw	$f2, ya			; / 
-	
 	pop	a
 	call	SetEDLVarDSP		; Write the new delay.
 	mov	!MaxEchoDelay, a
-	
-	mov	a, !EchoDelay		; Clear out the RAM associated with the new echo buffer.  This way we avoid noise from whatever data was there before.
-	beq	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
-	mov	$14, #$00
-	mov	$15, y
-	mov	a, #$00
-	mov	y, a
-	
--	mov	($14)+y, a		; clear the whole echo buffer
-	dbnz	y, -
-	inc	$15
-	bne	-
 	bra	SubC_table2_reserveBuffer_jmpToSetFLGFromNCKValue
 	
 ; dispatch vcmd in A
@@ -2716,6 +2741,32 @@ FetchVoiceXAndZeroA:
 ; vcmd F2: echo volume fade
 ; vcmd F0: disable echo
 ; vcmd F1: set echo delay, feedback, filter
+
+cmdDDFromReadahead:
+	call	L_1260
+	call	GetCommandDataFast
+
+cmdDD:					; Pitch bend
+if !noSFX == !false
+	mov	a, $48					; \ 
+	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
+	beq	L_10FB					; /
+-
+	call	L_1260
+	jmp	L_1260
+endif
+L_10FB:
+	mov	$91+x, y				; \ Get the $DD parameters.
+	call	GetCommandDataFast			; |
+	mov	$90+x, a				; |
+	call	GetCommandDataFast			; /
+	clrc
+	adc	a, $43
+cmdDDAddHTuneValuesGate:
+	bra	cmdDDAddHTuneValuesSkip
+	clrc
+	adc	a, !HTuneValues+x
+cmdDDAddHTuneValuesSkip:
 
 ; calculate portamento delta
 CalcPortamentoDelta:
@@ -3263,31 +3314,7 @@ L_10E4:
 	call	L_112A
 	bra	L_1133
 +
-if !noSFX == !false
-	mov	a, $48					; \ 
-	and	a, $1d					; | Check to see if the current channel is disabled with a sound effect.
-	beq	L_10FB					; /
-	mov	$10, #$04
-L_10F3:
-	call	L_1260
-	dbnz	$10, L_10F3
-	bra	L_1111
-endif
-L_10FB:
-	call	L_1260					; \ 
-	call	GetCommandDataFast			; |
-	mov	$91+x, a				; | Get the $DD parameters.
-	call	GetCommandDataFast			; |
-	mov	$90+x, a				; |
-	call	GetCommandDataFast			; /
-	clrc
-	adc	a, $43
-cmdDDAddHTuneValuesGate:
-	bra	cmdDDAddHTuneValuesSkip
-	clrc
-	adc	a, !HTuneValues+x
-cmdDDAddHTuneValuesSkip:
-	call	CalcPortamentoDelta
+	call	cmdDDFromReadahead
 L_1111:
 	call	L_09CDWPreCheck
 L_1133:
@@ -3488,23 +3515,7 @@ VelocityValues:
 ; pan table (max pan full L = $14.00)
 PanValues:
 	db $00, $01, $03, $07, $0D, $15, $1E, $29, $34, $42, $51, $5E, $67, $6E, $73, $77
-	db $7A, $7C, $7D, $7E, $7F
-
-
-
-
-
-
-; default values (1295) for DSP regs (12A1)
-;  mvol L/R max, echo vol L/R zero, FLG = echo off/noise 400HZ
-;  echo feedback = $60, echo/pitchmod/noise vbits off
-;  source dir = $8000, echo ram = $6000, echo delay = 32ms
-
-DefDSPValues:
-		db $7F, $7F, $00, $00, $2F, $00, $00, $00, $00, $2F, $88, $00 
-
-DefDSPRegs:
-		db $0C, $1C, $2C, $3C, $6C, $0D, $2D, $3D, $4D, $5D, $6D, $7D
+	db $7A, $7C, $7D, $7E, $7F, $7F
 
 ; echo filters 0 and 1
 EchoFilter0:

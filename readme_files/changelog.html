@@ -258,7 +258,7 @@
 		</ul>
 	</li>
 	</ul>
-	<h2>Version 1.0.12 Beta Version X Fork - 2026-05-09</h2>
+	<h2>Version 1.0.12 Beta Version X Fork - 2026-05-21</h2>
 	<ul>
 	<li>Overall
 		<ul>
@@ -267,11 +267,18 @@
 		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. <b>There are a lot of hijack changes involved here, including some new ones. Higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations, and any patch that wants to access song IDs above $FF (and/or use the fade command) must be manually adjusted.</b>" - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>Command Line
+		<ul>
+		<li>"Fixed a segmentation fault caused by using -visualize with the -e flag activated. Visualizations will now be properly generated even with echo buffer checking disabled and will output the proper filename as well, as that was also not being properly generated." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Gameplay
 		<ul>
 		<li>"Fixed a bug where a local song would sometimes initially fail to play after loading in some emulators." - KungFuFurby</li>
 		<li>"Fixed a bug where AddmusicK's code was not properly handing the expiration of the Starman timer due to a swapped BCS and BEQ opcode. <b>As part of the fix, the code snippet from $00E2EE has had its NOPed out area enlarged to start at $00E2EB and skip over all of the vanilla code for the storages that used the level music.</b>"</li>
 		<li>"Added a filter for hijacks that conflict with Yoshifanatic's Overworld Revolution patch." - KungFuFurby</li>
+		<li>"Fixed a bug where changing level music while the Starman or P-Switch songs were active would cause the next level music to fail to load upon the conclusion of the Starman and/or the P-Switch effect." - KungFuFurby</li>
+		<li>"Added a new user define, !TimerResetOnLevelFade . This define is designed to allow patches that allow P-Switch, star and directional coin timers to persist between rooms that would otherwise fail when AddmusicK is applied on top of these patches." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Built-In Original Songs
@@ -282,6 +289,11 @@
 	<li>Documentation
 		<ul>
 		<li>"Updated the UberASM section to cover both pre-V2.0 and post-V2.0." - MarioFanGamer</li>
+		</ul>
+	</li>
+	<li>Music Hex Commands
+		<ul>
+		<li>"The $FA $04 command has been modified so that setting the highest bit will now directly disable echo writes. <b>This obsoletes a hot patch bit! (Namely, the one that that would disables echo writes when setting up the echo buffer through $FA $04.)</b>" - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Music MML Parser
@@ -299,6 +311,11 @@
 		<li>"Added memory remaining statements to output and stats.txt files." - KungFuFurby</li>
 		<li>"The limitations of the EDL register are now factored in when calculating the echo buffer size to allocate: that is, they only go from $00-$0F." - KungFuFurby</li>
 		<li>"!FreeRAM is now stored in a separate ASM file, AMKFreeRAMDefines.asm, in the asm/SNES directory. This file is intended to be used for patch files in case !FreeRAM changes so that the defines can be modified as needed (and recycled by multiple patch files)." - KungFuFurby</li>
+		<li>"The echo buffer size detection has been enhanced via detecting DSP register hex commands, as well as several other echo-related hex commands to determine if echo is used at all. This is required to determine whether an echo buffer size of zero is being used at all." - KungFuFurby</li>
+		<li>"If a zero EDL buffer is being used, it is now required that the last $100 bytes of ARAM be reserved for it due to $FF00-$FF03 being occupied to prevent data loss due to the echo buffer overwriting those four bytes." - KungFuFurby</li>
+		<li>"Fixed a bug where the first generated SPC file has an extra EMPTY.brr sample slot when running in -norom with all global songs removed." - nyanpasu64</li>
+		<li>"Fixed a bug where the sample directory was not being properly relocated in SPC exports when using #pad." - KungFuFurby</li>
+		<li>"The use of #pad in songs is now acknowledged as part of the memory usage reporting provided by the program." - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>SPC700-Side ASM
@@ -306,6 +323,9 @@
 		<li>"Fixed a bug where pausing with !noSFX set to !true was causing a note sticking effect instead of the intended muting effect." - KungFuFurby</li>
 		<li>"Fixed a bug where $1DFB commands (such as changing a song) were failing to execute while paused. They will instead take effect immediately upon unpausing." - KungFuFurby</li>
 		<li>"Fixed a bug where glissando was failing to do its first semitone addition with the hot patch disabled when SFX was played on top of the first note." - KungFuFurby</li>
+		<li>"Fixed a bug where encountering the $DD command outside of readahead would crash the sound driver due to a zero pointer." - KungFuFurby</li>
+		<li>"All DSP registers are now initialized on boot rather than just a selection of them, to prevent uninitialized values from causing side effects." - KungFuFurby</li>
+		<li>"Fixed a bug where the echo volume was not zeroed out prior to calling the loader, sometimes causing clicks while loading new data." - KungFuFurby</li>
 		</ul>
 	</li>
 	</ul>

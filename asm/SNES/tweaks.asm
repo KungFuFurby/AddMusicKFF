@@ -44,15 +44,6 @@ org $00D0DD
 	JSL GameOverHijack
 	NOP
 
-org $00E2EB
-	BRA Skip9
-		;Just write a bunch of NOPs up until we reach $00E308.
-		;We automate this using a padding operation.
-assert pc() <= $00E308
-padbyte $EA
-pad $00E308
-Skip9:
-
 org $00EEC2
 	JSL StageClearHijack
 	NOP
@@ -451,6 +442,15 @@ org $00A6ED
 	NOP : NOP
 	NOP : NOP : NOP
 Skip8:
+
+org $00E2EB
+	BRA Skip9
+		;Just write a bunch of NOPs up until we reach $00E308.
+		;We automate this using a padding operation.
+assert pc() <= $00E308
+padbyte $EA
+pad $00E308
+Skip9:
 
 org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP

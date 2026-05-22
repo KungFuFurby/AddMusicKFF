@@ -356,15 +356,20 @@ endif
 	LDA !MusicMir			; |
 	CMP !MusicBackup		; |
 	BNE ++				; |
+	CMP !CurrentSongGroup		; |
+	BNE ++				; |
 	XBA				; |
 	LDA !MusicMirHi			; |
 	CMP !MusicBackupHi		; |
+	BNE ++				; |
+	CMP !CurrentSongGroup+1		; |
 	BNE ++				; |
 	STA !MusicBackupHi		; |
 	XBA				; |
 	STA !MusicBackup		; |
 	REP #$20			; |
 	STA !CurrentSong		; |
+	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
 	SEP #$20
@@ -424,8 +429,8 @@ endif
 	XBA
 	REP #$20
 	CMP.W #!SongCount
-	SEP #$20
 	BCC +
+	SEP #$20
 	LDA #$FF
 	JMP Fade
 +
@@ -449,7 +454,8 @@ endif
 ;	JMP Fade
 ;+
 
-
+	STA !CurrentSongGroup
+	SEP #$20
 	
 
 	LDA #$FF		; Send this as early as possible
@@ -744,9 +750,11 @@ SkipSPCNormal:
 	JMP End
 	
 HandleSpecialSongs:
+if !TimerResetOnLevelFade == !true
 	LDA $0100|!SA1Addr2
 	CMP #$0F
 	BEQ +
+endif
 	SEP #$20
 	LDA !MusicMir
 	XBA
