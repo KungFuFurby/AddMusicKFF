@@ -70,7 +70,7 @@ after_build:
 
 environment:
   ATARISMWC_AUTH_KEY:
-    secure: ICQTZ2g57iFL9GBHQmy4gl7bGvdVBSQ/r6n1pbs+4xA=
+    secure: NG+uc6uV/7OJ64Uh7JpEHrcF4zwpRRe1vWKRY6RvHLC7v5IKE+O33JyaX03qxmxN
   
 deploy:
   - provider: Webhook
