@@ -177,6 +177,7 @@ Music::Music()
 	echoBufferSize = 0;
 	echoBufferAllocVCMDIsSet = false;
 	hasEchoBufferCommand = false;
+	usesEcho = false;
 	noteParamaterByteCount = 0;
 
 	//if (validateHex)		// Allow space for the buffer reservation header.
@@ -529,8 +530,14 @@ void Music::printChannelDataNonVerbose(int totalSize)
 	{
 		printf("?:??, 0x%04X bytes\n", totalSize);
 	}
-
-
+	
+	if (minSize > 0) {
+		std::stringstream paddedSizeStringStream;
+		paddedSizeStringStream << " padded to 0x" << hex4 << minSize << " bytes ";
+		std::cout << std::setw(80) << std::right << std::setfill('.');
+		std::cout << paddedSizeStringStream.str() << std::endl << std::left << std::setw(0) << std::dec;
+	}
+	
 }
 
 void Music::parseQMarkDirective()
@@ -1517,6 +1524,9 @@ void Music::parseHFDHex()
 				}
 				else
 				{
+					if (reg == 0x2C || reg == 0x3C || reg == 0x0D || reg == 0x4D || (reg & 0x0F) == 0x0F) {
+						usesEcho = true;
+					}
 					append(0xF6);
 					append(reg);
 					append(val);
@@ -1978,12 +1988,24 @@ void Music::parseHexCommand()
 					usedSamples[i] = true;
 			}
 			
+			if (hexLeft == 0 && (currentHex == 0xEF || currentHex == 0xF2 || currentHex == 0xF5)) {
+				usesEcho = true;
+			}
+			
+			if (hexLeft == 0 && currentHex == 0xFA && currentHexSub == 0x04) {
+				usesEcho = true;
+			}
+			
 			if (hexLeft == 0 && currentHex == 0xF6)
 			{
 				if (currentDSPRegister == 0x7D)
 				{
 					i &= 0xF;
 					echoBufferSize = std::max(echoBufferSize, i);
+					usesEcho = true;
+				}
+				if (currentDSPRegister == 0x2C || currentDSPRegister == 0x3C || currentDSPRegister == 0x0D || currentDSPRegister == 0x4D || currentDSPRegister == 0x6D || (currentDSPRegister & 0x0F) == 0x0F || ((currentDSPRegister == 0x6C) && ((i & 0x20) != 0))) {
+					usesEcho = true;
 				}
 			}
 
@@ -1992,6 +2014,7 @@ void Music::parseHexCommand()
 				i &= 0xF;
 				echoBufferSize = std::max(echoBufferSize, i);
 				hasEchoBufferCommand = true;
+				usesEcho = true;
 			}
 
 			if (currentHex == 0xDA && songTargetProgram == 1)			// If this was the instrument command
@@ -2026,9 +2049,14 @@ void Music::parseHexCommand()
 				}
 			}
 
-			if (hexLeft == 0 && currentHex == 0xF4)
-			if (i == 0x00 || i == 0x06)
-				hasYoshiDrums = true;
+			if (hexLeft == 0 && currentHex == 0xF4) {
+				if (i == 0x00 || i == 0x06) {
+					hasYoshiDrums = true;
+				}
+				if (i == 0x03) {
+					usesEcho = true;
+				}
+			}
 
 			if (hexLeft == 1 && currentHex == 0xDD)			// Hack allowing the $DD command to accept a note as a parameter.
 			{
@@ -3038,7 +3066,14 @@ void Music::pointersFirstPass()
 			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
 			z += 3;
 		}
-		if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
+		if (!usesEcho) {
+			//Echo is not used. Force it to be disabled.
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x80);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0x04);
+			data[resizedChannel].insert(data[resizedChannel].begin(), 0xFA);
+			z += 3;
+		}
+		else if (echoBufferSize > 0 || !echoBufferAllocVCMDIsSet || hasEchoBufferCommand) {
 			//Just put the VCMD in its default place: no need to move it around.
 			//In particular, the $F1 command means that echo writes have been enabled, meaning the special case is irrelevant.
 			data[resizedChannel].insert(data[resizedChannel].begin(), echoBufferSize);
@@ -3097,7 +3132,8 @@ void Music::pointersFirstPass()
 		int emptySampleIndex = ::getSample("EMPTY.brr", this);
 		if (emptySampleIndex == -1)
 		{
-			addSample("EMPTY.brr", this, true);
+			// Add EMPTY.brr to global::samples and global::sampleToIndex, but not mySamples.
+			addSample("EMPTY.brr", nullptr, true);
 			emptySampleIndex = getSample("EMPTY.brr", this);
 		}
 
@@ -3291,8 +3327,13 @@ void Music::pointersFirstPass()
 		spaceUsedBySamples += 4 + samples[mySamples[i]].data.size();	// The 4 accounts for the space used by the SRCN table.
 	}
 
-	if (verbose)
-		std::cout << name << " total size: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << totalSize << " bytes" << std::dec << std::endl;
+	if (verbose) {
+		std::cout << name << " total size: 0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << totalSize << " bytes";
+		if (minSize > 0) {
+			std::cout << " padded to 0x" << minSize << " bytes";
+		}
+		std::cout << std::dec << std::endl;
+	}
 	else
 		printChannelDataNonVerbose(totalSize);
 	//for (int z = 0; z <= 8; z++)
@@ -3322,6 +3363,9 @@ void Music::pointersFirstPass()
 	statStrStream << "SAMPLES SIZE:				0x" << hex4 << spaceUsedBySamples << "\n";
 	statStrStream << "ECHO SIZE:				0x" << hex4 << (echoBufferSize << 11) << "\n";
 	statStrStream << "SONG TOTAL DATA SIZE:			0x" << hex4 << data[0].size() + data[1].size() + data[2].size() + data[3].size() + data[4].size() + data[5].size() + data[6].size() + data[7].size() + data[8].size() + spaceForPointersAndInstrs << "\n";
+	if (minSize > 0) {
+	statStrStream << "SONG PADDED DATA SIZE:			0x" << hex4 << minSize << "\n";
+	}
 	if (index > highestGlobalSong)
 		statStrStream << "FREE ARAM (APPROXIMATE):		0x" << hex4 << 0x10000 - (echoBufferSize << 11) - spaceUsedBySamples - totalSize - programUploadPos << "\n\n";
 	else

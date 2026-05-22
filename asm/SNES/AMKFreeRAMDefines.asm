@@ -4,6 +4,7 @@
 !FreeRAM		= $7FB000
 !CurrentSong		= !FreeRAM+$00
 !NoUploadSamples	= !FreeRAM+$02
+!CurrentSongGroup	= !FreeRAM+$03
 !SongPositionLow	= !FreeRAM+$05
 !SongPositionHigh	= !FreeRAM+$06
 !SPCOutput1		= !SongPositionLow

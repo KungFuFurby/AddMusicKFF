@@ -14,6 +14,11 @@ include
 
 incsrc "../UserDefines.asm"
 
+!YoshifanaticOverworldRevolutionPresent = !false
+if read4($048000) == $524F4659 ; "YFOR"
+!YoshifanaticOverworldRevolutionPresent = !true
+endif
+
 ;All of these overwritings now call subroutines because they must now handle 16-bit song values.
 org $94B2
 	JSL RescueEggHijack
@@ -37,30 +42,6 @@ org $00C9F3
 org $00D0DD
 	JSL GameOverHijack
 	NOP
-
-org $00E2EB
-if !PSwitchIsSFX == !true
-;;; Don't factor in the P-Switch and directional coin timers. Instead, only
-;;; use the star power timer. This is because the P-Switch music is now
-;;; a SFX instance playing with the actual level music.
-	JSL RestoreMusicFromBackup
-else
-	LDA $14AD|!SA1Addr2
-	ORA $14AE|!SA1Addr2
-	ORA $190C|!SA1Addr2
-	BEQ ChangeToPSwitch
-	JSL RestoreMusicFromBackup
-	BRA Skip9
-ChangeToPSwitch:
-	JSL PSwitchHijack
-endif
-	BRA Skip9
-		;Just write a bunch of NOPs up until we reach $00E308.
-		;We automate this using a padding operation.
-assert pc() <= $00E308
-padbyte $EA
-pad $00E308
-Skip9:
 
 org $00EEC2
 	JSL StageClearHijack
@@ -164,6 +145,7 @@ org $03CE99
 	JSL BossClearHijack
 	NOP
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $0483D1
 	JSL VoBAppearsHijack
 	NOP
@@ -199,6 +181,7 @@ endif
 org $04DBF7
 	jsl OverworldMusicHijack
 	NOP
+endif
 
 org $0DE250
 	;Signal byte for Lunar Magic indicating that 16-bit music IDs are in use: normally this byte is $FF.
@@ -338,12 +321,15 @@ org $0096C3				; Don't upload music bank 1
 	BRA Skip1Point5 : NOP
 Skip1Point5:
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $00A0B3				;;; ditto
 	BRA + : NOP
 	+
 
 org $00A0B9
 	JSR ClearMusicBackup
+	+
+endif
 
 org $009702				; Don't upload music bank 2...or something.
 	NOP #3
@@ -456,6 +442,14 @@ org $00A6ED
 	NOP : NOP : NOP
 Skip8:
 
+org $00E2EB
+	BRA Skip9
+		;Just write a bunch of NOPs up until we reach $00E308.
+		;We automate this using a padding operation.
+assert pc() <= $00E308
+padbyte $EA
+pad $00E308
+Skip9:
 
 org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP
@@ -464,7 +458,7 @@ org $0093C0
 JSL NintPresentsHijack
 NOP
 
-
+if !YoshifanaticOverworldRevolutionPresent == !false
 org $049AC2
 JMP OWMusicHijack		; Force music to play when fading out from an exit tile, not just from pipe/star fade-outs.
 
@@ -477,7 +471,7 @@ OWMusicHijack:
 	SEP #$30		; Restore hijacked code (if it weren't for this, we could just JMP directly there...
 	JMP $DBD7		; Jump to normal music changing code, which perform the RTS that we overwrote.
 	
-
+endif
 
 
 
@@ -551,6 +545,7 @@ else
 	STA $1DFA|!SA1Addr2
 endif
 
+if !YoshifanaticOverworldRevolutionPresent == !false
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD
 	BRA +
@@ -560,7 +555,7 @@ assert pc() <= $04DBF3
 padbyte $EA
 pad $04DBF3
 	+
-	
+endif
 	
 ;;; prevent game overs from fading overworld songs out
 org $009E17
