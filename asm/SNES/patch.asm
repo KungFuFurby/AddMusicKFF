@@ -33,7 +33,7 @@ endif
 
 
 
-!Version = $00
+!Version = $01
 
 !SampleGroupPtrsLoc	= $008000
 
@@ -86,15 +86,17 @@ incsrc "AMKFreeRAMDefines.asm"
 !SFX1DFCMir = 	$1DFC|!SA1Addr2
 
 !MusicBackup = $0DDA|!SA1Addr2
-
+!MusicBackupHi = $06FF|!SA1Addr2
+!MusicMirHi = $0700|!SA1Addr2
 
 !DefARAMRet = $042F	; This is the address that the SPC will jump to after uploading a block of data normally.
 !ExpARAMRet = $0400	; This is the address that the SPC will jump to after uploading a block of data that precedes another block of data (used when uploading multiple blocks).
 			; All of these are changed automatically.
 !SongCount = $00	; How many songs exist.  Used by the fading routine; changed automatically.
 
-incsrc "tweaks.asm"			
-			
+incsrc "../UserDefines.asm"
+!true = 1
+!false = 0
 	
 padbyte $55		
 org $0E8000		; Clear out what parts of bank E we can (Lunar Magic install some hacks there).
@@ -125,6 +127,7 @@ MainLabel:
 if !PSwitchStarRestart == !true
 	lda !Trick
 	beq +
+	;WARNING: No 16-bit support here
 	lda !CurrentSong
 	sta !MusicReg
 	lda #$00
@@ -149,17 +152,25 @@ endif
 	STZ !SpecialMir
 	STZ !SFX1DFCMir
 	LDA !MusicMir
+	ORA !MusicMirHi
 	BEQ NoMusic
+	LDA !MusicMir
+	XBA
+	LDA !MusicMirHi
+	XBA
+	REP #$20
 	CMP !CurrentSong
 	BNE ChangeMusic
 if !PSwitchStarRestart == !true
-	cmp !GlobalMusicCount+1
+	cmp.w !GlobalMusicCount+1
 	bcc ChangeMusic
 endif
 
 End:	
+	SEP #$20
 if !PSwitchStarRestart == !true	
 	stz !MusicMir
+	stz !MusicMirHi
 endif
 	CLI
 	PLB
@@ -183,40 +194,55 @@ PlayDirect:
 ;	STA !MusicReg
 ;	LDA !CurrentSong
 ;	STA !MusicBackup
+;	STZ !MusicBackupHi
+;	LDA #$00
+;	STA !CurrentSong+1
 ;	PLA
 ;	STA !CurrentSong
 ;	BRA End
 
 ;	STA !MusicReg
 ;	PHA
+;	LDA !CurrentSong+1
+;	BNE +
 ;	LDA !CurrentSong
 ;	CMP !GlobalMusicCount+1
 ;	BCC +
 ;	STA !MusicBackup
+;	STZ !MusicBackupHi
 ;+
+;	LDA #$00
+;	STA !CurrentSong+1
 ;	PLA
 ;	STA !CurrentSong
 ;	BRA End
 
 if !PSwitchStarRestart == !true
+	rep #$20
+	and #$00FF
 	cmp !CurrentSong
+	sep #$20
 	beq +
 endif
 
 	STA !MusicReg
 	STA !CurrentSong
+	LDA #$00
+	STA !CurrentSong+1
 	BRA End
 
 if !PSwitchStarRestart == !true
 +	lda #$01
 	sta !Trick
-	lda #!Tricker
+	;WARNING: No 16-bit support here
+	lda.b #!Tricker
 	sta !MusicReg
 	bra End
 endif
 
 	
 ChangeMusic:
+	SEP #$20
 	LDA $187A|!SA1Addr2		; \ 
 	BEQ +
 	LDA #$FF
@@ -228,73 +254,98 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
+;	XBA
+;	LDA !MusicMirHi
+;	XBA
+	REP #$20
 if !PSwitchIsSFX == !false
-;	CMP #!PSwitch
+;	CMP.W #!PSwitch
 ;	BEQ .doExtraChecks
 endif
-;	CMP #!Starman
+;	CMP.W #!Starman
 ;	BEQ .doExtraChecks
 ;	BRA .okay
 ;	
 ;.doExtraChecks			; We can't allow the p-switch or starman songs to play during the level clear themes.
 	LDA !CurrentSong
-	CMP #!StageClear
+	CMP.W #!StageClear
 	BEQ LevelEndMusicChange
-	CMP #!IrisOut
+	CMP.W #!IrisOut
 	BEQ LevelEndMusicChange
-	CMP #!Keyhole
+	CMP.W #!Keyhole
 	BEQ LevelEndMusicChange
-	CMP #!BossClear		;;; this one too
+	CMP.W #!BossClear	;;; this one too
 	BNE Okay
 	
 LevelEndMusicChange:
+	SEP #$20
 	LDA !MusicMir
-	CMP #!IrisOut
+	XBA
+	LDA !MusicMirHi
+	XBA
+	REP #$20
+	CMP.W #!IrisOut
 	BEQ Okay
-	CMP #!SwitchPalace	;;; bonus game fix
+	CMP.W #!SwitchPalace	;;; bonus game fix
 	BEQ Okay
-	CMP #!Miss		;;; sure why not
+	CMP.W #!Miss		;;; sure why not
 	BEQ Okay
-	CMP #!RescueEgg
+	CMP.W #!RescueEgg
 	BEQ Okay		; Yep
-	CMP #!StaffRoll	; Added credits check
+	CMP.W #!StaffRoll	; Added credits check
 	BEQ Okay
+	SEP #$20
 	LDA $0100|!SA1Addr2		
 	CMP #$10			
 	BCC Okay
+	;;; REP #$20
 	;;; LDA !CurrentSong	;;; this is why we got here in first place, seems redundant
-	;;; CMP #!StageClear
+	;;; CMP.W #!StageClear
 	;;; BEQ EndWithCancel
-	;;; CMP #!IrisOut
+	;;; CMP.W #!IrisOut
 	;;; BEQ EndWithCancel
 EndWithCancel:
+	;;; SEP #$20
 if !PSwitchStarRestart == !false
 	STZ !MusicMir
+	STZ !MusicMirHi
 endif
-	BRA End
+	JMP End
 	
 Okay:
+	SEP #$20
+	LDA !MusicMirHi
+	BNE NotGlobalSong
 	LDA !MusicMir			; \ Global songs require no uploads.
 	CMP !GlobalMusicCount+1		; |
-	BCC PlayDirect			; /
-	
+	BCS NotGlobalSong		; /
+	JMP PlayDirect
 
-	CMP #$FF			; \ #$FF is fade.
-	BEQ Fade			; /
+NotGlobalSong:
+	LDA !MusicMir
+	CMP #$FF
+	BNE NotFade
+	LDA !MusicMirHi
+	CMP #$FF			; \ #$FFFF is fade.
+	BNE NotFade			; /
+	JMP Fade
+NotFade:
 
 if or(and(equal(!PSwitchIsSFX,!false),notequal(!PSwitch,$00)),notequal(!Starman,$00))
+	REP #$20
 	LDA !CurrentSong		; \ 
 if !PSwitchIsSFX == !false && !PSwitch != $00
-	CMP #!PSwitch			; |
+	CMP.W #!PSwitch			; |
 	BEQ +				; |
 endif
 if !Starman != $00
-	CMP #!Starman			; |
+	CMP.W #!Starman			; |
 	BNE ++				; | Don't upload samples if we're coming back from the pswitch or starman musics.
 endif
 endif
 	;;;BRA ++			; |
 +					; |
+	SEP #$20			; |
 	LDA $0100|!SA1Addr2		; | \
 	CMP #$12+1			; | | But if we're coming back from the p-switch or starman musics AND we're loading a new level, then we might need to reload the song as well.
 	BCC ++				; | / ;;; can't be bad to allow everything below
@@ -303,44 +354,79 @@ endif
 	BNE ++				; |
 	CMP !CurrentSongGroup		; |
 	BNE ++				; |
-	STA !CurrentSong		; |
+	XBA				; |
+	LDA !MusicMirHi			; |
+	CMP !MusicBackupHi		; |
+	BNE ++				; |
+	CMP !CurrentSongGroup+1		; |
+	BNE ++				; |
+	STA !MusicBackupHi		; |
+	XBA				; |
 	STA !MusicBackup		; |
+	REP #$20			; |
+	STA !CurrentSong		; |
 	STA !CurrentSongGroup		; |
 	JMP SPCNormal			; |
 ++					; /
+	SEP #$20
 	LDA !MusicMir
-	STA !CurrentSong
 	STA !MusicBackup
-	
+	XBA
+	LDA !MusicMirHi
+	STA !MusicBackupHi
+	XBA
+	REP #$20
+	STA !CurrentSong
+
+;	SEP #$20	
 ;	LDA $0100|!SA1Addr2
 ;	CMP #$0F
 ;	BCC .forceMusicToPlay
+;	REP #$20
 ;	LDA !CurrentSong
-;	CMP #!StageClear
+;	CMP.W #!StageClear
 ;	BEQ EndWithCancel
-;	CMP #!IrisOut
+;	CMP.W #!IrisOut
 ;	BEQ EndWithCancel
 ;.forceMusicToPlay
-
+;	SEP #$20
 
 
 ;	LDA !MusicMir
 ;	CMP !MusicBackup
 ;	BNE +
+;	XBA
+;	LDA !MusicMirHi
+;	CMP !MusicBackup
+;	BNE +
+;	XBA
+;	REP #$20
 ;	STA !CurrentSong
+;	SEP #$20
 ;	JMP SkipSPCNormal
 ;+
 ;	LDA #$00
 ;	STA !MusicBackup
-;+	LDA !MusicMir		;
+;+	SEP #$20		;
+;	LDA !MusicMir
+;	XBA
+;	LDA !MusicMirHi
+;	XBA
+;	REP #$20
 ;	STA !CurrentSong
 ;
 ;+++
 
 
+	SEP #$20
 	LDA !MusicMir
-	CMP #!SongCount
+	XBA
+	LDA !MusicMirHi
+	XBA
+	REP #$20
+	CMP.W #!SongCount
 	BCC +
+	SEP #$20
 	LDA #$FF
 	JMP Fade
 +
@@ -365,6 +451,7 @@ endif
 ;+
 
 	STA !CurrentSongGroup
+	SEP #$20
 	
 
 	LDA #$FF		; Send this as early as possible
@@ -382,12 +469,15 @@ endif
 	STZ $4200		; Disable NMI.  While NMI no longer messes with the audio ports,
 				; interrupts at the wrong time during this delicate routine are bad.
 	
-	REP #$30		; $108055
+	;REP #$30		; $108055
 	;LDA #$0000
 	;SEP #$20
+	SEP #$20
 	LDA !MusicMir
-	;REP #$30
-	AND #$00FF
+	XBA
+	LDA !MusicMirHi
+	XBA
+	REP #$30
 	STA $00
 	ASL			;\
 	CLC			;| Multiply by 3.
@@ -454,9 +544,12 @@ NoAdd:	STA $09			; /
 	LDA.b #SampleGroupPtrs>>16
 	STA $0F
 	
-	LDA !MusicMir			; \
+	SEP #$20			; \
+	LDA !MusicMir			; |
+	XBA				; |
+	LDA !MusicMirHi			; |
+	XBA				; |
 	REP #$30			; |
-	AND #$00FF			; |
 	ASL				; | Index the table by the music number
 	TAY				; |
 	LDA [$0D],y			; /
@@ -658,21 +751,27 @@ if !TimerResetOnLevelFade == !true
 	CMP #$0F
 	BEQ +
 endif
+	SEP #$20
 	LDA !MusicMir
-	CMP #!Miss
+	XBA
+	LDA !MusicMirHi
+	XBA
+	REP #$20
+	CMP.W #!Miss
 	BEQ +
-	CMP #!GameOver
+	CMP.W #!GameOver
 	BEQ +
 if !PSwitch != $00 || !Starman != $00
-	CMP #!StageClear	;;; more checks here should help
+	CMP.W #!StageClear	;;; more checks here should help
 	BEQ ++
-	CMP #!IrisOut
+	CMP.W #!IrisOut
 	BEQ ++
-	CMP #!BossClear
+	CMP.W #!BossClear
 	BEQ ++
-	CMP #!Keyhole
+	CMP.W #!Keyhole
 	BEQ ++
 endif
+	SEP #$20
 if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
 	ORA $14AE|!SA1Addr2
@@ -682,13 +781,15 @@ endif
 if !Starman != $00
 	LDA $1490|!SA1Addr2
 	CMP #$1E
-	BEQ .restoreFromStarMusic
-	BCS .starMusic
+	BCC ++
+	BNE .starMusic
+	JSL RestoreMusicFromBackup
 endif
 ++
 	RTS
 	
 +
+	SEP #$20
 	STZ $14AD|!SA1Addr2
 	STZ $14AE|!SA1Addr2
 	STZ $190C|!SA1Addr2
@@ -711,21 +812,29 @@ if !Starman != $00
 	bcs .starMusic			;;; just play the star music
 endif
 if !PSwitchIsSFX == !false
+	sep #$20
 	lda !MusicMir
-	cmp #!PSwitch
+	xba
+	lda !MusicMirHi
+	xba
+	rep #$20
+	cmp.w #!PSwitch
 	beq ++
 	lda !CurrentSong
-	cmp #!PSwitch
+	cmp.w #!PSwitch
 	bne +
 endif
 
+	sep #$20
 	stz !MusicMir
+	lda #$00
+	sta !MusicMirHi
 	rts
 
 if !PSwitchIsSFX == !false
 if !PSwitch != $00
-+	LDA #!PSwitch
-	STA !MusicMir
++	SEP #$20
+	JSL PSwitchHijack
 endif
 ++	RTS
 endif
@@ -739,8 +848,7 @@ endif
 endif
 
 if !PSwitchIsSFX == !false && !PSwitchStarRestart == !false && !PSwitch != $00
-	LDA #!PSwitch
-	STA !MusicMir
+	JSL PSwitchHijack
 endif
 ++
 	RTS
@@ -751,44 +859,285 @@ if !Starman != $00
 if !PSwitchStarRestart == !true
 	jsr SkipPowStar
 	bcs ++
+	sep #$20
 	lda !MusicMir
-	cmp #!Starman
+	xba
+	lda !MusicMirHi
+	xba
+	rep #$20
+	cmp.w #!Starman
 	beq ++
 	lda !CurrentSong
-	cmp #!Starman
+	cmp.w #!Starman
 	bne +
+	sep #$20
 	stz !MusicMir
+	stz !MusicMirHi
 	rts
 endif
 
-+	LDA #!Starman
-	STA !MusicMir
++	SEP #$20
+	JSL StarmanHijack
 ++	RTS
-
-	
-.restoreFromStarMusic
-	LDA !MusicBackup
-	STA !MusicMir
-+
-	RTS
 endif
 
 if !PSwitchStarRestart == !true
 SkipPowStar:
+	rep #$20
 	lda !CurrentSong
-	cmp #!StageClear
+	cmp.w #!StageClear
 	beq +
-	cmp #!IrisOut
+	cmp.w #!IrisOut
 	beq +
-	cmp #!BossClear
+	cmp.w #!BossClear
 	beq +
-	cmp #!Keyhole
+	cmp.w #!Keyhole
 	beq +
 	clc
-+	rts
++
+	sep #$20
+	rts
 endif
+
+RestoreMusicFromBackup:
+	LDA !MusicBackup
+	STA !MusicMir
+	LDA !MusicBackupHi
+	STA !MusicMirHi
+	RTL
+
+CheckMusicBackupForFF:
+	LDA $0DDA|!SA1Addr2
+	CMP #$FF
+	BNE +
+	LDA !MusicBackupHi
+	CMP #$FF
++
+	RTL
+
+SetMusicBackupToFF:
+	LDA #$FF
+StoreToMusicBackupLoHi:
+	STA $0DDA|!SA1Addr2
+	STA !MusicBackupHi
+	RTL
+
+;We're out of space for inserting hijack code, so some of it will reside in AddmusicK's reserved space instead.
+
+;Some hijacks will not be making an appearance if Yoshifanatic's Overworld Revolution is present.
+!YoshifanaticOverworldRevolutionPresent = !false
+if read4($048000) == $524F4659 ; "YFOR"
+!YoshifanaticOverworldRevolutionPresent = !true
+endif
+
+if !YoshifanaticOverworldRevolutionPresent == !false
+OverworldMusicHijack:
+	LDA.L OverworldMusicArrayLo, X
+	STA $1DFB|!SA1Addr2
+	LDA.L OverworldMusicArrayHi, X
+	STA !MusicMirHi
+	RTL
+endif
+
+LevelMusicHijack:
+	LDA.L LevelMusicArrayLo, X
+	STA $0DDA|!SA1Addr2
+	LDA.L LevelMusicArrayHi, X
+	STA !MusicBackupHi
+	RTL
+
+RescueEggHijack:
+	LDA.B #!RescueEgg&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!RescueEgg>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+TitleHijack:
+	LDA.B #!Title&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Title>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+CastleDestructionFanfareHijack:
+	LDA.B #!CastleDestructionFanfare&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!CastleDestructionFanfare>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BonusEndHijack:
+	LDY.B #!BonusEnd&$FF
+	STY $1DFB|!SA1Addr2
+	LDY.B #!BonusEnd>>8&$FF
+	STY !MusicMirHi
+	RTL
+
+IrisOutHijack:
+	LDA.B #!IrisOut&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!IrisOut>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+GameOverHijack:
+	LDA.B #!GameOver&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!GameOver>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+if !PSwitchIsSFX == !false
+PSwitchHijack:
+	LDA.B #!PSwitch&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!PSwitch>>8&$FF
+	STA !MusicMirHi
+	RTL
+endif
+
+StageClearHijack:
+	LDA.B #!StageClear&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!StageClear>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+MissHijack:
+	LDA.B #!Miss&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Miss>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BossClearHijack:
+	LDA.B #!BossClear&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BossClear>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+StarmanHijack:
+	LDA.B #!Starman&$FF
+	STA !MusicMir
+	LDA.B #!Starman>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+KeyholeHijack:
+	LDA.B #!Keyhole&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!Keyhole>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserZoomOutHijack:
+	LDA.B #!BowserZoomOut&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserZoomOut>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserIntrludeHijack:
+	LDA.B #!BowserIntrlude&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserIntrlude>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserZoomInHijack:
+	LDA.B #!BowserZoomIn&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserZoomIn>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+BowserDefeatedHijack:
+	LDA.B #!BowserDefeated&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!BowserDefeated>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+PrincessSavedHijack:
+	LDA.B #!PrincessSaved&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!PrincessSaved>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+if !YoshifanaticOverworldRevolutionPresent == !false
+VoBAppearsHijack:
+	LDA.B #!VoBAppears&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!VoBAppears>>8&$FF
+	STA !MusicMirHi
+	RTL
+endif
+
+StaffRollHijack:
+	LDA.B #!StaffRoll&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!StaffRoll>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+YoshisAreHomeHijack:
+	LDA.B #!YoshisAreHome&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!YoshisAreHome>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+CastListHijack:
+	LDA.B #!CastList&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!CastList>>8&$FF
+	STA !MusicMirHi
+	RTL
+
+if !WelcomeSongOverride == !true
+WelcomeHijack:
+	LDA.B #!Welcome&$FF
+	STA $0DDA|!SA1Addr2
+	LDA.B #!Welcome>>8&$FF
+	STA !MusicBackupHi
+	RTL
+endif
+
+if !BowserSongOverride == !true
+BowserHijack:
+	LDA.B #!Bowser&$FF
+	STA $0DDA|!SA1Addr2
+	LDA.B #!Bowser>>8&$FF
+	STA !MusicBackupHi
+	RTL
+endif
+
+BowserExtraMusicSFXArrayHi:
+	db $2E,$2F,$30,$31,$32,$33,$34,!Bowser2>>8&$FF,!Bowser3>>8&$FF
+
+BowserExtraMusicSFXHijack:
+	PHX
+	TYX
+	LDA.L BowserExtraMusicSFXArrayLo, X
+	STA $1DFB|!SA1Addr2
+	LDA.L BowserExtraMusicSFXArrayHi, X
+	STA !MusicMirHi
+	PLX
+	RTL
+
+NintPresentsHijack:
+	LDA.B #!NintPresents&$FF
+	STA $1DFB|!SA1Addr2
+	LDA.B #!NintPresents>>8&$FF
+	STA !MusicMirHi
+	RTL
 	
 pushpc
+
+incsrc "tweaks.asm"
 
 incsrc "SongSampleList.asm"
 

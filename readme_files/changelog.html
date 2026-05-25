@@ -263,6 +263,8 @@
 	<li>Overall
 		<ul>
 		<li>"The way the music collection has been handled internally has been modified in terms of its data type: instead of using an array of 256 entries, they now use maps. This will help prevent future complaints from compilers due to too much memory being requested for allocation for an array of music instances." - KungFuFurby</li>
+		<li>"<b>The data version has been incremented here due to a change to Addmusic_list.txt's parsing to support 16-bit song IDs... as well as a larger-than-usual potential of partial patch breakage, though except for the fade command, most cases will merely truncate to 8 bits instead until the ASM is adjusted.</b>" - KungFuFurby</li>
+		<li>"<b>(EXPERIMENTAL)</b> Added the ability to insert up to 65,536 songs in a ROM, as opposed to 256 before. <b>There are a lot of hijack changes involved here, including some new ones. Higher IDs may need additional adjustments to the internal AddmusicK code due to other technical limitations, and any patch that wants to access song IDs above $FF (and/or use the fade command) must be manually adjusted.</b>" - KungFuFurby</li>
 		</ul>
 	</li>
 	<li>Command Line

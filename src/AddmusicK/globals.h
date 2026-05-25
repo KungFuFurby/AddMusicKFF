@@ -26,7 +26,7 @@
 
 #define PARSER_VERSION 4			// Used to keep track of incompatible changes to the parser
 
-#define DATA_VERSION 0				// Used to keep track of incompatible changes to any and all compiled data, either to the SNES or to the PC
+#define DATA_VERSION 1				// Used to keep track of incompatible changes to any and all compiled data, either to the SNES or to the PC
 
 #include <cstdint>		// // //
 //class ROM;
@@ -57,7 +57,7 @@ class SampleGroup;
 //extern ROM rom;
 extern std::vector<uint8_t> rom;
 
-//extern Music musics[256];
+//extern Music musics[65536];
 extern std::map<int, Music> musics;
 //extern Sample samples[256];
 extern std::vector<Sample> samples;

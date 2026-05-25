@@ -19,26 +19,47 @@ if read4($048000) == $524F4659 ; "YFOR"
 !YoshifanaticOverworldRevolutionPresent = !true
 endif
 
-org $94B3
-	db !RescueEgg
-org $96C7
-	db !Title
+;All of these overwritings now call subroutines because they must now handle 16-bit song values.
+org $94B2
+	JSL RescueEggHijack
+	NOP
+org $96C6
+	JSL TitleHijack
+	NOP
 ;;; org $009E18		;;; except this one needs nuking
 	;;; db $FF
-org $0CD5D4 ; Change castle destruction sequence song 2
-	db !CastleDestructionFanfare	
-org $00C526
-	db !BonusEnd
-org $00C9BD
-	db !IrisOut
-org $00D0DE
-	db !GameOver
-org $00EEC3
-	db !StageClear
-org $00F60B
-	db !Miss
-org $018784
-	db !BossClear
+org $0CD5D3 ; Change castle destruction sequence song 2
+	JSL CastleDestructionFanfareHijack
+	NOP
+org $00C525
+	JSL BonusEndHijack
+	NOP
+org $00C9BC
+	JSL IrisOutHijack
+	NOP
+org $00C9F3
+	JSR ClearMusicBackup
+org $00D0DD
+	JSL GameOverHijack
+	NOP
+
+org $00EEC2
+	JSL StageClearHijack
+	NOP
+
+org $00EEC7
+	JSL SetMusicBackupToFF
+	NOP
+
+org $00F60A
+	JSL MissHijack
+	NOP
+	JSL SetMusicBackupToFF
+	NOP
+
+org $018780
+	JSL StoreToMusicBackupLoHi
+	JSL BossClearHijack
 
 org $01AAFD
 if !PSwitchIsSFX == !true
@@ -55,20 +76,32 @@ if !PSwitchIsSFX == !true
 Skip10:
 else
 Skip10:
-	LDA.B #!PSwitch
-	STA $1DFB|!SA1Addr2
+	JSL PSwitchHijack
+	NOP
 endif
 
-org $01C0F0
-	db !StageClear
-org $01C586
-	db !Starman
-org $01D04F
-	db !BossClear
-org $01E216
-	db !Keyhole
-org $01FB2E
-	db !BossClear
+org $01C0EF
+	JSL StageClearHijack
+	NOP
+	JSL SetMusicBackupToFF
+	NOP
+
+org $01C585	; 13 bytes
+	JSL StarmanHijack
+	RTL
+
+org $01D04E
+	JSL BossClearHijack
+	NOP
+
+org $01E215
+	JSL KeyholeHijack
+	NOP
+
+org $01FB2D
+	JSL BossClearHijack
+	NOP
+
 org $028967
 if !PSwitchIsSFX == !true
 ;;; Modify this trigger to use the built-in P-Switch SFX + Music as SFX
@@ -76,78 +109,145 @@ if !PSwitchIsSFX == !true
 	LDA.b #$C0
 	STA $1DFC|!SA1Addr2
 else
-	LDA.b #!PSwitch
-	STA $1DFB|!SA1Addr2
+	JSL PSwitchHijack
+	NOP
 endif
 
-org $03809D
-	db !BossClear
-org $0398E7
-	db !BossClear
-org $03A702
-	db !BowserZoomOut
-org $03A7A8
-	db !BowserIntrlude
-org $03A7C2
-	db !BowserZoomIn
-org $03ABF4
-	db !BowserDefeated
-org $03AC53
-	db !PrincessSaved
-org $03CE9A
-	db !BossClear
+org $03809C
+	JSL BossClearHijack
+	NOP
+
+org $0398E6
+	JSL BossClearHijack
+	NOP
+
+org $03A701
+	JSL BowserZoomOutHijack
+	NOP
+
+org $03A7A7
+	JSL BowserIntrludeHijack
+	NOP
+
+org $03A7C1
+	JSL BowserZoomInHijack
+	NOP
+
+org $03ABF3
+	JSL BowserDefeatedHijack
+	NOP
+
+org $03AC52
+	JSL PrincessSavedHijack
+	NOP
+
+org $03CE99
+	JSL BossClearHijack
+	NOP
+
 if !YoshifanaticOverworldRevolutionPresent == !false
-org $0483D2
-	db !VoBAppears
+org $0483D1
+	JSL VoBAppearsHijack
+	NOP
 
 org $048E44
 	NOP : NOP : NOP
 
-org $0491E1
-	db $FF
+org $0491E0
+	jsl FadeHijack
+	NOP
 
-
-
+!OverworldMusicArrayOverwrite = 0
 if read1($04DBC8) == $02 && read1($04DBC9) == $03 && read1($04DBCA) == $04 && read1($04DBCB) == $06 && read1($04DBCC) == $07 && read1($04DBCD) == $09 && read1($04DBCE) == $05 
+!OverworldMusicArrayOverwrite = 1
+endif
+
 org $048D8A
-	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
+OverworldMusicArrayLo:
+if !OverworldMusicArrayOverwrite == 1
+	db !Overworld&$FF, !YoshisIsland&$FF, !VanillaDome&$FF, !ForestOfIllusion&$FF, !ValleyOfBowser&$FF, !SpecialWorld&$FF, !StarRoad&$FF
+endif
 org $04DBC8
-	db !Overworld, !YoshisIsland, !VanillaDome, !ForestOfIllusion, !ValleyOfBowser, !SpecialWorld, !StarRoad
+if !OverworldMusicArrayOverwrite == 1
+	db !Overworld&$FF, !YoshisIsland&$FF, !VanillaDome&$FF, !ForestOfIllusion&$FF, !ValleyOfBowser&$FF, !SpecialWorld&$FF, !StarRoad&$FF
 endif
+
+org $0DE259
+OverworldMusicArrayHi:
+if !OverworldMusicArrayOverwrite == 1
+	db !Overworld>>8&$FF, !YoshisIsland>>8&$FF, !VanillaDome>>8&$FF, !ForestOfIllusion>>8&$FF, !ValleyOfBowser>>8&$FF, !SpecialWorld>>8&$FF, !StarRoad>>8&$FF
 endif
-	
+
+org $04DBF7
+	jsl OverworldMusicHijack
+	NOP
+endif
+
+org $0DE250
+	;Signal byte for Lunar Magic indicating that 16-bit music IDs are in use: normally this byte is $FF.
+	db $00
+
+LevelMusicArrayHi:
+	db !HereWeGo>>8&$FF, !Cave>>8&$FF, !Piano>>8&$FF, !Castle>>8&$FF, !GhostHouse>>8&$FF, !Water>>8&$FF, !Boss>>8&$FF, !SwitchPalace>>8&$FF
+
 org $0584DB
+LevelMusicArrayLo:
 	db !HereWeGo, !Cave, !Piano, !Castle, !GhostHouse, !Water, !Boss, !SwitchPalace
-org $0C9447
-	db !StaffRoll
-org $0CA40C
-	db !YoshisAreHome
-org $0CA5C2
-	db !CastList
+
+org $058551
+	LDA $0100|!SA1Addr2
+	CMP #$07
+	BCC Skip11
+
+	jsl LevelMusicHijack
+	BRA Skip11
+
+	NOP
+	NOP : NOP
+	NOP : NOP
+	NOP : NOP : NOP
+Skip11:
+
+
+org $0C9446
+	JSL StaffRollHijack
+	NOP
+
+org $0CA40B
+	JSL YoshisAreHomeHijack
+	NOP
+
+org $0CA5C1
+	JSL CastListHijack
+	NOP
 		
-org $009723
-	LDA.b #!Welcome
+org $00971A
+	LDA $0109|!SA1Addr2
+	BEQ NoWelcomeSong
+	CMP.B #$E9
+	BNE Skip6
 if !WelcomeSongOverride == !true
-	STA.w $0DDA|!SA1Addr2					
+	JSL WelcomeHijack
 else
-	STZ.w $1DFB|!SA1Addr2
+	STZ $1DFB|!SA1Addr2
+	STZ !MusicMirHi
 endif
-	LDA.w $0DDA|!SA1Addr2	; 
-	NOP : NOP		; 
-	NOP : NOP		; 
-	LDY.w $0D9B|!SA1Addr2	; 
-	CPY.b #$C1		; 
+NoWelcomeSong:
 if !BowserSongOverride == !true
-	BNE CODE_009738		; 
-else
-	BRA CODE_009738		; 
+	LDY.w $0D9B|!SA1Addr2
+	CPY.b #$C1
+	BNE NoBowserSong
+	JSL BowserHijack
+NoBowserSong:
 endif
-	LDA.b #!Bowser		; 
-CODE_009738:			;
-	STA.w $1DFB|!SA1Addr2	; 
-CODE_00973B:			;
-	NOP : NOP		;BRA Skip6
-	STA.w $0DDA|!SA1Addr2	;NOP : NOP : NOP
+	JSL RestoreMusicFromBackup
+	BRA Skip6
+
+		;Just write a bunch of NOPs up until we reach $009740.
+		;We automate this using a padding operation.
+assert pc() <= $009740
+padbyte $EA
+pad $009740
 Skip6:
 
 org $008134			; Don't upload the overworld music bank.
@@ -183,6 +283,19 @@ NoYoshiDrum:
 		LDA #$03
 		STA $1DFA|!SA1Addr2
 		RTL
+FadeHijack:
+		;We need to write a 16-bit ID instead of an 8-bit ID.
+		LDA #$FF
+		STA $1DFB|!SA1Addr2
+		STA !MusicMirHi
+		RTL
+
+ClearMusicBackup:
+	;Needs to be in the same ROM bank for a hijack because it replaces a single STZ opcode.
+		STZ $0DDA|!SA1Addr2
+		STZ !MusicBackupHi
+		RTS
+
 		;Just write a bunch of NOPs up until we reach $0081AA.
 		;We automate this using a padding operation.
 assert pc() <= $0081AA
@@ -212,6 +325,10 @@ if !YoshifanaticOverworldRevolutionPresent == !false
 org $00A0B3				;;; ditto
 	BRA + : NOP
 	+
+
+org $00A0B9
+	JSR ClearMusicBackup
+	+
 endif
 
 org $009702				; Don't upload music bank 2...or something.
@@ -231,6 +348,7 @@ StartSelectSfx:
 	lda #$09 		;\ Play sfx
 	sta $1DFA|!SA1Addr2 	;/
 	jmp $A289 		; Return back
+
 	;Just write a bunch of NOPs up until we reach $00A654.
 	;We automate this using a padding operation.
 assert pc() <= $00A654
@@ -246,45 +364,55 @@ org $00C53E
 if !PSwitchIsSFX == !true
 ;;; Don't factor in the previous level music.
 	LDA.b #$80
-	NOP
-	NOP : NOP
-
-else
-	LDA !MusicBackup
-	NOP	: NOP
 endif
+	CPY #$01
+	BNE LevelMusicRestore
+	LDY $190C|!SA1Addr2
+	BNE LevelMusicRestore
 
-;org $00C53E
-	
-	;BRA Skip3 : NOP 
-	;NOP : NOP 
-	;Skip3:
-	
-;org $00C54C
-;	BRA Skip4 : NOP
-;	Skip4:
-
-org $00C54C
-if !PSwitchIsSFX == !true
+if !PSwitchIsSFX == !false
+	JSL RestoreMusicFromBackup
+else
 	STA $1DFC|!SA1Addr2
-else
-	STA $1DFB|!SA1Addr2
 endif
+
+LevelMusicRestore:
+if !PSwitchIsSFX == !false
+	JSL CheckMusicBackupForFF
+	BEQ PSwitchSFXSkip
+endif
+	CPY #$1E
+	BNE PSwitchSFXSkip
+	LDA #$24
+	STA $1DFC|!SA1Addr2
+
+PSwitchSFXSkip:
+if !PSwitchIsSFX == !true
+	BRA Skip4
+endif
+
+		;Just write a bunch of NOPs up until we reach $00C559.
+		;We automate this using a padding operation.
+assert pc() <= $00C55C
+padbyte $EA
+pad $00C55C
+Skip4:
 	
 org $02E277		;;; fix for the directional coins (more like code restore)
 	LDA $14AD|!SA1Addr2
 	
 org $02E27F		;;; ditto
-	LDA !MusicBackup
-	NOP : NOP
+	JSL RestoreMusicFromBackup
+	NOP
 	
 org $03A842
-	db $2E,$2F,$30,$31,$32,$33,$34,!Bowser2,!Bowser3
+BowserExtraMusicSFXArrayLo:
+	db $2E,$2F,$30,$31,$32,$33,$34,!Bowser2&$FF,!Bowser3&$FF
 	
 	
 org $03A88B		; Was NOPs before.  Restore that.
-	LDA $A842,y
-	STA $1DFB|!SA1Addr2
+	JSL BowserExtraMusicSFXHijack
+	NOP
 	PLA
 	LSR
 	LSR
@@ -323,35 +451,12 @@ padbyte $EA
 pad $00E308
 Skip9:
 
-org $01C585	; 13 bytes
-	;LDA $1DFB|!SA1Addr2
-	;STA $0DDA|!SA1Addr2
-	LDA #!Starman
-	STA $1DFB|!SA1Addr2
-	RTL
-	
-;org $01C58A
-;	RTL
-	
-org $058555
-	LDX $0100|!SA1Addr2
-	CPX #$07
-	BCC Skip11
-
-	STA $0DDA|!SA1Addr2
-	BRA Skip11 
-
-	NOP : NOP
-	NOP : NOP : NOP
-Skip11:
-
-
 org $00805E			; Don't upload the standard sample bank.
 	NOP : NOP : NOP
 	
 org $0093C0
-LDA.b #!NintPresents
-STA $1DFB|!SA1Addr2
+JSL NintPresentsHijack
+NOP
 
 if !YoshifanaticOverworldRevolutionPresent == !false
 org $049AC2
@@ -444,7 +549,11 @@ if !YoshifanaticOverworldRevolutionPresent == !false
 ;;; checking whether mario and luigi are on the same submap isn't necessary anymore
 org $04DBDD
 	BRA +
-	NOP #20
+		;Just write a bunch of NOPs up until we reach $04DBF3
+		;We automate this using a padding operation.
+assert pc() <= $04DBF3
+padbyte $EA
+pad $04DBF3
 	+
 endif
 	
