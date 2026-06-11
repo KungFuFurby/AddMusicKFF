@@ -232,45 +232,69 @@ ChangeMusic:
 	;STA $7FFFFF
 	
 ;	LDA !MusicMir
-if !PSwitchIsSFX == !false
+if !PSwitchIsSFX == !false && !PSwitch != $00
 ;	CMP #!PSwitch
 ;	BEQ .doExtraChecks
 endif
+if !Starman != $00
 ;	CMP #!Starman
 ;	BEQ .doExtraChecks
+endif
 ;	BRA .okay
 ;	
 ;.doExtraChecks			; We can't allow the p-switch or starman songs to play during the level clear themes.
 	LDA !CurrentSong
+if !StageClear != $00
 	CMP #!StageClear
 	BEQ LevelEndMusicChange
+endif
+if !IrisOut != $00
 	CMP #!IrisOut
 	BEQ LevelEndMusicChange
+endif
+if !Keyhole != $00
 	CMP #!Keyhole
 	BEQ LevelEndMusicChange
+endif
+if !BossClear != $00
 	CMP #!BossClear		;;; this one too
+endif
 	BNE Okay
 	
 LevelEndMusicChange:
 	LDA !MusicMir
+if !IrisOut != $00
 	CMP #!IrisOut
 	BEQ Okay
+endif
+if !SwitchPalace != $00
 	CMP #!SwitchPalace	;;; bonus game fix
 	BEQ Okay
+endif
+if !Miss != $00
 	CMP #!Miss		;;; sure why not
 	BEQ Okay
+endif
+if !RescueEgg != $00
 	CMP #!RescueEgg
 	BEQ Okay		; Yep
+endif
+if !StaffRoll != $00
 	CMP #!StaffRoll	; Added credits check
 	BEQ Okay
+endif
 	LDA $0100|!SA1Addr2		
 	CMP #$10			
 	BCC Okay
 	;;; LDA !CurrentSong	;;; this is why we got here in first place, seems redundant
+if !StageClear != $00
 	;;; CMP #!StageClear
 	;;; BEQ EndWithCancel
+endif
+if !IrisOut != $00
 	;;; CMP #!IrisOut
 	;;; BEQ EndWithCancel
+endif
 EndWithCancel:
 if !PSwitchStarRestart == !false
 	STZ !MusicMir
@@ -320,10 +344,14 @@ endif
 ;	CMP #$0F
 ;	BCC .forceMusicToPlay
 ;	LDA !CurrentSong
+if !StageClear != $00
 ;	CMP #!StageClear
 ;	BEQ EndWithCancel
+endif
+if !IrisOut != $00
 ;	CMP #!IrisOut
 ;	BEQ EndWithCancel
+endif
 ;.forceMusicToPlay
 
 
@@ -663,19 +691,31 @@ if !TimerResetOnLevelFade == !true
 	BEQ +
 endif
 	LDA !MusicMir
+if !Miss != $00
 	CMP #!Miss
 	BEQ +
+endif
+if !GameOver != $00
 	CMP #!GameOver
 	BEQ +
+endif
 if !PSwitch != $00 || !Starman != $00
+if !StageClear != $00
 	CMP #!StageClear	;;; more checks here should help
 	BEQ ++
+endif
+if !IrisOut != $00
 	CMP #!IrisOut
 	BEQ ++
+endif
+if !BossClear != $00
 	CMP #!BossClear
 	BEQ ++
+endif
+if !Keyhole != $00
 	CMP #!Keyhole
 	BEQ ++
+endif
 endif
 if !PSwitch != $00
 	LDA $14AD|!SA1Addr2
@@ -780,14 +820,22 @@ endif
 if !PSwitchStarRestart == !true
 SkipPowStar:
 	lda !CurrentSong
+if !StageClear != $00
 	cmp #!StageClear
 	beq +
+endif
+if !IrisOut != $00
 	cmp #!IrisOut
 	beq +
+endif
+if !BossClear != $00
 	cmp #!BossClear
 	beq +
+endif
+if !Keyhole != $00
 	cmp #!Keyhole
 	beq +
+endif
 	clc
 +	rts
 endif
