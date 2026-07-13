@@ -224,6 +224,16 @@
 		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"Corrected a conflict where the fade command would conflict with the $E0 and $E1 hex commands." - KungFuFurby</li>
+		</ul>
+	</li>
+	<li>SPC700 <-> SNES Communication
+		<ul>
+		<li>"Added the ability to fade the volume to any value instead of just zero through the $80-$FF $1DFB commands. It is backward compatible with the original $FF $1DFB command. <b>WARNING: May introduce conflicts on the SNES side if more than 127 songs are defined. The lower IDs for the fades will instead be reserved for song slots.</b>" - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Historical Addmusic Adaptations
 		<ul>
 		<li>"Added a warning for using non-standard FIR coefficient table IDs, mostly because they won't sound consistent due to an out-of-bounds read situation. Addmusic405 songs already output an error." - KungFuFurby</li>
