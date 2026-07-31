@@ -224,6 +224,11 @@
 		<li>"Upgraded song-related memory overflow errors by no longer rounding them to the nearest $100 bytes and also identifying whether or not the echo buffer or the sample data caused the overflow." - KungFuFurby</li>
 		</ul>
 	</li>
+	<li>SPC700-Side ASM
+		<ul>
+		<li>"The MVOL DSP registers are now set to $7F on song initialization. This avoids problems with the sound being quieter than expected when a song fails to do the same, since the MVOL DSP registers are otherwise never touched except by direct DSP register writes from the sound data." - KungFuFurby</li>
+		</ul>
+	</li>
 	<li>Historical Addmusic Adaptations
 		<ul>
 		<li>"Added a warning for using non-standard FIR coefficient table IDs, mostly because they won't sound consistent due to an out-of-bounds read situation. Addmusic405 songs already output an error." - KungFuFurby</li>
