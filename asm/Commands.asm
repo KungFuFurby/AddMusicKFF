@@ -365,32 +365,61 @@ TSampleLoad:
 cmdE6:					; Second loop
 {
 	bne   label2
-	dec   a				; \ ?
-	mov   $01f0+x,a			; /
-	mov   a,$30+x			; \
-	mov   $01e0+x,a			; | Save the current song position into $01e0
-	mov   a,$31+x			; |
-	mov   $01e1+x,a			; /
-	ret				;
+	inc   $c0+x
+	call  getNestLocation
+	mov   a, #$ff
+	mov   y, #$04
+	mov   ($16)+y, a
+	mov   y, #$01
+	call  setLoopPtrToPos
+	ret
+	;mov   a, #$02
+	;bra   storeLoopType
 
 label2:
-	mov   a, $01f0+x
-	dec   a
-	beq   label4
-	cmp   a, #$fe
-	bne   label3
-	mov   a, y
-label3:
-	setp
-	mov.b $01f0&$ff+x,a
-	mov.b a,$01e0&$ff+x
-	mov.b y,$01e1&$ff+x
-	clrp
-	mov   $30+x,a
-	mov   $31+x,y
-label4:
-	ret
+	mov   $13, a
+	call  getNestLocation
+	mov   y, #$03
+	call  setLoopPtrToPos
+	mov   y, #$04
+	mov   a, ($16)+y
+	cmp   a, #$ff
+	bne   loopEndCheck
+	mov   a, $13
+	mov   ($16)+y, a
+	bra   jumpToLoopPt
 }	
+	
+
+loopEndCheck:
+	dec	a
+	mov	($16)+y, a
+	beq	loopEnd_goUpOneLevel
+jumpToLoopPt:
+	mov	y, #$00
+jumpToEndPt:
+	mov	a, ($16)+y
+	mov	$30+x, a
+	inc	y
+	mov	a, ($16)+y
+	mov	$31+x, a
+	ret
+
+loopEnd_goUpOneLevel:
+	mov	y, #$02
+	call	jumpToEndPt
+	dec	$c0+x
+	ret
+	;mov	a, #$00
+	;bra	storeLoopType
+
+setLoopPtrToPos:
+	mov   a, $31+x
+	mov   ($16)+y, a
+	dec   y
+	mov   a, $30+x
+	mov   ($16)+y, a
+	ret
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;cmdE8:					; Fade the volume
 {
@@ -402,20 +431,50 @@ cmdE9:					; Loop
 	push  a
 	call  GetCommandDataFast
 	push  a
+	inc   $c0+x
+	call  getNestLocation
 	call  GetCommandDataFast
-	mov   $c0+x, a           ; repeat counter = op3
-	mov   a, $30+x
-	mov   $03e0+x, a
-	mov   a, $31+x
-	mov   $03e1+x, a         ; save current vptr in 3E0/1+X
+	mov   y, #$04             ; repeat counter = op3
+	mov   ($16)+y, a
+	dec   y
+	call  setLoopPtrToPos
+	dec   y
 	pop   a
+	mov   ($16)+y, a
 	mov   $31+x, a
-	mov   $03f1+x, a
+	dec   y
 	pop   a
+	mov   ($16)+y, a
 	mov   $30+x, a
-	mov   $03f0+x, a         ; set vptr/3F0/1+X to op1/2
+	;mov   a, #$01
+storeLoopType:
+	;mov   y, #$05
+	;mov   ($16)+y, a
 	ret
 }
+
+getNestLocation:
+	mov a, $c0+x
+getNestLocationFromReadahead:
+	dec a
+getNestLocationFromReadaheadNoDec:
+	mov y, #6*9 ;6 bytes per channel, 8 tracks total (+1 for readahead)
+	mul ya
+	movw $16, ya
+	mov a, x
+	mov y, #$03
+	mul ya
+	addw ya, $16
+	movw $16, ya
+	clrc
+	;Location is temporary
+	;This will be overwritten by the location of the end of the song data
+getNestLocationLocLo:
+	adc $16, #$00
+getNestLocationLocHi:
+	adc $17, #$C0
+	mov x, $46
+	ret
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cmdEA:					; Fade the vibrato
 {
